@@ -8,6 +8,11 @@
   --toggle-button-bg: #ffffff;
   --toggle-button-btn: #ffffff;
   --navbar-bg: #262626;
+    --glass-tint: 52%;
+  --glass-brightness: 0.85;
+  --glass-rim: rgba(255, 255, 255, 0.35);
+  --glass-shadow: rgba(0, 0, 0, 0.22);
+
 }
 
 .dark {
@@ -18,6 +23,11 @@
   --toggle-button-bg: #070707;
   --toggle-button-btn: #1a1a1a;
   --navbar-bg: #ffff;
+    --glass-tint: 48%;
+  --glass-brightness: 1.15;
+  --glass-rim: rgba(255, 255, 255, 0.7);
+  --glass-shadow: rgba(0, 0, 0, 0.35);
+
 }
 
 .bg-product-frame {
@@ -83,3 +93,46 @@
 .animate-progress {
   animation: progressBar 6s linear forwards;
 }
+.liquid-glass {
+  isolation: isolate;
+  background: color-mix(in srgb, var(--navbar-bg) var(--glass-tint), transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(var(--glass-brightness));
+  backdrop-filter: blur(20px) saturate(180%) brightness(var(--glass-brightness));
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 22px rgba(255, 255, 255, 0.06),
+    0 8px 32px var(--glass-shadow);
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0) 38%,
+    rgba(255, 255, 255, 0) 62%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass {
+    background: color-mix(in srgb, var(--navbar-bg) 92%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass {
+    background: var(--navbar-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
