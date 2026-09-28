@@ -37,24 +37,42 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: monospace;
 }
 
-.font-body {
-  font-family: var(--font-libre-baskerville), sans-serif;
+/* Typographie : style épuré, scandinave, proche d'Helvetica */
+@layer base {
+  html,
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  body {
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
 }
 
-.font-dior {
-  font-family: var(--font-tenor), serif;
-  letter-spacing: -.5px;
-}
-
+.font-body,
+.font-dior,
 .font-pagetitle {
-  font-family: var(--font-tenor), sans-serif;
-  font-weight: 400;
+  font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: -0.02em;
 }
+
 
 .luxury-select .ant-select-selector {
   background: transparent !important;
