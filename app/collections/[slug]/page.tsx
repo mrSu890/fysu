@@ -164,7 +164,7 @@ export default function CollectionPage() {
     
           {/* HERO */}
           {hasHero && (
-            <div className="relative w-full h-[65vh] sm:h-[75vh] lg:h-[100vh] min-h-[600px]">
+                       <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
               <Image
                 src={page.hero_image}
                 alt={page.title}
