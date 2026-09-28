@@ -136,3 +136,15 @@
   }
 }
 
+
+/* Points décoratifs fixes */
+.deco-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #707070;
+}
+
+.dark .deco-dot {
+  background: #e5e5e5;
+}
