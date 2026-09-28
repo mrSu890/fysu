@@ -14,31 +14,12 @@ type HeroMedia = {
 
 const SLIDE_DURATION = 6000; // ms
 
+// Pages vers lesquelles renvoient les deux images (à adapter si les adresses diffèrent)
+const LEFT_LINK = "/for-him";
+const RIGHT_LINK = "/for-her";
+
 const isVideoMedia = (item: HeroMedia) =>
   item.media_type === "video" || /\.(mp4|webm|mov)$/i.test(item.media_path);
-
-const HeroOverlay = () => {
-  const t = useTranslations("Home");
-
-  return (
-    <div className="absolute inset-0 flex items-end justify-start px-4 pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
-
-      <div className="relative text-white space-y-2 pb-6 pointer-events-auto">
-        <div>
-          <p className="font-dior text-[1.1rem]">{t("heroTitle")}</p>
-          <p className="font-dior text-sm">{t("heroSubtitle")}</p>
-        </div>
-
-        <Link href="/collections/when-the-flowers-bloom">
-          <button className="text-sm mb-4 px-4 py-2 bg-white text-black rounded-lg cursor-pointer">
-            {t("heroCta")}
-          </button>
-        </Link>
-      </div>
-    </div>
-  );
-};
 
 const HomeHero = () => {
   const t = useTranslations("Home");
@@ -88,48 +69,50 @@ const HomeHero = () => {
   const getUrl = (path: string) =>
     `https://mugpnlsqeqbojnzrfnjf.supabase.co/storage/v1/object/public/hero-images/${path}`;
 
-  // Mode "split" : les 2 premiers médias côte à côte (photo ou vidéo)
+  // Mode "split" : les 2 premiers médias côte à côte, chacun cliquable
   const leftMedia = slides[0];
   const rightMedia = slides[1];
 
-  const renderPanel = (item: HeroMedia, isLeft: boolean) => {
+  const renderPanel = (item: HeroMedia, href: string, label: string) => {
     const url = getUrl(item.media_path);
 
-    return isVideoMedia(item) ? (
-      <video
-        src={url}
-        className="absolute inset-0 w-full h-full object-cover"
-        muted
-        autoPlay
-        loop
-        playsInline
-      />
-    ) : (
-      <Image
-        src={url}
-        alt={isLeft ? "Hero left" : "Hero right"}
-        fill
-        priority
-        sizes="50vw"
-        className="object-cover object-center"
-      />
+    return (
+      <Link href={href} aria-label={label} className="absolute inset-0 block">
+        {isVideoMedia(item) ? (
+          <video
+            src={url}
+            className="absolute inset-0 w-full h-full object-cover"
+            muted
+            autoPlay
+            loop
+            playsInline
+          />
+        ) : (
+          <Image
+            src={url}
+            alt={label}
+            fill
+            priority
+            sizes="50vw"
+            className="object-cover object-center"
+          />
+        )}
+      </Link>
     );
   };
 
   if (leftMedia && rightMedia) {
     return (
-           <section className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
-                <div className="absolute inset-0 grid grid-cols-2">
+      <section className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
+        <div className="absolute inset-0 grid grid-cols-2">
           <div className="relative h-full w-full">
-            {renderPanel(leftMedia, true)}
+            {renderPanel(leftMedia, LEFT_LINK, "For him")}
           </div>
 
           <div className="relative h-full w-full">
-            {renderPanel(rightMedia, false)}
+            {renderPanel(rightMedia, RIGHT_LINK, "For her")}
           </div>
         </div>
-
-        <HeroOverlay />
       </section>
     );
   }
