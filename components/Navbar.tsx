@@ -120,7 +120,7 @@ function MobileMenu({
   return (
     <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
       <div className="flex items-center gap-3">
-        <div className="bg-[var(--navbar-bg)]/60 backdrop-blur-sm w-[70%] rounded-4xl flex justify-start">
+              <div className="relative liquid-glass w-[70%] rounded-4xl flex justify-start">
           <Link href="/" className="w-full flex items-center justify-start">
             <div className="relative h-[24px] w-[160px] my-[.52rem]">
               <Image
@@ -135,7 +135,7 @@ function MobileMenu({
           </Link>
         </div>
 
-        <div className="bg-[var(--navbar-bg)]/60 backdrop-blur-sm w-[30%] rounded-4xl flex gap-4 justify-center items-center text-[var(--menu)] h-[42px]">
+                <div className="relative liquid-glass w-[30%] rounded-4xl flex gap-4 justify-center items-center text-[var(--menu)] h-[42px]">
           <button
             onClick={openCartWithDelay}
             className="relative cursor-pointer"
@@ -165,7 +165,7 @@ function MobileMenu({
       <AnimatePresence>
         {activePanel === "menu" && (
           <motion.div
-            className="absolute top-full mt-2 w-full overflow-hidden text-[var(--menu)] rounded-xl bg-[var(--navbar-bg)]/60 backdrop-blur-sm"
+       className="absolute top-full mt-2 w-full overflow-hidden text-[var(--menu)] rounded-xl liquid-glass"
             initial={{ height: 0 }}
             animate={{ height: "auto" }}
             exit={{ height: 0 }}
