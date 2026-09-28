@@ -118,8 +118,8 @@ const HomeHero = () => {
 
   if (leftMedia && rightMedia) {
     return (
-      <section className="relative w-full h-[65vh] sm:h-[75vh] lg:h-[100vh] min-h-[400px] overflow-hidden">
-        <div className="grid h-full w-full grid-cols-2">
+           <section className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
+                <div className="absolute inset-0 grid grid-cols-2">
           <div className="relative h-full w-full">
             {renderPanel(leftMedia, true)}
           </div>
