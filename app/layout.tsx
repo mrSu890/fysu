@@ -6,6 +6,7 @@ import { Libre_Baskerville } from "next/font/google"
 import { Playfair_Display } from 'next/font/google';
 import { Tenor_Sans } from "next/font/google";
 import CookieBanner from "@/components/CookieBanner";
+import DecorativeDots from "@/components/DecorativeDots";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -70,6 +71,8 @@ export default async function RootLayout({
           </NextIntlClientProvider>
         {/* </AuthProvider> */}
         <Toaster />
+                <DecorativeDots />
+
         
       </body>
     </html>
