@@ -13,6 +13,32 @@ type HeroMedia = {
 };
 
 const SLIDE_DURATION = 6000; // ms
+const isVideoMedia = (item: HeroMedia) =>
+  item.media_type === "video" || /\.(mp4|webm|mov)$/i.test(item.media_path);
+
+const HeroOverlay = () => {
+  const t = useTranslations("Home");
+
+  return (
+    <div className="absolute inset-0 flex items-end justify-start px-4 pointer-events-none">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
+
+      <div className="relative text-white space-y-2 pb-6 pointer-events-auto">
+        <div>
+          <p className="font-dior text-[1.1rem]">{t("heroTitle")}</p>
+          <p className="font-dior text-sm">{t("heroSubtitle")}</p>
+        </div>
+
+        <Link href="/collections/when-the-flowers-bloom">
+          <button className="text-sm mb-4 px-4 py-2 bg-white text-black rounded-lg cursor-pointer">
+            {t("heroCta")}
+          </button>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
 
 const HomeHero = () => {
   const t = useTranslations("Home");
@@ -61,6 +87,42 @@ const HomeHero = () => {
 
   const getUrl = (path: string) =>
     `https://mugpnlsqeqbojnzrfnjf.supabase.co/storage/v1/object/public/hero-images/${path}`;
+    // Mode "split" : 1re image à gauche + 1re vidéo à droite (si les deux existent)
+  const leftImage = slides.find((item) => !isVideoMedia(item));
+  const rightVideo = slides.find((item) => isVideoMedia(item));
+
+  if (leftImage && rightVideo) {
+    return (
+      <section className="relative w-full h-[65vh] sm:h-[75vh] lg:h-[100vh] min-h-[400px] overflow-hidden">
+        <div className="grid h-full w-full grid-cols-2">
+          <div className="relative h-full w-full">
+            <Image
+              src={getUrl(leftImage.media_path)}
+              alt="Hero image"
+              fill
+              priority
+              sizes="50vw"
+              className="object-cover object-center"
+            />
+          </div>
+
+          <div className="relative h-full w-full">
+            <video
+              src={getUrl(rightVideo.media_path)}
+              className="absolute inset-0 w-full h-full object-cover"
+              muted
+              autoPlay
+              loop
+              playsInline
+            />
+          </div>
+        </div>
+
+        <HeroOverlay />
+      </section>
+    );
+  }
+
 
   return (
     <section className="relative w-full h-[65vh] sm:h-[75vh] lg:h-[100vh] min-h-[400px] overflow-hidden">
