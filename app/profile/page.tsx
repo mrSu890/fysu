@@ -13,7 +13,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useTranslations } from "next-intl";
 
 // Image d'en-tête de la page compte (à déposer dans public/images/)
-const PROFILE_HERO_SRC = "/images/profile-hero.jpg";
+const PROFILE_HERO_SRC = "/images/profile-hero.jpeg";
 
 export default function ProfilePage() {
   const t = useTranslations("Profile");
