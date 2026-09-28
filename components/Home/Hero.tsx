@@ -13,6 +13,7 @@ type HeroMedia = {
 };
 
 const SLIDE_DURATION = 6000; // ms
+
 const isVideoMedia = (item: HeroMedia) =>
   item.media_type === "video" || /\.(mp4|webm|mov)$/i.test(item.media_path);
 
@@ -38,7 +39,6 @@ const HeroOverlay = () => {
     </div>
   );
 };
-
 
 const HomeHero = () => {
   const t = useTranslations("Home");
@@ -87,34 +87,45 @@ const HomeHero = () => {
 
   const getUrl = (path: string) =>
     `https://mugpnlsqeqbojnzrfnjf.supabase.co/storage/v1/object/public/hero-images/${path}`;
-    // Mode "split" : 1re image à gauche + 1re vidéo à droite (si les deux existent)
-  const leftImage = slides.find((item) => !isVideoMedia(item));
-  const rightVideo = slides.find((item) => isVideoMedia(item));
 
-  if (leftImage && rightVideo) {
+  // Mode "split" : les 2 premiers médias côte à côte (photo ou vidéo)
+  const leftMedia = slides[0];
+  const rightMedia = slides[1];
+
+  const renderPanel = (item: HeroMedia, isLeft: boolean) => {
+    const url = getUrl(item.media_path);
+
+    return isVideoMedia(item) ? (
+      <video
+        src={url}
+        className="absolute inset-0 w-full h-full object-cover"
+        muted
+        autoPlay
+        loop
+        playsInline
+      />
+    ) : (
+      <Image
+        src={url}
+        alt={isLeft ? "Hero left" : "Hero right"}
+        fill
+        priority
+        sizes="50vw"
+        className="object-cover object-center"
+      />
+    );
+  };
+
+  if (leftMedia && rightMedia) {
     return (
       <section className="relative w-full h-[65vh] sm:h-[75vh] lg:h-[100vh] min-h-[400px] overflow-hidden">
         <div className="grid h-full w-full grid-cols-2">
           <div className="relative h-full w-full">
-            <Image
-              src={getUrl(leftImage.media_path)}
-              alt="Hero image"
-              fill
-              priority
-              sizes="50vw"
-              className="object-cover object-center"
-            />
+            {renderPanel(leftMedia, true)}
           </div>
 
           <div className="relative h-full w-full">
-            <video
-              src={getUrl(rightVideo.media_path)}
-              className="absolute inset-0 w-full h-full object-cover"
-              muted
-              autoPlay
-              loop
-              playsInline
-            />
+            {renderPanel(rightMedia, false)}
           </div>
         </div>
 
@@ -122,7 +133,6 @@ const HomeHero = () => {
       </section>
     );
   }
-
 
   return (
     <section className="relative w-full h-[65vh] sm:h-[75vh] lg:h-[100vh] min-h-[400px] overflow-hidden">
