@@ -27,6 +27,15 @@ const Product = ({
   const [isInView, setIsInView] = useState(false)
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
   const dragIntentRef = useRef(false)
+    const [infoRevealed, setInfoRevealed] = useState(false)
+  const hideInfoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (hideInfoTimeoutRef.current) clearTimeout(hideInfoTimeoutRef.current)
+    }
+  }, [])
+
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -123,11 +132,27 @@ const Product = ({
   const resetGesture = () => {
     pointerStartRef.current = null
     dragIntentRef.current = false
+        // Tactile : les infos se recachent un peu après que le doigt a quitté l'écran
+    if (hideInfoTimeoutRef.current) clearTimeout(hideInfoTimeoutRef.current)
+    hideInfoTimeoutRef.current = setTimeout(() => {
+      setInfoRevealed(false)
+      hideInfoTimeoutRef.current = null
+    }, 2500)
+
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     pointerStartRef.current = { x: e.clientX, y: e.clientY }
     dragIntentRef.current = false
+        // Tactile (téléphone / iPad) : on révèle les infos dès que le doigt se pose
+    if (e.pointerType === "touch" || e.pointerType === "pen") {
+      if (hideInfoTimeoutRef.current) {
+        clearTimeout(hideInfoTimeoutRef.current)
+        hideInfoTimeoutRef.current = null
+      }
+      setInfoRevealed(true)
+    }
+
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -268,7 +293,14 @@ const Product = ({
   
       {/* Infos produit */}
       <Link href={`/product/${product.slug}`} className="block w-full">
-        <div className="flex justify-between items-start gap-3 mx-2">
+                <div
+          className={`flex justify-between items-start gap-3 mx-2 transition-all duration-300 ease-out group-focus-within:opacity-100 group-focus-within:translate-y-0 ${
+            infoRevealed
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0"
+          }`}
+        >
+
           <div className="flex flex-col items-start">
             <p className="text-xs uppercase tracking-wide group-hover:underline transition truncate">
               {product.name}
