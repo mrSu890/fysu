@@ -179,7 +179,7 @@ export default function CollectionPage() {
               {/* TITLE */}
               <div className="absolute inset-0 flex items-end">
                 <div className="pb-24 pl-16">
-                  <h1 className="text-white font-dior font-light text-2xl tracking-wide">
+                <h1 className="text-white font-dior font-bold text-4xl sm:text-6xl tracking-tight">
                     {page.title}
                   </h1>
                 </div>
