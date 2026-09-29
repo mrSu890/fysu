@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react"
 
-const DURATION = 2800 // durée de l'animation (ms)
+const DURATION = 2800 // durée de la ligne et du pourcentage (ms)
+const LOGO_DURATION = 700 // durée d'apparition du logo (ms) : rapide
 const MAX_WAIT = 9000 // sécurité : on ne bloque jamais plus longtemps
 
 export default function SiteLoader() {
   const [progress, setProgress] = useState(0)
+  const [logoReveal, setLogoReveal] = useState(0)
   const [fading, setFading] = useState(false)
   const [visible, setVisible] = useState(true)
 
@@ -45,11 +47,12 @@ export default function SiteLoader() {
     }
   }, [visible])
 
-  // Fait monter le pourcentage de 0 à 100
+  // Fait monter le pourcentage de 0 à 100 et dévoile le logo
   useEffect(() => {
     let raf = 0
     let loaded = document.readyState === "complete"
     let last = -1
+    let lastLogo = -1
     let done = false
     const start = performance.now()
 
@@ -60,6 +63,16 @@ export default function SiteLoader() {
 
     const tick = (now: number) => {
       const elapsed = now - start
+
+      // Logo : apparition rapide (ease-out)
+      const lt = Math.min(elapsed / LOGO_DURATION, 1)
+      const logoP = Math.floor((1 - Math.pow(1 - lt, 3)) * 100)
+      if (logoP !== lastLogo) {
+        lastLogo = logoP
+        setLogoReveal(logoP)
+      }
+
+      // Ligne + pourcentage
       const t = Math.min(elapsed / DURATION, 1)
       const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
@@ -76,6 +89,7 @@ export default function SiteLoader() {
       if (p >= 100 && !done) {
         done = true
         setProgress(100)
+        setLogoReveal(100)
         setFading(true)
         window.setTimeout(() => setVisible(false), 700)
         return
@@ -103,10 +117,10 @@ export default function SiteLoader() {
         transition: "opacity 0.7s ease",
       }}
     >
-      {/* Logo qui se dévoile de haut en bas */}
+      {/* Logo qui se dévoile rapidement de haut en bas */}
       <div
         className="aspect-[1195/359] w-[200px] sm:w-[260px]"
-        style={{ clipPath: `inset(0 0 ${100 - progress}% 0)` }}
+        style={{ clipPath: `inset(0 0 ${100 - logoReveal}% 0)` }}
       >
         <div
           className="loader-logo-lightmode h-full w-full bg-contain bg-center bg-no-repeat"
