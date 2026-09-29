@@ -7,6 +7,7 @@ import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
 import ScrollReveal from "@/components/ScrollReveal";
 import SiteLoader from "@/components/SiteLoader";
+import NotificationToasts from "@/components/NotificationToasts";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -54,6 +55,7 @@ export default async function RootLayout({
             <CartProvider>
               {children}
               <CookieBanner />
+              <NotificationToasts />
             </CartProvider>
           </NextIntlClientProvider>
         {/* </AuthProvider> */}
