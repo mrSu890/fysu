@@ -18,6 +18,9 @@ const SLIDE_DURATION = 6000; // ms
 const LEFT_LINK = "/for-him";
 const RIGHT_LINK = "/for-her";
 
+// Lien du bouton "Discover" quand il n'y a qu'une seule image
+const DISCOVER_LINK = "/product/saku-t-1";
+
 const isVideoMedia = (item: HeroMedia) =>
   item.media_type === "video" || /\.(mp4|webm|mov)$/i.test(item.media_path);
 
@@ -159,20 +162,21 @@ const HomeHero = () => {
               <div className="absolute inset-0 flex items-end justify-start px-4">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
 
-                <div className="relative text-white space-y-2 pb-6">
-                  <div>
-                    <p className="font-dior text-[1.1rem]">
-                      {t("heroTitle")}
-                    </p>
-                    <p className="font-dior text-sm">
-                      {t("heroSubtitle")}
-                    </p>
-                  </div>
+                <div className="relative text-white pb-8 sm:pb-12 max-w-[92%]">
+                  <h2 className="text-2xl sm:text-4xl uppercase font-normal tracking-[0.08em] leading-tight">
+                    {t("heroTitle")}
+                  </h2>
 
-                  <Link href="/collections/when-the-flowers-bloom">
-                    <button className="text-sm mb-4 px-4 py-2 bg-white text-black rounded-lg cursor-pointer">
-                      {t("heroCta")}
-                    </button>
+                  <p className="mt-3 font-serif text-base sm:text-xl">
+                    {t("heroSubtitle")}
+                  </p>
+
+                  <Link
+                    href={DISCOVER_LINK}
+                    className="mt-5 inline-flex items-center gap-2 text-sm uppercase tracking-[0.12em]"
+                  >
+                    Discover
+                    <span aria-hidden="true">&rsaquo;</span>
                   </Link>
                 </div>
               </div>
