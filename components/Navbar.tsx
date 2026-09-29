@@ -1,7 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  motion,
+  AnimatePresence,
+  animate,
+  useMotionValue,
+} from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, UserRound, ShoppingCart } from "lucide-react";
@@ -19,9 +24,13 @@ const KIBAN_LOGO_LIGHT = "/images/kiban-logo-light"; // logo clair (mode clair)
 const KIBAN_LOGO_DARK = "/images/kiban-logo-dark"; // logo foncé (mode sombre)
 const KIBAN_LOGO_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "webp", "svg"];
 
-// Animation "vivante" : ressort doux, sobre et chic (léger, sans rebond exagéré)
-const SPRING = { type: "spring", stiffness: 280, damping: 30, mass: 1 } as const;
+// Animation "vivante" : ressort souple et élastique, mais sombre et chic
+const SPRING = { type: "spring", stiffness: 140, damping: 19, mass: 1.1 } as const;
 const PILL_RADIUS = 30;
+const HEADER_H = 42; // hauteur de la ligne avec les icônes
+const GAP = 12; // écart entre les deux pastilles
+const ICONS_W = 60; // largeur approximative du groupe d'icônes (panier + menu)
+const ICONS_PAD = 24; // marge à droite des icônes quand le panneau est ouvert
 
 function MobileMenu({
   activePanel,
@@ -164,117 +173,181 @@ function MobileMenu({
     setActivePanel("menu");
   };
 
+  /* ---------- Animation des pastilles (largeur / hauteur / position réelles) ---------- */
+  const rowRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const [rowW, setRowW] = useState(0);
+  const [topH, setTopH] = useState(HEADER_H);
+  const [contentH, setContentH] = useState(0);
+  const readyRef = useRef(false);
+
+  // Valeurs de départ en CSS (avant la mesure), puis en pixels
+  const logoWidth = useMotionValue<any>("calc(70% - 6px)");
+  const rightWidth = useMotionValue<any>("calc(30% - 6px)");
+  const rightHeight = useMotionValue<any>(HEADER_H);
+  const rightX = useMotionValue<any>(0);
+  const rightY = useMotionValue<any>(0);
+  const iconsRight = useMotionValue<any>(`calc(50% - ${ICONS_W / 2}px)`);
+
+  // Mesure la largeur disponible et la hauteur de la pastille du logo
+  useEffect(() => {
+    const row = rowRef.current;
+    const logo = logoRef.current;
+    if (!row || !logo) return;
+
+    const measure = () => {
+      setRowW(row.offsetWidth);
+      if (logo.offsetHeight > 0) setTopH(logo.offsetHeight);
+    };
+    measure();
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(row);
+    ro.observe(logo);
+    return () => ro.disconnect();
+  }, []);
+
+  // Mesure la hauteur du contenu (menu ou panier) affiché dans le panneau
+  const contentObserver = useRef<ResizeObserver | null>(null);
+  const setContentEl = useCallback((el: HTMLDivElement | null) => {
+    if (contentObserver.current) {
+      contentObserver.current.disconnect();
+      contentObserver.current = null;
+    }
+    if (!el) return;
+    const measure = () => {
+      if (el.offsetHeight > 0) setContentH(el.offsetHeight);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    contentObserver.current = ro;
+  }, []);
+
+  useEffect(() => {
+    if (!rowW) return;
+
+    const closedRightW = rowW * 0.3 - GAP / 2;
+    const targets: [any, number][] = [
+      [logoWidth, open ? rowW : rowW * 0.7 - GAP / 2],
+      [rightWidth, open ? rowW : closedRightW],
+      [rightX, open ? 0 : rowW - closedRightW],
+      [rightY, open ? topH + GAP : 0],
+      [rightHeight, open ? HEADER_H + contentH : HEADER_H],
+      [iconsRight, open ? ICONS_PAD : (closedRightW - ICONS_W) / 2],
+    ];
+
+    if (!readyRef.current) {
+      // Première mesure : on place tout d'un coup, sans animation
+      targets.forEach(([mv, v]) => mv.jump(v));
+      readyRef.current = true;
+      return;
+    }
+
+    targets.forEach(([mv, v]) => animate(mv, v, SPRING));
+  }, [rowW, topH, open, contentH, logoWidth, rightWidth, rightX, rightY, rightHeight, iconsRight]);
+
   return (
-    <motion.div
-      layoutRoot
-      className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl"
-    >
-      <div className="flex flex-wrap items-start gap-3">
+    <div className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
+      <div ref={rowRef} className="relative">
         {/* Pastille du logo : elle s'étend pour combler le vide laissé par l'autre pastille */}
         <motion.div
-          layout
-          transition={SPRING}
-          style={{ borderRadius: PILL_RADIUS }}
-          className={`relative liquid-glass flex justify-start ${
-            open ? "w-full" : "w-[calc(70%-6px)]"
-          }`}
+          ref={logoRef}
+          style={{ width: logoWidth, borderRadius: PILL_RADIUS }}
+          className="relative liquid-glass flex justify-start"
         >
-          <motion.div
-            layout="position"
-            transition={SPRING}
-            className="flex items-center"
-          >
-            <Link href="/" className="flex items-center justify-start">
-              <div
-                className={
-                  isKiban
-                    ? "relative"
-                    : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
-                }
-              >
-                {isKiban ? (
-                  kibanLogoSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={kibanLogoSrc}
-                      alt="Kiban Collector"
-                      className="block h-[26px] sm:h-[30px] w-auto max-w-full my-[8px] sm:my-[6px]"
-                      style={{
-                        filter: isDark
-                          ? "brightness(0)"
-                          : "brightness(0) invert(1)",
-                      }}
-                    />
-                  ) : (
-                    <span className="block my-[10px] whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
-                      Kiban Collector
-                    </span>
-                  )
-                ) : (
-                  <Image
-                    src={isDark ? logoBlack : logoWhite}
-                    alt="FYSU Logo"
-                    fill
-                    priority
-                    sizes="160px"
-                    className="object-contain"
+          <Link href="/" className="flex items-center justify-start">
+            <div
+              className={
+                isKiban
+                  ? "relative"
+                  : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
+              }
+            >
+              {isKiban ? (
+                kibanLogoSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={kibanLogoSrc}
+                    alt="Kiban Collector"
+                    className="block h-[26px] sm:h-[30px] w-auto max-w-full my-[8px] sm:my-[6px]"
+                    style={{
+                      filter: isDark
+                        ? "brightness(0)"
+                        : "brightness(0) invert(1)",
+                    }}
                   />
-                )}
-              </div>
-            </Link>
-          </motion.div>
+                ) : (
+                  <span className="block my-[10px] whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
+                    Kiban Collector
+                  </span>
+                )
+              ) : (
+                <Image
+                  src={isDark ? logoBlack : logoWhite}
+                  alt="FYSU Logo"
+                  fill
+                  priority
+                  sizes="160px"
+                  className="object-contain"
+                />
+              )}
+            </div>
+          </Link>
         </motion.div>
 
         {/* Pastille panier / menu : elle descend et s'agrandit en panneau */}
         <motion.div
-          layout
-          transition={SPRING}
-          style={{ borderRadius: PILL_RADIUS }}
-          className={`relative liquid-glass overflow-hidden text-[var(--menu)] ${
-            open ? "w-full" : "w-[calc(30%-6px)]"
-          }`}
+          style={{
+            width: rightWidth,
+            height: rightHeight,
+            x: rightX,
+            y: rightY,
+            borderRadius: PILL_RADIUS,
+          }}
+          className="absolute top-0 left-0 liquid-glass overflow-hidden text-[var(--menu)]"
         >
-          <motion.div
-            layout="position"
-            transition={SPRING}
-            className={`flex items-center gap-4 h-[42px] ${
-              open ? "justify-end px-6" : "justify-center"
-            }`}
-          >
-            <button
-              onClick={toggleCart}
-              className="relative cursor-pointer"
-              type="button"
+          <div className="relative" style={{ height: HEADER_H }}>
+            <motion.div
+              style={{ right: iconsRight, width: ICONS_W }}
+              className="absolute top-1/2 -translate-y-1/2 flex items-center justify-between"
             >
-              <ShoppingCart size={20} />
+              <button
+                onClick={toggleCart}
+                className="relative cursor-pointer"
+                type="button"
+              >
+                <ShoppingCart size={20} />
 
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-green-900 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {totalItems}
-                </span>
-              )}
-            </button>
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-green-900 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
 
-            <button
-              onClick={toggleMenu}
-              className="text-[var(--menu)] cursor-pointer"
-              type="button"
-            >
-              {panel === "menu" ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </motion.div>
+              <button
+                onClick={toggleMenu}
+                className="text-[var(--menu)] cursor-pointer"
+                type="button"
+              >
+                {panel === "menu" ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </motion.div>
+          </div>
 
           <AnimatePresence mode="wait" initial={false}>
             {panel === "cart" && mounted && (
               <motion.div
                 key="cart"
-                layout="position"
+                ref={setContentEl}
+                style={{ width: rowW || "100%" }}
                 initial={{ opacity: 0 }}
                 animate={{
                   opacity: 1,
-                  transition: { delay: 0.12, duration: 0.3 },
+                  transition: { delay: 0.18, duration: 0.35 },
                 }}
-                exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                exit={{ opacity: 0, transition: { duration: 0.15 } }}
               >
                 <CartDrawer />
               </motion.div>
@@ -283,13 +356,14 @@ function MobileMenu({
             {panel === "menu" && (
               <motion.div
                 key="menu"
-                layout="position"
+                ref={setContentEl}
+                style={{ width: rowW || "100%" }}
                 initial={{ opacity: 0 }}
                 animate={{
                   opacity: 1,
-                  transition: { delay: 0.12, duration: 0.3 },
+                  transition: { delay: 0.18, duration: 0.35 },
                 }}
-                exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                exit={{ opacity: 0, transition: { duration: 0.15 } }}
                 className="max-h-[calc(100dvh-7rem)] overflow-y-auto"
               >
                 <p className="text-5xl font-bold tracking-tighter px-6 pb-4">
@@ -381,7 +455,7 @@ function MobileMenu({
           </AnimatePresence>
         </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
