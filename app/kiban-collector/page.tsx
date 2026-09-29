@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import ProductFilters from "@/components/ProductFilters"
-import ThemeToggle from "@/components/ThemeToggle"
+import KibanLogo from "@/components/KibanLogo"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
@@ -15,7 +15,7 @@ const HERO_IMAGE = "/images/kiban-collector.jpg"
 const TITLE = "KIBAN COLLECTOR"
 
 const TEXT =
-  "Kiban Collector brings together the essential pieces of the Kiban universe. A selection made for collectors: objects designed with care, made to last and to be kept."
+  "Kiban Collector is FYSU's craft program: an experimental lab where artisans and engineers work side by side. Together, they create objects of exceptional craftsmanship, made to leave a mark on culture."
 
 // Collection créée dans l'admin (lien = kiban-collector) qui contient les produits
 const COLLECTION_SLUG = "kiban-collector"
@@ -29,6 +29,21 @@ export default function KibanCollectorPage() {
     gender: "all",
     sort: "default",
   })
+
+  // Cette page existe uniquement en mode sombre
+  useLayoutEffect(() => {
+    const html = document.documentElement
+    html.classList.add("dark")
+
+    return () => {
+      // En partant, on remet le mode choisi par le visiteur
+      let saved: string | null = null
+      try {
+        saved = localStorage.getItem("theme")
+      } catch {}
+      if (saved !== "dark") html.classList.remove("dark")
+    }
+  }, [])
 
   useEffect(() => {
     const load = async () => {
@@ -65,7 +80,7 @@ export default function KibanCollectorPage() {
     <>
       <Navbar />
 
-      {/* ================= IMAGE ARRONDIE + TEXTE ================= */}
+      {/* ================= IMAGE ARRONDIE + LOGO + TEXTE ================= */}
       <section className="w-11/12 max-w-6xl mx-auto pt-28 sm:pt-32">
         <div className="relative w-full aspect-[3/2] overflow-hidden rounded-2xl bg-neutral-200">
           {!heroFailed && (
@@ -80,11 +95,14 @@ export default function KibanCollectorPage() {
         </div>
 
         <div className="mx-auto mt-12 sm:mt-16 max-w-3xl text-center">
-          <h1 className="font-serif text-3xl sm:text-5xl uppercase tracking-wide leading-tight">
-            {TITLE}
-          </h1>
+          <h1 className="sr-only">{TITLE}</h1>
 
-          <p className="mt-6 text-sm sm:text-base leading-relaxed text-foreground/80">
+          {/* Le logo remplace le titre écrit */}
+          <div className="flex justify-center">
+            <KibanLogo tone="white" className="h-16 sm:h-24 w-auto" />
+          </div>
+
+          <p className="mt-8 text-sm sm:text-base leading-relaxed text-foreground/80">
             {TEXT}
           </p>
         </div>
@@ -114,7 +132,6 @@ export default function KibanCollectorPage() {
         )}
       </div>
 
-      <ThemeToggle />
       <Footer />
     </>
   )
