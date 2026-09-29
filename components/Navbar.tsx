@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,11 +15,13 @@ const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
 
 // Logos de la page Kiban Collector (à déposer dans public/images)
-const KIBAN_LOGO_LIGHT = "/images/kiban-logo-light";
-const KIBAN_LOGO_DARK = "/images/kiban-logo-dark";
+const KIBAN_LOGO_LIGHT = "/images/kiban-logo-light"; // logo clair (mode clair)
+const KIBAN_LOGO_DARK = "/images/kiban-logo-dark"; // logo foncé (mode sombre)
 const KIBAN_LOGO_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "webp", "svg"];
 
-const PANEL_TRANSITION_MS = 600;
+// Animation "vivante" : ressort doux, sobre et chic (léger, sans rebond exagéré)
+const SPRING = { type: "spring", stiffness: 280, damping: 30, mass: 1 } as const;
+const PILL_RADIUS = 30;
 
 function MobileMenu({
   activePanel,
@@ -47,8 +49,6 @@ function MobileMenu({
   const isKiban = pathname === "/kiban-collector";
   const [kibanLogoSrc, setKibanLogoSrc] = useState<string | null>(null);
 
-  const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
@@ -70,14 +70,6 @@ function MobileMenu({
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (switchTimeoutRef.current) {
-        clearTimeout(switchTimeoutRef.current);
-      }
-    };
   }, []);
 
   // Cherche le logo Kiban Collector (peu importe son extension)
@@ -147,222 +139,249 @@ function MobileMenu({
     };
   }, [isKiban, isDark]);
 
-  const clearPendingSwitch = () => {
-    if (switchTimeoutRef.current) {
-      clearTimeout(switchTimeoutRef.current);
-      switchTimeoutRef.current = null;
-    }
-  };
+  const panel: "menu" | "cart" | null = isCartOpen
+    ? "cart"
+    : activePanel === "menu"
+    ? "menu"
+    : null;
+  const open = panel !== null;
 
-  const openCartWithDelay = () => {
-    clearPendingSwitch();
-
+  const toggleCart = () => {
     if (isCartOpen) {
       setIsCartOpen(false);
       return;
     }
-
-    if (activePanel === "menu") {
-      setActivePanel(null);
-      switchTimeoutRef.current = setTimeout(() => {
-        setIsCartOpen(true);
-        switchTimeoutRef.current = null;
-      }, PANEL_TRANSITION_MS);
-      return;
-    }
-
+    setActivePanel(null);
     setIsCartOpen(true);
   };
 
-  const openMenuWithDelay = () => {
-    clearPendingSwitch();
-
+  const toggleMenu = () => {
     if (activePanel === "menu") {
       setActivePanel(null);
       return;
     }
-
-    if (isCartOpen) {
-      setIsCartOpen(false);
-      switchTimeoutRef.current = setTimeout(() => {
-        setActivePanel("menu");
-        switchTimeoutRef.current = null;
-      }, PANEL_TRANSITION_MS);
-      return;
-    }
-
+    setIsCartOpen(false);
     setActivePanel("menu");
   };
 
   return (
-    <div className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <div className="relative liquid-glass w-[70%] rounded-4xl flex justify-start">
-          <Link href="/" className="w-full flex items-center justify-start">
-            <div
-              className={
-                isKiban
-                  ? "relative"
-                  : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
-              }
-            >
-              {isKiban ? (
-                kibanLogoSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={kibanLogoSrc}
-                    alt="Kiban Collector"
-                    className="block h-[26px] sm:h-[30px] w-auto max-w-full my-[8px] sm:my-[6px]"
-                    style={{
-                      filter: isDark
-                        ? "brightness(0)"
-                        : "brightness(0) invert(1)",
-                    }}
-                  />
-                ) : (
-                  <span className="block my-[10px] whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
-                    Kiban Collector
-                  </span>
-                )
-              ) : (
-                <Image
-                  src={isDark ? logoBlack : logoWhite}
-                  alt="FYSU Logo"
-                  fill
-                  priority
-                  sizes="160px"
-                  className="object-contain"
-                />
-              )}
-            </div>
-          </Link>
-        </div>
-
-        <div className="relative liquid-glass w-[30%] rounded-4xl flex gap-4 justify-center items-center text-[var(--menu)] h-[42px]">
-          <button
-            onClick={openCartWithDelay}
-            className="relative cursor-pointer"
-            type="button"
-          >
-            <ShoppingCart size={20} />
-
-            {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-green-900 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {totalItems}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={openMenuWithDelay}
-            className="text-[var(--menu)]"
-            type="button"
-          >
-            {activePanel === "menu" ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {mounted && <CartDrawer />}
-
-      <AnimatePresence>
-        {activePanel === "menu" && (
+    <motion.div
+      layoutRoot
+      className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl"
+    >
+      <div className="flex flex-wrap items-start gap-3">
+        {/* Pastille du logo : elle s'étend pour combler le vide laissé par l'autre pastille */}
+        <motion.div
+          layout
+          transition={SPRING}
+          style={{ borderRadius: PILL_RADIUS }}
+          className={`relative liquid-glass flex justify-start ${
+            open ? "w-full" : "w-[calc(70%-6px)]"
+          }`}
+        >
           <motion.div
-            className="absolute top-full mt-2 w-full overflow-hidden text-[var(--menu)] rounded-xl liquid-glass"
-            initial={{ height: 0 }}
-            animate={{ height: "auto" }}
-            exit={{ height: 0 }}
-            transition={{ duration: 0.6 }}
+            layout="position"
+            transition={SPRING}
+            className="flex items-center"
           >
-            <p className="text-5xl font-bold tracking-tighter px-4 py-4">
-              {t("menu")}
-            </p>
-
-            <motion.ul
-              className="flex flex-col gap-4 uppercase text-sm tracking-wider px-4 pb-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {links.map((link) =>
-                link.href === "#" ? (
-                  <React.Fragment key="collections-mobile">
-                    <li>
-                      <button
-                        onClick={() => setCollectionOpen(!collectionOpen)}
-                        className="flex items-center justify-between w-full py-2 border-b border-white/20"
-                        type="button"
-                      >
-                        {t("collections").toUpperCase()}
-                        <ChevronDown
-                          size={16}
-                          className={`transition-transform ${
-                            collectionOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-                    </li>
-
-                    <AnimatePresence>
-                      {collectionOpen && (
-                        <motion.ul
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="pl-4 space-y-2 text-xs overflow-hidden"
-                        >
-                          {collections.map((col) => (
-                            <li key={col.label}>
-                              <Link
-                                href={col.href}
-                                onClick={handleMobileLinkClick}
-                                className="block py-1 border-b border-white/10"
-                              >
-                                {col.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </motion.ul>
-                      )}
-                    </AnimatePresence>
-                  </React.Fragment>
+            <Link href="/" className="flex items-center justify-start">
+              <div
+                className={
+                  isKiban
+                    ? "relative"
+                    : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
+                }
+              >
+                {isKiban ? (
+                  kibanLogoSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={kibanLogoSrc}
+                      alt="Kiban Collector"
+                      className="block h-[26px] sm:h-[30px] w-auto max-w-full my-[8px] sm:my-[6px]"
+                      style={{
+                        filter: isDark
+                          ? "brightness(0)"
+                          : "brightness(0) invert(1)",
+                      }}
+                    />
+                  ) : (
+                    <span className="block my-[10px] whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
+                      Kiban Collector
+                    </span>
+                  )
                 ) : (
-                  <li key={link.href}>
+                  <Image
+                    src={isDark ? logoBlack : logoWhite}
+                    alt="FYSU Logo"
+                    fill
+                    priority
+                    sizes="160px"
+                    className="object-contain"
+                  />
+                )}
+              </div>
+            </Link>
+          </motion.div>
+        </motion.div>
+
+        {/* Pastille panier / menu : elle descend et s'agrandit en panneau */}
+        <motion.div
+          layout
+          transition={SPRING}
+          style={{ borderRadius: PILL_RADIUS }}
+          className={`relative liquid-glass overflow-hidden text-[var(--menu)] ${
+            open ? "w-full" : "w-[calc(30%-6px)]"
+          }`}
+        >
+          <motion.div
+            layout="position"
+            transition={SPRING}
+            className={`flex items-center gap-4 h-[42px] ${
+              open ? "justify-end px-6" : "justify-center"
+            }`}
+          >
+            <button
+              onClick={toggleCart}
+              className="relative cursor-pointer"
+              type="button"
+            >
+              <ShoppingCart size={20} />
+
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-green-900 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={toggleMenu}
+              className="text-[var(--menu)] cursor-pointer"
+              type="button"
+            >
+              {panel === "menu" ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </motion.div>
+
+          <AnimatePresence mode="wait" initial={false}>
+            {panel === "cart" && mounted && (
+              <motion.div
+                key="cart"
+                layout="position"
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: 1,
+                  transition: { delay: 0.12, duration: 0.3 },
+                }}
+                exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              >
+                <CartDrawer />
+              </motion.div>
+            )}
+
+            {panel === "menu" && (
+              <motion.div
+                key="menu"
+                layout="position"
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: 1,
+                  transition: { delay: 0.12, duration: 0.3 },
+                }}
+                exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                className="max-h-[calc(100dvh-7rem)] overflow-y-auto"
+              >
+                <p className="text-5xl font-bold tracking-tighter px-6 pb-4">
+                  {t("menu")}
+                </p>
+
+                <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6">
+                  {links.map((link) =>
+                    link.href === "#" ? (
+                      <React.Fragment key="collections-mobile">
+                        <li>
+                          <button
+                            onClick={() => setCollectionOpen(!collectionOpen)}
+                            className="flex items-center justify-between w-full py-2 border-b border-white/20"
+                            type="button"
+                          >
+                            {t("collections").toUpperCase()}
+                            <ChevronDown
+                              size={16}
+                              className={`transition-transform ${
+                                collectionOpen ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                        </li>
+
+                        <AnimatePresence>
+                          {collectionOpen && (
+                            <motion.ul
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="pl-4 space-y-2 text-xs overflow-hidden"
+                            >
+                              {collections.map((col) => (
+                                <li key={col.label}>
+                                  <Link
+                                    href={col.href}
+                                    onClick={handleMobileLinkClick}
+                                    className="block py-1 border-b border-white/10"
+                                  >
+                                    {col.label}
+                                  </Link>
+                                </li>
+                              ))}
+                            </motion.ul>
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
+                    ) : (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          onClick={handleMobileLinkClick}
+                          className="block py-2 border-b border-white/20"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    )
+                  )}
+
+                  <li>
                     <Link
-                      href={link.href}
+                      href="/about"
                       onClick={handleMobileLinkClick}
                       className="block py-2 border-b border-white/20"
                     >
-                      {link.label}
+                      {t("about")}
                     </Link>
                   </li>
-                )
-              )}
 
-              <li>
-                <Link
-                  href="/about"
-                  onClick={handleMobileLinkClick}
-                  className="block py-2 border-b border-white/20"
-                >
-                  {t("about")}
-                </Link>
-              </li>
+                  <li>
+                    <LocaleSwitcher />
+                  </li>
 
-              <li>
-                <LocaleSwitcher />
-              </li>
-
-              <li className="mt-24">
-                <Link href="/profile" className="flex items-center gap-2">
-                  <UserRound size={20} /> {t("myFysu")}
-                </Link>
-              </li>
-            </motion.ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+                  <li className="mt-24">
+                    <Link
+                      href="/profile"
+                      onClick={handleMobileLinkClick}
+                      className="flex items-center gap-2"
+                    >
+                      <UserRound size={20} /> {t("myFysu")}
+                    </Link>
+                  </li>
+                </ul>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
 
