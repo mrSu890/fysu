@@ -118,11 +118,11 @@ function MobileMenu({
   };
 
   return (
-    <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
+          <div className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
       <div className="flex items-center gap-3">
               <div className="relative liquid-glass w-[70%] rounded-4xl flex justify-start">
           <Link href="/" className="w-full flex items-center justify-start">
-            <div className="relative h-[24px] w-[160px] my-[.52rem]">
+                                    <div className="relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]">
               <Image
                 src={isDark ? logoBlack : logoWhite}
                 alt="FYSU Logo"
