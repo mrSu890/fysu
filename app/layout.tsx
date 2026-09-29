@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
 import ScrollReveal from "@/components/ScrollReveal";
+import SiteLoader from "@/components/SiteLoader";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -46,6 +47,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-background text-foreground transition-colors duration-400">
+        {/* Écran de chargement d'arrivée sur le site */}
+        <SiteLoader />
         {/* <AuthProvider> */}
           <NextIntlClientProvider messages={messages}>
             <CartProvider>
