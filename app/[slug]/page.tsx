@@ -6,6 +6,7 @@ import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
+import PageBar from "@/components/PageBar"
 import ProductFilters from "@/components/ProductFilters"
 import StoryBar from "@/components/Stories/StoryBar"
 import { ProductType } from "@/types/product"
@@ -164,7 +165,7 @@ export default function CollectionPage() {
 
         {/* HERO */}
         {hasHero && (
-                  <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
             <Image
               src={page.hero_image}
               alt={page.title}
@@ -178,13 +179,22 @@ export default function CollectionPage() {
 
             {/* TITLE */}
             <div className="absolute inset-0 flex items-end">
-                           <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
-                               <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
+              <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
+                <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
                   {page.title}
                 </h1>
               </div>
             </div>
           </div>
+        )}
+
+        {/* BANDE BLANCHE : chemin / interrupteur / filtres */}
+        {hasHero && (
+          <PageBar
+            trail={[{ label: page.title }]}
+            filters={sections.length > 0 ? filters : undefined}
+            setFilters={sections.length > 0 ? setFilters : undefined}
+          />
         )}
 
         {/* STORIES */}
@@ -195,7 +205,7 @@ export default function CollectionPage() {
       {/* CONTENT */}
       <div
         className={`relative p-6 pb-44 ${
-          hasHero ? "top-28" : "top-24"
+          hasHero ? "top-16" : "top-24"
         }`}
       >
         {sections.length === 0 ? (
@@ -204,7 +214,9 @@ export default function CollectionPage() {
           </p>
         ) : (
           <>
-            <ProductFilters filters={filters} setFilters={setFilters} />
+            {!hasHero && (
+              <ProductFilters filters={filters} setFilters={setFilters} />
+            )}
 
             {visibleSections
               .map((section, sectionIndex) => {
@@ -261,7 +273,7 @@ export default function CollectionPage() {
         )}
       </div>
 
-      <ThemeToggle />
+      {!hasHero && <ThemeToggle />}
       <Footer />
     </>
   )
