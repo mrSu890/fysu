@@ -56,6 +56,7 @@ export default async function RootLayout({
         {/* </AuthProvider> */}
         <Toaster />
         <DecorativeDots />
+        <ScrollReveal />
       </body>
     </html>
   );
