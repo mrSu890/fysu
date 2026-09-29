@@ -2,6 +2,7 @@ import React from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import FygrancesIntro from "./FygrancesIntro";
 
 const logo = "/images/footer_logo.png"
 
@@ -20,8 +21,11 @@ const Footer: React.FC = () => {
 
   return (
     <>
+      {/* Présentation des FY'grances (image + texte + bouton) */}
+      <FygrancesIntro />
+
       {/* Image d'anthurium en bas de chaque page */}
-      <div className="w-full flex justify-center mt-24 bg-background">
+      <div className="w-full flex justify-center mt-10 bg-background">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/anthurium-light.JPG"
