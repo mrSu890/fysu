@@ -88,8 +88,8 @@ export default function ProfilePage() {
 
         {/* TITLE */}
         <div className="absolute inset-0 flex items-end">
-          <div className="pb-8 pl-6 sm:pb-16 sm:pl-16">
-            <h1 className="text-white font-dior font-bold text-4xl sm:text-6xl tracking-tight">
+                    <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
+                      <h1 className="text-white font-dior font-bold text-3xl sm:text-5xl tracking-tight leading-none">
               {t("hello", {
                 name: user.user_metadata?.name ?? t("fallbackName"),
               })}
