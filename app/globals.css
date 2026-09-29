@@ -245,6 +245,11 @@
 .dark .loader-logo-darkmode {
   display: block;
 }
+/* Logo Kiban Collector dans la barre : petit décalage vers la droite */
+.navbar-root img[alt="Kiban Collector"] {
+  margin-left: 18px;
+}
+
 
 
 
