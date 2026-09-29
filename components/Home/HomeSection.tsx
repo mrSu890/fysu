@@ -21,7 +21,7 @@ export default function HomeSection({ slug }: { slug: string }) {
   if (!products.length) return null;
 
   return (
-    <section className="relative top-56 w-11/12 mx-auto">
+       <section className="relative top-10 w-11/12 mx-auto">
       <h2 className="text-xl sm:text-2xl mb-8">{title}</h2>
 
       <div
