@@ -192,5 +192,14 @@
 .cookie-glass .bg-white {
   color: #171717;
 }
+/* Barre de navigation : logo, textes et icônes légèrement moins blancs */
+.navbar-root .liquid-glass,
+.navbar-root .liquid-glass * {
+  color: color-mix(in srgb, var(--menu) 85%, transparent);
+}
+
+.navbar-root .liquid-glass img {
+  opacity: 0.85;
+}
 
 
