@@ -86,7 +86,7 @@ export default function CookieBanner() {
             className="
               w-[min(560px,calc(100vw-2.5rem))]
               rounded-3xl
-              bg-white/95
+                            relative liquid-glass cookie-glass
               shadow-2xl
               p-6 md:p-7
             "
