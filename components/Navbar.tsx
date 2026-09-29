@@ -15,9 +15,8 @@ const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
 
 // Logos de la page Kiban Collector (à déposer dans public/images)
-// Le site essaie automatiquement ces extensions (majuscules ou minuscules)
-const KIBAN_LOGO_LIGHT = "/images/kiban-logo-light"; // logo clair (mode clair)
-const KIBAN_LOGO_DARK = "/images/kiban-logo-dark"; // logo foncé (mode sombre)
+const KIBAN_LOGO_LIGHT = "/images/kiban-logo-light";
+const KIBAN_LOGO_DARK = "/images/kiban-logo-dark";
 const KIBAN_LOGO_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "webp", "svg"];
 
 const PANEL_TRANSITION_MS = 600;
@@ -162,7 +161,13 @@ function MobileMenu({
       <div className="flex items-center gap-3">
         <div className="relative liquid-glass w-[70%] rounded-4xl flex justify-start">
           <Link href="/" className="w-full flex items-center justify-start">
-            <div className="relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]">
+            <div
+              className={
+                isKiban
+                  ? "relative h-[34px] w-[170px] my-[4px] sm:h-[38px] sm:w-[210px] sm:my-[2px]"
+                  : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
+              }
+            >
               {isKiban ? (
                 kibanLogoSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -170,6 +175,11 @@ function MobileMenu({
                     src={kibanLogoSrc}
                     alt="Kiban Collector"
                     className="absolute inset-0 h-full w-full object-contain object-left"
+                    style={{
+                      filter: isDark
+                        ? "brightness(0)"
+                        : "brightness(0) invert(1)",
+                    }}
                   />
                 ) : (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
