@@ -96,7 +96,45 @@ function MobileMenu({
       const src = `${base}.${KIBAN_LOGO_EXTENSIONS[index]}`;
       const probe = new window.Image();
       probe.onload = () => {
-        if (!cancelled) setKibanLogoSrc(src);
+        if (cancelled) return;
+        // Recadre automatiquement le logo (retire les marges transparentes)
+        try {
+          const w = probe.naturalWidth;
+          const h = probe.naturalHeight;
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("no ctx");
+          ctx.drawImage(probe, 0, 0);
+          const data = ctx.getImageData(0, 0, w, h).data;
+          let minX = w, minY = h, maxX = -1, maxY = -1;
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              if (data[(y * w + x) * 4 + 3] > 8) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+          if (maxX < 0) throw new Error("empty");
+          const pad = 2;
+          minX = Math.max(0, minX - pad);
+          minY = Math.max(0, minY - pad);
+          maxX = Math.min(w - 1, maxX + pad);
+          maxY = Math.min(h - 1, maxY + pad);
+          const cw = maxX - minX + 1;
+          const ch = maxY - minY + 1;
+          const out = document.createElement("canvas");
+          out.width = cw;
+          out.height = ch;
+          out.getContext("2d")!.drawImage(probe, minX, minY, cw, ch, 0, 0, cw, ch);
+          setKibanLogoSrc(out.toDataURL("image/png"));
+        } catch {
+          setKibanLogoSrc(src);
+        }
       };
       probe.onerror = () => tryNext(index + 1);
       probe.src = src;
@@ -164,7 +202,7 @@ function MobileMenu({
             <div
               className={
                 isKiban
-                  ? "relative h-[34px] w-[170px] my-[4px] sm:h-[38px] sm:w-[210px] sm:my-[2px]"
+                  ? "relative"
                   : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
               }
             >
@@ -174,7 +212,7 @@ function MobileMenu({
                   <img
                     src={kibanLogoSrc}
                     alt="Kiban Collector"
-                    className="absolute inset-0 h-full w-full object-contain object-left"
+                    className="block h-[26px] sm:h-[30px] w-auto max-w-full my-[8px] sm:my-[6px]"
                     style={{
                       filter: isDark
                         ? "brightness(0)"
@@ -182,7 +220,7 @@ function MobileMenu({
                     }}
                   />
                 ) : (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
+                  <span className="block my-[10px] whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
                     Kiban Collector
                   </span>
                 )
