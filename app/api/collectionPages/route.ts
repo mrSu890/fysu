@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export const runtime = "nodejs";
 
 // Collections cachées du menu "Collections" (elles ont leur propre page)
-const HIDDEN_SLUGS = ["kiban-collector"];
+const HIDDEN_SLUGS = ["kiban-collector", "thewave"];
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
