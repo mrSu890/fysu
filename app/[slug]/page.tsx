@@ -89,17 +89,15 @@ export default function CollectionPage() {
 
   /* LOADING */
 
-  if (loading) {
+    if (loading) {
     return (
       <>
         <Navbar />
-        <div className="h-[100vh] w-[100vw] font-pagetitle flex items-center justify-center text-neutral-500 text-4xl">
-          Fysu
-        </div>
-        <Footer />
+        <div className="min-h-screen" />
       </>
     )
   }
+
 
   if (!page) {
     return (
