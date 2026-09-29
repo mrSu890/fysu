@@ -33,7 +33,7 @@ export default function CartDrawer() {
               overflow-hidden
               text-[var(--menu)]
               rounded-xl
-              bg-[var(--navbar-bg)]/60
+                            liquid-glass
               backdrop-blur-sm
               shadow-xl
               z-[60]
