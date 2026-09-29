@@ -10,7 +10,7 @@ import ThemeToggle from "@/components/ThemeToggle"
 /* ====== À MODIFIER FACILEMENT ====== */
 
 // Photo de la zone arrondie : à déposer dans public/images
-const HERO_IMAGE = "/images/kiban-collector.jpeg"
+const HERO_IMAGE = "/images/kiban-collector.jpg"
 
 const TITLE = "KIBAN COLLECTOR"
 
