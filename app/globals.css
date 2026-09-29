@@ -211,6 +211,19 @@
 .dark .collection-bg {
   background-color: #4a4742;
 }
+/* Image d'anthurium : version claire / version sombre */
+.flower-dark {
+  display: none;
+}
+
+.dark .flower-light {
+  display: none;
+}
+
+.dark .flower-dark {
+  display: block;
+}
+
 
 
 
