@@ -223,6 +223,16 @@
 .dark .flower-dark {
   display: block;
 }
+/* Bande blanche sous l'image de garde */
+.page-bar {
+  background: #ffffff;
+  color: #171717;
+}
+
+.dark .page-bar {
+  background: #3f3c38;
+  color: #ffffff;
+}
 
 
 
