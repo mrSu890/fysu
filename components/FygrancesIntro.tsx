@@ -10,8 +10,8 @@ const FYGRANCES_LINK = "/fygrances";
 const FygrancesIntro = () => {
   const pathname = usePathname();
 
-  // Inutile de présenter les FY'grances sur leur propre page
-  if (pathname === FYGRANCES_LINK) return null;
+  // Ce bloc n'apparaît que sur la page d'accueil
+  if (pathname !== "/") return null;
 
   return (
     <section className="w-full mt-24 mb-10 grid grid-cols-2 items-center">
