@@ -163,7 +163,7 @@ export default function ProductClient() {
         {/* ================= IMAGES ================= */}
         <div
           className="
-            space-y-6 sm:space-y-8
+                        space-y-3
             sm:h-auto
             h-[66vh]
             overflow-y-scroll
@@ -194,7 +194,7 @@ export default function ProductClient() {
           {otherImages.length > 0 && (
             <div>
               {/* DESKTOP */}
-              <div className="hidden sm:grid grid-cols-2 gap-4">
+                            <div className="hidden sm:flex sm:flex-col gap-3">
                 {otherImages.map((img) => (
                   <div
                     key={img.id}
@@ -315,7 +315,7 @@ export default function ProductClient() {
             </div>
           )}
   
-          <div className="flex flex-col gap-4 p-4 bg-product-frame rounded-lg">
+                    <div className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
             <AddToCartButton
               product={product}
               selectedSizeId={selectedSizeId}
