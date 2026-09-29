@@ -91,8 +91,9 @@ export default function SiteLoader() {
         setProgress(100)
         setLogoReveal(100)
         setFading(true)
-                window.setTimeout(() => {
+        window.setTimeout(() => {
           setVisible(false)
+          // Prévient les notifications que le chargement est terminé
           ;(window as any).__siteLoaderDone = true
           window.dispatchEvent(new Event("site-loader-done"))
         }, 700)
