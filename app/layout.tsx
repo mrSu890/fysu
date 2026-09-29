@@ -5,6 +5,7 @@ import { CartProvider } from "@/context/CartContext";
 import { Inter } from "next/font/google";
 import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
+import ScrollReveal from "@/components/ScrollReveal";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
