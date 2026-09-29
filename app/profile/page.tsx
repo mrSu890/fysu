@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import UserOders from "@/components/Profile/UserOrders";
 import UserWishlist from "@/components/Profile/UserWishlist";
-import ThemeToggle from "@/components/ThemeToggle";
+import PageBar from "@/components/PageBar";
 import { useTranslations } from "next-intl";
 
 // Image d'en-tête de la page compte (à déposer dans public/images/)
@@ -17,6 +17,7 @@ const PROFILE_HERO_SRC = "/images/profile-hero.jpeg";
 
 export default function ProfilePage() {
   const t = useTranslations("Profile");
+  const tn = useTranslations("Navigation");
   const router = useRouter();
   const { user, loading } = useCurrentUser();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -88,8 +89,8 @@ export default function ProfilePage() {
 
         {/* TITLE */}
         <div className="absolute inset-0 flex items-end">
-                    <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
-                      <h1 className="text-white font-dior font-bold text-3xl sm:text-5xl tracking-tight leading-none">
+          <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
+            <h1 className="text-white font-dior font-bold text-3xl sm:text-5xl tracking-tight leading-none">
               {t("hello", {
                 name: user.user_metadata?.name ?? t("fallbackName"),
               })}
@@ -97,6 +98,9 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* BANDE BLANCHE : chemin / interrupteur */}
+      <PageBar trail={[{ label: tn("myFysu") }]} />
 
       {/* DÉCONNEXION */}
       <div className="w-11/12 max-w-7xl mx-auto flex justify-end pt-4">
@@ -116,9 +120,6 @@ export default function ProfilePage() {
         <UserOders />
       </div>
 
-      <div className="relative top-36">
-        <ThemeToggle />
-      </div>
       <Footer />
     </>
   );
