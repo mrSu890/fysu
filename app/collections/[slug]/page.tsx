@@ -6,6 +6,7 @@ import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
+import PageBar from "@/components/PageBar"
 import ProductFilters from "@/components/ProductFilters"
 import ThemeToggle from "@/components/ThemeToggle"
 import StoryBar from "@/components/Stories/StoryBar"
@@ -13,6 +14,7 @@ import { useTranslations } from "next-intl"
 
 export default function CollectionPage() {
   const t = useTranslations("Pages")
+  const tn = useTranslations("Navigation")
   const { slug } = useParams<{ slug: string }>()
   const router = useRouter()
 
@@ -164,7 +166,7 @@ export default function CollectionPage() {
     
           {/* HERO */}
           {hasHero && (
-                       <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
+            <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
               <Image
                 src={page.hero_image}
                 alt={page.title}
@@ -178,13 +180,22 @@ export default function CollectionPage() {
 
               {/* TITLE */}
               <div className="absolute inset-0 flex items-end">
-                              <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
-                                <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
+                <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
+                  <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
                     {page.title}
                   </h1>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* BANDE BLANCHE : chemin / interrupteur / filtres */}
+          {hasHero && (
+            <PageBar
+              trail={[{ label: tn("collections") }, { label: page.title }]}
+              filters={products.length > 0 ? filters : undefined}
+              setFilters={products.length > 0 ? setFilters : undefined}
+            />
           )}
     
           {/* STORIES */}
@@ -193,15 +204,17 @@ export default function CollectionPage() {
         </div>
     
         {/* CONTENT */}
-        <div className="relative px-6 pt-12 pb-44">
+        <div className={`relative px-6 pb-44 ${hasHero ? "pt-8" : "pt-12"}`}>
           {products.length === 0 ? (
             <p className="text-neutral-500 font-dior">
               {t("noProducts")}
             </p>
           ) : (
             <>
-              <ProductFilters filters={filters} setFilters={setFilters} />
-              <div className="relative top-12">
+              {!hasHero && (
+                <ProductFilters filters={filters} setFilters={setFilters} />
+              )}
+              <div className={`relative ${hasHero ? "top-4" : "top-12"}`}>
                 <div
                   className="
                     grid
@@ -220,7 +233,7 @@ export default function CollectionPage() {
           )}
         </div>
     
-        <ThemeToggle />
+        {!hasHero && <ThemeToggle />}
         <Footer />
       </>
     )
