@@ -233,6 +233,18 @@
   background: #3f3c38;
   color: #ffffff;
 }
+/* Écran de chargement : logo noir en mode clair, blanc en mode sombre */
+.loader-logo-darkmode {
+  display: none;
+}
+
+.dark .loader-logo-lightmode {
+  display: none;
+}
+
+.dark .loader-logo-darkmode {
+  display: block;
+}
 
 
 
