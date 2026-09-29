@@ -5,7 +5,6 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { Carousel } from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 
 type HeroMedia = {
   media_path: string;
@@ -18,14 +17,15 @@ const SLIDE_DURATION = 6000; // ms
 const LEFT_LINK = "/for-him";
 const RIGHT_LINK = "/for-her";
 
-// Lien du bouton "Discover" quand il n'y a qu'une seule image
+// Bouton "Discover" quand il n'y a qu'une seule image
 const DISCOVER_LINK = "/product/saku-t-1";
+const HERO_TITLE = "SPRING SPIRIT";
+const HERO_SUBTITLE = "When Sakuras Meet Denim";
 
 const isVideoMedia = (item: HeroMedia) =>
   item.media_type === "video" || /\.(mp4|webm|mov)$/i.test(item.media_path);
 
 const HomeHero = () => {
-  const t = useTranslations("Home");
   const [slides, setSlides] = useState<HeroMedia[]>([]);
   const [current, setCurrent] = useState(0);
 
@@ -163,17 +163,18 @@ const HomeHero = () => {
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
 
                 <div className="relative text-white pb-8 sm:pb-12 max-w-[92%]">
-                  <h2 className="text-2xl sm:text-4xl uppercase font-normal tracking-[0.08em] leading-tight">
-                    {t("heroTitle")}
+                  <h2 className="text-xl sm:text-3xl uppercase font-normal tracking-[0.08em] leading-tight">
+                    {HERO_TITLE}
                   </h2>
 
-                  <p className="mt-3 font-serif text-base sm:text-xl">
-                    {t("heroSubtitle")}
+                  <p className="mt-3 font-serif text-sm sm:text-lg">
+                    {HERO_SUBTITLE}
                   </p>
 
                   <Link
                     href={DISCOVER_LINK}
-                    className="mt-5 inline-flex items-center gap-2 text-sm uppercase tracking-[0.12em]"
+                    className="mt-4 inline-flex items-center gap-2 text-xs sm:text-sm uppercase tracking-[0.12em]"
+                    style={{ color: "#ffffff" }}
                   >
                     Discover
                     <span aria-hidden="true">&rsaquo;</span>
