@@ -1,32 +1,27 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useState } from "react";
+
+// Photo affichée sous la bannière d'accueil.
+// Envoie ta photo dans public/images sous le nom home-feature.jpeg
+const FEATURE_SRC = "/images/home-feature.jpeg";
 
 const NewSelectionIntro = () => {
-  const t = useTranslations("Home");
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return null;
 
   return (
-    <section className="relative top-56 w-full bg-transparent px-6 py-8 md:px-10 md:py-10 mb-36">
-      <div className="mx-auto grid max-w-md grid-cols-1 gap-y-6 md:w-fit md:max-w-none md:grid-cols-[140px_1px_360px] md:gap-x-10 md:gap-y-0">
-        
-        {/* LEFT */}
-        <div>
-          <h2 className="whitespace-nowrap font-dior text-[1.3rem] leading-none text-foreground md:text-[1.45rem]">
-            {t("newSelection")}
-          </h2>
-        </div>
-
-        {/* VERTICAL LINE (hidden mobile) */}
-        <div className="hidden md:block h-[92px] bg-foreground/20" />
-
-        {/* RIGHT */}
-        <div className="pt-0 md:pt-3">
-          <div className="mb-4 h-px w-full max-w-[360px] bg-foreground/35" />
-          <p className="w-full max-w-[360px] text-[0.95rem] leading-[1.15] text-foreground/70">
-            {t("newSelectionText")}
-          </p>
-        </div>
-
+    <section className="w-full px-6 sm:px-10 my-20 sm:my-28">
+      {/* Image décalée : alignée à gauche, avec de l'espace à droite */}
+      <div className="w-[80%] sm:w-[55%] max-w-2xl">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={FEATURE_SRC}
+          alt=""
+          className="block w-full h-auto"
+          onError={() => setFailed(true)}
+        />
       </div>
     </section>
   );
