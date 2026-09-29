@@ -91,7 +91,11 @@ export default function SiteLoader() {
         setProgress(100)
         setLogoReveal(100)
         setFading(true)
-        window.setTimeout(() => setVisible(false), 700)
+                window.setTimeout(() => {
+          setVisible(false)
+          ;(window as any).__siteLoaderDone = true
+          window.dispatchEvent(new Event("site-loader-done"))
+        }, 700)
         return
       }
 
