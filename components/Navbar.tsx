@@ -15,6 +15,7 @@ import CartDrawer from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 import { useTranslations } from "next-intl";
 import LocaleSwitcher from "./LocaleSwitcher";
+import CroppedLogo from "./CroppedLogo";
 
 const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
@@ -56,6 +57,7 @@ function MobileMenu({
 
   const pathname = usePathname();
   const isKiban = pathname === "/kiban-collector";
+  const isWave = pathname === "/thewave";
   const [kibanLogoSrc, setKibanLogoSrc] = useState<string | null>(null);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -259,7 +261,7 @@ function MobileMenu({
           <Link href="/" className="flex items-center justify-start">
             <div
               className={
-                isKiban
+                isKiban || isWave
                   ? "relative"
                   : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
               }
@@ -282,6 +284,13 @@ function MobileMenu({
                     Kiban Collector
                   </span>
                 )
+              ) : isWave ? (
+                <CroppedLogo
+                  bases={["/images/the-wave-logo"]}
+                  alt="TheWave"
+                  className="block h-[26px] sm:h-[30px] w-auto max-w-full my-[8px] sm:my-[6px]"
+                  style={{ marginLeft: 18 }}
+                />
               ) : (
                 <Image
                   src={isDark ? logoBlack : logoWhite}
@@ -479,13 +488,14 @@ export default function Navbar() {
         href: `/${p.slug}`,
       }));
 
-      // "Kiban Collector" est placé juste au-dessus de Fy'grances
+      // "Kiban Collector" et "TheWave" sont placés juste au-dessus de Fy'grances
       const kibanLink = { label: "KIBAN COLLECTOR", href: "/kiban-collector" };
+      const waveLink = { label: "THEWAVE", href: "/thewave" };
       const fyIndex = pageLinks.findIndex((l: { label: string; href: string }) =>
         /fy.?grances/i.test(l.href + l.label)
       );
-      if (fyIndex === -1) pageLinks.push(kibanLink);
-      else pageLinks.splice(fyIndex, 0, kibanLink);
+      if (fyIndex === -1) pageLinks.push(kibanLink, waveLink);
+      else pageLinks.splice(fyIndex, 0, kibanLink, waveLink);
 
       setLinks([
         ...pageLinks,
