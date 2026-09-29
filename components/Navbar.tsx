@@ -15,8 +15,10 @@ const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
 
 // Logos de la page Kiban Collector (à déposer dans public/images)
-const kibanLogoLight = "/images/kiban-logo-light.png"; // logo clair (mode clair)
-const kibanLogoDark = "/images/kiban-logo-dark.png"; // logo foncé (mode sombre)
+// Le site essaie automatiquement ces extensions (majuscules ou minuscules)
+const KIBAN_LOGO_LIGHT = "/images/kiban-logo-light"; // logo clair (mode clair)
+const KIBAN_LOGO_DARK = "/images/kiban-logo-dark"; // logo foncé (mode sombre)
+const KIBAN_LOGO_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "webp", "svg"];
 
 const PANEL_TRANSITION_MS = 600;
 
@@ -44,7 +46,7 @@ function MobileMenu({
 
   const pathname = usePathname();
   const isKiban = pathname === "/kiban-collector";
-  const [kibanLogoFailed, setKibanLogoFailed] = useState(false);
+  const [kibanLogoSrc, setKibanLogoSrc] = useState<string | null>(null);
 
   const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,6 +80,35 @@ function MobileMenu({
       }
     };
   }, []);
+
+  // Cherche le logo Kiban Collector (peu importe son extension)
+  useEffect(() => {
+    if (!isKiban) return;
+
+    let cancelled = false;
+    const base = isDark ? KIBAN_LOGO_DARK : KIBAN_LOGO_LIGHT;
+
+    const tryNext = (index: number) => {
+      if (cancelled) return;
+      if (index >= KIBAN_LOGO_EXTENSIONS.length) {
+        setKibanLogoSrc(null);
+        return;
+      }
+      const src = `${base}.${KIBAN_LOGO_EXTENSIONS[index]}`;
+      const probe = new window.Image();
+      probe.onload = () => {
+        if (!cancelled) setKibanLogoSrc(src);
+      };
+      probe.onerror = () => tryNext(index + 1);
+      probe.src = src;
+    };
+
+    tryNext(0);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isKiban, isDark]);
 
   const clearPendingSwitch = () => {
     if (switchTimeoutRef.current) {
@@ -133,20 +164,17 @@ function MobileMenu({
           <Link href="/" className="w-full flex items-center justify-start">
             <div className="relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]">
               {isKiban ? (
-                kibanLogoFailed ? (
+                kibanLogoSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={kibanLogoSrc}
+                    alt="Kiban Collector"
+                    className="absolute inset-0 h-full w-full object-contain object-left"
+                  />
+                ) : (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
                     Kiban Collector
                   </span>
-                ) : (
-                  <Image
-                    src={isDark ? kibanLogoDark : kibanLogoLight}
-                    alt="Kiban Collector"
-                    fill
-                    priority
-                    sizes="160px"
-                    className="object-contain object-left"
-                    onError={() => setKibanLogoFailed(true)}
-                  />
                 )
               ) : (
                 <Image
