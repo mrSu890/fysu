@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, UserRound, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import CartDrawer from "./CartDrawer";
@@ -12,6 +13,10 @@ import LocaleSwitcher from "./LocaleSwitcher";
 
 const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
+
+// Logos de la page Kiban Collector (à déposer dans public/images)
+const kibanLogoLight = "/images/kiban-logo-light.png"; // logo clair (mode clair)
+const kibanLogoDark = "/images/kiban-logo-dark.png"; // logo foncé (mode sombre)
 
 const PANEL_TRANSITION_MS = 600;
 
@@ -36,6 +41,10 @@ function MobileMenu({
   const { cart, isCartOpen, setIsCartOpen } = useCart();
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const pathname = usePathname();
+  const isKiban = pathname === "/kiban-collector";
+  const [kibanLogoFailed, setKibanLogoFailed] = useState(false);
 
   const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -118,24 +127,42 @@ function MobileMenu({
   };
 
   return (
-          <div className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
+    <div className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
       <div className="flex items-center gap-3">
-              <div className="relative liquid-glass w-[70%] rounded-4xl flex justify-start">
+        <div className="relative liquid-glass w-[70%] rounded-4xl flex justify-start">
           <Link href="/" className="w-full flex items-center justify-start">
-                                    <div className="relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]">
-              <Image
-                src={isDark ? logoBlack : logoWhite}
-                alt="FYSU Logo"
-                fill
-                priority
-                sizes="160px"
-                className="object-contain"
-              />
+            <div className="relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]">
+              {isKiban ? (
+                kibanLogoFailed ? (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-sm sm:text-lg font-medium tracking-[0.25em] uppercase">
+                    Kiban Collector
+                  </span>
+                ) : (
+                  <Image
+                    src={isDark ? kibanLogoDark : kibanLogoLight}
+                    alt="Kiban Collector"
+                    fill
+                    priority
+                    sizes="160px"
+                    className="object-contain object-left"
+                    onError={() => setKibanLogoFailed(true)}
+                  />
+                )
+              ) : (
+                <Image
+                  src={isDark ? logoBlack : logoWhite}
+                  alt="FYSU Logo"
+                  fill
+                  priority
+                  sizes="160px"
+                  className="object-contain"
+                />
+              )}
             </div>
           </Link>
         </div>
 
-                <div className="relative liquid-glass w-[30%] rounded-4xl flex gap-4 justify-center items-center text-[var(--menu)] h-[42px]">
+        <div className="relative liquid-glass w-[30%] rounded-4xl flex gap-4 justify-center items-center text-[var(--menu)] h-[42px]">
           <button
             onClick={openCartWithDelay}
             className="relative cursor-pointer"
@@ -165,7 +192,7 @@ function MobileMenu({
       <AnimatePresence>
         {activePanel === "menu" && (
           <motion.div
-       className="absolute top-full mt-2 w-full overflow-hidden text-[var(--menu)] rounded-xl liquid-glass"
+            className="absolute top-full mt-2 w-full overflow-hidden text-[var(--menu)] rounded-xl liquid-glass"
             initial={{ height: 0 }}
             animate={{ height: "auto" }}
             exit={{ height: 0 }}
@@ -278,11 +305,21 @@ export default function Navbar() {
       const res = await fetch("/api/pages");
       const data = await res.json();
 
+      const pageLinks = data.map((p: any) => ({
+        label: p.title.toUpperCase(),
+        href: `/${p.slug}`,
+      }));
+
+      // "Kiban Collector" est placé juste au-dessus de Fy'grances
+      const kibanLink = { label: "KIBAN COLLECTOR", href: "/kiban-collector" };
+      const fyIndex = pageLinks.findIndex((l: { label: string; href: string }) =>
+        /fy.?grances/i.test(l.href + l.label)
+      );
+      if (fyIndex === -1) pageLinks.push(kibanLink);
+      else pageLinks.splice(fyIndex, 0, kibanLink);
+
       setLinks([
-        ...data.map((p: any) => ({
-          label: p.title.toUpperCase(),
-          href: `/${p.slug}`,
-        })),
+        ...pageLinks,
         { label: t("collections").toUpperCase(), href: "#" },
       ]);
     };
