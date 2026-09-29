@@ -18,7 +18,7 @@ export default function CollectionPage() {
   const { slug } = useParams<{ slug: string }>()
   const router = useRouter()
 
-  const isFlowersBloomCollection = slug === "when-the-flowers-bloom"
+    const isFlowersBloomCollection = false
   const [page, setPage] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,41 +80,15 @@ export default function CollectionPage() {
   })
 
 
-  if (loading) {
+    if (loading) {
     return (
-      <div className="h-screen flex flex-col">
+      <>
         <Navbar />
-  
-        <div className="w-full h-screen flex items-center justify-center">
-          {isFlowersBloomCollection ? (
-            <>
-              {/* MOBILE ONLY */}
-              <div className="sm:hidden relative w-screen h-screen">
-                <video
-                  src="/videos/flowers_bloom_loader.MOV"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="auto"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              </div>
-  
-              {/* DESKTOP ONLY */}
-              <div className="hidden sm:block font-pagetitle text-neutral-500 text-4xl">
-                FYSU
-              </div>
-            </>
-          ) : (
-            <div className="font-pagetitle text-neutral-500 text-4xl">
-              FYSU
-            </div>
-          )}
-        </div>
-      </div>
-    );
+        <div className="min-h-screen" />
+      </>
+    )
   }
+
 
   if (!page) {
     return (
