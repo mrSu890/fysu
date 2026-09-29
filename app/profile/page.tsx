@@ -54,13 +54,15 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
+    if (loading) {
     return (
-      <div className="w-screen h-[90vh] flex items-center justify-center">
-        <h1 className="text-gray-500 text-4xl text-center">FYSU</h1>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen" />
+      </>
     );
   }
+
 
   if (!user) {
     return null;
