@@ -178,8 +178,8 @@ export default function CollectionPage() {
 
             {/* TITLE */}
             <div className="absolute inset-0 flex items-end">
-              <div className="pb-24 pl-16">
-               <h1 className="text-white font-dior font-bold text-4xl sm:text-6xl tracking-tight">
+                           <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
+                               <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
                   {page.title}
                 </h1>
               </div>
