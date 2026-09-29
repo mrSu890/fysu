@@ -97,13 +97,8 @@ export default function ProductClient() {
 
   /* ================= STATES ================= */
 
-  if (loading) return (
-  <div className="w-screen h-screen bg-background text-foreground text-4xl flex items-center justify-center">
-    <div className="font-pagetitle text-neutral-500 text-4xl">
-      FYSU
-    </div>
-  </div>
-  )
+    if (loading) return <div className="w-screen h-screen bg-background" />
+
   if (!product) return notFound()
 
   const mainImage = filteredImages[0]?.url
