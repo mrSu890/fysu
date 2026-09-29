@@ -9,6 +9,7 @@
   --toggle-button-btn: #ffffff;
   --navbar-bg: #262626;
   --glass-tint: 36%;
+    --glass-color: #3f5f3f;
   --glass-brightness: 0.85;
   --glass-rim: rgba(255, 255, 255, 0.35);
   --glass-shadow: rgba(0, 0, 0, 0.22);
@@ -24,6 +25,7 @@
   --toggle-button-btn: #1a1a1a;
   --navbar-bg: #ffff;
     --glass-tint: 34%;
+    --glass-color: var(--navbar-bg);
   --glass-brightness: 1.15;
   --glass-rim: rgba(255, 255, 255, 0.7);
   --glass-shadow: rgba(0, 0, 0, 0.35);
@@ -113,7 +115,7 @@
 }
 .liquid-glass {
   isolation: isolate;
-  background: color-mix(in srgb, var(--navbar-bg) var(--glass-tint), transparent);
+    background: color-mix(in srgb, var(--glass-color) var(--glass-tint), transparent);
   -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(var(--glass-brightness));
   backdrop-filter: blur(20px) saturate(180%) brightness(var(--glass-brightness));
   box-shadow:
@@ -186,4 +188,9 @@
     transition: none;
   }
 }
+/* Pop-up cookies : les boutons blancs gardent un texte sombre */
+.cookie-glass .bg-white {
+  color: #171717;
+}
+
 
