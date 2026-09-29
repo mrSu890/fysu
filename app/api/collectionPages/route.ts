@@ -2,6 +2,9 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
+// Collections cachées du menu "Collections" (elles ont leur propre page)
+const HIDDEN_SLUGS = ["kiban-collector"];
+
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("collectionPages")
@@ -16,9 +19,12 @@ export async function GET() {
     );
   }
 
-  return new Response(JSON.stringify(data ?? []), {
+  const visible = (data ?? []).filter(
+    (c: any) => !HIDDEN_SLUGS.includes(c.slug)
+  );
+
+  return new Response(JSON.stringify(visible), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
-  
 }
