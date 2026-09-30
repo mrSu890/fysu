@@ -10,7 +10,7 @@ import { useSiteCopy } from "@/lib/siteCopy"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
-// Photo de la zone arrondie : à déposer dans public/images
+// Image par défaut (si aucune image n'est choisie dans l'admin > Images de garde)
 const HERO_IMAGE = "/images/kiban-collector.jpg"
 
 const TITLE = "KIBAN COLLECTOR"
@@ -23,6 +23,7 @@ const COLLECTION_SLUG = "kiban-collector"
 export default function KibanCollectorPage() {
   const copy = useSiteCopy()
   const [products, setProducts] = useState<any[]>([])
+  const [heroImage, setHeroImage] = useState<string | null>(null)
   const [heroFailed, setHeroFailed] = useState(false)
   const [filters, setFilters] = useState({
     gender: "all",
@@ -51,6 +52,8 @@ export default function KibanCollectorPage() {
         if (!res.ok) return
         const data = await res.json()
         setProducts(data.products ?? [])
+        // image de garde choisie dans l'admin (sinon l'image par défaut)
+        if (data.page?.hero_image) setHeroImage(data.page.hero_image)
       } catch (err) {
         console.error(err)
       }
@@ -85,10 +88,14 @@ export default function KibanCollectorPage() {
           {!heroFailed && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={HERO_IMAGE}
+              src={heroImage ?? HERO_IMAGE}
               alt={TITLE}
               className="absolute inset-0 h-full w-full object-cover"
-              onError={() => setHeroFailed(true)}
+              onError={() => {
+                // si l'image de l'admin ne charge pas, on retombe sur l'image par défaut
+                if (heroImage) setHeroImage(null)
+                else setHeroFailed(true)
+              }}
             />
           )}
         </div>
