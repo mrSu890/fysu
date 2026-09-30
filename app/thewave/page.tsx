@@ -9,8 +9,11 @@ import CroppedLogo from "@/components/CroppedLogo"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
-// Photo verticale plein écran : à déposer dans public/images
+// Photo verticale : à déposer dans public/images
 const HERO_IMAGE = "/images/the-wave-hero.jpg"
+
+// Hauteur de l'image (en % de la hauteur de l'écran) : augmente pour l'allonger, diminue pour la raccourcir
+const HERO_HEIGHT = "78svh"
 
 const TITLE = "TheWave"
 
@@ -131,8 +134,11 @@ export default function TheWavePage() {
 
       <Navbar />
 
-      {/* ================= IMAGE PLEIN ÉCRAN (sans arrondi, sans marges) ================= */}
-      <section className="relative w-full h-[100svh] overflow-hidden bg-white/10">
+      {/* ================= IMAGE PLEINE LARGEUR (sans arrondi, sans marges) ================= */}
+      <section
+        className="relative w-full overflow-hidden bg-white/10"
+        style={{ height: HERO_HEIGHT }}
+      >
         {!heroFailed && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
