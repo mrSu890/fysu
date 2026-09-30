@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { NextRequest, NextResponse } from "next/server"
 import { cleanTitle, getRowRank, sortRows } from "@/lib/rowTypes"
@@ -96,8 +97,10 @@ export async function GET(
       })),
   }))
 
-  return NextResponse.json({
-    page,
-    sections,
-  })
+  return NextResponse.json(
+    await localize({
+      page,
+      sections,
+    })
+  )
 }
