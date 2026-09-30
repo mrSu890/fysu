@@ -15,19 +15,35 @@ type CartItem = ProductType & {
   quantity: number;
   selectedSizeId: string;
   selectedSizeLabel: string;
+  // couleur choisie (seulement pour les produits qui en ont plusieurs)
+  selectedColorName?: string | null;
+  selectedColorHex?: string | null;
+  selectedImageUrl?: string | null;
+};
+
+export type CartColor = {
+  name: string;
+  hex: string;
+  imageUrl?: string | null;
 };
 
 type CartContextType = {
   cart: CartItem[];
 
-  addToCart: (product: ProductType, sizeId: string, sizeLabel: string) => void;
+  addToCart: (
+    product: ProductType,
+    sizeId: string,
+    sizeLabel: string,
+    color?: CartColor | null
+  ) => void;
 
   justAdded: Record<string, boolean>;
   addToCartWithFeedback: (
     product: ProductType,
     sizeId: string,
     sizeLabel: string,
-    resetMs?: number
+    resetMs?: number,
+    color?: CartColor | null
   ) => void;
 
   removeFromCart: (productId: number, sizeId: string) => void;
@@ -79,7 +95,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   /* -------------------- CART OPS -------------------- */
 
-  const addToCart = (product: ProductType, sizeId: string, sizeLabel: string) => {
+  const addToCart = (
+    product: ProductType,
+    sizeId: string,
+    sizeLabel: string,
+    color?: CartColor | null
+  ) => {
     setCart((prev) => {
       const existing = prev.find(
         (item) => item.id === product.id && item.selectedSizeId === sizeId
@@ -99,6 +120,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           ...product,
           selectedSizeId: sizeId,
           selectedSizeLabel: sizeLabel,
+          selectedColorName: color?.name ?? null,
+          selectedColorHex: color?.hex ?? null,
+          selectedImageUrl: color?.imageUrl ?? null,
           quantity: 1,
         },
       ];
@@ -109,11 +133,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     product: ProductType,
     sizeId: string,
     sizeLabel: string,
-    resetMs = 1500
+    resetMs = 1500,
+    color?: CartColor | null
   ) => {
     const key = `${product.id}-${sizeId}`;
 
-    addToCart(product, sizeId, sizeLabel);
+    addToCart(product, sizeId, sizeLabel, color);
 
     setJustAdded((prev) => ({ ...prev, [key]: true }));
 
