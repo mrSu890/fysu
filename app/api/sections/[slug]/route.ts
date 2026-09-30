@@ -46,6 +46,12 @@ export async function GET(
       name,
       slug,
       price,
+      availability,
+      release_date,
+      product_sizes (
+        stock,
+        is_active
+      ),
       categories (
         name
       ),
