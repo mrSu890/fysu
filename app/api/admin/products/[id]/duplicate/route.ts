@@ -13,6 +13,14 @@ type ProductSizeRow = {
   stock: number;
   is_active: boolean;
   display_order: number | null;
+  color_id: string | null;
+};
+
+type ColorRow = {
+  id: string;
+  name: string;
+  hex: string;
+  display_order: number | null;
 };
 
 type ProductInfoBlockRow = {
@@ -36,6 +44,7 @@ type DuplicableProduct = {
   product_type: string | null;
   availability: string | null;
   release_date: string | null;
+  brand: string | null;
   category_id: number | null;
   details: string | null;
   size_fit: string | null;
@@ -52,7 +61,7 @@ type DuplicableProduct = {
 function slugify(value: string) {
   return value
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
@@ -123,6 +132,7 @@ export async function POST(
         product_type: sourceProduct.product_type ?? "clothing",
         availability: sourceProduct.availability ?? "available",
         release_date: sourceProduct.release_date ?? null,
+        brand: sourceProduct.brand ?? "fysu",
         category_id: sourceProduct.category_id,
         details: sourceProduct.details,
         size_fit: sourceProduct.size_fit,
@@ -157,9 +167,35 @@ export async function POST(
       if (error) throw error;
     }
 
+    // Couleurs : on copie chacune et on garde la correspondance ancien -> nouvel identifiant
+    const { data: sourceColors, error: colorsError } = await supabaseAdmin
+      .from("product_colors")
+      .select("id, name, hex, display_order")
+      .eq("product_id", id);
+
+    if (colorsError) throw colorsError;
+
+    const colorMap = new Map<string, string>();
+    for (const color of (sourceColors ?? []) as ColorRow[]) {
+      const { data: newColor, error } = await supabaseAdmin
+        .from("product_colors")
+        .insert({
+          product_id: newProductId,
+          name: color.name,
+          hex: color.hex,
+          display_order: color.display_order ?? 0,
+        })
+        .select("id")
+        .single();
+
+      if (error || !newColor) throw error ?? new Error("Erreur de copie d'une couleur");
+      colorMap.set(color.id, newColor.id as string);
+    }
+
     const sizes =
       sourceProduct.product_sizes?.map((size, index) => ({
         product_id: newProductId,
+        color_id: size.color_id ? colorMap.get(size.color_id) ?? null : null,
         size: size.size,
         stock: size.stock,
         is_active: size.is_active,
