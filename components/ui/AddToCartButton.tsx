@@ -11,6 +11,8 @@ type Props = {
   product: ProductType;
   selectedSizeId: string | null;
   selectedSizeLabel: string | null;
+  // "available" = « Ajouter au panier », "preorder" = « Précommander »
+  mode?: "available" | "preorder";
   className?: string;
 };
 
@@ -18,6 +20,7 @@ export default function AddToCartButton({
   product,
   selectedSizeId,
   selectedSizeLabel,
+  mode = "preorder",
   className,
 }: Props) {
   const t = useTranslations("Product");
@@ -50,7 +53,7 @@ export default function AddToCartButton({
         aria-label="Apple Pay"
       >
         <span className="flex items-center gap-1">
-          <span className="text-base leading-none"></span>
+          <span className="text-base leading-none"></span>
           <span>Pay</span>
         </span>
       </button>
@@ -110,7 +113,7 @@ export default function AddToCartButton({
         )}
       </AnimatePresence>
 
-      {/* Preorder button (unchanged) */}
+      {/* Bouton d'achat : « Ajouter au panier » ou « Précommander » selon le mode */}
       <motion.button
         type="button"
         disabled={isAdded}
@@ -162,7 +165,7 @@ export default function AddToCartButton({
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.25 }}
               >
-                {t("preorder")}
+                {mode === "available" ? t("addToCart") : t("preorder")}
               </motion.div>
             )}
           </AnimatePresence>
