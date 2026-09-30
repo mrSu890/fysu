@@ -3,12 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSiteCopy } from "@/lib/siteCopy";
 
 const IMAGE_SRC = "/images/Fygrances-hero.JPG";
 const FYGRANCES_LINK = "/fygrances";
 
 const FygrancesIntro = () => {
   const pathname = usePathname();
+  const copy = useSiteCopy();
 
   // Ce bloc n'apparaît que sur la page d'accueil
   if (pathname !== "/") return null;
@@ -33,9 +35,7 @@ const FygrancesIntro = () => {
         </h2>
 
         <p className="mt-3 text-xs sm:text-base leading-snug text-foreground/80">
-          Scents inspired by, and made to accompany, our emotional and psychic
-          states. Each FY&apos;grance is a quiet companion for the mood of the
-          moment.
+          {copy.fygrancesText}
         </p>
 
         <Link
@@ -43,7 +43,7 @@ const FygrancesIntro = () => {
           style={{ color: "var(--foreground)" }}
           className="mt-6 inline-flex items-center gap-2 border border-foreground px-3 py-2 sm:px-5 sm:py-3 text-[10px] sm:text-sm uppercase tracking-widest transition-opacity hover:opacity-60"
         >
-          Learn more
+          {copy.learnMore}
           <span aria-hidden="true">→</span>
         </Link>
       </div>
