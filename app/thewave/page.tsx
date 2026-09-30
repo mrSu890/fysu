@@ -6,6 +6,7 @@ import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import ProductFilters from "@/components/ProductFilters"
 import CroppedLogo from "@/components/CroppedLogo"
+import { useSiteCopy } from "@/lib/siteCopy"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
@@ -16,9 +17,6 @@ const HERO_IMAGE = "/images/the-wave-hero.jpg"
 const HERO_HEIGHT = "78svh"
 
 const TITLE = "TheWave"
-
-const TEXT =
-  "TheWave is a relaxed brand of colorful knitwear and summer accessories. It keeps you company through the simple moments: just before summer begins, all summer long, and just after it ends. It is also a music production and curation platform."
 
 // Collection créée dans l'admin (lien = thewave) qui contient les produits
 const COLLECTION_SLUG = "thewave"
@@ -33,6 +31,7 @@ const RED = "#e10813"
 const PINK = "#f5b0b3"
 
 export default function TheWavePage() {
+  const copy = useSiteCopy()
   const [products, setProducts] = useState<any[]>([])
   const [heroFailed, setHeroFailed] = useState(false)
   const productsRef = useRef<HTMLDivElement>(null)
@@ -165,7 +164,7 @@ export default function TheWavePage() {
           </div>
 
           <p className="mt-8 text-sm sm:text-base leading-relaxed text-white">
-            {TEXT}
+            {copy.waveText}
           </p>
         </div>
       </section>
@@ -196,5 +195,5 @@ export default function TheWavePage() {
 
       <Footer />
     </>
-  );
+  )
 }
