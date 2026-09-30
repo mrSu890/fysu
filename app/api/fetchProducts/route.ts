@@ -35,6 +35,12 @@ export async function GET() {
       gender: product.gender,
       price: product.price,
       createdAt: product.createdAt,
+      availability: product.availability ?? "available",
+      release_date: product.release_date ?? null,
+      product_sizes: (product.product_sizes ?? []).map((s: any) => ({
+        stock: s.stock,
+        is_active: s.is_active,
+      })),
     
       thumbnail_url: product.product_images?.[0]?.url ?? null,
     
