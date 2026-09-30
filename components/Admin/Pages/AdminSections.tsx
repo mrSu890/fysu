@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import { Select, Input, Switch } from "antd";
 import toast from "react-hot-toast";
+import { ROW_TYPES, cleanTitle, detectRowKind, getRowLabel, getRowKind, sortRows } from "@/lib/rowTypes";
 
 const { Option } = Select;
 
@@ -24,6 +25,7 @@ type Section = {
     id: string;
     title: string;
     slug: string;
+    row_type?: string | null;
     is_active: boolean;
     section_products?: {
       product: Product;
@@ -40,6 +42,7 @@ export default function AdminSections() {
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
+  const [rowType, setRowType] = useState<string>("auto");
   const [isActive, setIsActive] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [selectedPages, setSelectedPages] = useState<string[]>([]);
@@ -83,6 +86,7 @@ export default function AdminSections() {
       id: editingSection?.id,
       title,
       slug,
+      row_type: rowType === "auto" ? null : rowType,
       is_active: isActive,
       product_ids: selectedProducts,
       page_ids: selectedPages,
@@ -110,6 +114,7 @@ export default function AdminSections() {
     setEditingSection(null);
     setTitle("");
     setSlug("");
+    setRowType("auto");
     setIsActive(true);
     setSelectedProducts([]);
     setSelectedPages([]);
@@ -135,6 +140,7 @@ export default function AdminSections() {
     setEditingSection(section);
     setTitle(section.title);
     setSlug(section.slug ?? "");
+    setRowType(section.row_type ?? "auto");
     setIsActive(section.is_active);
   
     // récupérer produits liés
@@ -180,6 +186,26 @@ export default function AdminSections() {
             onChange={(e) => setSlug(e.target.value)}
             className="rounded-xl"
           />
+
+          {/* TYPE DE RANGÉE : décide de la place sur la page (ordre fixe) */}
+          <div>
+            <Select
+              value={rowType}
+              onChange={setRowType}
+              className="w-full"
+              options={[
+                {
+                  value: "auto",
+                  label: `Automatique (détecté : ${getRowLabel(detectRowKind(title))})`,
+                },
+                ...ROW_TYPES.map((t) => ({ value: t.id, label: t.label })),
+              ]}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Sur les pages, les rangées s’affichent toujours dans cet ordre : vestes et manteaux, hauts,
+              pantalons et jupes, robes, accessoires, chaussures. Plus besoin de « A. », « B. » dans le titre.
+            </p>
+          </div>
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">Active</span>
@@ -265,7 +291,7 @@ export default function AdminSections() {
         {/* SECTIONS LIST */}
         <ul className="space-y-4">
           <AnimatePresence>
-            {sections.map((section) => (
+            {sortRows(sections).map((section) => (
               <motion.li
                 key={section.id}
                 initial={{ opacity: 0, y: 8 }}
@@ -274,7 +300,11 @@ export default function AdminSections() {
                 className="rounded-2xl border border-gray-200 bg-white p-5 flex justify-between items-center"
               >
                 <div>
-                  <p className="font-medium">{section.title}</p>
+                  <p className="font-medium">{cleanTitle(section.title)}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Type : {getRowLabel(getRowKind(section))}
+                    {section.row_type ? "" : " (automatique)"}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Pages:{" "}
                     {section.section_pages?.map((sp) => sp.pages.slug).join(", ") || "—"}
