@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
@@ -32,6 +32,8 @@ const PINK = "#f5b0b3"
 export default function TheWavePage() {
   const [products, setProducts] = useState<any[]>([])
   const [heroFailed, setHeroFailed] = useState(false)
+  const productsRef = useRef<HTMLDivElement>(null)
+  const [waveOpacity, setWaveOpacity] = useState(0)
   const [filters, setFilters] = useState({
     gender: "all",
     sort: "default",
@@ -49,6 +51,28 @@ export default function TheWavePage() {
         saved = localStorage.getItem("theme")
       } catch {}
       if (saved !== "dark") html.classList.remove("dark")
+    }
+  }, [])
+
+  // La vague rose apparaît doucement quand on arrive aux produits
+  useEffect(() => {
+    const update = () => {
+      const el = productsRef.current
+      if (!el) return
+      const top = el.getBoundingClientRect().top
+      const vh = window.innerHeight
+      // début : le haut de la zone produits est à 90% de l'écran, fin : à 40%
+      const start = vh * 0.9
+      const end = vh * 0.4
+      const p = (start - top) / (start - end)
+      setWaveOpacity(Math.min(1, Math.max(0, p)))
+    }
+    update()
+    window.addEventListener("scroll", update, { passive: true })
+    window.addEventListener("resize", update)
+    return () => {
+      window.removeEventListener("scroll", update)
+      window.removeEventListener("resize", update)
     }
   }, [])
 
@@ -92,14 +116,14 @@ export default function TheWavePage() {
         html.wave-page .flower-dark { display: none !important; }
       `}</style>
 
-      {/* Fond fixe : rouge + grande vague rose */}
+      {/* Fond fixe : tout rouge, puis la grande vague rose apparaît au niveau des produits */}
       <div className="fixed inset-0 -z-10" style={{ background: RED }} aria-hidden="true">
         <svg
           className="h-full w-full"
           viewBox="0 0 1821 2576"
           preserveAspectRatio="xMidYMax slice"
+          style={{ opacity: waveOpacity, transition: "opacity 0.25s linear" }}
         >
-          <rect width="1821" height="2576" fill={RED} />
           <path d={WAVE_PATH} fill={PINK} />
         </svg>
       </div>
@@ -139,7 +163,7 @@ export default function TheWavePage() {
       </section>
 
       {/* ================= PRODUITS ================= */}
-      <div className="relative px-6 pt-20 pb-44 text-white">
+      <div ref={productsRef} className="relative px-6 pt-20 pb-44 text-white">
         {products.length > 0 && (
           <>
             <ProductFilters filters={filters} setFilters={setFilters} />
