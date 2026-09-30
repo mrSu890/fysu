@@ -30,6 +30,14 @@ export async function GET(
         size,
         stock,
         is_active,
+        display_order,
+        color_id
+      ),
+      product_colors!product_colors_product_id_fkey (
+        id,
+        product_id,
+        name,
+        hex,
         display_order
       ),
       product_info_blocks (
@@ -85,6 +93,11 @@ export async function GET(
       product.product_sizes
         ?.sort((a: any, b: any) => a.display_order - b.display_order) ?? []
 
+  // Tri des couleurs
+  const colors =
+    product.product_colors
+      ?.sort((a: any, b: any) => a.display_order - b.display_order) ?? []
+
   /* ================= FORMAT SUGGESTIONS ================= */
 
   const suggested_products =
@@ -98,6 +111,7 @@ export async function GET(
     {
       ...product,
       product_sizes: sizes,
+      product_colors: colors,
       product_info_blocks: info_blocks,
       product_suggestions: suggested_products
     },
