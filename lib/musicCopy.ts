@@ -19,6 +19,8 @@ export type MusicCopy = {
   collapse: string
   expand: string
   backTo: string
+  allAlbums: string
+  musicTitle: string
   loading: string
   notFound: string
   tracks: (count: number, minutes: number) => string
@@ -39,6 +41,8 @@ const COPY: Record<string, MusicCopy> = {
     collapse: "Shrink the player",
     expand: "Open the player",
     backTo: "Back to",
+    allAlbums: "All albums",
+    musicTitle: "Music",
     loading: "Loading",
     notFound: "Album not found.",
     tracks: (n, m) => `${n} ${n > 1 ? "tracks" : "track"} · ${m} min`,
@@ -57,6 +61,8 @@ const COPY: Record<string, MusicCopy> = {
     collapse: "Réduire le lecteur",
     expand: "Ouvrir le lecteur",
     backTo: "Retour à",
+    allAlbums: "Tous les albums",
+    musicTitle: "Musique",
     loading: "Chargement",
     notFound: "Album introuvable.",
     tracks: (n, m) => `${n} ${n > 1 ? "titres" : "titre"} · ${m} min`,
@@ -75,6 +81,8 @@ const COPY: Record<string, MusicCopy> = {
     collapse: "Speler verkleinen",
     expand: "Speler openen",
     backTo: "Terug naar",
+    allAlbums: "Alle albums",
+    musicTitle: "Muziek",
     loading: "Laden",
     notFound: "Album niet gevonden.",
     tracks: (n, m) => `${n} ${n > 1 ? "nummers" : "nummer"} · ${m} min`,
@@ -93,6 +101,8 @@ const COPY: Record<string, MusicCopy> = {
     collapse: "プレーヤーを小さくする",
     expand: "プレーヤーを開く",
     backTo: "戻る：",
+    allAlbums: "すべてのアルバム",
+    musicTitle: "ミュージック",
     loading: "読み込み中",
     notFound: "アルバムが見つかりません。",
     tracks: (n, m) => `${n}曲 · ${m}分`,
