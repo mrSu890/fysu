@@ -30,6 +30,8 @@ type ProductUpdatePayload = {
   category_id?: number | null;
   gender?: string;
   product_type?: string;
+  availability?: string;
+  release_date?: string | null;
   colors?: number;
   images?: ProductImageInput[];
   care_instructions?: string;
@@ -54,6 +56,8 @@ export async function POST(req: Request) {
       category_id,
       gender,
       product_type,
+      availability,
+      release_date,
       colors,
       images,
       care_instructions,
@@ -84,6 +88,8 @@ export async function POST(req: Request) {
         category_id,
         gender,
         product_type,
+        availability,
+        release_date,
         colors,
         care_instructions,
         shipping,
