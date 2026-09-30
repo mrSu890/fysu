@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Copy, Crop, ExternalLink, ImagePlus, Plus, RefreshCw, Trash2, Upload } from "lucide-react"
 import { AdminButton, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/kit"
@@ -10,17 +9,25 @@ import { resizeImage } from "@/lib/imageTools"
 import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
+import { BRAND_LIST, getBrandId } from "@/lib/brands"
 
 /* ====================================================================
    FICHE PRODUIT EN PLEINE PAGE
-   Onglets : Général · Images & couleurs · Tailles & stock · Infos · Recommandations
+   Onglets : Général · Couleurs & stock · Infos · Recommandations
+   Chaque couleur a son nom, ses images et son stock par taille.
    ==================================================================== */
 
 type Category = { id: number; name: string }
 type ListProduct = { id: number; name: string; thumbnail: string | null }
 
-type ColorSet = { color: string; images: string[] }
-type SizeState = { size: string; stock: number; is_active: boolean }
+type SizeState = { id?: string; size: string; stock: number; is_active: boolean }
+type ColorState = {
+  id?: string
+  name: string
+  hex: string
+  images: string[]
+  sizes: SizeState[]
+}
 type InfoBlockState = {
   image_url: string | null
   title: string
@@ -41,12 +48,12 @@ type FormState = {
   product_type: string
   availability: string
   release_date: string
+  brand: string
 }
 
 const TABS = [
   { id: "general", label: "Général" },
-  { id: "images", label: "Images & couleurs" },
-  { id: "sizes", label: "Tailles & stock" },
+  { id: "colors", label: "Couleurs & stock" },
   { id: "info", label: "Infos produit" },
   { id: "related", label: "Recommandations" },
 ] as const
@@ -55,8 +62,11 @@ type TabId = (typeof TABS)[number]["id"]
 const INPUT =
   "w-full rounded-2xl border border-[#e0dbd3] bg-white px-4 py-2.5 text-sm text-[#171717] outline-none placeholder:text-[#b3ada3] focus:ring-2 focus:ring-[#171717]/10"
 
+const HEX_RE = /^#[0-9a-f]{6}$/i
+const PALETTE = ["#000000", "#ffffff", "#8a8a8a", "#1f3f73", "#7a1f1f", "#2c4a26", "#c9b79c", "#e10813"]
+
 const normalizeColor = (c: string) => c.trim().toLowerCase() || "#000000"
-const pickerValue = (c: string) => (/^#[0-9a-f]{6}$/i.test(c.trim()) ? c.trim() : "#000000")
+const pickerValue = (c: string) => (HEX_RE.test(c.trim()) ? c.trim() : "#000000")
 
 function Field({
   label,
@@ -137,9 +147,9 @@ export default function ProductEditor({ id }: { id: string }) {
     product_type: "clothing",
     availability: "available",
     release_date: "",
+    brand: "fysu",
   })
-  const [colorSets, setColorSets] = useState<ColorSet[]>([])
-  const [sizes, setSizes] = useState<SizeState[]>([])
+  const [colors, setColors] = useState<ColorState[]>([])
   const [infoBlocks, setInfoBlocks] = useState<InfoBlockState[]>([])
   const [sizeGuide, setSizeGuide] = useState<string | null>(null)
   const [related, setRelated] = useState<number[]>([])
@@ -150,8 +160,8 @@ export default function ProductEditor({ id }: { id: string }) {
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
   const snapshot = useMemo(
-    () => JSON.stringify({ form, colorSets, sizes, infoBlocks, sizeGuide, related }),
-    [form, colorSets, sizes, infoBlocks, sizeGuide, related]
+    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, related }),
+    [form, colors, infoBlocks, sizeGuide, related]
   )
   const dirty = !loading && saved !== "" && snapshot !== saved
 
@@ -176,26 +186,56 @@ export default function ProductEditor({ id }: { id: string }) {
         product_type: p.product_type ?? "clothing",
         availability: isAvailabilityId(p.availability) ? p.availability : "available",
         release_date: p.release_date ? String(p.release_date).slice(0, 10) : "",
+        brand: getBrandId(p.brand),
       }
 
-      // Regroupe les images par couleur
-      const grouped: Record<string, ColorSet> = {}
-      const order: string[] = []
-      for (const img of (p.product_images ?? []) as { url: string; color: string | null }[]) {
-        const color = img.color || "#000000"
-        if (!grouped[color]) {
-          grouped[color] = { color, images: [] }
-          order.push(color)
-        }
-        grouped[color].images.push(img.url)
-      }
-      const nextColors = order.map((c) => grouped[c])
+      const imageRows = (p.product_images ?? []) as { url: string; color: string | null }[]
+      const sizeRows = ((p.product_sizes ?? []) as any[])
+        .slice()
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+      const colorRows = (p.product_colors ?? []) as { id: string; name: string; hex: string }[]
 
-      const nextSizes: SizeState[] = ((p.product_sizes ?? []) as any[]).map((s) => ({
+      const toSize = (s: any): SizeState => ({
+        id: s.id,
         size: s.size ?? "",
         stock: Number(s.stock ?? 0),
         is_active: !!s.is_active,
-      }))
+      })
+
+      let nextColors: ColorState[]
+
+      if (colorRows.length > 0) {
+        nextColors = colorRows.map((c, i) => {
+          const hex = (c.hex || "#000000").toLowerCase()
+          return {
+            id: c.id,
+            name: c.name,
+            hex,
+            // les images sans couleur reconnue vont sur la première couleur
+            images: imageRows
+              .filter((img) => {
+                const imgHex = (img.color || "#000000").toLowerCase()
+                const known = colorRows.some((cc) => (cc.hex || "").toLowerCase() === imgHex)
+                return imgHex === hex || (i === 0 && !known)
+              })
+              .map((img) => img.url),
+            // les tailles sans couleur vont aussi sur la première
+            sizes: sizeRows
+              .filter((s) => s.color_id === c.id || (i === 0 && !s.color_id))
+              .map(toSize),
+          }
+        })
+      } else {
+        // produit sans couleur enregistrée : on part d'une couleur "Unique"
+        nextColors = [
+          {
+            name: "Unique",
+            hex: "#000000",
+            images: imageRows.map((img) => img.url),
+            sizes: sizeRows.map(toSize),
+          },
+        ]
+      }
 
       const nextInfo: InfoBlockState[] = ((p.product_info_blocks ?? []) as any[]).map((b) => ({
         image_url: b.image_url ?? null,
@@ -210,8 +250,7 @@ export default function ProductEditor({ id }: { id: string }) {
 
       setSlug(p.slug ?? "")
       setForm(nextForm)
-      setColorSets(nextColors)
-      setSizes(nextSizes)
+      setColors(nextColors)
       setInfoBlocks(nextInfo)
       setSizeGuide(p.size_guide_image_url ?? null)
       setRelated(nextRelated)
@@ -220,8 +259,7 @@ export default function ProductEditor({ id }: { id: string }) {
       setSaved(
         JSON.stringify({
           form: nextForm,
-          colorSets: nextColors,
-          sizes: nextSizes,
+          colors: nextColors,
           infoBlocks: nextInfo,
           sizeGuide: p.size_guide_image_url ?? null,
           related: nextRelated,
@@ -255,8 +293,8 @@ export default function ProductEditor({ id }: { id: string }) {
 
   /* ---------- Envois d'images ---------- */
 
-  async function uploadProductImages(colorIndex: number, files: File[]) {
-    const color = normalizeColor(colorSets[colorIndex]?.color ?? "#000000")
+  async function uploadProductImages(ci: number, files: File[]) {
+    const color = normalizeColor(colors[ci]?.hex ?? "#000000")
     setUploading(true)
     try {
       // un par un : le nom du fichier contient l'heure, pas de risque de collision
@@ -267,8 +305,8 @@ export default function ProductEditor({ id }: { id: string }) {
         fd.append("productId", String(productId))
         fd.append("color", color)
         const data = await api.upload<{ url: string }>("/api/admin/products/upload-product-image", fd)
-        setColorSets((cur) =>
-          cur.map((set, i) => (i === colorIndex ? { ...set, images: [...set.images, data.url] } : set))
+        setColors((cur) =>
+          cur.map((c, i) => (i === ci ? { ...c, images: [...c.images, data.url] } : c))
         )
       }
     } catch (e) {
@@ -280,7 +318,7 @@ export default function ProductEditor({ id }: { id: string }) {
 
   // Remplace une image par une autre, au même endroit (même couleur, même position)
   async function replaceImage(ci: number, ii: number, file: File) {
-    const color = normalizeColor(colorSets[ci]?.color ?? "#000000")
+    const color = normalizeColor(colors[ci]?.hex ?? "#000000")
     setUploading(true)
     try {
       const fd = new FormData()
@@ -288,9 +326,9 @@ export default function ProductEditor({ id }: { id: string }) {
       fd.append("productId", String(productId))
       fd.append("color", color)
       const data = await api.upload<{ url: string }>("/api/admin/products/upload-product-image", fd)
-      setColorSets((cur) =>
-        cur.map((set, i) =>
-          i === ci ? { ...set, images: set.images.map((u, j) => (j === ii ? data.url : u)) } : set
+      setColors((cur) =>
+        cur.map((c, i) =>
+          i === ci ? { ...c, images: c.images.map((u, j) => (j === ii ? data.url : u)) } : c
         )
       )
     } catch (e) {
@@ -330,52 +368,112 @@ export default function ProductEditor({ id }: { id: string }) {
     }
   }
 
-  /* ---------- Modifications de listes ---------- */
+  /* ---------- Modifications des couleurs ---------- */
 
-  const updateColor = (index: number, color: string) =>
-    setColorSets((cur) => cur.map((s, i) => (i === index ? { ...s, color } : s)))
+  const updateColor = (ci: number, patch: Partial<ColorState>) =>
+    setColors((cur) => cur.map((c, i) => (i === ci ? { ...c, ...patch } : c)))
 
-  const removeImage = (colorIndex: number, imgIndex: number) =>
-    setColorSets((cur) =>
-      cur.map((s, i) =>
-        i === colorIndex ? { ...s, images: s.images.filter((_, j) => j !== imgIndex) } : s
-      )
+  const addColor = () =>
+    setColors((cur) => {
+      const used = new Set(cur.map((c) => c.hex.toLowerCase()))
+      const hex = PALETTE.find((h) => !used.has(h)) ?? "#" + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")
+      return [
+        ...cur,
+        {
+          name: `Couleur ${cur.length + 1}`,
+          hex,
+          images: [],
+          // mêmes tailles que la première couleur, stock à 0 (à remplir)
+          sizes: (cur[0]?.sizes ?? []).map((s) => ({ size: s.size, stock: 0, is_active: s.is_active })),
+        },
+      ]
+    })
+
+  const removeColor = (ci: number) => {
+    if (colors.length <= 1) return
+    if (!confirm(`Supprimer la couleur « ${colors[ci].name} », ses images et son stock ?`)) return
+    setColors((cur) => cur.filter((_, i) => i !== ci))
+  }
+
+  const removeImage = (ci: number, imgIndex: number) =>
+    setColors((cur) =>
+      cur.map((c, i) => (i === ci ? { ...c, images: c.images.filter((_, j) => j !== imgIndex) } : c))
     )
 
-  const moveImage = (colorIndex: number, imgIndex: number, to: number) => {
-    if (colorIndex === to) return
-    setColorSets((cur) => {
-      const img = cur[colorIndex]?.images[imgIndex]
+  const moveImage = (ci: number, imgIndex: number, to: number) => {
+    if (ci === to) return
+    setColors((cur) => {
+      const img = cur[ci]?.images[imgIndex]
       if (!img) return cur
-      return cur.map((s, i) => {
-        if (i === colorIndex) return { ...s, images: s.images.filter((_, j) => j !== imgIndex) }
-        if (i === to) return { ...s, images: [...s.images, img] }
-        return s
+      return cur.map((c, i) => {
+        if (i === ci) return { ...c, images: c.images.filter((_, j) => j !== imgIndex) }
+        if (i === to) return { ...c, images: [...c.images, img] }
+        return c
       })
     })
   }
 
   // Met une image en première position (c'est elle qui sert de vignette)
-  const makeMain = (colorIndex: number, imgIndex: number) =>
-    setColorSets((cur) =>
-      cur.map((s, i) => {
-        if (i !== colorIndex) return s
-        const img = s.images[imgIndex]
-        return { ...s, images: [img, ...s.images.filter((_, j) => j !== imgIndex)] }
+  const makeMain = (ci: number, imgIndex: number) =>
+    setColors((cur) =>
+      cur.map((c, i) => {
+        if (i !== ci) return c
+        const img = c.images[imgIndex]
+        return { ...c, images: [img, ...c.images.filter((_, j) => j !== imgIndex)] }
       })
     )
 
-  const updateSize = (index: number, patch: Partial<SizeState>) =>
-    setSizes((cur) => cur.map((s, i) => (i === index ? { ...s, ...patch } : s)))
+  /* ---------- Modifications des tailles (par couleur) ---------- */
 
-  const moveSize = (index: number, dir: -1 | 1) =>
-    setSizes((cur) => {
-      const j = index + dir
-      if (j < 0 || j >= cur.length) return cur
-      const next = [...cur]
-      ;[next[index], next[j]] = [next[j], next[index]]
-      return next
+  const updateSize = (ci: number, si: number, patch: Partial<SizeState>) =>
+    setColors((cur) =>
+      cur.map((c, i) =>
+        i === ci ? { ...c, sizes: c.sizes.map((s, j) => (j === si ? { ...s, ...patch } : s)) } : c
+      )
+    )
+
+  const moveSize = (ci: number, si: number, dir: -1 | 1) =>
+    setColors((cur) =>
+      cur.map((c, i) => {
+        if (i !== ci) return c
+        const j = si + dir
+        if (j < 0 || j >= c.sizes.length) return c
+        const next = [...c.sizes]
+        ;[next[si], next[j]] = [next[j], next[si]]
+        return { ...c, sizes: next }
+      })
+    )
+
+  const addSize = (ci: number) =>
+    setColors((cur) =>
+      cur.map((c, i) =>
+        i === ci ? { ...c, sizes: [...c.sizes, { size: "", stock: 0, is_active: true }] } : c
+      )
+    )
+
+  const removeSize = (ci: number, si: number) =>
+    setColors((cur) =>
+      cur.map((c, i) => (i === ci ? { ...c, sizes: c.sizes.filter((_, j) => j !== si) } : c))
+    )
+
+  const applyPreset = (ci: number, presets: string[]) =>
+    updateColor(ci, { sizes: presets.map((size) => ({ size, stock: 0, is_active: true })) })
+
+  // Copie les noms de tailles de cette couleur vers les autres (ajoute seulement celles qui manquent, stock 0)
+  const copySizesToOthers = (ci: number) => {
+    setColors((cur) => {
+      const source = cur[ci]?.sizes ?? []
+      return cur.map((c, i) => {
+        if (i === ci) return c
+        const have = new Set(c.sizes.map((s) => s.size.trim().toLowerCase()))
+        const missing = source
+          .filter((s) => !have.has(s.size.trim().toLowerCase()))
+          .map((s) => ({ size: s.size, stock: 0, is_active: s.is_active }))
+        return { ...c, sizes: [...c.sizes, ...missing] }
+      })
     })
+    notify.success("Tailles ajoutées aux autres couleurs (stock à 0)")
+  }
 
   const updateBlock = (index: number, patch: Partial<InfoBlockState>) =>
     setInfoBlocks((cur) => cur.map((b, i) => (i === index ? { ...b, ...patch } : b)))
@@ -392,19 +490,34 @@ export default function ProductEditor({ id }: { id: string }) {
       setTab("general")
       return notify.error("Prix invalide")
     }
-    const names = sizes.map((s) => s.size.trim())
-    if (names.some((n) => !n)) {
-      setTab("sizes")
-      return notify.error("Une taille n'a pas de nom")
-    }
-    if (new Set(names.map((n) => n.toLowerCase())).size !== names.length) {
-      setTab("sizes")
-      return notify.error("Deux tailles portent le même nom")
-    }
 
-    const images = colorSets.flatMap((s) =>
-      s.images.map((url) => ({ url, color: normalizeColor(s.color) }))
-    )
+    const hexes = new Set<string>()
+    for (const c of colors) {
+      if (!c.name.trim()) {
+        setTab("colors")
+        return notify.error("Une couleur n'a pas de nom")
+      }
+      if (!HEX_RE.test(c.hex.trim())) {
+        setTab("colors")
+        return notify.error(`Code couleur invalide pour « ${c.name} » (exemple : #1a1a1a)`)
+      }
+      const hex = c.hex.trim().toLowerCase()
+      if (hexes.has(hex)) {
+        setTab("colors")
+        return notify.error("Deux couleurs ont le même code couleur")
+      }
+      hexes.add(hex)
+
+      const names = c.sizes.map((s) => s.size.trim())
+      if (names.some((n) => !n)) {
+        setTab("colors")
+        return notify.error(`Une taille n'a pas de nom (couleur « ${c.name} »)`)
+      }
+      if (new Set(names.map((n) => n.toLowerCase())).size !== names.length) {
+        setTab("colors")
+        return notify.error(`Deux tailles portent le même nom (couleur « ${c.name} »)`)
+      }
+    }
 
     setSaving(true)
     try {
@@ -425,14 +538,19 @@ export default function ProductEditor({ id }: { id: string }) {
           form.availability === "coming_soon" || form.availability === "preorder"
             ? form.release_date || null
             : null,
-        colors: colorSets.filter((s) => s.images.length > 0).length,
-        images,
+        brand: form.brand,
         size_guide_image_url: sizeGuide,
-        sizes: sizes.map((s, i) => ({
-          size: s.size.trim(),
-          stock: Math.max(0, Number(s.stock) || 0),
-          is_active: s.is_active,
-          display_order: i,
+        colors: colors.map((c) => ({
+          id: c.id,
+          name: c.name.trim(),
+          hex: normalizeColor(c.hex),
+          images: c.images,
+          sizes: c.sizes.map((s) => ({
+            id: s.id,
+            size: s.size.trim(),
+            stock: Math.max(0, Number(s.stock) || 0),
+            is_active: s.is_active,
+          })),
         })),
         info_blocks: infoBlocks,
         suggested_product_ids: related,
@@ -512,7 +630,10 @@ export default function ProductEditor({ id }: { id: string }) {
   const typeCfg = getProductType(form.product_type)
   const labels = getAdminLabels(form.product_type)
   const availabilityCfg = AVAILABILITY_LIST.find((a) => a.id === form.availability) ?? AVAILABILITY_LIST[0]
-  const effectiveMode = getEffectiveAvailability({ availability: form.availability, product_sizes: sizes })
+  const effectiveMode = getEffectiveAvailability({
+    availability: form.availability,
+    product_sizes: colors.flatMap((c) => c.sizes),
+  })
 
   return (
     <div className="pb-28">
@@ -560,7 +681,7 @@ export default function ProductEditor({ id }: { id: string }) {
                   : "text-[#7a756d] hover:text-[#171717]"
               }`}
             >
-              {t.id === "sizes" ? `${typeCfg.sizeNounAdmin} & stock` : t.label}
+              {t.label}
             </button>
           ))}
         </div>
@@ -584,6 +705,24 @@ export default function ProductEditor({ id }: { id: string }) {
                     {PRODUCT_TYPE_LIST.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.emoji} {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              <div className="sm:col-span-2">
+                <Field
+                  label="Marque (style de la fiche)"
+                  hint="The Wave = fond rouge et vague. Kiban Collector = fond sombre. fysu = fiche classique."
+                >
+                  <select
+                    className={INPUT}
+                    value={form.brand}
+                    onChange={(e) => setField("brand", e.target.value)}
+                  >
+                    {BRAND_LIST.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.label}
                       </option>
                     ))}
                   </select>
@@ -663,7 +802,7 @@ export default function ProductEditor({ id }: { id: string }) {
                 <p className="mt-2 text-xs text-[#7a756d]">{availabilityCfg.description}</p>
                 {effectiveMode === "sold_out" && form.availability !== "sold_out" && (
                   <p className="mt-2 rounded-xl bg-[#fbe6c8] px-3 py-2 text-xs text-[#7a4a0a]">
-                    Aucun stock actif dans l'onglet « {typeCfg.sizeNounAdmin} & stock » : ce produit
+                    Aucun stock actif dans l'onglet « Couleurs & stock » : ce produit
                     s'affichera « Épuisé » sur le site.
                   </p>
                 )}
@@ -770,36 +909,61 @@ export default function ProductEditor({ id }: { id: string }) {
         </div>
       )}
 
-      {/* ===== IMAGES & COULEURS ===== */}
-      {tab === "images" && (
+      {/* ===== COULEURS & STOCK ===== */}
+      {tab === "colors" && (
         <div className="space-y-4">
-          {colorSets.length === 0 && (
-            <Panel>
-              <p className="text-sm text-[#7a756d]">
-                Aucune couleur pour l&apos;instant. Ajoute une couleur, puis ses images.
-              </p>
-            </Panel>
-          )}
+          <p className="text-sm text-[#7a756d]">
+            Chaque couleur a ses images et son propre stock par {typeCfg.sizeNounAdmin.toLowerCase().replace(/s$/, "")}.
+            Si le produit n'a qu'une couleur, le client ne voit pas de choix de couleur.
+          </p>
 
-          {colorSets.map((set, ci) => (
-            <Panel key={ci}>
-              <div className="flex flex-wrap items-center gap-3">
-                <input
-                  type="color"
-                  value={pickerValue(set.color)}
-                  onChange={(e) => updateColor(ci, e.target.value)}
-                  className="h-10 w-12 cursor-pointer rounded-lg border border-[#e0dbd3] bg-white"
-                />
-                <input
-                  className={`${INPUT} !w-32`}
-                  value={set.color}
-                  onChange={(e) => updateColor(ci, e.target.value)}
-                  aria-label="Code couleur"
-                />
-                <span className="text-xs text-[#9a948a]">
-                  {set.images.length} image{set.images.length > 1 ? "s" : ""}
-                </span>
-                <div className="ml-auto flex flex-wrap gap-2">
+          {colors.map((c, ci) => {
+            const totalStock = c.sizes
+              .filter((s) => s.is_active)
+              .reduce((sum, s) => sum + Math.max(0, Number(s.stock) || 0), 0)
+
+            return (
+              <Panel key={c.id ?? `new-${ci}`}>
+                {/* En-tête de la couleur */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    value={pickerValue(c.hex)}
+                    onChange={(e) => updateColor(ci, { hex: e.target.value })}
+                    className="h-10 w-12 cursor-pointer rounded-lg border border-[#e0dbd3] bg-white"
+                    aria-label="Choisir la couleur"
+                  />
+                  <input
+                    className={`${INPUT} !w-28`}
+                    value={c.hex}
+                    onChange={(e) => updateColor(ci, { hex: e.target.value })}
+                    aria-label="Code couleur"
+                  />
+                  <input
+                    className={`${INPUT} min-w-[9rem] flex-1`}
+                    placeholder="Nom (ex : Noir, Écru…)"
+                    value={c.name}
+                    onChange={(e) => updateColor(ci, { name: e.target.value })}
+                    aria-label="Nom de la couleur"
+                  />
+                  <span className="text-xs text-[#9a948a]">
+                    Stock : {totalStock}
+                  </span>
+                  <AdminButton
+                    variant="danger"
+                    icon={Trash2}
+                    disabled={colors.length <= 1}
+                    onClick={() => removeColor(ci)}
+                  >
+                    Couleur
+                  </AdminButton>
+                </div>
+
+                {/* Images de la couleur */}
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-[#3d3a35]">
+                    Images ({c.images.length})
+                  </p>
                   <FileButton
                     multiple
                     disabled={uploading}
@@ -807,199 +971,183 @@ export default function ProductEditor({ id }: { id: string }) {
                   >
                     Ajouter des images
                   </FileButton>
-                  <AdminButton
-                    variant="danger"
-                    icon={Trash2}
-                    onClick={() => {
-                      if (confirm("Supprimer cette couleur et ses images du produit ?"))
-                        setColorSets((cur) => cur.filter((_, i) => i !== ci))
-                    }}
-                  >
-                    Couleur
-                  </AdminButton>
                 </div>
-              </div>
 
-              {set.images.length > 0 && (
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                  {set.images.map((url, ii) => (
-                    <div key={`${url}-${ii}`} className="rounded-2xl bg-[#faf8f5] p-2 ring-1 ring-[#eee9e1]">
-                      <div className="relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt="" className="h-40 w-full rounded-xl object-cover" />
-                        {ii === 0 && (
-                          <span className="absolute left-2 top-2 rounded-full bg-[#171717] px-2 py-0.5 text-[10px] text-white">
-                            Principale
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setEditingImage({ ci, ii })}
-                          className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
-                        >
-                          <Crop size={13} /> Cadrer
-                        </button>
-                        <label
-                          className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5] ${
-                            uploading ? "pointer-events-none opacity-50" : ""
-                          }`}
-                        >
-                          <RefreshCw size={13} /> Remplacer
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              e.target.value = ""
-                              if (file) replaceImage(ci, ii, file)
-                            }}
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(ci, ii)}
-                          aria-label="Supprimer l'image"
-                          className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                      <div className="mt-1.5 flex items-center gap-1.5">
-                        {colorSets.length > 1 && (
-                          <select
-                            aria-label="Déplacer vers une autre couleur"
-                            value={ci}
-                            onChange={(e) => moveImage(ci, ii, Number(e.target.value))}
-                            className="h-8 min-w-0 flex-1 rounded-full border border-[#e0dbd3] bg-white px-2 text-xs"
-                          >
-                            {colorSets.map((cs, k) => (
-                              <option key={k} value={k}>
-                                {k === ci ? `Couleur ${cs.color}` : `→ ${cs.color}`}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        {ii > 0 && (
+                {c.images.length > 0 && (
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                    {c.images.map((url, ii) => (
+                      <div key={`${url}-${ii}`} className="rounded-2xl bg-[#faf8f5] p-2 ring-1 ring-[#eee9e1]">
+                        <div className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt="" className="h-40 w-full rounded-xl object-cover" />
+                          {ii === 0 && (
+                            <span className="absolute left-2 top-2 rounded-full bg-[#171717] px-2 py-0.5 text-[10px] text-white">
+                              Principale
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-2 flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => makeMain(ci, ii)}
-                            className="h-8 cursor-pointer rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                            onClick={() => setEditingImage({ ci, ii })}
+                            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
                           >
-                            1ère
+                            <Crop size={13} /> Cadrer
                           </button>
-                        )}
+                          <label
+                            className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5] ${
+                              uploading ? "pointer-events-none opacity-50" : ""
+                            }`}
+                          >
+                            <RefreshCw size={13} /> Remplacer
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                e.target.value = ""
+                                if (file) replaceImage(ci, ii, file)
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(ci, ii)}
+                            aria-label="Supprimer l'image"
+                            className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          {colors.length > 1 && (
+                            <select
+                              aria-label="Déplacer vers une autre couleur"
+                              value={ci}
+                              onChange={(e) => moveImage(ci, ii, Number(e.target.value))}
+                              className="h-8 min-w-0 flex-1 rounded-full border border-[#e0dbd3] bg-white px-2 text-xs"
+                            >
+                              {colors.map((cs, k) => (
+                                <option key={k} value={k}>
+                                  {k === ci ? `Couleur ${cs.name}` : `→ ${cs.name}`}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {ii > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => makeMain(ci, ii)}
+                              className="h-8 cursor-pointer rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                            >
+                              1ère
+                            </button>
+                          )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tailles et stock de la couleur */}
+                <p className="mb-2 mt-6 text-xs font-medium text-[#3d3a35]">
+                  {typeCfg.sizeNounAdmin} et stock de cette couleur
+                </p>
+
+                <div className="space-y-2">
+                  {c.sizes.length === 0 && (
+                    <p className="text-sm text-[#7a756d]">
+                      Aucune ligne. Ajoute-en une pour pouvoir vendre cette couleur.
+                    </p>
+                  )}
+                  {c.sizes.map((s, si) => (
+                    <div
+                      key={s.id ?? `new-${si}`}
+                      className="flex flex-wrap items-center gap-2 rounded-2xl bg-[#faf8f5] p-3 ring-1 ring-[#eee9e1]"
+                    >
+                      <div className="flex flex-col">
+                        <button
+                          type="button"
+                          onClick={() => moveSize(ci, si, -1)}
+                          disabled={si === 0}
+                          aria-label="Monter"
+                          className="cursor-pointer px-1 text-xs leading-none text-[#7a756d] disabled:opacity-25"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveSize(ci, si, 1)}
+                          disabled={si === c.sizes.length - 1}
+                          aria-label="Descendre"
+                          className="cursor-pointer px-1 text-xs leading-none text-[#7a756d] disabled:opacity-25"
+                        >
+                          ▼
+                        </button>
+                      </div>
+                      <input
+                        className={`${INPUT} !w-24`}
+                        placeholder={typeCfg.presets[0] ?? "Taille"}
+                        value={s.size}
+                        onChange={(e) => updateSize(ci, si, { size: e.target.value })}
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#7a756d]">Stock</span>
+                        <input
+                          type="number"
+                          min={0}
+                          inputMode="numeric"
+                          className={`${INPUT} !w-24`}
+                          value={s.stock}
+                          onChange={(e) => updateSize(ci, si, { stock: Number(e.target.value) })}
+                        />
+                      </div>
+                      <label className="ml-1 inline-flex cursor-pointer items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={s.is_active}
+                          onChange={(e) => updateSize(ci, si, { is_active: e.target.checked })}
+                          className="h-4 w-4"
+                        />
+                        Active
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeSize(ci, si)}
+                        aria-label="Supprimer la taille"
+                        className="ml-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   ))}
                 </div>
-              )}
-            </Panel>
-          ))}
 
-          <AdminButton
-            icon={Plus}
-            onClick={() => setColorSets((cur) => [...cur, { color: "#000000", images: [] }])}
-          >
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <AdminButton icon={Plus} onClick={() => addSize(ci)}>
+                    Ajouter une taille
+                  </AdminButton>
+                  {c.sizes.length === 0 && (
+                    <AdminButton onClick={() => applyPreset(ci, typeCfg.presets)}>
+                      Modèle {typeCfg.label.toLowerCase()} : {typeCfg.presets.slice(0, 3).join(", ")}
+                      {typeCfg.presets.length > 3 ? "…" : ""}
+                    </AdminButton>
+                  )}
+                  {colors.length > 1 && c.sizes.length > 0 && (
+                    <AdminButton icon={Copy} onClick={() => copySizesToOthers(ci)}>
+                      Copier ces tailles vers les autres couleurs
+                    </AdminButton>
+                  )}
+                </div>
+              </Panel>
+            )
+          })}
+
+          <AdminButton icon={Plus} onClick={addColor}>
             Ajouter une couleur
           </AdminButton>
         </div>
-      )}
-
-      {/* ===== TAILLES & STOCK ===== */}
-      {tab === "sizes" && (
-        <Panel
-          title={`${typeCfg.sizeNounAdmin} et stock`}
-          description="L'ordre ci-dessous est l'ordre d'affichage sur le site. Une taille inactive est cachée."
-        >
-          <div className="space-y-2">
-            {sizes.length === 0 && (
-              <p className="text-sm text-[#7a756d]">Aucune ligne. Ajoute-en une pour pouvoir vendre ce produit.</p>
-            )}
-            {sizes.map((s, i) => (
-              <div
-                key={i}
-                className="flex flex-wrap items-center gap-2 rounded-2xl bg-[#faf8f5] p-3 ring-1 ring-[#eee9e1]"
-              >
-                <div className="flex flex-col">
-                  <button
-                    type="button"
-                    onClick={() => moveSize(i, -1)}
-                    disabled={i === 0}
-                    aria-label="Monter"
-                    className="cursor-pointer px-1 text-xs leading-none text-[#7a756d] disabled:opacity-25"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveSize(i, 1)}
-                    disabled={i === sizes.length - 1}
-                    aria-label="Descendre"
-                    className="cursor-pointer px-1 text-xs leading-none text-[#7a756d] disabled:opacity-25"
-                  >
-                    ▼
-                  </button>
-                </div>
-                <input
-                  className={`${INPUT} !w-24`}
-                  placeholder={typeCfg.presets[0] ?? "Taille"}
-                  value={s.size}
-                  onChange={(e) => updateSize(i, { size: e.target.value })}
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#7a756d]">Stock</span>
-                  <input
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    className={`${INPUT} !w-24`}
-                    value={s.stock}
-                    onChange={(e) => updateSize(i, { stock: Number(e.target.value) })}
-                  />
-                </div>
-                <label className="ml-1 inline-flex cursor-pointer items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={s.is_active}
-                    onChange={(e) => updateSize(i, { is_active: e.target.checked })}
-                    className="h-4 w-4"
-                  />
-                  Active
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setSizes((cur) => cur.filter((_, k) => k !== i))}
-                  aria-label="Supprimer la taille"
-                  className="ml-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <AdminButton
-              icon={Plus}
-              onClick={() => setSizes((cur) => [...cur, { size: "", stock: 0, is_active: true }])}
-            >
-              Ajouter une taille
-            </AdminButton>
-            {sizes.length === 0 && (
-              <AdminButton
-                onClick={() =>
-                  setSizes(typeCfg.presets.map((size) => ({ size, stock: 0, is_active: true })))
-                }
-              >
-                Modèle {typeCfg.label.toLowerCase()} : {typeCfg.presets.slice(0, 3).join(", ")}
-                {typeCfg.presets.length > 3 ? "…" : ""}
-              </AdminButton>
-            )}
-          </div>
-        </Panel>
       )}
 
       {/* ===== INFOS PRODUIT ===== */}
@@ -1176,9 +1324,9 @@ export default function ProductEditor({ id }: { id: string }) {
         </Panel>
       )}
 
-      {editingImage && colorSets[editingImage.ci]?.images[editingImage.ii] && (
+      {editingImage && colors[editingImage.ci]?.images[editingImage.ii] && (
         <ImageEditorModal
-          url={colorSets[editingImage.ci].images[editingImage.ii]}
+          url={colors[editingImage.ci].images[editingImage.ii]}
           onCancel={() => setEditingImage(null)}
           onSave={async (file) => {
             const { ci, ii } = editingImage
