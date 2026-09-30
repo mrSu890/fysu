@@ -73,17 +73,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
   
-    // 🔥 Décrémentation du stock par taille
+    // 🔥 Décrémentation du stock par couleur et par taille (une ligne = une couleur + une taille)
+    const colorNameBySize = new Map<string, string>();
+
     for (const item of cartFromMetadata) {
       const { data: sizeRow, error: fetchError } = await supabase
         .from("product_sizes")
-        .select("stock")
+        .select("stock, color_id")
         .eq("id", item.sizeId)
         .single();
   
       if (fetchError || !sizeRow) {
         console.error("Size not found:", item.sizeId);
         continue;
+      }
+
+      // nom de la couleur, pour que la commande dise quoi expédier
+      if (sizeRow.color_id) {
+        const { data: colorRow } = await supabase
+          .from("product_colors")
+          .select("name")
+          .eq("id", sizeRow.color_id)
+          .maybeSingle();
+
+        if (colorRow?.name) colorNameBySize.set(item.sizeId, colorRow.name);
       }
   
       const newStock = sizeRow.stock - item.quantity;
@@ -101,12 +114,17 @@ export async function POST(req: Request) {
   
     const shipping = session.customer_details;
   
-    const items = cartFromMetadata.map((i) => ({
-      product_id: Number(i.productId),
-      size_id: i.sizeId,
-      size_label: i.sizeLabel,
-      quantity: i.quantity,
-    }));
+    const items = cartFromMetadata.map((i) => {
+      const colorName = colorNameBySize.get(i.sizeId);
+      return {
+        product_id: Number(i.productId),
+        size_id: i.sizeId,
+        // la couleur est ajoutée à la taille pour qu'elle s'affiche dans l'admin des commandes
+        size_label: colorName ? `${i.sizeLabel} · ${colorName}` : i.sizeLabel,
+        color_name: colorName ?? null,
+        quantity: i.quantity,
+      };
+    });
   
     const { error } = await supabase.from("orders").insert({
       id: crypto.randomUUID(),
