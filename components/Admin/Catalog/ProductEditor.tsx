@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Copy, ExternalLink, ImagePlus, Plus, Trash2, Upload } from "lucide-react"
+import { ArrowLeft, Copy, Crop, ExternalLink, ImagePlus, Plus, RefreshCw, Trash2, Upload } from "lucide-react"
 import { AdminButton, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
+import { resizeImage } from "@/lib/imageTools"
+import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 
 /* ====================================================================
    FICHE PRODUIT EN PLEINE PAGE
@@ -134,6 +136,8 @@ export default function ProductEditor({ id }: { id: string }) {
   const [sizeGuide, setSizeGuide] = useState<string | null>(null)
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
+  // image en cours de recadrage
+  const [editingImage, setEditingImage] = useState<{ ci: number; ii: number } | null>(null)
 
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
@@ -245,7 +249,8 @@ export default function ProductEditor({ id }: { id: string }) {
     setUploading(true)
     try {
       // un par un : le nom du fichier contient l'heure, pas de risque de collision
-      for (const file of files) {
+      for (const original of files) {
+        const file = await resizeImage(original)
         const fd = new FormData()
         fd.append("file", file)
         fd.append("productId", String(productId))
@@ -262,11 +267,33 @@ export default function ProductEditor({ id }: { id: string }) {
     }
   }
 
+  // Remplace une image par une autre, au même endroit (même couleur, même position)
+  async function replaceImage(ci: number, ii: number, file: File) {
+    const color = normalizeColor(colorSets[ci]?.color ?? "#000000")
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", await resizeImage(file))
+      fd.append("productId", String(productId))
+      fd.append("color", color)
+      const data = await api.upload<{ url: string }>("/api/admin/products/upload-product-image", fd)
+      setColorSets((cur) =>
+        cur.map((set, i) =>
+          i === ci ? { ...set, images: set.images.map((u, j) => (j === ii ? data.url : u)) } : set
+        )
+      )
+    } catch (e) {
+      notify.error(errorMessage(e, "Erreur d'envoi de l'image"))
+    } finally {
+      setUploading(false)
+    }
+  }
+
   async function uploadSizeGuide(files: File[]) {
     setUploading(true)
     try {
       const fd = new FormData()
-      fd.append("file", files[0])
+      fd.append("file", await resizeImage(files[0]))
       fd.append("productId", String(productId))
       const data = await api.upload<{ url: string }>("/api/admin/products/upload-size-guide", fd)
       setSizeGuide(data.url)
@@ -281,7 +308,7 @@ export default function ProductEditor({ id }: { id: string }) {
     setUploading(true)
     try {
       const fd = new FormData()
-      fd.append("file", files[0])
+      fd.append("file", await resizeImage(files[0]))
       fd.append("productId", String(productId))
       const data = await api.upload<{ url: string }>("/api/admin/products/upload-info-block", fd)
       setInfoBlocks((cur) => cur.map((b, i) => (i === index ? { ...b, image_url: data.url } : b)))
@@ -713,6 +740,40 @@ export default function ProductEditor({ id }: { id: string }) {
                         )}
                       </div>
                       <div className="mt-2 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingImage({ ci, ii })}
+                          className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                        >
+                          <Crop size={13} /> Cadrer
+                        </button>
+                        <label
+                          className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3 text-xs ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5] ${
+                            uploading ? "pointer-events-none opacity-50" : ""
+                          }`}
+                        >
+                          <RefreshCw size={13} /> Remplacer
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              e.target.value = ""
+                              if (file) replaceImage(ci, ii, file)
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(ci, ii)}
+                          aria-label="Supprimer l'image"
+                          className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5">
                         {colorSets.length > 1 && (
                           <select
                             aria-label="Déplacer vers une autre couleur"
@@ -736,14 +797,6 @@ export default function ProductEditor({ id }: { id: string }) {
                             1ère
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => removeImage(ci, ii)}
-                          aria-label="Supprimer l'image"
-                          className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
-                        >
-                          <Trash2 size={14} />
-                        </button>
                       </div>
                     </div>
                   ))}
@@ -1026,6 +1079,18 @@ export default function ProductEditor({ id }: { id: string }) {
             </div>
           </div>
         </Panel>
+      )}
+
+      {editingImage && colorSets[editingImage.ci]?.images[editingImage.ii] && (
+        <ImageEditorModal
+          url={colorSets[editingImage.ci].images[editingImage.ii]}
+          onCancel={() => setEditingImage(null)}
+          onSave={async (file) => {
+            const { ci, ii } = editingImage
+            await replaceImage(ci, ii, file)
+            setEditingImage(null)
+          }}
+        />
       )}
 
       {/* Barre d'enregistrement */}
