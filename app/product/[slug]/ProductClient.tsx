@@ -1,8 +1,9 @@
 "use client"
 
 import { useParams, notFound, useSearchParams, useRouter } from "next/navigation"
-import { useEffect, useState, useMemo, useRef } from "react"
-import type { ProductType, ProductSize } from "@/types/product"
+import { useEffect, useLayoutEffect, useState, useMemo, useRef } from "react"
+import Link from "next/link"
+import type { ProductType, ProductSize, ProductColor } from "@/types/product"
 import Product from "@/components/Product"
 import Image from "next/image"
 import { Collapse, Modal } from "antd"
@@ -12,6 +13,8 @@ import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
 import ProductInfoBlocks from "@/components/Product/ProductInfoBlocks"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { getTypeCopy } from "@/lib/productTypes"
+import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
+import { getColorCopy } from "@/lib/colorCopy"
 import {
   formatReleaseDate,
   getAvailabilityCopy,
@@ -34,7 +37,7 @@ export default function ProductClient() {
   const [loading, setLoading] = useState(true)
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
 
-  const selectedColor: string | null = searchParams?.get("color")
+  const colorParam: string | null = searchParams?.get("color") ?? null
 
   /* ================= FETCH ================= */
 
@@ -56,59 +59,97 @@ export default function ProductClient() {
   }, [slug])
 
 
+  /* ================= MARQUE (style de la fiche) ================= */
+
+  const brandId = getBrandId(product?.brand)
+
+  // The Wave et Kiban Collector ont leur propre ambiance (comme leurs pages)
+  useLayoutEffect(() => {
+    if (brandId === "fysu") return
+    const html = document.documentElement
+    const extra = brandId === "thewave" ? ["dark", "brand-page", "wave-page"] : ["dark", "brand-page"]
+    html.classList.add(...extra)
+
+    return () => {
+      html.classList.remove("brand-page", "wave-page")
+      let saved: string | null = null
+      try {
+        saved = localStorage.getItem("theme")
+      } catch {}
+      if (saved !== "dark") html.classList.remove("dark")
+    }
+  }, [brandId])
+
   /* ================= DERIVED DATA ================= */
+
+  const colorList: ProductColor[] = useMemo(
+    () => [...(product?.product_colors ?? [])].sort((a, b) => a.display_order - b.display_order),
+    [product]
+  )
+
+  // stock total de chaque couleur (tailles actives)
+  const stockByColor = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const s of product?.product_sizes ?? []) {
+      if (!s.is_active || !s.color_id) continue
+      map[s.color_id] = (map[s.color_id] ?? 0) + Math.max(0, s.stock)
+    }
+    return map
+  }, [product])
+
+  // couleur affichée : celle de l'adresse (?color=), sinon la première en stock
+  const selectedColor: ProductColor | null = useMemo(() => {
+    if (colorList.length === 0) return null
+    const q = colorParam?.toLowerCase()
+    return (
+      colorList.find((c) => c.hex.toLowerCase() === q) ??
+      colorList.find((c) => (stockByColor[c.id] ?? 0) > 0) ??
+      colorList[0]
+    )
+  }, [colorList, colorParam, stockByColor])
 
   const filteredImages = useMemo(() => {
     if (!product) return []
-
     if (!selectedColor) return product.product_images
 
-    return product.product_images.filter(
-      (img) =>
-        img.color &&
-        img.color.toLowerCase() === selectedColor.toLowerCase()
+    const matching = product.product_images.filter(
+      (img) => img.color && img.color.toLowerCase() === selectedColor.hex.toLowerCase()
+    )
+    return matching.length > 0 ? matching : product.product_images
+  }, [product, selectedColor])
+
+  // tailles de la couleur choisie (une ligne de stock = une couleur + une taille)
+  const sizesForColor: ProductSize[] = useMemo(() => {
+    if (!product?.product_sizes) return []
+    return product.product_sizes.filter(
+      (s) => s.is_active && (!selectedColor || !s.color_id || s.color_id === selectedColor.id)
     )
   }, [product, selectedColor])
 
-  const availableColors: string[] = useMemo(() => {
-    if (!product) return []
+  const availableSizes: ProductSize[] = useMemo(
+    () => sizesForColor.filter((s) => s.stock > 0),
+    [sizesForColor]
+  )
 
-    return Array.from(
-      new Set(
-        product.product_images
-          .map((img) => img.color)
-          .filter(Boolean)
-      )
-    )
-  }, [product])
-
-  const availableSizes: ProductSize[] = useMemo(() => {
-    if (!product?.product_sizes) return []
-  
-    return product.product_sizes.filter(
-      (s) => s.is_active && s.stock > 0
-    )
-  }, [product])
-
+  // Quand on change de couleur : la taille choisie n'existe peut-être plus.
   // Une seule taille disponible (taille unique, un seul volume…) : on la sélectionne d'office
   useEffect(() => {
-    if (availableSizes.length === 1 && !selectedSizeId) {
+    if (selectedSizeId && availableSizes.some((s) => s.id === selectedSizeId)) return
+
+    if (availableSizes.length === 1) {
       setSelectedSizeId(availableSizes[0].id)
       setSelectedSizeLabel(availableSizes[0].size)
+    } else if (selectedSizeId) {
+      setSelectedSizeId(null)
+      setSelectedSizeLabel(null)
     }
   }, [availableSizes, selectedSizeId])
 
   /* ================= HANDLERS ================= */
 
-  const handleColorClick = (color: string) => {
+  const handleColorClick = (color: ProductColor) => {
     const params = new URLSearchParams(window.location.search)
-
-    if (selectedColor === color) {
-      params.delete("color")
-    } else {
-      params.set("color", color)
-    }
-
+    params.set("color", color.hex)
     router.replace(`?${params.toString()}`, { scroll: false })
   }
 
@@ -131,6 +172,12 @@ export default function ProductClient() {
   // Mode de disponibilité réellement appliqué (achat, précommande, me prévenir, devis, à venir, épuisé)
   const mode = getEffectiveAvailability(product)
   const canBuy = isBuyable(mode)
+
+  const colorCopy = getColorCopy(locale)
+  const brand = BRANDS[brandId]
+  const hasColors = colorList.length > 1
+  // achat possible mais plus rien en stock dans cette couleur
+  const colorSoldOut = canBuy && availableSizes.length === 0
 
   const rawItems: { key: string; label: string; text?: string | null }[] = [
     { key: "1", label: copy.details ?? t("details"), text: product.details },
@@ -156,6 +203,41 @@ export default function ProductClient() {
 
   return (
     <>
+    {brandId !== "fysu" && (
+      <style>{`
+        html.brand-page button[aria-pressed] { display: none; }
+        ${
+          brandId === "thewave"
+            ? `
+        html.wave-page { background: ${WAVE.RED}; }
+        html.wave-page body { background: transparent !important; color: #fff; }
+        html.wave-page .bg-background { background-color: transparent !important; }
+        html.wave-page .flower-light,
+        html.wave-page .flower-dark { display: none !important; }
+        html.wave-page .ant-collapse,
+        html.wave-page .ant-collapse-header,
+        html.wave-page .ant-collapse-header-text,
+        html.wave-page .ant-collapse-content,
+        html.wave-page .ant-collapse-content-box,
+        html.wave-page .ant-collapse-expand-icon { color: #fff !important; }
+        `
+            : ""
+        }
+      `}</style>
+    )}
+
+    {brandId === "thewave" && (
+      <div className="fixed inset-0 -z-10" style={{ background: WAVE.RED }} aria-hidden="true">
+        <svg
+          className="h-full w-full"
+          viewBox="0 0 1821 2576"
+          preserveAspectRatio="xMidYMax slice"
+        >
+          <path d={WAVE.PATH} fill={WAVE.DEEP} />
+        </svg>
+      </div>
+    )}
+
     <div className="max-w-6xl mx-auto py-12 relative top-0 sm:top-24">
       <div className="grid md:grid-cols-2 gap-12 items-start">
   
@@ -232,6 +314,16 @@ export default function ProductClient() {
         {/* ================= INFO ================= */}
         <div className="space-y-6 sticky top-24 self-start w-11/12 mx-auto">
   
+          {brand.path && (
+            <Link
+              href={brand.path}
+              style={{ color: "inherit" }}
+              className="block text-xs uppercase tracking-[0.18em] opacity-70 hover:opacity-100 transition"
+            >
+              ← {colorCopy.backTo} {brand.label}
+            </Link>
+          )}
+
           <h1 className="text-xl font-medium">
             {product.name}
           </h1>
@@ -248,25 +340,45 @@ export default function ProductClient() {
           </p>
   
           {/* COLORS */}
-          {availableColors.length > 0 && (
-            <div className="flex gap-3">
-              {availableColors.map((color) => (
-                <button
-                  key={color}
-                  onClick={() => handleColorClick(color)}
-                  className={`w-7 h-7 rounded-full ${
-                    selectedColor === color
-                      ? "ring-2 ring-black"
-                      : ""
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
+          {hasColors && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">
+                {colorCopy.color} : <span className="font-normal">{selectedColor?.name}</span>
+              </p>
+
+              <div className="flex flex-wrap gap-3">
+                {colorList.map((c) => {
+                  const isSelected = selectedColor?.id === c.id
+                  const isOut = (stockByColor[c.id] ?? 0) <= 0
+
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      title={c.name}
+                      aria-label={c.name}
+                      onClick={() => handleColorClick(c)}
+                      className={`relative h-8 w-8 cursor-pointer rounded-full border border-black/20 transition ${
+                        isSelected
+                          ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                          : "hover:scale-105"
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                    >
+                      {isOut && (
+                        <span className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full">
+                          <span className="block h-px w-[150%] rotate-45 bg-foreground/70" />
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
   
           {/* SIZES */}
-          {canBuy && availableSizes.length > 0 && (
+          {canBuy && sizesForColor.length > 0 && (
             <div className="space-y-3">
 
               <div className="flex justify-between items-center">
@@ -284,12 +396,15 @@ export default function ProductClient() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                {availableSizes.map((s) => {
+                {sizesForColor.map((s) => {
                   const isSelected = selectedSizeId === s.id
+                  const isOut = s.stock <= 0
 
                   return (
                     <button
                       key={s.id}
+                      type="button"
+                      disabled={isOut}
                       onClick={() => {
                         setSelectedSizeId(s.id)
                         setSelectedSizeLabel(s.size)
@@ -301,9 +416,11 @@ export default function ProductClient() {
                         border rounded-md
                         transition-all duration-200
                         ${
-                          isSelected
-                            ? "border-black bg-black text-white"
-                            : "border-neutral-300 text-foreground hover:border-black"
+                          isOut
+                            ? "cursor-not-allowed border-neutral-300 text-foreground/30 line-through"
+                            : isSelected
+                              ? "border-black bg-black text-white"
+                              : "border-neutral-300 text-foreground hover:border-black"
                         }
                       `}
                     >
@@ -317,12 +434,28 @@ export default function ProductClient() {
           )}
   
                     <div className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
-            {canBuy ? (
+            {canBuy && colorSoldOut ? (
+              <div
+                aria-disabled="true"
+                className="w-full cursor-not-allowed border border-neutral-300 py-3 text-center text-sm font-medium tracking-wide text-foreground/50"
+              >
+                {colorCopy.colorSoldOut}
+              </div>
+            ) : canBuy ? (
               <AddToCartButton
                 product={product}
                 selectedSizeId={selectedSizeId}
                 selectedSizeLabel={selectedSizeLabel}
                 mode={mode === "available" ? "available" : "preorder"}
+                color={
+                  hasColors && selectedColor
+                    ? {
+                        name: selectedColor.name,
+                        hex: selectedColor.hex,
+                        imageUrl: filteredImages[0]?.url ?? null,
+                      }
+                    : null
+                }
               />
             ) : (
               <AvailabilityBlock product={product} mode={mode} />
