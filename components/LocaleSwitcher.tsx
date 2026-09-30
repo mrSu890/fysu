@@ -1,48 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { ChangeEvent, useTransition } from "react";
-import { locales, type AppLocale } from "@/i18n/routing";
+import { countryName, flagEmoji, getStoredCountry } from "@/lib/regions";
 
-const localeNames: Record<AppLocale, string> = {
-  en: "EN",
-  nl: "NL",
-  fr: "FR",
-  ja: "JA",
-};
-
+// Bouton du menu : affiche la zone choisie et rouvre le pop-up de choix
 export default function LocaleSwitcher() {
-  const locale = useLocale() as AppLocale;
-  const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("LocaleSwitcher");
-  const [isPending, startTransition] = useTransition();
+  const [country, setCountry] = useState<string | null>(null);
 
-  const onChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextLocale = event.target.value as AppLocale;
-    document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
-
-    startTransition(() => {
-      router.refresh();
-    });
-  };
+  useEffect(() => {
+    const read = () => setCountry(getStoredCountry());
+    read();
+    window.addEventListener("region-done", read);
+    return () => window.removeEventListener("region-done", read);
+  }, []);
 
   return (
-    <label className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em]">
-      <span className="sr-only">{t("label")}</span>
-      <select
-        value={locale}
-        onChange={onChange}
-        disabled={isPending}
-        aria-label={t("label")}
-        className="bg-transparent outline-none cursor-pointer disabled:opacity-50"
-      >
-        {locales.map((item) => (
-          <option key={item} value={item}>
-            {localeNames[item]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event("open-region-picker"))}
+      aria-label={t("label")}
+      className="inline-flex cursor-pointer items-center gap-2 text-[11px] uppercase tracking-[0.18em]"
+    >
+      <span aria-hidden="true">{country ? flagEmoji(country) : "🌍"}</span>
+      <span>{country ? countryName(country, locale) : t("label")}</span>
+      <span className="opacity-60">· {locale.toUpperCase()}</span>
+    </button>
   );
 }
