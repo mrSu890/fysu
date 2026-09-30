@@ -39,6 +39,8 @@ type PlayerContextType = {
 
 const PlayerContext = createContext<PlayerContextType | null>(null)
 
+const STORAGE_KEY = "fysu-music-player"
+
 function shuffled<T>(list: T[]) {
   const copy = [...list]
   for (let i = copy.length - 1; i > 0; i--) {
@@ -60,12 +62,60 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const [time, setTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [collapsed, setCollapsed] = useState(false)
+  const pendingSeekRef = useRef(0)
+  const restoredRef = useRef(false)
+  const lastSavedSecondRef = useRef(-1)
+
+  // Au rechargement de la page : on retrouve l'album en cours (en pause) pour garder la pastille
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const saved = JSON.parse(raw)
+        const list: MusicTrack[] = Array.isArray(saved.queue) ? saved.queue : []
+        const i = Math.min(Math.max(Number(saved.index) || 0, 0), Math.max(list.length - 1, 0))
+        if (saved.album && list.length > 0 && list[i]) {
+          queueRef.current = list
+          indexRef.current = i
+          setQueue(list)
+          setAlbum(saved.album)
+          setIndex(i)
+          setCollapsed(Boolean(saved.collapsed))
+          setTime(Number(saved.time) || 0)
+          setDuration(Number(list[i].duration_seconds) || 0)
+          pendingSeekRef.current = Number(saved.time) || 0
+          const audio = audioRef.current
+          if (audio) audio.src = list[i].audio_url
+        }
+      }
+    } catch {
+      /* rien à restaurer */
+    }
+    restoredRef.current = true
+  }, [])
+
+  // Sauvegarde (une fois par seconde au maximum)
+  useEffect(() => {
+    if (!restoredRef.current || !album || queue.length === 0) return
+    const second = Math.floor(time)
+    if (second === lastSavedSecondRef.current && !collapsed) return
+    lastSavedSecondRef.current = second
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ album, queue, index, time, collapsed })
+      )
+    } catch {
+      /* stockage indisponible */
+    }
+  }, [album, queue, index, time, collapsed])
 
   // Lance le titre n° i. Appelé directement depuis un clic (obligatoire sur iPhone).
   const load = useCallback((i: number) => {
     const audio = audioRef.current
     const track = queueRef.current[i]
     if (!audio || !track) return
+    pendingSeekRef.current = 0
     indexRef.current = i
     setIndex(i)
     setTime(0)
@@ -185,6 +235,10 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration
           if (Number.isFinite(d) && d > 0) setDuration(d)
+          if (pendingSeekRef.current > 0) {
+            e.currentTarget.currentTime = pendingSeekRef.current
+            pendingSeekRef.current = 0
+          }
         }}
         onEnded={() => {
           if (indexRef.current < queueRef.current.length - 1) load(indexRef.current + 1)
