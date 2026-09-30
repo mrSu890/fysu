@@ -15,6 +15,7 @@ export async function GET(
       *,
       product_images (*),
       product_sizes (*),
+      product_colors!product_colors_product_id_fkey (*),
       product_info_blocks (*),
       product_suggestions!product_suggestions_product_id_fkey (
         suggested_product_id,
@@ -45,6 +46,10 @@ export async function GET(
 
     product_sizes:
       product.product_sizes
+        ?.sort((a: any, b: any) => a.display_order - b.display_order) ?? [],
+
+    product_colors:
+      product.product_colors
         ?.sort((a: any, b: any) => a.display_order - b.display_order) ?? [],
 
     product_info_blocks:
