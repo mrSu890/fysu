@@ -46,6 +46,10 @@ export async function GET(
         url,
         color,
         productId
+      ),
+      product_sizes (
+        stock,
+        is_active
       )
     `)
     .in("id", page.products)
