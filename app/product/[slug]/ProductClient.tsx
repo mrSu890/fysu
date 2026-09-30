@@ -69,8 +69,11 @@ export default function ProductClient() {
     const html = document.documentElement
     const extra = brandId === "thewave" ? ["dark", "brand-page", "wave-page"] : ["dark", "brand-page"]
     html.classList.add(...extra)
+    // la barre de navigation et le pied de page s'adaptent à la marque
+    html.setAttribute("data-brand", brandId)
 
     return () => {
+      html.removeAttribute("data-brand")
       html.classList.remove("brand-page", "wave-page")
       let saved: string | null = null
       try {
@@ -233,7 +236,7 @@ export default function ProductClient() {
           viewBox="0 0 1821 2576"
           preserveAspectRatio="xMidYMax slice"
         >
-          <path d={WAVE.PATH} fill={WAVE.DEEP} />
+          <path d={WAVE.PATH} fill={WAVE.PINK} />
         </svg>
       </div>
     )}
