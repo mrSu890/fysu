@@ -23,8 +23,60 @@ function getPreferredLocale(req: NextRequest) {
   return defaultLocale
 }
 
+// Protège toutes les routes /api/admin/* : il faut être connecté ET avoir le rôle admin
+async function guardAdminApi(req: NextRequest) {
+  const res = NextResponse.next()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options) {
+          res.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options) {
+          res.cookies.set({ name, value: "", ...options })
+        },
+      },
+    }
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile || profile.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  return res
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+
+  // API admin : réservée aux admins
+  // (exception : la lecture de la politique de confidentialité, affichée sur le site public)
+  if (pathname.startsWith("/api/admin")) {
+    if (req.method === "GET" && pathname === "/api/admin/privacy-policy") {
+      return NextResponse.next()
+    }
+    return guardAdminApi(req)
+  }
 
   // Laisser passer fichiers statiques et internals
   if (
@@ -102,5 +154,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!api|_next|.*\\..*).*)", "/api/admin/:path*"],
 }
