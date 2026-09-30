@@ -21,14 +21,26 @@ export default function CookieBanner() {
 
   useEffect(() => {
     const existing = getConsent();
-    if (!existing) {
-      setVisible(true);
-      setMode("banner");
-    } else {
+    if (existing) {
       // si tu veux permettre réouverture via un bouton ailleurs,
       // tu peux laisser visible=false.
       setVisible(false);
+      return;
     }
+
+    // On attend la fin du chargement ET le choix de la zone avant d'afficher les cookies
+    const show = () => {
+      setVisible(true);
+      setMode("banner");
+    };
+
+    if ((window as any).__siteLoaderDone) {
+      show();
+      return;
+    }
+
+    window.addEventListener("site-loader-done", show, { once: true });
+    return () => window.removeEventListener("site-loader-done", show);
   }, []);
 
   const openPrefs = () => {
