@@ -9,6 +9,7 @@ import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
 import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
+import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
 
 /* ====================================================================
    FICHE PRODUIT EN PLEINE PAGE
@@ -38,6 +39,8 @@ type FormState = {
   category_id: number | null
   gender: string
   product_type: string
+  availability: string
+  release_date: string
 }
 
 const TABS = [
@@ -132,6 +135,8 @@ export default function ProductEditor({ id }: { id: string }) {
     category_id: null,
     gender: "",
     product_type: "clothing",
+    availability: "available",
+    release_date: "",
   })
   const [colorSets, setColorSets] = useState<ColorSet[]>([])
   const [sizes, setSizes] = useState<SizeState[]>([])
@@ -169,6 +174,8 @@ export default function ProductEditor({ id }: { id: string }) {
         category_id: p.category_id ?? null,
         gender: p.gender ?? "",
         product_type: p.product_type ?? "clothing",
+        availability: isAvailabilityId(p.availability) ? p.availability : "available",
+        release_date: p.release_date ? String(p.release_date).slice(0, 10) : "",
       }
 
       // Regroupe les images par couleur
@@ -413,6 +420,11 @@ export default function ProductEditor({ id }: { id: string }) {
         category_id: form.category_id,
         gender: form.gender,
         product_type: form.product_type,
+        availability: form.availability,
+        release_date:
+          form.availability === "coming_soon" || form.availability === "preorder"
+            ? form.release_date || null
+            : null,
         colors: colorSets.filter((s) => s.images.length > 0).length,
         images,
         size_guide_image_url: sizeGuide,
@@ -499,6 +511,8 @@ export default function ProductEditor({ id }: { id: string }) {
 
   const typeCfg = getProductType(form.product_type)
   const labels = getAdminLabels(form.product_type)
+  const availabilityCfg = AVAILABILITY_LIST.find((a) => a.id === form.availability) ?? AVAILABILITY_LIST[0]
+  const effectiveMode = getEffectiveAvailability({ availability: form.availability, product_sizes: sizes })
 
   return (
     <div className="pb-28">
@@ -624,6 +638,52 @@ export default function ProductEditor({ id }: { id: string }) {
                   </select>
                 </Field>
               </div>
+            </div>
+          </Panel>
+
+          <Panel
+            title="Disponibilité"
+            description="Comment le client peut obtenir ce produit."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Field label="Mode">
+                  <select
+                    className={INPUT}
+                    value={form.availability}
+                    onChange={(e) => setField("availability", e.target.value)}
+                  >
+                    {AVAILABILITY_LIST.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.emoji} {a.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <p className="mt-2 text-xs text-[#7a756d]">{availabilityCfg.description}</p>
+                {effectiveMode === "sold_out" && form.availability !== "sold_out" && (
+                  <p className="mt-2 rounded-xl bg-[#fbe6c8] px-3 py-2 text-xs text-[#7a4a0a]">
+                    Aucun stock actif dans l'onglet « {typeCfg.sizeNounAdmin} & stock » : ce produit
+                    s'affichera « Épuisé » sur le site.
+                  </p>
+                )}
+              </div>
+              {(form.availability === "coming_soon" || form.availability === "preorder") && (
+                <Field
+                  label={
+                    form.availability === "coming_soon"
+                      ? "Date de sortie (facultatif)"
+                      : "Expédition prévue à partir du (facultatif)"
+                  }
+                >
+                  <input
+                    type="date"
+                    className={INPUT}
+                    value={form.release_date}
+                    onChange={(e) => setField("release_date", e.target.value)}
+                  />
+                </Field>
+              )}
             </div>
           </Panel>
 
