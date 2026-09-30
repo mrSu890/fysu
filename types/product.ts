@@ -34,6 +34,7 @@ export type ProductType = {
   createdAt: string;          
   slug: string;
   gender: string;
+  product_type?: string | null;
   category: string;
   colors: number;
   details?: string | null;
