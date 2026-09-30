@@ -234,7 +234,7 @@ export default function NotificationToasts() {
         timers.push(window.setTimeout(resolve, ms))
       })
 
-    // On attend la fin de l'écran de chargement
+    // On attend la fin de l'écran de chargement (et le choix de la zone)
     const waitLoader = () =>
       new Promise<void>((resolve) => {
         if ((window as any).__siteLoaderDone) return resolve()
@@ -243,7 +243,7 @@ export default function NotificationToasts() {
           resolve()
         }
         window.addEventListener("site-loader-done", done)
-        timers.push(window.setTimeout(done, 6000)) // sécurité
+        timers.push(window.setTimeout(done, 300000)) // sécurité (le choix de zone peut prendre du temps)
       })
 
     const waitUser = async () => {
