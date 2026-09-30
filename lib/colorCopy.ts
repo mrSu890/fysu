@@ -2,6 +2,8 @@
    TEXTES DU SÉLECTEUR DE COULEUR (en / fr / nl / ja)
    ==================================================================== */
 
+import { getExtraCopy } from "./extraCopy"
+
 type L4 = { en: string; fr: string; nl: string; ja: string }
 
 const COPY = {
@@ -18,10 +20,12 @@ const COPY = {
 export type ColorCopy = Record<keyof typeof COPY, string>
 
 export function getColorCopy(locale: string): ColorCopy {
-  const l: keyof L4 = locale === "fr" || locale === "nl" || locale === "ja" ? locale : "en"
+  const core = locale === "fr" || locale === "nl" || locale === "ja" || locale === "en"
+  const l: keyof L4 = core ? (locale as keyof L4) : "en"
+  const extra = core ? undefined : getExtraCopy(locale, "Colors")
   const out = {} as ColorCopy
   for (const key of Object.keys(COPY) as (keyof typeof COPY)[]) {
-    out[key] = COPY[key][l]
+    out[key] = extra?.[key] ?? COPY[key][l]
   }
   return out
 }

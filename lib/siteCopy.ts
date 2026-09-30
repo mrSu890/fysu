@@ -1,4 +1,4 @@
-import { useLocale } from "next-intl"
+import { useLocale, useMessages } from "next-intl"
 
 /* ====================================================================
    TEXTES ÉCRITS DANS LE CODE (pas dans l'admin), dans les 4 langues.
@@ -84,5 +84,7 @@ const COPY: Record<string, SiteCopy> = {
 // À utiliser dans les composants clients : const copy = useSiteCopy()
 export function useSiteCopy(): SiteCopy {
   const locale = useLocale()
-  return COPY[locale] ?? COPY.en
+  const messages = useMessages() as { SiteCopy?: Partial<SiteCopy> }
+  if (COPY[locale]) return COPY[locale]
+  return { ...COPY.en, ...(messages.SiteCopy ?? {}) }
 }

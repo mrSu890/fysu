@@ -103,6 +103,8 @@ export function getEffectiveAvailability(p: {
    TEXTES DU SITE (en / fr / nl / ja)
    ==================================================================== */
 
+import { getExtraCopy } from "./extraCopy"
+
 type L4 = { en: string; fr: string; nl: string; ja: string }
 
 const COPY = {
@@ -231,10 +233,12 @@ export type AvailabilityCopyKey = keyof typeof COPY
 export type AvailabilityCopy = Record<AvailabilityCopyKey, string>
 
 export function getAvailabilityCopy(locale: string): AvailabilityCopy {
-  const l: keyof L4 = locale === "fr" || locale === "nl" || locale === "ja" ? locale : "en"
+  const core = locale === "fr" || locale === "nl" || locale === "ja" || locale === "en"
+  const l: keyof L4 = core ? (locale as keyof L4) : "en"
+  const extra = core ? undefined : getExtraCopy(locale, "Availability")
   const out = {} as AvailabilityCopy
   for (const key of Object.keys(COPY) as AvailabilityCopyKey[]) {
-    out[key] = COPY[key][l]
+    out[key] = extra?.[key] ?? COPY[key][l]
   }
   return out
 }
