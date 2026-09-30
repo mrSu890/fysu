@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { isBrandId } from "@/lib/brands";
 
-type ProductSizeInput = {
+type SizeInput = {
+  id?: string;
   size: string;
   stock: number;
   is_active: boolean;
-  display_order: number;
 };
 
-type ProductImageInput = {
-  url: string;
-  color: string;
+type ColorInput = {
+  id?: string;
+  name: string;
+  hex: string;
+  images: string[];
+  sizes: SizeInput[];
 };
 
 type ProductInfoBlockInput = {
@@ -32,15 +36,16 @@ type ProductUpdatePayload = {
   product_type?: string;
   availability?: string;
   release_date?: string | null;
-  colors?: number;
-  images?: ProductImageInput[];
+  brand?: string;
   care_instructions?: string;
   shipping?: string;
   size_guide_image_url?: string | null;
-  sizes?: ProductSizeInput[];
+  colors?: ColorInput[];
   info_blocks?: ProductInfoBlockInput[];
   suggested_product_ids?: number[];
 };
+
+const HEX_RE = /^#[0-9a-f]{6}$/;
 
 export async function POST(req: Request) {
   try {
@@ -58,12 +63,11 @@ export async function POST(req: Request) {
       product_type,
       availability,
       release_date,
-      colors,
-      images,
+      brand,
       care_instructions,
       shipping,
       size_guide_image_url,
-      sizes,
+      colors,
       info_blocks,
       suggested_product_ids
     } = body;
@@ -73,6 +77,39 @@ export async function POST(req: Request) {
         { error: "Missing product id" },
         { status: 400 }
       );
+    }
+
+    if (!Array.isArray(colors) || colors.length === 0) {
+      return NextResponse.json(
+        { error: "Le produit doit avoir au moins une couleur" },
+        { status: 400 }
+      );
+    }
+
+    /* ================= VALIDATION DES COULEURS ================= */
+
+    const hexes = new Set<string>();
+    for (const c of colors) {
+      const hex = (c.hex || "").trim().toLowerCase();
+      if (!HEX_RE.test(hex)) {
+        return NextResponse.json(
+          { error: `Code couleur invalide : ${c.hex}` },
+          { status: 400 }
+        );
+      }
+      if (!c.name || !c.name.trim()) {
+        return NextResponse.json(
+          { error: "Une couleur n'a pas de nom" },
+          { status: 400 }
+        );
+      }
+      if (hexes.has(hex)) {
+        return NextResponse.json(
+          { error: "Deux couleurs ont le même code couleur" },
+          { status: 400 }
+        );
+      }
+      hexes.add(hex);
     }
 
     /* ================= PRODUCT ================= */
@@ -90,7 +127,8 @@ export async function POST(req: Request) {
         product_type,
         availability,
         release_date,
-        colors,
+        brand: isBrandId(brand) ? brand : undefined,
+        colors: colors.filter((c) => c.images?.length > 0).length,
         care_instructions,
         shipping,
         size_guide_image_url,
@@ -104,31 +142,144 @@ export async function POST(req: Request) {
       );
     }
 
-    /* ================= SIZES ================= */
+    /* ================= COULEURS ================= */
 
-    await supabaseAdmin
-      .from("product_sizes")
-      .delete()
+    const { data: existingColors, error: existingColorsError } = await supabaseAdmin
+      .from("product_colors")
+      .select("id")
       .eq("product_id", id);
 
-    if (sizes?.length) {
-      const formattedSizes = sizes.map((s) => ({
-        product_id: id,
-        size: s.size,
-        stock: s.stock,
-        is_active: s.is_active,
-        display_order: s.display_order
-      }));
+    if (existingColorsError) {
+      return NextResponse.json(
+        { error: existingColorsError.message },
+        { status: 500 }
+      );
+    }
 
+    const existingColorIds = new Set<string>((existingColors ?? []).map((c: any) => c.id as string));
+    const keptColorIds = new Set(
+      colors.map((c) => c.id).filter((cid): cid is string => !!cid && existingColorIds.has(cid))
+    );
+
+    // Couleurs retirées (leurs tailles disparaissent avec elles)
+    const removedColorIds = Array.from(existingColorIds).filter((cid) => !keptColorIds.has(cid));
+    if (removedColorIds.length) {
       const { error } = await supabaseAdmin
-        .from("product_sizes")
-        .insert(formattedSizes);
+        .from("product_colors")
+        .delete()
+        .in("id", removedColorIds);
 
       if (error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    }
+
+    // Mise à jour / création, dans l'ordre choisi
+    const colorIds: string[] = [];
+    for (let i = 0; i < colors.length; i++) {
+      const c = colors[i];
+      const values = {
+        name: c.name.trim(),
+        hex: c.hex.trim().toLowerCase(),
+        display_order: i,
+      };
+
+      if (c.id && existingColorIds.has(c.id)) {
+        const { error } = await supabaseAdmin
+          .from("product_colors")
+          .update(values)
+          .eq("id", c.id);
+
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+        colorIds.push(c.id);
+      } else {
+        const { data, error } = await supabaseAdmin
+          .from("product_colors")
+          .insert({ product_id: id, ...values })
+          .select("id")
+          .single();
+
+        if (error || !data) {
+          return NextResponse.json(
+            { error: error?.message ?? "Erreur lors de la création d'une couleur" },
+            { status: 500 }
+          );
+        }
+        colorIds.push(data.id as string);
+      }
+    }
+
+    /* ================= TAILLES (une ligne par couleur et par taille) ================= */
+
+    const { data: existingSizes, error: existingSizesError } = await supabaseAdmin
+      .from("product_sizes")
+      .select("id")
+      .eq("product_id", id);
+
+    if (existingSizesError) {
+      return NextResponse.json(
+        { error: existingSizesError.message },
+        { status: 500 }
+      );
+    }
+
+    const existingSizeIds = new Set<string>((existingSizes ?? []).map((s: any) => s.id as string));
+    const keptSizeIds = new Set<string>();
+
+    for (let ci = 0; ci < colors.length; ci++) {
+      const sizes = colors[ci].sizes ?? [];
+
+      for (let si = 0; si < sizes.length; si++) {
+        const s = sizes[si];
+        const values = {
+          product_id: id,
+          color_id: colorIds[ci],
+          size: s.size.trim(),
+          stock: Math.max(0, Math.floor(Number(s.stock) || 0)),
+          is_active: !!s.is_active,
+          display_order: si,
+        };
+
+        if (s.id && existingSizeIds.has(s.id)) {
+          // on garde le même identifiant : les paniers déjà remplis restent valides
+          const { error } = await supabaseAdmin
+            .from("product_sizes")
+            .update(values)
+            .eq("id", s.id);
+
+          if (error) {
+            return NextResponse.json({ error: error.message }, { status: 500 });
+          }
+          keptSizeIds.add(s.id);
+        } else {
+          const { data, error } = await supabaseAdmin
+            .from("product_sizes")
+            .insert(values)
+            .select("id")
+            .single();
+
+          if (error || !data) {
+            return NextResponse.json(
+              { error: error?.message ?? "Erreur lors de la création d'une taille" },
+              { status: 500 }
+            );
+          }
+          keptSizeIds.add(data.id as string);
+        }
+      }
+    }
+
+    const removedSizeIds = Array.from(existingSizeIds).filter((sid) => !keptSizeIds.has(sid));
+    if (removedSizeIds.length) {
+      const { error } = await supabaseAdmin
+        .from("product_sizes")
+        .delete()
+        .in("id", removedSizeIds);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
     }
 
@@ -139,15 +290,17 @@ export async function POST(req: Request) {
       .delete()
       .eq("productId", id);
 
-    if (images?.length) {
-      const formattedImages = images
-        .filter((img) => img.url && img.color)
-        .map((img) => ({
+    const formattedImages = colors.flatMap((c) =>
+      (c.images ?? [])
+        .filter(Boolean)
+        .map((url) => ({
           productId: id,
-          url: img.url,
-          color: img.color
-        }));
+          url,
+          color: c.hex.trim().toLowerCase(),
+        }))
+    );
 
+    if (formattedImages.length) {
       const { error } = await supabaseAdmin
         .from("product_images")
         .insert(formattedImages);
