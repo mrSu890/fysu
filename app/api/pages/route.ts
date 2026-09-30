@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
@@ -11,5 +12,5 @@ export async function GET() {
 
   if (error) console.error(error);
 
-  return new Response(JSON.stringify(data ?? []), { status: 200 });
+  return new Response(JSON.stringify(await localize(data ?? [])), { status: 200 });
 }
