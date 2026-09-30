@@ -203,13 +203,6 @@ const Product = ({
 
   return (
     <div className="relative w-full group" ref={containerRef} >
-      {/* Catégorie */}
-      <div className="absolute left-2 top-2 rounded-md px-2 py-0.5 z-10">
-        <p className="uppercase tracking-wide text-xs text-gray-600">
-          {product.category}
-        </p>
-      </div>
-  
       {/* Bouton like */}
       <button
         onClick={toggleLike}
