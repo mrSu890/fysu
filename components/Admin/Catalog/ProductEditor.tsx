@@ -8,6 +8,7 @@ import { AdminButton, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
 import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
+import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 
 /* ====================================================================
    FICHE PRODUIT EN PLEINE PAGE
@@ -36,6 +37,7 @@ type FormState = {
   price: string
   category_id: number | null
   gender: string
+  product_type: string
 }
 
 const TABS = [
@@ -129,6 +131,7 @@ export default function ProductEditor({ id }: { id: string }) {
     price: "",
     category_id: null,
     gender: "",
+    product_type: "clothing",
   })
   const [colorSets, setColorSets] = useState<ColorSet[]>([])
   const [sizes, setSizes] = useState<SizeState[]>([])
@@ -165,6 +168,7 @@ export default function ProductEditor({ id }: { id: string }) {
         price: p.price != null ? String(p.price) : "",
         category_id: p.category_id ?? null,
         gender: p.gender ?? "",
+        product_type: p.product_type ?? "clothing",
       }
 
       // Regroupe les images par couleur
@@ -408,6 +412,7 @@ export default function ProductEditor({ id }: { id: string }) {
         price,
         category_id: form.category_id,
         gender: form.gender,
+        product_type: form.product_type,
         colors: colorSets.filter((s) => s.images.length > 0).length,
         images,
         size_guide_image_url: sizeGuide,
@@ -492,6 +497,9 @@ export default function ProductEditor({ id }: { id: string }) {
     .map((rid) => allProducts.find((p) => p.id === rid))
     .filter(Boolean) as ListProduct[]
 
+  const typeCfg = getProductType(form.product_type)
+  const labels = getAdminLabels(form.product_type)
+
   return (
     <div className="pb-28">
       <button
@@ -538,7 +546,7 @@ export default function ProductEditor({ id }: { id: string }) {
                   : "text-[#7a756d] hover:text-[#171717]"
               }`}
             >
-              {t.label}
+              {t.id === "sizes" ? `${typeCfg.sizeNounAdmin} & stock` : t.label}
             </button>
           ))}
         </div>
@@ -549,6 +557,24 @@ export default function ProductEditor({ id }: { id: string }) {
         <div className="space-y-4">
           <Panel title="Informations principales">
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Field
+                  label="Type de produit"
+                  hint="Change les tailles proposées et les champs de texte de la fiche."
+                >
+                  <select
+                    className={INPUT}
+                    value={form.product_type}
+                    onChange={(e) => setField("product_type", e.target.value)}
+                  >
+                    {PRODUCT_TYPE_LIST.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.emoji} {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
               <div className="sm:col-span-2">
                 <Field label="Nom">
                   <input
@@ -566,18 +592,20 @@ export default function ProductEditor({ id }: { id: string }) {
                   onChange={(e) => setField("price", e.target.value)}
                 />
               </Field>
-              <Field label="Genre">
-                <select
-                  className={INPUT}
-                  value={form.gender}
-                  onChange={(e) => setField("gender", e.target.value)}
-                >
-                  <option value="">—</option>
-                  <option value="him">Homme</option>
-                  <option value="her">Femme</option>
-                  <option value="unisex">Unisexe</option>
-                </select>
-              </Field>
+              {typeCfg.showGender && (
+                <Field label="Genre">
+                  <select
+                    className={INPUT}
+                    value={form.gender}
+                    onChange={(e) => setField("gender", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="him">Homme</option>
+                    <option value="her">Femme</option>
+                    <option value="unisex">Unisexe</option>
+                  </select>
+                </Field>
+              )}
               <div className="sm:col-span-2">
                 <Field label="Catégorie">
                   <select
@@ -609,7 +637,7 @@ export default function ProductEditor({ id }: { id: string }) {
                   onChange={(e) => setField("description", e.target.value)}
                 />
               </Field>
-              <Field label="Détails">
+              <Field label={labels.details}>
                 <textarea
                   rows={3}
                   className={INPUT}
@@ -617,22 +645,26 @@ export default function ProductEditor({ id }: { id: string }) {
                   onChange={(e) => setField("details", e.target.value)}
                 />
               </Field>
-              <Field label="Coupe et taille (size fit)">
-                <textarea
-                  rows={3}
-                  className={INPUT}
-                  value={form.size_fit}
-                  onChange={(e) => setField("size_fit", e.target.value)}
-                />
-              </Field>
-              <Field label="Entretien (care instructions)">
-                <textarea
-                  rows={4}
-                  className={INPUT}
-                  value={form.care_instructions}
-                  onChange={(e) => setField("care_instructions", e.target.value)}
-                />
-              </Field>
+              {labels.sizeFit && (
+                <Field label={labels.sizeFit}>
+                  <textarea
+                    rows={3}
+                    className={INPUT}
+                    value={form.size_fit}
+                    onChange={(e) => setField("size_fit", e.target.value)}
+                  />
+                </Field>
+              )}
+              {labels.care && (
+                <Field label={labels.care}>
+                  <textarea
+                    rows={4}
+                    className={INPUT}
+                    value={form.care_instructions}
+                    onChange={(e) => setField("care_instructions", e.target.value)}
+                  />
+                </Field>
+              )}
               <Field label="Livraison (shipping)">
                 <textarea
                   rows={4}
@@ -644,6 +676,7 @@ export default function ProductEditor({ id }: { id: string }) {
             </div>
           </Panel>
 
+          {typeCfg.sizeGuide && (
           <Panel title="Guide des tailles" description="Image affichée dans la fiche produit du site.">
             <div className="flex flex-wrap items-end gap-4">
               {sizeGuide && (
@@ -662,6 +695,7 @@ export default function ProductEditor({ id }: { id: string }) {
               </div>
             </div>
           </Panel>
+          )}
 
           <Panel title="Zone dangereuse">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -817,12 +851,12 @@ export default function ProductEditor({ id }: { id: string }) {
       {/* ===== TAILLES & STOCK ===== */}
       {tab === "sizes" && (
         <Panel
-          title="Tailles et stock"
+          title={`${typeCfg.sizeNounAdmin} et stock`}
           description="L'ordre ci-dessous est l'ordre d'affichage sur le site. Une taille inactive est cachée."
         >
           <div className="space-y-2">
             {sizes.length === 0 && (
-              <p className="text-sm text-[#7a756d]">Aucune taille. Ajoute-en une pour pouvoir vendre ce produit.</p>
+              <p className="text-sm text-[#7a756d]">Aucune ligne. Ajoute-en une pour pouvoir vendre ce produit.</p>
             )}
             {sizes.map((s, i) => (
               <div
@@ -851,7 +885,7 @@ export default function ProductEditor({ id }: { id: string }) {
                 </div>
                 <input
                   className={`${INPUT} !w-24`}
-                  placeholder="Taille"
+                  placeholder={typeCfg.presets[0] ?? "Taille"}
                   value={s.size}
                   onChange={(e) => updateSize(i, { size: e.target.value })}
                 />
@@ -897,10 +931,11 @@ export default function ProductEditor({ id }: { id: string }) {
             {sizes.length === 0 && (
               <AdminButton
                 onClick={() =>
-                  setSizes(["XS", "S", "M", "L", "XL"].map((size) => ({ size, stock: 0, is_active: true })))
+                  setSizes(typeCfg.presets.map((size) => ({ size, stock: 0, is_active: true })))
                 }
               >
-                Modèle XS → XL
+                Modèle {typeCfg.label.toLowerCase()} : {typeCfg.presets.slice(0, 3).join(", ")}
+                {typeCfg.presets.length > 3 ? "…" : ""}
               </AdminButton>
             )}
           </div>
