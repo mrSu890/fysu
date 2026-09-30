@@ -236,11 +236,9 @@ export default function CollectionPage() {
                           flex
                           gap-6
                           overflow-x-auto
-                          scroll-smooth
-                          snap-x snap-mandatory
+                          snap-x snap-proximity
                           no-scrollbar
                           pb-2
-                          touch-pan-x
                           overscroll-x-contain
                         "
                       >
