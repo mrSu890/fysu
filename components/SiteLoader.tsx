@@ -7,6 +7,27 @@ const LOGO_DURATION = 700 // durée d'apparition du logo (ms) : rapide
 const MAX_WAIT = 9000 // sécurité : on ne bloque jamais plus longtemps
 const SESSION_KEY = "fysu:loader:seen" // l'écran de chargement n'apparaît qu'une fois par visite
 
+// Le choix de zone a-t-il déjà été fait ?
+const hasRegion = () =>
+  typeof document !== "undefined" &&
+  document.cookie.split("; ").some((row) => row.startsWith("FYSU_COUNTRY="))
+
+// Appelé quand l'écran de chargement n'est plus visible :
+// - le pop-up de choix de zone peut apparaître (si besoin)
+// - cookies et notifications attendent que la zone soit choisie
+const finishLoader = () => {
+  ;(window as any).__loaderVisualDone = true
+  window.dispatchEvent(new Event("loader-visual-done"))
+
+  const releasePopups = () => {
+    ;(window as any).__siteLoaderDone = true
+    window.dispatchEvent(new Event("site-loader-done"))
+  }
+
+  if (hasRegion()) releasePopups()
+  else window.addEventListener("region-done", releasePopups, { once: true })
+}
+
 export default function SiteLoader() {
   const [progress, setProgress] = useState(0)
   const [logoReveal, setLogoReveal] = useState(0)
@@ -23,9 +44,8 @@ export default function SiteLoader() {
     } catch {}
 
     if (seen) {
-      ;(window as any).__siteLoaderDone = true
-      window.dispatchEvent(new Event("site-loader-done"))
       setVisible(false)
+      finishLoader()
     } else {
       setReady(true)
     }
@@ -114,9 +134,7 @@ export default function SiteLoader() {
         setFading(true)
         window.setTimeout(() => {
           setVisible(false)
-          // Prévient les notifications que le chargement est terminé
-          ;(window as any).__siteLoaderDone = true
-          window.dispatchEvent(new Event("site-loader-done"))
+          finishLoader()
         }, 700)
         return
       }
