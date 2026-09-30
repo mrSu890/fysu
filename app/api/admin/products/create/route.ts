@@ -7,7 +7,7 @@ export const runtime = "nodejs"
 function slugify(value: string) {
   return value
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
@@ -66,18 +66,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error?.message ?? "Erreur lors de la création" }, { status: 500 })
     }
 
-    const presets = getProductType(productType).presets
-    if (presets.length) {
-      const { error: sizesError } = await supabaseAdmin.from("product_sizes").insert(
-        presets.map((size, index) => ({
-          product_id: product.id,
-          size,
-          stock: 0,
-          is_active: true,
-          display_order: index,
-        }))
-      )
-      if (sizesError) console.error("Création des tailles :", sizesError)
+    // Une première couleur "Unique" (à renommer dans la fiche) qui porte les tailles
+    const { data: color, error: colorError } = await supabaseAdmin
+      .from("product_colors")
+      .insert({ product_id: product.id, name: "Unique", hex: "#000000", display_order: 0 })
+      .select("id")
+      .single()
+
+    if (colorError || !color) {
+      console.error("Création de la couleur :", colorError)
+    } else {
+      const presets = getProductType(productType).presets
+      if (presets.length) {
+        const { error: sizesError } = await supabaseAdmin.from("product_sizes").insert(
+          presets.map((size, index) => ({
+            product_id: product.id,
+            color_id: color.id,
+            size,
+            stock: 0,
+            is_active: true,
+            display_order: index,
+          }))
+        )
+        if (sizesError) console.error("Création des tailles :", sizesError)
+      }
     }
 
     return NextResponse.json({ id: product.id })
