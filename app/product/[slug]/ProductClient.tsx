@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useState, useMemo, useRef } from "react"
 import Link from "next/link"
 import type { ProductType, ProductSize, ProductColor } from "@/types/product"
 import Product from "@/components/Product"
+import WishlistHeart from "@/components/WishlistHeart"
 import Image from "next/image"
 import { Collapse, Modal } from "antd"
 import type { CollapseProps } from "antd"
@@ -327,9 +328,12 @@ export default function ProductClient() {
             </Link>
           )}
 
-          <h1 className="text-xl font-medium">
-            {product.name}
-          </h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-xl font-medium">
+              {product.name}
+            </h1>
+            <WishlistHeart productId={product.id} size={26} className="-mr-1.5 -mt-1 shrink-0" />
+          </div>
 
           <p className="text-sm whitespace-pre-line">
             {formatText(product.description)}
@@ -491,7 +495,7 @@ export default function ProductClient() {
             {t("youMayAlsoLike")}
           </h2>
 
-          <div ref={scrollRef} className="flex gap-8 overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain">
+          <div ref={scrollRef} className="flex gap-8 overflow-x-auto no-scrollbar overscroll-x-contain">
             {product.product_suggestions.map((p) => (
               <div key={p.id} className="flex-shrink-0 w-[280px]">
                 <Product product={p} scrollRef={scrollRef} />
