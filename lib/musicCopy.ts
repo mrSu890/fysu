@@ -21,6 +21,7 @@ export type MusicCopy = {
   backTo: string
   allAlbums: string
   musicTitle: string
+  projects: string
   loading: string
   notFound: string
   tracks: (count: number, minutes: number) => string
@@ -43,6 +44,7 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "Back to",
     allAlbums: "All albums",
     musicTitle: "Music",
+    projects: "Projects",
     loading: "Loading",
     notFound: "Album not found.",
     tracks: (n, m) => `${n} ${n > 1 ? "tracks" : "track"} · ${m} min`,
@@ -63,6 +65,7 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "Retour à",
     allAlbums: "Tous les albums",
     musicTitle: "Musique",
+    projects: "Projets",
     loading: "Chargement",
     notFound: "Album introuvable.",
     tracks: (n, m) => `${n} ${n > 1 ? "titres" : "titre"} · ${m} min`,
@@ -83,6 +86,7 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "Terug naar",
     allAlbums: "Alle albums",
     musicTitle: "Muziek",
+    projects: "Projecten",
     loading: "Laden",
     notFound: "Album niet gevonden.",
     tracks: (n, m) => `${n} ${n > 1 ? "nummers" : "nummer"} · ${m} min`,
@@ -103,6 +107,7 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "戻る：",
     allAlbums: "すべてのアルバム",
     musicTitle: "ミュージック",
+    projects: "プロジェクト",
     loading: "読み込み中",
     notFound: "アルバムが見つかりません。",
     tracks: (n, m) => `${n}曲 · ${m}分`,

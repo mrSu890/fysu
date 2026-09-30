@@ -7,7 +7,7 @@ import { locales } from "@/i18n/routing"
    - "languages" = les langues officielles / principales du pays.
    - Le site n'affiche que les langues qu'il possède vraiment (voir
      i18n/routing.ts). Si un pays a une langue que le site n'a pas
-     encore, l'anglais est proposé à la place.
+     encore, l'anglais est proposé. L'anglais est proposé partout.
    - Le jour où une langue est ajoutée au site (ex: "de"), elle s'active
      toute seule pour tous les pays qui la parlent.
    ==================================================================== */
@@ -122,17 +122,12 @@ export const LANGUAGE_NAMES: Record<string, string> = {
   ta: "தமிழ்",
 }
 
-/** Langues à proposer pour un pays (uniquement celles que le site possède). */
+/** Langues à proposer pour un pays : celles du pays que le site possède, puis toujours l'anglais. */
 export function offeredLanguages(country: Country): string[] {
-  const supported = country.languages.filter((l) =>
+  const result = country.languages.filter((l) =>
     (locales as readonly string[]).includes(l)
   )
-  const someMissing = supported.length < country.languages.length
-
-  const result = [...supported]
-  if ((someMissing || result.length === 0) && !result.includes("en")) {
-    result.push("en")
-  }
+  if (!result.includes("en")) result.push("en")
   return result
 }
 
