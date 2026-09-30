@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
@@ -47,7 +48,7 @@ export async function GET() {
       product_images: product.product_images ?? [],
     }));
 
-    return new Response(JSON.stringify(formatted), { status: 200 });
+    return new Response(JSON.stringify(await localize(formatted)), { status: 200 });
 
   } catch (err) {
     console.error("Erreur serveur :", err);
