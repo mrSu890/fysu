@@ -9,11 +9,13 @@ import { Collapse, Modal } from "antd"
 import type { CollapseProps } from "antd"
 import AddToCartButton from "@/components/ui/AddToCartButton"
 import ProductInfoBlocks from "@/components/Product/ProductInfoBlocks"
-import { useFormatter, useTranslations } from "next-intl"
+import { useFormatter, useLocale, useTranslations } from "next-intl"
+import { getTypeCopy } from "@/lib/productTypes"
 
 export default function ProductClient() {
   const t = useTranslations("Product")
   const format = useFormatter()
+  const locale = useLocale()
   const { slug } = useParams() as { slug: string }
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -81,6 +83,14 @@ export default function ProductClient() {
     )
   }, [product])
 
+  // Une seule taille disponible (taille unique, un seul volume…) : on la sélectionne d'office
+  useEffect(() => {
+    if (availableSizes.length === 1 && !selectedSizeId) {
+      setSelectedSizeId(availableSizes[0].id)
+      setSelectedSizeLabel(availableSizes[0].size)
+    }
+  }, [availableSizes, selectedSizeId])
+
   /* ================= HANDLERS ================= */
 
   const handleColorClick = (color: string) => {
@@ -109,44 +119,27 @@ export default function ProductClient() {
     return text.replace(/\\n/g, "\n")
   }
 
-  const items: CollapseProps["items"] = [
-    {
-      key: "1",
-      label: t("details"),
-      children: (
-        <p className="whitespace-pre-line">
-          {formatText(product.details) || t("noDetails")}
-        </p>
-      ),
-    },
-    {
-      key: "2",
-      label: t("sizeFit"),
-      children: (
-        <p className="whitespace-pre-line">
-          {formatText(product.size_fit) || t("noInfo")}
-        </p>
-      ),
-    },
-    {
-      key: "3",
-      label: t("careInstructions"),
-      children: (
-        <p className="whitespace-pre-line">
-          {formatText(product.care_instructions) || t("noCareInstructions")}
-        </p>
-      ),
-    },
-    {
-      key: "4",
-      label: t("shipping"),
-      children: (
-        <p className="whitespace-pre-line">
-          {formatText(product.shipping) || t("noShipping")}
-        </p>
-      ),
-    },
+  const copy = getTypeCopy(product.product_type, locale)
+
+  const rawItems: { key: string; label: string; text?: string | null }[] = [
+    { key: "1", label: copy.details ?? t("details"), text: product.details },
+    ...(copy.sizeFit === false
+      ? []
+      : [{ key: "2", label: copy.sizeFit ?? t("sizeFit"), text: product.size_fit }]),
+    ...(copy.care === false
+      ? []
+      : [{ key: "3", label: copy.care ?? t("careInstructions"), text: product.care_instructions }]),
+    { key: "4", label: t("shipping"), text: product.shipping },
   ]
+
+  // on n'affiche que les rubriques remplies
+  const items: CollapseProps["items"] = rawItems
+    .filter((item) => formatText(item.text).trim() !== "")
+    .map((item) => ({
+      key: item.key,
+      label: item.label,
+      children: <p className="whitespace-pre-line">{formatText(item.text)}</p>,
+    }))
 
   /* ================= RENDER ================= */
 
@@ -266,15 +259,17 @@ export default function ProductClient() {
             <div className="space-y-3">
 
               <div className="flex justify-between items-center">
-                <p className="text-sm font-medium">{t("size")}</p>
+                <p className="text-sm font-medium">{copy.sizeTitle ?? t("size")}</p>
 
-                <button
-                  type="button"
-                  onClick={() => setSizeGuideOpen(true)}
-                  className="text-sm underline text-foreground hover:text-foreground/60 cursor-pointer"
-                >
-                  {t("sizeGuide")}
-                </button>
+                {copy.sizeGuide && (
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideOpen(true)}
+                    className="text-sm underline text-foreground hover:text-foreground/60 cursor-pointer"
+                  >
+                    {t("sizeGuide")}
+                  </button>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -317,7 +312,7 @@ export default function ProductClient() {
               selectedSizeLabel={selectedSizeLabel}
             />
     
-            <Collapse items={items} bordered={false} ghost />
+            {items.length > 0 && <Collapse items={items} bordered={false} ghost />}
           </div>
   
         </div>
