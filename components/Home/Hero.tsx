@@ -32,22 +32,47 @@ const HomeHero = () => {
   const carouselRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Charge les images du hero, et réessaie si le chargement échoue
   useEffect(() => {
-    const fetchMedia = async () => {
-      const { data, error } = await supabaseClient
-        .from("hero_slider")
-        .select("media_path, media_type")
-        .order("order");
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-      if (error) {
-        console.error("Erreur Supabase:", error);
+    const fetchMedia = async (attempt = 0) => {
+      let result: HeroMedia[] | null = null;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from("hero_slider")
+          .select("media_path, media_type")
+          .order("order");
+
+        if (error) {
+          console.error("Erreur Supabase:", error);
+        } else if (data && data.length > 0) {
+          result = data as HeroMedia[];
+        }
+      } catch (err) {
+        console.error("Erreur réseau hero:", err);
+      }
+
+      if (cancelled) return;
+
+      if (result) {
+        setSlides(result);
         return;
       }
 
-      setSlides(data || []);
+      if (attempt < 5) {
+        retryTimer = setTimeout(() => fetchMedia(attempt + 1), 700 * (attempt + 1));
+      }
     };
 
     fetchMedia();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, []);
 
   useEffect(() => {
