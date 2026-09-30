@@ -4,12 +4,21 @@ export type ProductImage = {
   color: string;
 };
 
+export type ProductColor = {
+  id: string;
+  product_id: number;
+  name: string;
+  hex: string;
+  display_order: number;
+};
+
 export type ProductSize = {
   id: string;        
   product_id: number;
   size: string;
   stock: number;
   is_active: boolean;
+  color_id?: string | null;
 };
 
 export type Category = {
@@ -36,6 +45,7 @@ export type ProductType = {
   gender: string;
   product_type?: string | null;
   availability?: string | null;
+  brand?: string | null;
   release_date?: string | null;
   category: string;
   colors: number;
@@ -51,6 +61,7 @@ export type ProductType = {
 
   product_images: ProductImage[];
   product_sizes: ProductSize[];
+  product_colors?: ProductColor[];
 
   product_suggestions: ProductType[];
 
