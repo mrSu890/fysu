@@ -5,6 +5,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { Carousel } from "antd";
 import Image from "next/image";
 import Link from "next/link";
+import { useSiteCopy } from "@/lib/siteCopy";
 
 type HeroMedia = {
   media_path: string;
@@ -19,13 +20,12 @@ const RIGHT_LINK = "/for-her";
 
 // Bouton "Discover" quand il n'y a qu'une seule image
 const DISCOVER_LINK = "/product/saku-t-1";
-const HERO_TITLE = "SPRING SPIRIT";
-const HERO_SUBTITLE = "When Sakuras Meet Denim";
 
 const isVideoMedia = (item: HeroMedia) =>
   item.media_type === "video" || /\.(mp4|webm|mov)$/i.test(item.media_path);
 
 const HomeHero = () => {
+  const copy = useSiteCopy();
   const [slides, setSlides] = useState<HeroMedia[]>([]);
   const [current, setCurrent] = useState(0);
 
@@ -195,11 +195,11 @@ const HomeHero = () => {
 
                 <div className="relative text-white pb-8 sm:pb-12 max-w-[92%]">
                   <h2 className="text-xl sm:text-3xl uppercase font-normal tracking-[0.08em] leading-tight">
-                    {HERO_TITLE}
+                    {copy.heroTitle}
                   </h2>
 
                   <p className="mt-3 font-serif text-sm sm:text-lg">
-                    {HERO_SUBTITLE}
+                    {copy.heroSubtitle}
                   </p>
 
                   <Link
@@ -207,7 +207,7 @@ const HomeHero = () => {
                     className="mt-4 inline-flex items-center gap-2 text-xs sm:text-sm uppercase tracking-[0.12em]"
                     style={{ color: "#ffffff" }}
                   >
-                    Discover
+                    {copy.discover}
                     <span aria-hidden="true">&rsaquo;</span>
                   </Link>
                 </div>
