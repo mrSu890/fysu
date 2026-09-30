@@ -105,11 +105,33 @@ export async function GET(
       ?.sort((a: any, b: any) => a.display_order - b.display_order)
       .map((s: any) => s.suggested) ?? []
 
+  /* ================= MARQUE ================= */
+
+  // Un produit rangé dans la page The Wave / Kiban Collector prend automatiquement son style,
+  // sauf si une marque a été choisie à la main dans la fiche produit
+  let brand: string = product.brand ?? "fysu"
+
+  if (brand === "fysu") {
+    const { data: brandPages } = await supabaseAdmin
+      .from("collectionPages")
+      .select("slug, products")
+      .in("slug", ["thewave", "kiban-collector"])
+
+    for (const page of (brandPages ?? []) as { slug: string; products: unknown }[]) {
+      const ids = Array.isArray(page.products) ? page.products.map((x) => Number(x)) : []
+      if (ids.includes(Number(product.id))) {
+        brand = page.slug === "thewave" ? "thewave" : "kiban"
+        break
+      }
+    }
+  }
+
   /* ================= RESPONSE ================= */
 
   return NextResponse.json(
     {
       ...product,
+      brand,
       product_sizes: sizes,
       product_colors: colors,
       product_info_blocks: info_blocks,
