@@ -8,9 +8,16 @@ import Image from "next/image"
 import { Collapse, Modal } from "antd"
 import type { CollapseProps } from "antd"
 import AddToCartButton from "@/components/ui/AddToCartButton"
+import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
 import ProductInfoBlocks from "@/components/Product/ProductInfoBlocks"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { getTypeCopy } from "@/lib/productTypes"
+import {
+  formatReleaseDate,
+  getAvailabilityCopy,
+  getEffectiveAvailability,
+  isBuyable,
+} from "@/lib/availability"
 
 export default function ProductClient() {
   const t = useTranslations("Product")
@@ -120,6 +127,10 @@ export default function ProductClient() {
   }
 
   const copy = getTypeCopy(product.product_type, locale)
+
+  // Mode de disponibilité réellement appliqué (achat, précommande, me prévenir, devis, à venir, épuisé)
+  const mode = getEffectiveAvailability(product)
+  const canBuy = isBuyable(mode)
 
   const rawItems: { key: string; label: string; text?: string | null }[] = [
     { key: "1", label: copy.details ?? t("details"), text: product.details },
@@ -255,7 +266,7 @@ export default function ProductClient() {
           )}
   
           {/* SIZES */}
-          {availableSizes.length > 0 && (
+          {canBuy && availableSizes.length > 0 && (
             <div className="space-y-3">
 
               <div className="flex justify-between items-center">
@@ -306,11 +317,25 @@ export default function ProductClient() {
           )}
   
                     <div className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
-            <AddToCartButton
-              product={product}
-              selectedSizeId={selectedSizeId}
-              selectedSizeLabel={selectedSizeLabel}
-            />
+            {canBuy ? (
+              <AddToCartButton
+                product={product}
+                selectedSizeId={selectedSizeId}
+                selectedSizeLabel={selectedSizeLabel}
+                mode={mode === "available" ? "available" : "preorder"}
+              />
+            ) : (
+              <AvailabilityBlock product={product} mode={mode} />
+            )}
+
+            {mode === "preorder" && product.release_date && (
+              <p className="-mt-1 text-center text-xs text-foreground/60">
+                {getAvailabilityCopy(locale).expected.replace(
+                  "{date}",
+                  formatReleaseDate(product.release_date, locale)
+                )}
+              </p>
+            )}
     
             {items.length > 0 && <Collapse items={items} bordered={false} ghost />}
           </div>
