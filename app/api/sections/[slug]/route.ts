@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -72,8 +73,10 @@ export async function GET(
     main_image: product?.product_images?.[0]?.url ?? null,
   })) ?? [];
 
-  return NextResponse.json({
-    title: section.title,
-    products: formattedProducts,
-  });
+  return NextResponse.json(
+    await localize({
+      title: section.title,
+      products: formattedProducts,
+    })
+  );
 }
