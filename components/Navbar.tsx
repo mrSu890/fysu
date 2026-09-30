@@ -8,7 +8,7 @@ import {
   useMotionValue,
 } from "framer-motion";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useBrandPage } from "@/lib/useBrandPage";
 import { Menu, X, ChevronDown, UserRound, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import CartDrawer from "./CartDrawer";
@@ -55,9 +55,9 @@ function MobileMenu({
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const pathname = usePathname();
-  const isKiban = pathname === "/kiban-collector";
-  const isWave = pathname === "/thewave";
+  const brandPage = useBrandPage();
+  const isKiban = brandPage === "kiban";
+  const isWave = brandPage === "thewave";
   const [kibanLogoSrc, setKibanLogoSrc] = useState<string | null>(null);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
