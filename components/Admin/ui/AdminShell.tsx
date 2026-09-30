@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   ExternalLink,
   Images,
+  Inbox,
   Layers,
   LayoutDashboard,
   Menu,
@@ -37,6 +38,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: "Produits", href: "/admin/catalog", icon: Shirt },
       { label: "Commandes", href: "/admin/orders", icon: ShoppingBag },
+      { label: "Demandes", href: "/admin/requests", icon: Inbox },
       { label: "Clients", href: "/admin/users", icon: Users },
     ],
   },
