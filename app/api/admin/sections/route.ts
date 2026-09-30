@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { isRowKind } from "@/lib/rowTypes";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,7 @@ export async function GET() {
         id,
         title,
         slug,
+        row_type,
         display_order,
         is_active,
         created_at,
@@ -62,6 +64,7 @@ export async function POST(req: Request) {
     const {
       title,
       slug,
+      row_type = null,
       display_order = 0,
       is_active = true,
       product_ids = [],
@@ -81,6 +84,7 @@ export async function POST(req: Request) {
       .insert({
         title,
         slug,
+        row_type: isRowKind(row_type) ? row_type : null,
         display_order,
         is_active,
       })
@@ -142,6 +146,7 @@ export async function PUT(req: Request) {
       id,
       title,
       slug,
+      row_type,
       display_order,
       is_active,
       product_ids = [],
@@ -161,6 +166,7 @@ export async function PUT(req: Request) {
       .update({
         title,
         slug,
+        ...(row_type !== undefined ? { row_type: isRowKind(row_type) ? row_type : null } : {}),
         display_order,
         is_active,
       })
