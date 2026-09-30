@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+// Enregistre la liste (ordonnée) des produits d'une collection. Une liste vide est acceptée.
 export async function POST(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -8,8 +9,6 @@ export async function POST(
   const { id } = await context.params;
 
   try {
-    console.log("CollectionPage ID:", id);
-
     const body = await req.json().catch(() => null);
 
     if (!body || !Array.isArray(body.productIds)) {
@@ -19,24 +18,19 @@ export async function POST(
       );
     }
 
-    // ✅ CAST + VALIDATION
-    const productIds = body.productIds
-      .map((id: any) => Number(id))
-      .filter((id: number) => Number.isInteger(id));
-
-    if (productIds.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Aucun productId valide" }),
-        { status: 400 }
-      );
-    }
-
-    console.log("New products (int[]):", productIds);
+    // On garde l'ordre choisi, sans doublons
+    const productIds: number[] = Array.from(
+      new Set(
+        body.productIds
+          .map((value: any) => Number(value))
+          .filter((value: number) => Number.isInteger(value))
+      )
+    ) as number[];
 
     const { error } = await supabase
       .from("collectionPages")
       .update({
-        products: productIds, // 🟢 int[]
+        products: productIds,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -53,7 +47,6 @@ export async function POST(
         headers: { "Content-Type": "application/json" },
       }
     );
-
   } catch (err) {
     console.error("POST /collectionPages/products failed:", err);
     return new Response(
