@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -23,7 +24,7 @@ export async function GET() {
     (c: any) => !HIDDEN_SLUGS.includes(c.slug)
   );
 
-  return new Response(JSON.stringify(visible), {
+  return new Response(JSON.stringify(await localize(visible)), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
