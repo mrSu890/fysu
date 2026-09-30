@@ -12,6 +12,7 @@ import {
   Skeleton,
 } from "@/components/Admin/ui/kit"
 import { api, errorMessage, formatDate, notify } from "@/lib/adminApi"
+import { PRODUCT_TYPE_LIST, getProductType } from "@/lib/productTypes"
 
 type Product = {
   id: number
@@ -19,6 +20,7 @@ type Product = {
   slug: string
   price: number
   gender: string
+  product_type: string
   category_id: number | null
   createdAt: string | null
   thumbnail: string | null
@@ -50,6 +52,7 @@ export default function AdminCatalog() {
   const [query, setQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [genderFilter, setGenderFilter] = useState("all")
+  const [typeFilter, setTypeFilter] = useState("all")
   const [stockFilter, setStockFilter] = useState("all")
   const [sort, setSort] = useState("newest")
 
@@ -103,6 +106,7 @@ export default function AdminCatalog() {
       )
         return false
       if (genderFilter !== "all" && p.gender !== genderFilter) return false
+      if (typeFilter !== "all" && p.product_type !== typeFilter) return false
       if (stockFilter === "low" && !(p.stockState === "low" || p.stockState === "none")) return false
       if (stockFilter === "out" && p.stockState !== "out") return false
       return true
@@ -125,15 +129,20 @@ export default function AdminCatalog() {
       }
     })
     return list
-  }, [products, query, categoryFilter, genderFilter, stockFilter, sort])
+  }, [products, query, categoryFilter, genderFilter, typeFilter, stockFilter, sort])
 
   const hasFilters =
-    query !== "" || categoryFilter !== "all" || genderFilter !== "all" || stockFilter !== "all"
+    query !== "" ||
+    categoryFilter !== "all" ||
+    genderFilter !== "all" ||
+    typeFilter !== "all" ||
+    stockFilter !== "all"
 
   function resetFilters() {
     setQuery("")
     setCategoryFilter("all")
     setGenderFilter("all")
+    setTypeFilter("all")
     setStockFilter("all")
   }
 
@@ -296,6 +305,19 @@ export default function AdminCatalog() {
           </select>
 
           <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className={SELECT_CLASS}
+          >
+            <option value="all">Tous les types</option>
+            {PRODUCT_TYPE_LIST.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value)}
             className={SELECT_CLASS}
@@ -396,6 +418,8 @@ export default function AdminCatalog() {
                     {p.name}
                   </Link>
                   <p className="mt-0.5 truncate text-xs text-[#9a948a]">
+                    {getProductType(p.product_type).label}
+                    {" · "}
                     {p.category_id != null ? categoryName[p.category_id] ?? "—" : "Sans catégorie"}
                     {p.gender && ` · ${GENDERS[p.gender] ?? p.gender}`}
                     <span className="hidden sm:inline"> · {formatDate(p.createdAt)}</span>
