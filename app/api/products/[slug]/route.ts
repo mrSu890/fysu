@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { NextResponse } from "next/server"
 
@@ -129,14 +130,14 @@ export async function GET(
   /* ================= RESPONSE ================= */
 
   return NextResponse.json(
-    {
+    await localize({
       ...product,
       brand,
       product_sizes: sizes,
       product_colors: colors,
       product_info_blocks: info_blocks,
       product_suggestions: suggested_products
-    },
+    }),
     { status: 200 }
   )
 }
