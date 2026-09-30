@@ -89,7 +89,7 @@ export default function CheckoutClient() {
             <div key={`${item.id}-${item.selectedSizeId}`} className="flex items-center gap-4 p-4">
               <div className="relative w-16 h-20 bg-neutral-100 rounded-md overflow-hidden">
                 <Image
-                  src={item.product_images?.[0]?.url ?? "/placeholder.png"}
+                  src={item.selectedImageUrl ?? item.product_images?.[0]?.url ?? "/placeholder.png"}
                   alt={item.name}
                   fill
                   className="object-cover"
@@ -101,6 +101,7 @@ export default function CheckoutClient() {
 
                 <p className="text-xs text-neutral-500 mt-1">
                   {t("size")} : {item.selectedSizeLabel}
+                  {item.selectedColorName ? ` · ${item.selectedColorName}` : ""}
                 </p>
 
                 <p className="text-sm text-neutral-500 mt-1">
