@@ -1,10 +1,23 @@
+"use client";
+
 import React from 'react';
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import CroppedLogo from "./CroppedLogo";
 import FygrancesIntro from "./FygrancesIntro";
 
 const logo = "/images/footer_logo.png"
+
+// Version TheWave du pied de page : rose pâle pastel en Liquid Glass
+const WAVE_INK = "#3b1a1d"
+const WAVE_GLASS = {
+  "--glass-color": "#f9d3d5",
+  "--navbar-bg": "#f9d3d5",
+  "--glass-tint": "72%",
+  color: WAVE_INK,
+} as React.CSSProperties
 
 // Fondu sur les bords pour que l'image se fonde dans le fond de la page
 const softEdges: React.CSSProperties = {
@@ -18,6 +31,9 @@ const softEdges: React.CSSProperties = {
 
 const Footer: React.FC = () => {
   const t = useTranslations("Footer");
+  const pathname = usePathname();
+  const isWave = pathname === "/thewave";
+  const ink = isWave ? { color: WAVE_INK } : undefined;
 
   return (
     <>
@@ -42,7 +58,14 @@ const Footer: React.FC = () => {
         />
       </div>
 
-      <footer className="relative bg-[#154733] text-white px-6 py-10 text-sm md:text-base font-dior">
+      <footer
+        className={
+          isWave
+            ? "relative liquid-glass px-6 py-10 text-sm md:text-base font-dior"
+            : "relative bg-[#154733] text-white px-6 py-10 text-sm md:text-base font-dior"
+        }
+        style={isWave ? WAVE_GLASS : undefined}
+      >
         {/* Email Signup */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
@@ -50,7 +73,12 @@ const Footer: React.FC = () => {
             <input
               type="email"
               placeholder={t("emailPlaceholder")}
-              className="w-full px-4 py-2 bg-transparent border border-white placeholder-white text-white"
+              className={
+                isWave
+                  ? "w-full px-4 py-2 bg-transparent border border-current placeholder:text-[#3b1a1d]/60"
+                  : "w-full px-4 py-2 bg-transparent border border-white placeholder-white text-white"
+              }
+              style={ink}
             />
           </div>
 
@@ -58,31 +86,40 @@ const Footer: React.FC = () => {
           <div>
             <h2 className="font-bold uppercase mb-2">{t("clientServices")}</h2>
             <ul className="space-y-2">
-              <li><Link href="/privacy" className="hover:underline">{t("shipping")}</Link></li>
-              <li><Link href="/privacy" className="hover:underline">{t("payment")}</Link></li>
-              <li><Link href="/privacy" className="hover:underline">{t("returns")}</Link></li>
+              <li><Link href="/privacy" className="hover:underline" style={ink}>{t("shipping")}</Link></li>
+              <li><Link href="/privacy" className="hover:underline" style={ink}>{t("payment")}</Link></li>
+              <li><Link href="/privacy" className="hover:underline" style={ink}>{t("returns")}</Link></li>
             </ul>
           </div>
 
           {/* Logo */}
           <div className="flex justify-start md:justify-center items-center md:items-start">
-            <Image
-              src={logo}
-              width={150}
-              height={150}
-              alt="logo"
-              className="object-contain"
-              priority
-            />
+            {isWave ? (
+              <CroppedLogo
+                bases={["/images/the-wave-logo"]}
+                alt="TheWave"
+                className="h-12 w-auto"
+                style={{ filter: "brightness(0)", opacity: 0.85 }}
+              />
+            ) : (
+              <Image
+                src={logo}
+                width={150}
+                height={150}
+                alt="logo"
+                className="object-contain"
+                priority
+              />
+            )}
           </div>
         </div>
 
         {/* Bottom links */}
-        <div className="border-t border-white mt-10 pt-6">
+        <div className={isWave ? "border-t border-current mt-10 pt-6" : "border-t border-white mt-10 pt-6"}>
           <div className="max-w-6xl mx-auto flex flex-wrap justify-center md:justify-between text-xs md:text-sm gap-4 md:gap-8 text-center">
-            <Link href="/privacy" className="hover:underline">{t("legalTerms").toUpperCase()}</Link>
-            <Link href="/privacy" className="hover:underline">{t("contact").toUpperCase()}</Link>
-            <Link href="/privacy" className="hover:underline">{t("privacyPolicy").toUpperCase()}</Link>
+            <Link href="/privacy" className="hover:underline" style={ink}>{t("legalTerms").toUpperCase()}</Link>
+            <Link href="/privacy" className="hover:underline" style={ink}>{t("contact").toUpperCase()}</Link>
+            <Link href="/privacy" className="hover:underline" style={ink}>{t("privacyPolicy").toUpperCase()}</Link>
           </div>
         </div>
       </footer>
