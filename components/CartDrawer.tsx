@@ -41,7 +41,7 @@ export default function CartDrawer() {
               <div className="flex items-center gap-4">
                 <div className="relative w-16 h-20 bg-neutral-100 rounded overflow-hidden shrink-0">
                   <Image
-                    src={item.product_images?.[0]?.url}
+                    src={item.selectedImageUrl ?? item.product_images?.[0]?.url}
                     alt={item.name}
                     fill
                     className="object-contain"
@@ -56,6 +56,17 @@ export default function CartDrawer() {
                     <span className="inline-block px-2 py-0.5 bg-white/10 rounded text-[10px] tracking-wide">
                       {item.selectedSizeLabel}
                     </span>
+                    {item.selectedColorName && (
+                      <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded text-[10px] tracking-wide">
+                        {item.selectedColorHex && (
+                          <span
+                            className="inline-block h-2 w-2 rounded-full border border-white/40"
+                            style={{ backgroundColor: item.selectedColorHex }}
+                          />
+                        )}
+                        {item.selectedColorName}
+                      </span>
+                    )}
                   </p>
 
                   <p className="text-xs mt-1 font-sans">
