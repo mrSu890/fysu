@@ -9,6 +9,8 @@ import ScrollReveal from "@/components/ScrollReveal";
 import SiteLoader from "@/components/SiteLoader";
 import NotificationToasts from "@/components/NotificationToasts";
 import RegionGate from "@/components/RegionGate";
+import ExtraCopyBridge from "@/components/ExtraCopyBridge";
+import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -33,7 +35,11 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={inter.variable}>
+    <html
+      lang={locale}
+      dir={rtlLocales.includes(locale) ? "rtl" : "ltr"}
+      className={inter.variable}
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -53,6 +59,7 @@ export default async function RootLayout({
         <SiteLoader />
         {/* <AuthProvider> */}
           <NextIntlClientProvider messages={messages}>
+            <ExtraCopyBridge />
             <CartProvider>
               {children}
               {/* Choix de la zone : apparaît avant les cookies et les notifications */}
