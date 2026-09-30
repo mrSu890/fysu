@@ -110,8 +110,9 @@ export default function TheWavePage() {
   return (
     <>
       <style>{`
-        html.wave-page { background: ${RED}; --background: transparent; }
+        html.wave-page { background: ${RED}; }
         html.wave-page body { background: transparent !important; color: #fff; }
+        html.wave-page .bg-background { background-color: transparent !important; }
         html.wave-page .flower-light,
         html.wave-page .flower-dark { display: none !important; }
       `}</style>
