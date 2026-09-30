@@ -6,6 +6,7 @@ import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import ProductFilters from "@/components/ProductFilters"
 import KibanLogo from "@/components/KibanLogo"
+import { useSiteCopy } from "@/lib/siteCopy"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
@@ -14,15 +15,13 @@ const HERO_IMAGE = "/images/kiban-collector.jpg"
 
 const TITLE = "KIBAN COLLECTOR"
 
-const TEXT =
-  "Kiban Collector is FYSU's craft program: an experimental lab where artisans and engineers work side by side. Together, they create objects of exceptional craftsmanship, made to leave a mark on culture."
-
 // Collection créée dans l'admin (lien = kiban-collector) qui contient les produits
 const COLLECTION_SLUG = "kiban-collector"
 
 /* =================================== */
 
 export default function KibanCollectorPage() {
+  const copy = useSiteCopy()
   const [products, setProducts] = useState<any[]>([])
   const [heroFailed, setHeroFailed] = useState(false)
   const [filters, setFilters] = useState({
@@ -103,7 +102,7 @@ export default function KibanCollectorPage() {
           </div>
 
           <p className="mt-8 text-sm sm:text-base leading-relaxed text-foreground/80">
-            {TEXT}
+            {copy.kibanText}
           </p>
         </div>
       </section>
