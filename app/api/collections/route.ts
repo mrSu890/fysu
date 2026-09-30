@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { NextResponse } from "next/server"
 import { supabaseServer } from "@/lib/supabaseServer"
 
@@ -15,7 +16,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(await localize(data))
   } catch (err: any) {
     console.error("Crash API collections:", err)
     return NextResponse.json({ error: err.message }, { status: 500 })
