@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { NextRequest, NextResponse } from "next/server"
+import { cleanTitle, getRowRank, sortRows } from "@/lib/rowTypes"
 
 export const runtime = "nodejs"
 
@@ -34,6 +35,7 @@ export async function GET(
     section:sections (
       id,
       title,
+      row_type,
       display_order,
       is_active,
       section_products (
@@ -70,30 +72,29 @@ export async function GET(
     )
   }
 
-  // Formatter proprement 
+  // Formatter proprement
 
-  const sections =
-    sectionLinks
-      ?.map((link: any) => link.section)
-      .filter((section: any) => section?.is_active)
+  const activeSections = (sectionLinks ?? [])
+    .map((link: any) => link.section)
+    .filter((section: any) => section?.is_active)
+
+  // Ordre FIXE : vestes/manteaux, hauts, pantalons/jupes, robes, accessoires, chaussures
+  const sections = sortRows(activeSections as any[]).map((section: any) => ({
+    ...section,
+    // le titre est affiché sans les préfixes "A. ", "B. "
+    title: cleanTitle(section.title),
+    rank: getRowRank(section),
+    section_products: [...(section.section_products ?? [])]
       .sort((a: any, b: any) => a.display_order - b.display_order)
-      .map((section: any) => ({
-        ...section,
-        section_products: section.section_products
-          ?.sort(
-            (a: any, b: any) => a.display_order - b.display_order
-          )
-          .map((sp: any) => ({
-            ...sp,
-            product: {
-              ...sp.product,
-              category: sp.product?.categories?.name ?? null,
-              main_image:
-                sp.product?.product_images?.[0]?.url ?? null,
-            },
-          })),
-      })) ?? []
-
+      .map((sp: any) => ({
+        ...sp,
+        product: {
+          ...sp.product,
+          category: sp.product?.categories?.name ?? null,
+          main_image: sp.product?.product_images?.[0]?.url ?? null,
+        },
+      })),
+  }))
 
   return NextResponse.json({
     page,
