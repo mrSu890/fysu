@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
@@ -17,7 +18,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json(await localize(data))
 }
 
 export async function POST(req: Request) {
