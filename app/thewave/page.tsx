@@ -9,7 +9,7 @@ import CroppedLogo from "@/components/CroppedLogo"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
-// Photo verticale de la zone arrondie : à déposer dans public/images
+// Photo verticale plein écran : à déposer dans public/images
 const HERO_IMAGE = "/images/the-wave-hero.jpg"
 
 const TITLE = "TheWave"
@@ -131,21 +131,22 @@ export default function TheWavePage() {
 
       <Navbar />
 
-      {/* ================= IMAGE VERTICALE ARRONDIE + LOGO + TEXTE ================= */}
-      <section className="w-11/12 max-w-6xl mx-auto pt-28 sm:pt-32 text-white">
-        <div className="relative mx-auto w-full max-w-md sm:max-w-lg aspect-[3/4] overflow-hidden rounded-2xl bg-white/10">
-          {!heroFailed && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={HERO_IMAGE}
-              alt={TITLE}
-              className="absolute inset-0 h-full w-full object-cover"
-              onError={() => setHeroFailed(true)}
-            />
-          )}
-        </div>
+      {/* ================= IMAGE PLEIN ÉCRAN (sans arrondi, sans marges) ================= */}
+      <section className="relative w-full h-[100svh] overflow-hidden bg-white/10">
+        {!heroFailed && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={HERO_IMAGE}
+            alt={TITLE}
+            className="absolute inset-0 h-full w-full object-cover"
+            onError={() => setHeroFailed(true)}
+          />
+        )}
+      </section>
 
-        <div className="mx-auto mt-12 sm:mt-16 max-w-3xl text-center">
+      {/* ================= LOGO + TEXTE ================= */}
+      <section className="w-11/12 max-w-6xl mx-auto pt-12 sm:pt-16 text-white">
+        <div className="mx-auto max-w-3xl text-center">
           <h1 className="sr-only">{TITLE}</h1>
 
           {/* Le logo 2 remplace le titre écrit */}
@@ -189,5 +190,5 @@ export default function TheWavePage() {
 
       <Footer />
     </>
-  )
+  );
 }
