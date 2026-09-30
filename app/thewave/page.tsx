@@ -4,8 +4,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
-import ProductFilters from "@/components/ProductFilters"
 import CroppedLogo from "@/components/CroppedLogo"
+import PageBar from "@/components/PageBar"
+import Link from "next/link"
+import { Music } from "lucide-react"
+import { useMusicCopy } from "@/lib/musicCopy"
 import { useSiteCopy } from "@/lib/siteCopy"
 
 /* ====== À MODIFIER FACILEMENT ====== */
@@ -32,6 +35,8 @@ const PINK = "#f5b0b3"
 
 export default function TheWavePage() {
   const copy = useSiteCopy()
+  const musicCopy = useMusicCopy()
+  const [musicHref, setMusicHref] = useState<string | null>(null)
   const [products, setProducts] = useState<any[]>([])
   const [heroImage, setHeroImage] = useState<string | null>(null)
   const [heroFailed, setHeroFailed] = useState(false)
@@ -79,6 +84,17 @@ export default function TheWavePage() {
     }
   }, [])
 
+  // Bouton musique : page de l'album The Wave (ou la liste si plusieurs)
+  useEffect(() => {
+    fetch(`/api/music?collection=${COLLECTION_SLUG}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => {
+        if (!Array.isArray(list) || list.length === 0) return
+        setMusicHref(list.length === 1 ? `/music/${list[0].slug}` : "/music")
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -120,6 +136,8 @@ export default function TheWavePage() {
         html.wave-page .bg-background { background-color: transparent !important; }
         html.wave-page .flower-light,
         html.wave-page .flower-dark { display: none !important; }
+        html.wave-page .page-bar { background: #ffffff; color: #171717; }
+        html.wave-page .page-bar .bg-background { background-color: ${RED} !important; }
       `}</style>
 
       {/* Fond fixe : tout rouge, puis la grande vague rose apparaît au niveau des produits */}
@@ -156,6 +174,27 @@ export default function TheWavePage() {
         )}
       </section>
 
+      {/* ================= BANDE BLANCHE : chemin / musique / filtres ================= */}
+      <PageBar
+        trail={[{ label: "The Wave" }]}
+        filters={products.length > 0 ? filters : undefined}
+        setFilters={products.length > 0 ? setFilters : undefined}
+        middle={
+          musicHref ? (
+            <Link
+              href={musicHref}
+              className="flex h-8 items-center gap-1.5 rounded-full bg-[#171717] px-4 text-xs font-medium"
+              style={{ color: "#ffffff" }}
+            >
+              <Music size={14} />
+              {musicCopy.musicTitle}
+            </Link>
+          ) : (
+            <span />
+          )
+        }
+      />
+
       {/* ================= LOGO + TEXTE ================= */}
       <section className="w-11/12 max-w-6xl mx-auto pt-12 sm:pt-16 text-white">
         <div className="mx-auto max-w-3xl text-center">
@@ -177,11 +216,10 @@ export default function TheWavePage() {
       </section>
 
       {/* ================= PRODUITS ================= */}
-      <div ref={productsRef} className="relative px-6 pt-20 pb-44 text-white">
+      <div ref={productsRef} className="relative px-6 pt-12 pb-44 text-white">
         {products.length > 0 && (
           <>
-            <ProductFilters filters={filters} setFilters={setFilters} />
-            <div className="relative top-12">
+            <div className="relative">
               <div
                 className="
                   grid
