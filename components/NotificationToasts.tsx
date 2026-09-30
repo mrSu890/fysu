@@ -110,6 +110,21 @@ const writeStore = (key: string, value: string) => {
   } catch {}
 }
 
+// Mémoire "pour cette visite" (elle s'efface quand on ferme l'onglet)
+const readSession = (key: string): string | null => {
+  try {
+    return sessionStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+const writeSession = (key: string, value: string) => {
+  try {
+    sessionStorage.setItem(key, value)
+  } catch {}
+}
+
 const todayKey = () => new Date().toISOString().slice(0, 10)
 
 /* ====== CARTE DE NOTIFICATION ====== */
@@ -254,6 +269,9 @@ export default function NotificationToasts() {
         dismissRef.current = finish
       })
 
+    // Le message de bienvenue : une seule fois par visite
+    const welcomeOk = () => readSession("fysu:toast:welcome") !== "1"
+
     const shippingOk = () => readStore("fysu:toast:shipping") !== todayKey()
 
     const signupOk = () => {
@@ -267,10 +285,11 @@ export default function NotificationToasts() {
       await sleep(800)
       if (cancelled) return
 
-      // 1. Bienvenue (toujours)
+      // 1. Bienvenue (une fois par visite)
       await waitUser()
       if (cancelled) return
-      if (!isExcluded()) {
+      if (!isExcluded() && welcomeOk()) {
+        writeSession("fysu:toast:welcome", "1")
         await show("welcome", WELCOME_VISIBLE)
         await sleep(600)
       }
