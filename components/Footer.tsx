@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useBrandPage } from "@/lib/useBrandPage";
 import { useTranslations } from "next-intl";
 import CroppedLogo from "./CroppedLogo";
 import FygrancesIntro from "./FygrancesIntro";
@@ -31,8 +31,7 @@ const softEdges: React.CSSProperties = {
 
 const Footer: React.FC = () => {
   const t = useTranslations("Footer");
-  const pathname = usePathname();
-  const isWave = pathname === "/thewave";
+  const isWave = useBrandPage() === "thewave";
   const ink = isWave ? { color: WAVE_INK } : undefined;
 
   return (
