@@ -10,6 +10,46 @@ export const dynamic = "force-dynamic"
    GET /api/music?slug=mon-album      -> un album avec tous ses titres
    ==================================================================== */
 
+// Retrouve la page de chaque collection liée à l'album (pour les liens « Retour à … »)
+async function resolveCollections(slugs: string[]) {
+  const fixed: Record<string, { href: string; title: string }> = {
+    thewave: { href: "/thewave", title: "The Wave" },
+    "kiban-collector": { href: "/kiban-collector", title: "Kiban Collector" },
+  }
+  const out: { slug: string; href: string; title: string }[] = []
+
+  for (const slug of slugs) {
+    if (fixed[slug]) {
+      out.push({ slug, ...fixed[slug] })
+      continue
+    }
+    try {
+      const { data: cp } = await supabaseAdmin
+        .from("collectionPages")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle()
+      if (cp) {
+        out.push({ slug, href: `/collections/${slug}`, title: (cp as any).title ?? (cp as any).name ?? slug })
+        continue
+      }
+      const { data: pg } = await supabaseAdmin
+        .from("pages")
+        .select("title, slug")
+        .eq("slug", slug)
+        .maybeSingle()
+      if (pg) {
+        out.push({ slug, href: `/${slug}`, title: (pg as any).title ?? slug })
+        continue
+      }
+    } catch {
+      /* on ignore : lien non affiché */
+    }
+    out.push({ slug, href: `/${slug}`, title: slug.replace(/-/g, " ") })
+  }
+  return out
+}
+
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams
   const slug = params.get("slug")
@@ -34,7 +74,9 @@ export async function GET(req: Request) {
       .sort((a: any, b: any) => a.display_order - b.display_order || a.id - b.id)
       .map(({ audio_path, ...t }: any) => t)
 
-    return NextResponse.json({ ...album, tracks })
+    const collections = await resolveCollections((album as any).collection_slugs ?? [])
+
+    return NextResponse.json({ ...album, tracks, collections })
   }
 
   // ----- la liste -----
