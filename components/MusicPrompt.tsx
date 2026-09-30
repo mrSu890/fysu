@@ -51,11 +51,12 @@ function recentlyClosed(slug: string) {
 export default function MusicPrompt() {
   const pathname = usePathname()
   const copy = useMusicCopy()
-  const { album: playingAlbum, playing } = useMusicPlayer()
+  const { album: playingAlbum, playing, prime, unprime } = useMusicPlayer()
   const [albums, setAlbums] = useState<PromptAlbum[]>([])
   const [slug, setSlug] = useState<string | null>(null)
   const [regionReady, setRegionReady] = useState(false)
   const [closed, setClosed] = useState(false)
+  const [hidden, setHidden] = useState(false)
 
   // On attend que la zone soit choisie (le pop-up de région passe en premier)
   useEffect(() => {
@@ -71,22 +72,50 @@ export default function MusicPrompt() {
     setAlbums([])
     if (!s || (parts1(pathname) && RESERVED.has(s))) {
       setSlug(null)
+      setHidden(false)
+      unprime()
       return
     }
     setSlug(s)
-    if (recentlyClosed(s)) return
+    setHidden(recentlyClosed(s))
 
     let cancelled = false
     fetch(`/api/music?collection=${encodeURIComponent(s)}`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
-        if (!cancelled && Array.isArray(data)) setAlbums(data)
+      .then(async (data) => {
+        if (cancelled) return
+        const list: PromptAlbum[] = Array.isArray(data) ? data : []
+        setAlbums(list)
+        if (list.length === 0) {
+          unprime()
+          return
+        }
+        // la pastille de musique apparaît (en pause) sur chaque page qui a de la musique
+        try {
+          const res = await fetch(`/api/music?slug=${encodeURIComponent(list[0].slug)}`)
+          if (!res.ok || cancelled) return
+          const full = await res.json()
+          if (cancelled) return
+          prime(
+            {
+              id: full.id,
+              slug: full.slug,
+              title: full.title,
+              artist: full.artist,
+              cover_url: full.cover_url,
+              brand: full.brand,
+            },
+            full.tracks ?? []
+          )
+        } catch {
+          /* pas de pastille */
+        }
       })
       .catch(() => {})
     return () => {
       cancelled = true
     }
-  }, [pathname])
+  }, [pathname, prime, unprime])
 
   function close() {
     setClosed(true)
@@ -102,7 +131,7 @@ export default function MusicPrompt() {
   const alreadyListening = Boolean(
     playingAlbum && playing && albums.some((a) => a.id === playingAlbum.id)
   )
-  const visible = regionReady && !closed && albums.length > 0 && !alreadyListening
+  const visible = regionReady && !hidden && !closed && albums.length > 0 && !alreadyListening
 
   return (
     <AnimatePresence>

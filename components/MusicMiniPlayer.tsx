@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { ChevronDown, Music, Pause, Play, SkipBack, SkipForward } from "lucide-react"
+import { ChevronDown, ListMusic, Music, Pause, Play, SkipBack, SkipForward } from "lucide-react"
 import { useMusicPlayer } from "@/context/MusicPlayerContext"
 import { useMusicCopy } from "@/lib/musicCopy"
 import Equalizer from "@/components/MusicEqualizer"
@@ -92,7 +92,7 @@ export default function MiniPlayer() {
               type="button"
               onClick={prev}
               aria-label={copy.previous}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full"
             >
               <SkipBack size={18} fill="currentColor" />
             </button>
@@ -112,15 +112,23 @@ export default function MiniPlayer() {
               type="button"
               onClick={next}
               aria-label={copy.next}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full"
             >
               <SkipForward size={18} fill="currentColor" />
             </button>
+            <Link
+              href={`/music/${album.slug}`}
+              aria-label={album.title}
+              title={album.title}
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full"
+            >
+              <ListMusic size={18} />
+            </Link>
             <button
               type="button"
               onClick={() => setCollapsed(true)}
               aria-label={copy.collapse}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full opacity-70"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full opacity-70"
             >
               <ChevronDown size={18} />
             </button>

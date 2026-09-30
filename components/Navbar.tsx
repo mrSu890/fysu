@@ -16,6 +16,7 @@ import { useCart } from "@/context/CartContext";
 import { useTranslations } from "next-intl";
 import LocaleSwitcher from "./LocaleSwitcher";
 import CroppedLogo from "./CroppedLogo";
+import { useMusicCopy } from "@/lib/musicCopy";
 
 const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
@@ -41,6 +42,9 @@ function MobileMenu({
   handleMobileLinkClick,
   links,
   collections,
+  projectsOpen,
+  setProjectsOpen,
+  projects,
 }: {
   activePanel: "menu" | null;
   setActivePanel: (v: "menu" | null) => void;
@@ -49,6 +53,9 @@ function MobileMenu({
   handleMobileLinkClick: () => void;
   links: { label: string; href: string }[];
   collections: { label: string; href: string }[];
+  projectsOpen: boolean;
+  setProjectsOpen: (v: boolean) => void;
+  projects: { label: string; href: string }[];
 }) {
   const t = useTranslations("Navigation");
   const { cart, isCartOpen, setIsCartOpen } = useCart();
@@ -380,34 +387,42 @@ function MobileMenu({
                 </p>
 
                 <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6">
-                  {links.map((link) =>
-                    link.href === "#" ? (
-                      <React.Fragment key="collections-mobile">
+                  {links.map((link) => {
+                    const isProjects = link.href === "#projects";
+                    const isAccordion = link.href === "#" || isProjects;
+                    const isOpen = isProjects ? projectsOpen : collectionOpen;
+                    const toggle = () =>
+                      isProjects
+                        ? setProjectsOpen(!projectsOpen)
+                        : setCollectionOpen(!collectionOpen);
+                    const items = isProjects ? projects : collections;
+                    return isAccordion ? (
+                      <React.Fragment key={link.href}>
                         <li>
                           <button
-                            onClick={() => setCollectionOpen(!collectionOpen)}
+                            onClick={toggle}
                             className="flex items-center justify-between w-full py-2 border-b border-white/20"
                             type="button"
                           >
-                            {t("collections").toUpperCase()}
+                            {link.label}
                             <ChevronDown
                               size={16}
                               className={`transition-transform ${
-                                collectionOpen ? "rotate-180" : ""
+                                isOpen ? "rotate-180" : ""
                               }`}
                             />
                           </button>
                         </li>
 
                         <AnimatePresence>
-                          {collectionOpen && (
+                          {isOpen && (
                             <motion.ul
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               className="pl-4 space-y-2 text-xs overflow-hidden"
                             >
-                              {collections.map((col) => (
+                              {items.map((col) => (
                                 <li key={col.label}>
                                   <Link
                                     href={col.href}
@@ -432,8 +447,8 @@ function MobileMenu({
                           {link.label}
                         </Link>
                       </li>
-                    )
-                  )}
+                    );
+                  })}
 
                   <li>
                     <Link
@@ -472,6 +487,10 @@ export default function Navbar() {
   const t = useTranslations("Navigation");
   const [activePanel, setActivePanel] = useState<"menu" | null>(null);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const musicCopy = useMusicCopy();
+  // Projets hors catégories de produits (la musique pour l'instant)
+  const projects = [{ label: musicCopy.musicTitle, href: "/music" }];
 
   const [links, setLinks] = useState<{ label: string; href: string }[]>([]);
   const [collections, setCollections] = useState<
@@ -500,6 +519,7 @@ export default function Navbar() {
       setLinks([
         ...pageLinks,
         { label: t("collections").toUpperCase(), href: "#" },
+        { label: musicCopy.projects.toUpperCase(), href: "#projects" },
       ]);
     };
 
@@ -517,10 +537,11 @@ export default function Navbar() {
 
     loadPages();
     loadCollections();
-  }, [t]);
+  }, [t, musicCopy.projects]);
 
   const handleMobileLinkClick = () => {
     setCollectionOpen(false);
+    setProjectsOpen(false);
     setActivePanel(null);
   };
 
@@ -533,6 +554,9 @@ export default function Navbar() {
       handleMobileLinkClick={handleMobileLinkClick}
       links={links}
       collections={collections}
+      projectsOpen={projectsOpen}
+      setProjectsOpen={setProjectsOpen}
+      projects={projects}
     />
   );
 }

@@ -14,6 +14,8 @@ type Props = {
   // Filtres (facultatif) : affichés à droite de la bande
   filters?: any
   setFilters?: (f: any) => void
+  // Remplace l'interrupteur clair / sombre au milieu de la bande (facultatif)
+  middle?: React.ReactNode
 }
 
 /* Interrupteur clair / sombre (version compacte pour la bande) */
@@ -91,7 +93,7 @@ function BarThemeSwitch() {
   )
 }
 
-export default function PageBar({ trail, filters, setFilters }: Props) {
+export default function PageBar({ trail, filters, setFilters, middle }: Props) {
   const tn = useTranslations("Navigation")
 
   const crumbs: Crumb[] = [{ label: tn("menu"), href: "/" }, ...trail]
@@ -118,9 +120,9 @@ export default function PageBar({ trail, filters, setFilters }: Props) {
           ))}
         </nav>
 
-        {/* MILIEU : interrupteur clair / sombre */}
+        {/* MILIEU : interrupteur clair / sombre (ou bouton personnalisé) */}
         <div className="flex justify-center">
-          <BarThemeSwitch />
+          {middle ?? <BarThemeSwitch />}
         </div>
 
         {/* DROITE : filtres */}

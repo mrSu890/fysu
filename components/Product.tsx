@@ -95,16 +95,9 @@ const Product = ({
 
   const hasAnimatedRef = useRef(false)
 
-  // Glisser les photos du produit : seulement à la souris.
-  // Au doigt, le balayage horizontal fait défiler la rangée de produits (plus de conflit).
-  const [canDrag, setCanDrag] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)")
-    const update = () => setCanDrag(mq.matches)
-    update()
-    mq.addEventListener("change", update)
-    return () => mq.removeEventListener("change", update)
-  }, [])
+  // Glisser les photos du produit (souris et doigt) quand il y en a plusieurs.
+  // Pour faire défiler la rangée de produits : glisser sur le texte sous la photo ou entre les cartes.
+  const canDrag = images.length > 1
 
   const goToProduct = () => {
     router.push(`/product/${product.slug}`)
@@ -196,6 +189,18 @@ const Product = ({
         className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-100 mb-4"
       >
         {/* Badge de disponibilité (précommande, épuisé, bientôt…) */}
+        {images.length > 1 && (
+          <span className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1">
+            {images.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                  i === currentIndex ? "bg-white" : "bg-white/50"
+                }`}
+              />
+            ))}
+          </span>
+        )}
         {badgeText && (
           <span className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-black">
             {badgeText}
