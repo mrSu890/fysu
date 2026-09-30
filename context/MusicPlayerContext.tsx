@@ -31,6 +31,10 @@ type PlayerContextType = {
   collapsed: boolean
   setCollapsed: (value: boolean) => void
   playAlbum: (album: PlayerAlbum, tracks: MusicTrack[], startIndex?: number, shuffle?: boolean) => void
+  // affiche la pastille (en pause) pour l'album d'une page, sans lancer la musique
+  prime: (album: PlayerAlbum, tracks: MusicTrack[]) => void
+  // retire la pastille si la musique n'a jamais été lancée
+  unprime: () => void
   toggle: () => void
   next: () => void
   prev: () => void
@@ -62,6 +66,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const [time, setTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [collapsed, setCollapsed] = useState(false)
+  const startedRef = useRef(false)
   const pendingSeekRef = useRef(0)
   const restoredRef = useRef(false)
   const lastSavedSecondRef = useRef(-1)
@@ -83,6 +88,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
           setCollapsed(Boolean(saved.collapsed))
           setTime(Number(saved.time) || 0)
           setDuration(Number(list[i].duration_seconds) || 0)
+          startedRef.current = true
           pendingSeekRef.current = Number(saved.time) || 0
           const audio = audioRef.current
           if (audio) audio.src = list[i].audio_url
@@ -116,6 +122,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     const track = queueRef.current[i]
     if (!audio || !track) return
     pendingSeekRef.current = 0
+    startedRef.current = true
     indexRef.current = i
     setIndex(i)
     setTime(0)
@@ -137,6 +144,44 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     },
     [load]
   )
+
+  const prime = useCallback<PlayerContextType["prime"]>((nextAlbum, tracks) => {
+    if (!tracks.length) return
+    // quelque chose est déjà lancé : on ne touche à rien
+    if (startedRef.current && queueRef.current.length > 0) return
+    const audio = audioRef.current
+    queueRef.current = tracks
+    indexRef.current = 0
+    setQueue(tracks)
+    setAlbum(nextAlbum)
+    setIndex(0)
+    setTime(0)
+    setDuration(Number(tracks[0].duration_seconds) || 0)
+    setCollapsed(false)
+    if (audio) audio.src = tracks[0].audio_url
+  }, [])
+
+  const unprime = useCallback(() => {
+    if (startedRef.current) return
+    if (queueRef.current.length === 0) return
+    queueRef.current = []
+    indexRef.current = 0
+    setQueue([])
+    setAlbum(null)
+    setIndex(0)
+    setTime(0)
+    setDuration(0)
+    const audio = audioRef.current
+    if (audio) {
+      audio.removeAttribute("src")
+      audio.load()
+    }
+    try {
+      sessionStorage.removeItem(STORAGE_KEY)
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   const toggle = useCallback(() => {
     const audio = audioRef.current
@@ -214,12 +259,14 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       collapsed,
       setCollapsed,
       playAlbum,
+      prime,
+      unprime,
       toggle,
       next,
       prev,
       seek,
     }),
-    [album, queue, index, current, playing, time, duration, collapsed, playAlbum, toggle, next, prev, seek]
+    [album, queue, index, current, playing, time, duration, collapsed, playAlbum, prime, unprime, toggle, next, prev, seek]
   )
 
   return (
@@ -229,7 +276,10 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         ref={audioRef}
         preload="metadata"
         playsInline
-        onPlay={() => setPlaying(true)}
+        onPlay={() => {
+          startedRef.current = true
+          setPlaying(true)
+        }}
         onPause={() => setPlaying(false)}
         onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => {
