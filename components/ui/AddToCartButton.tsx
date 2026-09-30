@@ -1,7 +1,7 @@
 "use client";
 
 import { ProductType } from "@/types/product";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartColor } from "@/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { useState } from "react";
@@ -13,6 +13,8 @@ type Props = {
   selectedSizeLabel: string | null;
   // "available" = « Ajouter au panier », "preorder" = « Précommander »
   mode?: "available" | "preorder";
+  // couleur choisie (null si le produit n'a qu'une couleur)
+  color?: CartColor | null;
   className?: string;
 };
 
@@ -21,6 +23,7 @@ export default function AddToCartButton({
   selectedSizeId,
   selectedSizeLabel,
   mode = "preorder",
+  color = null,
   className,
 }: Props) {
   const t = useTranslations("Product");
@@ -123,7 +126,7 @@ export default function AddToCartButton({
             return;
           }
 
-          addToCartWithFeedback(product, selectedSizeId, selectedSizeLabel, 1500);
+          addToCartWithFeedback(product, selectedSizeId, selectedSizeLabel, 1500, color);
           setIsCartOpen(true);
         }}
         className={`
