@@ -7,7 +7,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ProductType } from "@/types/product"
 import { motion, useMotionValue, animate } from "framer-motion"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
+import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/lib/availability"
 
 const IMAGE_CLICK_THRESHOLD = 8
 
@@ -21,6 +22,11 @@ const Product = ({
   isFirst?: boolean
 }) => {
   const t = useTranslations("Product")
+  const locale = useLocale()
+  const badgeText = getBadgeText(
+    getEffectiveAvailability(product),
+    getAvailabilityCopy(locale)
+  )
   const router = useRouter()
   const [liked, setLiked] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -222,6 +228,12 @@ const Product = ({
         ref={trackRef}
         className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-100 mb-4"
       >
+        {/* Badge de disponibilité (précommande, épuisé, bientôt…) */}
+        {badgeText && (
+          <span className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-black">
+            {badgeText}
+          </span>
+        )}
         <motion.div
           className="flex h-full w-full cursor-grab active:cursor-grabbing"
           style={{ x, touchAction: "pan-y" }}
