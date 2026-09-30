@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { isAvailabilityId, isBuyable } from "@/lib/availability";
 
 type RawCartItem = {
   id?: number;
@@ -10,6 +11,7 @@ type CheckoutProductRow = {
   id: number;
   name: string;
   price: number;
+  availability: string | null;
   product_sizes: {
     id: string;
     size: string;
@@ -69,6 +71,7 @@ export async function validateCheckoutCart(cart: unknown): Promise<{
       id,
       name,
       price,
+      availability,
       product_sizes (
         id,
         size,
@@ -94,6 +97,12 @@ export async function validateCheckoutCart(cart: unknown): Promise<{
 
     if (!product) {
       return { ok: false, status: 400, error: "A product in your cart no longer exists" };
+    }
+
+    // Produit "me prévenir", "devis", "à venir" ou "épuisé" : pas d'achat possible
+    const mode = isAvailabilityId(product.availability) ? product.availability : "available";
+    if (!isBuyable(mode)) {
+      return { ok: false, status: 400, error: `${product.name} is not available for purchase` };
     }
 
     const size = product.product_sizes?.find((entry) => entry.id === item.sizeId);
