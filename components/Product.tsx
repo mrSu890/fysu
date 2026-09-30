@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Heart } from "lucide-react"
+import WishlistHeart from "@/components/WishlistHeart"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -14,11 +14,10 @@ const IMAGE_CLICK_THRESHOLD = 8
 
 const Product = ({
   product,
-  scrollRef,
   isFirst = false,
 }: {
   product: ProductType
-  scrollRef?: React.RefObject<HTMLDivElement | null>
+  scrollRef?: React.RefObject<HTMLDivElement | null> // gardé pour compatibilité (plus utilisé)
   isFirst?: boolean
 }) => {
   const t = useTranslations("Product")
@@ -28,7 +27,6 @@ const Product = ({
     getAvailabilityCopy(locale)
   )
   const router = useRouter()
-  const [liked, setLiked] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isInView, setIsInView] = useState(false)
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -61,40 +59,6 @@ const Product = ({
   
     return () => observer.disconnect()
   }, [])
-
-  // Vérifie si ce produit est déjà dans la wishlist
-  useEffect(() => {
-    const checkWishlist = async () => {
-      try {
-        const res = await fetch(`/api/wishlist/${product.id}`)
-        const data = await res.json()
-        setLiked(data.liked)
-      } catch (err) {
-        console.error("Erreur check wishlist:", err)
-      }
-    }
-    checkWishlist()
-  }, [product.id])
-
-  const toggleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-
-    try {
-      const res = await fetch("/api/wishlist", {
-        method: liked ? "DELETE" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: product.id }),
-      })
-
-      if (res.ok) {
-        setLiked(!liked)
-      } else {
-        console.error("Erreur ajout/suppression wishlist")
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
 
   // Extraire les couleurs uniques depuis les images
   const uniqueColors = useMemo(() => {
@@ -130,6 +94,17 @@ const Product = ({
   }, [])
 
   const hasAnimatedRef = useRef(false)
+
+  // Glisser les photos du produit : seulement à la souris.
+  // Au doigt, le balayage horizontal fait défiler la rangée de produits (plus de conflit).
+  const [canDrag, setCanDrag] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)")
+    const update = () => setCanDrag(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    return () => mq.removeEventListener("change", update)
+  }, [])
 
   const goToProduct = () => {
     router.push(`/product/${product.slug}`)
@@ -210,19 +185,11 @@ const Product = ({
   return (
     <div className="relative w-full group" ref={containerRef} >
       {/* Bouton like */}
-      <button
-        onClick={toggleLike}
-        className="absolute top-2 right-2 rounded-full p-1.5 hover:bg-gray-200 cursor-pointer transition z-10"
-      >
-        <Heart
-          size={22}
-          className={`transition-colors ${
-            liked ? "fill-green-900 text-green-900" : "text-gray-700"
-          }`}
-          strokeWidth={1.5}
-        />
-      </button>
-  
+      <WishlistHeart
+        productId={product.id}
+        className="absolute top-2 right-2 z-10 hover:bg-gray-200"
+      />
+
       {/* Image */}
       <div
         ref={trackRef}
@@ -235,9 +202,9 @@ const Product = ({
           </span>
         )}
         <motion.div
-          className="flex h-full w-full cursor-grab active:cursor-grabbing"
-          style={{ x, touchAction: "pan-y" }}
-          drag="x"
+          className={`flex h-full w-full ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
+          style={{ x, touchAction: canDrag ? "pan-y" : "auto" }}
+          drag={canDrag ? "x" : false}
           dragConstraints={{
             right: 0,
             left: -(trackWidth * (images.length - 1)),
@@ -247,19 +214,10 @@ const Product = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={resetGesture}
-          onTouchStart={(e) => e.stopPropagation()}
           onDragStart={() => {
             dragIntentRef.current = true
-
-            if (scrollRef?.current) {
-              scrollRef.current.style.overflowX = "hidden"
-            }
           }}
           onDragEnd={() => {
-            if (scrollRef?.current) {
-              scrollRef.current.style.overflowX = "auto"
-            }
-
             if (!trackWidth) return
 
             const movedBy = -x.get()
