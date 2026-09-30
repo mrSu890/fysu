@@ -30,15 +30,20 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { title, hero_image } = body;
+    const { title, hero_image, visible } = body;
+
+    // Seuls les champs envoyés sont modifiés
+    const updatePayload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (title !== undefined) updatePayload.title = title;
+    if (hero_image !== undefined) updatePayload.hero_image = hero_image;
+    if (visible !== undefined) updatePayload.visible = visible;
 
     const { data, error } = await supabase
       .from("collectionPages")
-      .update({
-        title,
-        hero_image,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", id)
       .select()
       .single();
