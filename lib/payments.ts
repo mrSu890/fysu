@@ -17,6 +17,7 @@ type CheckoutProductRow = {
     size: string;
     stock: number;
     is_active: boolean;
+    color_id: string | null;
   }[];
 };
 
@@ -76,7 +77,8 @@ export async function validateCheckoutCart(cart: unknown): Promise<{
         id,
         size,
         stock,
-        is_active
+        is_active,
+        color_id
       )
     `)
     .in("id", productIds);
@@ -84,6 +86,19 @@ export async function validateCheckoutCart(cart: unknown): Promise<{
   if (error) {
     console.error("Checkout product validation error:", error);
     return { ok: false, status: 500, error: "Unable to validate cart" };
+  }
+
+  // Couleurs des produits du panier (pour afficher "Produit – Couleur" sur la page de paiement)
+  const { data: colorRows } = await supabaseAdmin
+    .from("product_colors")
+    .select("id, product_id, name")
+    .in("product_id", productIds);
+
+  const colorNames = new Map<string, string>();
+  const colorCount = new Map<number, number>();
+  for (const c of (colorRows ?? []) as { id: string; product_id: number; name: string }[]) {
+    colorNames.set(c.id, c.name);
+    colorCount.set(c.product_id, (colorCount.get(c.product_id) ?? 0) + 1);
   }
 
   const products = new Map<number, CheckoutProductRow>(
@@ -119,9 +134,13 @@ export async function validateCheckoutCart(cart: unknown): Promise<{
       return { ok: false, status: 400, error: `Only ${size.stock} left for ${product.name} (${size.size})` };
     }
 
+    // On ajoute la couleur au nom seulement si le produit en a plusieurs
+    const colorName = size.color_id ? colorNames.get(size.color_id) : undefined;
+    const showColor = !!colorName && (colorCount.get(product.id) ?? 0) > 1;
+
     validatedItems.push({
       productId: product.id,
-      productName: product.name,
+      productName: showColor ? `${product.name} – ${colorName}` : product.name,
       unitAmount: Math.round(product.price * 100),
       quantity: item.quantity,
       sizeId: size.id,
