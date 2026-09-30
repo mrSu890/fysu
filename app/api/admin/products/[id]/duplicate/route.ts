@@ -34,6 +34,8 @@ type DuplicableProduct = {
   price: number;
   gender: string | null;
   product_type: string | null;
+  availability: string | null;
+  release_date: string | null;
   category_id: number | null;
   details: string | null;
   size_fit: string | null;
@@ -119,6 +121,8 @@ export async function POST(
         slug,
         gender: sourceProduct.gender,
         product_type: sourceProduct.product_type ?? "clothing",
+        availability: sourceProduct.availability ?? "available",
+        release_date: sourceProduct.release_date ?? null,
         category_id: sourceProduct.category_id,
         details: sourceProduct.details,
         size_fit: sourceProduct.size_fit,
