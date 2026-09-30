@@ -1,3 +1,4 @@
+import { localize } from "@/lib/translate"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -28,7 +29,7 @@ export async function GET(
 
   // Aucun produit
   if (!Array.isArray(page.products) || page.products.length === 0) {
-    return NextResponse.json({ page, products: [] })
+    return NextResponse.json(await localize({ page, products: [] }))
   }
 
   // Produits + images
@@ -73,8 +74,10 @@ export async function GET(
         product.product_images?.[0]?.url ?? null,
     }))
 
-  return NextResponse.json({
-    page,
-    products: orderedProducts,
-  })
+  return NextResponse.json(
+    await localize({
+      page,
+      products: orderedProducts,
+    })
+  )
 }
