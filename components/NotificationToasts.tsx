@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion, type PanInfo } from "framer-motion"
-import { useLocale } from "next-intl"
+import { useLocale, useMessages } from "next-intl"
 import { X } from "lucide-react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 
@@ -80,6 +80,24 @@ const COPY: Record<string, Copy> = {
     signupNo: "まだです、登録します",
     close: "閉じる",
   },
+}
+
+// Langues ajoutées ensuite : les textes viennent du fichier messages/<langue>.json
+function fromMessages(m?: Record<string, string>): Copy | null {
+  if (!m) return null
+  return {
+    welcomeLabel: m.welcomeLabel,
+    welcomeText: m.welcomeText,
+    backLabel: m.backLabel,
+    backText: (n) => (n ? m.backText.replace("{name}", n) : m.backTextAnon),
+    shippingLabel: m.shippingLabel,
+    shippingText: m.shippingText,
+    signupLabel: m.signupLabel,
+    signupText: m.signupText,
+    signupYes: m.signupYes,
+    signupNo: m.signupNo,
+    close: m.close,
+  }
 }
 
 /* ====== RYTHME ====== */
@@ -212,7 +230,8 @@ function ToastCard({
 
 export default function NotificationToasts() {
   const locale = useLocale()
-  const copy = COPY[locale] ?? COPY.en
+  const messages = useMessages() as { Toasts?: Record<string, string> }
+  const copy = COPY[locale] ?? fromMessages(messages.Toasts) ?? COPY.en
   const pathname = usePathname()
   const { user, profile, loading } = useCurrentUser()
 

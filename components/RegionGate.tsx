@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { useLocale } from "next-intl"
+import { useLocale, useMessages } from "next-intl"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import {
   CONTINENTS,
@@ -104,7 +104,8 @@ type Step = "continent" | "country" | "language"
 export default function RegionGate() {
   const locale = useLocale()
   const router = useRouter()
-  const copy = COPY[locale] ?? COPY.en
+  const messages = useMessages() as { RegionGate?: Copy }
+  const copy = COPY[locale] ?? messages.RegionGate ?? COPY.en
 
   const [open, setOpen] = useState(false)
   const [closable, setClosable] = useState(false)
