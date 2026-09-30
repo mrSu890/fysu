@@ -26,7 +26,7 @@ export default function MusicAlbumPage() {
   const copy = useMusicCopy()
   const player = useMusicPlayer()
 
-  const [album, setAlbum] = useState<MusicAlbumFull | null>(null)
+  const [album, setAlbum] = useState<(MusicAlbumFull & { collections?: { slug: string; href: string; title: string }[] }) | null>(null)
   const [loading, setLoading] = useState(true)
   const [missing, setMissing] = useState(false)
   const [openInfo, setOpenInfo] = useState<number | null>(null)
@@ -143,11 +143,21 @@ export default function MusicAlbumPage() {
 
         {album && (
           <>
-            {brand.path && (
-              <Link href={brand.path} className="mb-6 inline-block text-xs opacity-70 hover:opacity-100">
-                ← {copy.backTo} {brand.label}
+            <nav className="mb-6 flex flex-col items-start gap-2 text-xs">
+              {(album.collections ?? []).map((c) => (
+                <Link key={c.slug} href={c.href} className="opacity-80 hover:opacity-100">
+                  ← {copy.backTo} {c.title}
+                </Link>
+              ))}
+              {(album.collections ?? []).length === 0 && brand.path && (
+                <Link href={brand.path} className="opacity-80 hover:opacity-100">
+                  ← {copy.backTo} {brand.label}
+                </Link>
+              )}
+              <Link href="/music" className="opacity-80 hover:opacity-100">
+                ♪ {copy.allAlbums}
               </Link>
-            )}
+            </nav>
 
             {/* ================= EN-TÊTE ================= */}
             <header className="flex flex-col items-center text-center sm:flex-row sm:items-end sm:gap-7 sm:text-left">
