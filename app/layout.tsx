@@ -10,6 +10,9 @@ import SiteLoader from "@/components/SiteLoader";
 import NotificationToasts from "@/components/NotificationToasts";
 import RegionGate from "@/components/RegionGate";
 import ExtraCopyBridge from "@/components/ExtraCopyBridge";
+import MiniPlayer from "@/components/MusicMiniPlayer";
+import MusicPrompt from "@/components/MusicPrompt";
+import { MusicPlayerProvider } from "@/context/MusicPlayerContext";
 import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -61,11 +64,16 @@ export default async function RootLayout({
           <NextIntlClientProvider messages={messages}>
             <ExtraCopyBridge />
             <CartProvider>
-              {children}
-              {/* Choix de la zone : apparaît avant les cookies et les notifications */}
-              <RegionGate />
-              <CookieBanner />
-              <NotificationToasts />
+              <MusicPlayerProvider>
+                {children}
+                {/* Choix de la zone : apparaît avant les cookies et les notifications */}
+                <RegionGate />
+                <CookieBanner />
+                <NotificationToasts />
+                {/* Musique : pop-up sur les collections + pastille de lecture */}
+                <MusicPrompt />
+                <MiniPlayer />
+              </MusicPlayerProvider>
             </CartProvider>
           </NextIntlClientProvider>
         {/* </AuthProvider> */}
