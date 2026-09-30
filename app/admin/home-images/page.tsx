@@ -1,15 +1,6 @@
-import HeroSliderDashboard from '@/components/Admin/HeroSliderDashboard';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import HeroSliderDashboard from "@/components/Admin/HeroSliderDashboard"
 
-const HomeImagesAdminPage = () => {
-    return (
-        <>
-            <Navbar />
-            <HeroSliderDashboard />
-            <Footer />
-        </>
-    )
+// La coque de l'admin (menu + barre du haut) est ajoutée par app/admin/layout.tsx
+export default function HomeImagesAdminPage() {
+  return <HeroSliderDashboard />
 }
-
-export default HomeImagesAdminPage
