@@ -17,6 +17,7 @@ type SectionType = {
   id: string
   title: string
   display_order: number
+  rank?: number
   section_products: {
     display_order: number
     product: ProductType
@@ -112,8 +113,9 @@ export default function CollectionPage() {
   }
 
   const hasHero = Boolean(page.hero_image)
-  const visibleSections = sections
-    .sort((a, b) => a.display_order - b.display_order)
+  // Ordre fixe des rangées (calculé par le serveur : vestes, hauts, pantalons/jupes, robes, accessoires, chaussures)
+  const visibleSections = [...sections]
+    .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99) || a.display_order - b.display_order)
     .map((section) => {
       const products = section.section_products
         ?.sort((a, b) => a.display_order - b.display_order)
