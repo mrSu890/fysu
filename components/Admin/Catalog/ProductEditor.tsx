@@ -10,6 +10,7 @@ import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
 import { BRAND_LIST, getBrandId } from "@/lib/brands"
+import { FAMILY_ADMIN_LIST } from "@/lib/olfactive"
 
 /* ====================================================================
    FICHE PRODUIT EN PLEINE PAGE
@@ -49,6 +50,8 @@ type FormState = {
   availability: string
   release_date: string
   brand: string
+  olfactive_family: string
+  evocation: string
 }
 
 const TABS = [
@@ -148,6 +151,8 @@ export default function ProductEditor({ id }: { id: string }) {
     availability: "available",
     release_date: "",
     brand: "fysu",
+    olfactive_family: "",
+    evocation: "",
   })
   const [colors, setColors] = useState<ColorState[]>([])
   const [infoBlocks, setInfoBlocks] = useState<InfoBlockState[]>([])
@@ -187,6 +192,8 @@ export default function ProductEditor({ id }: { id: string }) {
         availability: isAvailabilityId(p.availability) ? p.availability : "available",
         release_date: p.release_date ? String(p.release_date).slice(0, 10) : "",
         brand: getBrandId(p.brand),
+        olfactive_family: p.olfactive_family ?? "",
+        evocation: p.evocation ?? "",
       }
 
       const imageRows = (p.product_images ?? []) as { url: string; color: string | null }[]
@@ -539,6 +546,8 @@ export default function ProductEditor({ id }: { id: string }) {
             ? form.release_date || null
             : null,
         brand: form.brand,
+        olfactive_family: form.product_type === "fragrance" ? form.olfactive_family || null : null,
+        evocation: form.evocation,
         size_guide_image_url: sizeGuide,
         colors: colors.map((c) => ({
           id: c.id,
@@ -737,6 +746,41 @@ export default function ProductEditor({ id }: { id: string }) {
                   />
                 </Field>
               </div>
+              {form.product_type === "fragrance" && (
+                <>
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Famille olfactive"
+                      hint="Classe le parfum sur la page FY'grances (des plus fraîches aux plus profondes)."
+                    >
+                      <select
+                        className={INPUT}
+                        value={form.olfactive_family}
+                        onChange={(e) => setField("olfactive_family", e.target.value)}
+                      >
+                        <option value="">Aucune</option>
+                        {FAMILY_ADMIN_LIST.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.label}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Phrase d'évocation"
+                      hint="Une courte phrase sous le nom, par exemple « pour les soirs où le corps ralentit »."
+                    >
+                      <input
+                        className={INPUT}
+                        value={form.evocation}
+                        onChange={(e) => setField("evocation", e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                </>
+              )}
               <Field label="Prix (€)">
                 <input
                   className={INPUT}
