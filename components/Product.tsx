@@ -17,7 +17,7 @@ const Product = ({
   isFirst = false,
 }: {
   product: ProductType
-  scrollRef?: React.RefObject<HTMLDivElement | null> // gardé pour compatibilité (plus utilisé)
+  scrollRef?: React.RefObject<HTMLDivElement | null>
   isFirst?: boolean
 }) => {
   const t = useTranslations("Product")
@@ -95,9 +95,6 @@ const Product = ({
 
   const hasAnimatedRef = useRef(false)
 
-  // Glisser les photos du produit (souris et doigt) quand il y en a plusieurs.
-  // Pour faire défiler la rangée de produits : glisser sur le texte sous la photo ou entre les cartes.
-  const canDrag = images.length > 1
 
   const goToProduct = () => {
     router.push(`/product/${product.slug}`)
@@ -207,9 +204,9 @@ const Product = ({
           </span>
         )}
         <motion.div
-          className={`flex h-full w-full ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
-          style={{ x, touchAction: canDrag ? "pan-y" : "auto" }}
-          drag={canDrag ? "x" : false}
+          className="flex h-full w-full cursor-grab active:cursor-grabbing"
+          style={{ x, touchAction: "pan-y" }}
+          drag="x"
           dragConstraints={{
             right: 0,
             left: -(trackWidth * (images.length - 1)),
@@ -219,10 +216,19 @@ const Product = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={resetGesture}
+          onTouchStart={(e) => e.stopPropagation()}
           onDragStart={() => {
             dragIntentRef.current = true
+
+            if (scrollRef?.current) {
+              scrollRef.current.style.overflowX = "hidden"
+            }
           }}
           onDragEnd={() => {
+            if (scrollRef?.current) {
+              scrollRef.current.style.overflowX = "auto"
+            }
+
             if (!trackWidth) return
 
             const movedBy = -x.get()
