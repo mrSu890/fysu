@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isBrandId } from "@/lib/brands";
+import { isFamilyId } from "@/lib/olfactive";
 
 type SizeInput = {
   id?: string;
@@ -37,6 +38,8 @@ type ProductUpdatePayload = {
   availability?: string;
   release_date?: string | null;
   brand?: string;
+  olfactive_family?: string | null;
+  evocation?: string;
   care_instructions?: string;
   shipping?: string;
   size_guide_image_url?: string | null;
@@ -64,6 +67,8 @@ export async function POST(req: Request) {
       availability,
       release_date,
       brand,
+      olfactive_family,
+      evocation,
       care_instructions,
       shipping,
       size_guide_image_url,
@@ -128,6 +133,8 @@ export async function POST(req: Request) {
         availability,
         release_date,
         brand: isBrandId(brand) ? brand : undefined,
+        olfactive_family: isFamilyId(olfactive_family) ? olfactive_family : olfactive_family === null ? null : undefined,
+        evocation,
         colors: colors.filter((c) => c.images?.length > 0).length,
         care_instructions,
         shipping,
