@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocale } from "next-intl"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
@@ -27,14 +27,18 @@ const CHAPTER_TYPES: { id: "parfums" | "soins" | "maison"; types: string[] }[] =
 type Chapter = { id: string; title: string; body: string; image_url: string | null }
 
 function Row({ products }: { products: any[] }) {
+  const rowRef = useRef<HTMLDivElement | null>(null)
   return (
-    <div className="no-scrollbar flex snap-x snap-proximity gap-6 overflow-x-auto overscroll-x-contain pb-2">
+    <div
+      ref={rowRef}
+      className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth overscroll-x-contain pb-2"
+    >
       {products.map((product) => (
         <div
           key={product.id}
           className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px]"
         >
-          <Product product={product} />
+          <Product product={product} scrollRef={rowRef} />
         </div>
       ))}
     </div>
