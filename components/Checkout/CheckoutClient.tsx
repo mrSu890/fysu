@@ -8,6 +8,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+const LINE = "color-mix(in srgb, var(--foreground) 14%, transparent)";
+const CARD = "color-mix(in srgb, var(--foreground) 5%, var(--background))";
+
 export default function CheckoutClient() {
   const t = useTranslations("Checkout");
   const { cart } = useCart();
@@ -60,7 +63,7 @@ export default function CheckoutClient() {
 
   if (userLoading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white">
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
         <video
           src="/videos/fysu_loader.mov"
           autoPlay
@@ -77,59 +80,69 @@ export default function CheckoutClient() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-6xl mx-auto py-12 px-4 relative top-24"
+      transition={{ duration: 0.45, ease: "easeOut" }}
+      className="mx-auto w-11/12 max-w-6xl pb-32 pt-32 sm:pt-40"
     >
-      <div>
-        <h2 className="text-2xl font-semibold mb-6">
-          {t("summary")}
-        </h2>
+      <h1 className="mb-8 text-2xl font-medium tracking-tight sm:text-3xl">
+        {t("summary")}
+      </h1>
 
-        <div className="divide-y rounded-lg border bg-white">
-          {cart.map((item) => (
-            <div key={`${item.id}-${item.selectedSizeId}`} className="flex items-center gap-4 p-4">
-              <div className="relative w-16 h-20 bg-neutral-100 rounded-md overflow-hidden">
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px] lg:items-start">
+        {/* ARTICLES */}
+        <ul className="overflow-hidden rounded-[28px]" style={{ background: CARD, border: `1px solid ${LINE}` }}>
+          {cart.map((item, index) => (
+            <li
+              key={`${item.id}-${item.selectedSizeId}`}
+              className="flex items-center gap-4 p-4 sm:p-5"
+              style={index > 0 ? { borderTop: `1px solid ${LINE}` } : undefined}
+            >
+              <div className="relative h-24 w-[72px] shrink-0 overflow-hidden rounded-2xl bg-neutral-200/60">
                 <Image
                   src={item.selectedImageUrl ?? item.product_images?.[0]?.url ?? "/placeholder.png"}
                   alt={item.name}
                   fill
+                  sizes="72px"
                   className="object-cover"
                 />
               </div>
 
-              <div className="flex-1">
-                <p className="font-medium">{item.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium uppercase tracking-wide">{item.name}</p>
 
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="mt-1.5 text-xs opacity-60">
                   {t("size")} : {item.selectedSizeLabel}
                   {item.selectedColorName ? ` · ${item.selectedColorName}` : ""}
                 </p>
 
-                <p className="text-sm text-neutral-500 mt-1">
+                <p className="mt-1 text-xs opacity-60">
                   {t("quantity")} : {item.quantity}
                 </p>
               </div>
 
-              <span className="font-semibold">
+              <span className="shrink-0 text-sm font-medium">
                 €{(item.price * item.quantity).toFixed(2)}
               </span>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
 
-        <div className="mt-6 border-t pt-4">
-          <div className="flex justify-between text-lg font-semibold mb-4">
-            <span>{t("total")}</span>
-            <span>€{total.toFixed(2)}</span>
+        {/* TOTAL + PAIEMENT */}
+        <div
+          className="rounded-[28px] p-6 sm:p-7 lg:sticky lg:top-28"
+          style={{ background: CARD, border: `1px solid ${LINE}` }}
+        >
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs uppercase tracking-[0.25em] opacity-70">{t("total")}</span>
+            <span className="text-2xl font-medium">€{total.toFixed(2)}</span>
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600 mb-3">{error}</p>
-          )}
+          {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 
           <button
             onClick={handleCheckout}
-            disabled={loading}
-            className="w-full bg-black text-white py-4 text-sm font-medium tracking-wide hover:bg-neutral-800 transition disabled:opacity-60"
+            disabled={loading || cart.length === 0}
+            className="mt-6 w-full cursor-pointer touch-manipulation rounded-full py-4 text-xs font-medium uppercase tracking-[0.2em] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ background: "var(--foreground)", color: "var(--background)" }}
           >
             {loading
               ? t("redirecting")
