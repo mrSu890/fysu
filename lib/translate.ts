@@ -189,6 +189,11 @@ async function translateMany(texts: string[], locale: string) {
 
 /* ====== Parcours des données (copie, sans modifier l'original) ====== */
 
+// Un produit (a un slug et un prix) : son nom reste toujours celui de l'admin (ex. « Gigil »)
+function keepsName(obj: Record<string, unknown>, key: string) {
+  return key === "name" && "slug" in obj && "price" in obj
+}
+
 function collect(node: unknown, inside: boolean, out: string[]) {
   if (typeof node === "string") {
     if (inside) out.push(node)
@@ -196,7 +201,7 @@ function collect(node: unknown, inside: boolean, out: string[]) {
     for (const item of node) collect(item, inside, out)
   } else if (node && typeof node === "object") {
     for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
-      collect(v, inside || TRANSLATABLE_KEYS.has(k), out)
+      collect(v, inside || (TRANSLATABLE_KEYS.has(k) && !keepsName(node as Record<string, unknown>, k)), out)
     }
   }
 }
@@ -209,7 +214,7 @@ function apply(node: unknown, inside: boolean, map: Map<string, string>): unknow
   if (node && typeof node === "object") {
     const out: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
-      out[k] = apply(v, inside || TRANSLATABLE_KEYS.has(k), map)
+      out[k] = apply(v, inside || (TRANSLATABLE_KEYS.has(k) && !keepsName(node as Record<string, unknown>, k)), map)
     }
     return out
   }
