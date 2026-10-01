@@ -51,6 +51,8 @@ const TRANSLATABLE_KEYS = new Set([
   "size_fit",
   "content",
   "category",
+  "evocation",
+  "body",
 ])
 
 const memory = new Map<string, string>()

@@ -4,7 +4,7 @@
    des textes de la fiche et ce qui est affiché ou caché.
    ==================================================================== */
 
-export type ProductTypeId = "clothing" | "shoes" | "accessory" | "fragrance" | "skincare" | "other"
+export type ProductTypeId = "clothing" | "shoes" | "accessory" | "fragrance" | "skincare" | "home" | "other"
 
 type L4 = { en: string; fr: string; nl: string; ja: string }
 
@@ -84,6 +84,18 @@ export const PRODUCT_TYPES: Record<ProductTypeId, ProductTypeConfig> = {
     showGender: false,
     size_fit: { en: "Ingredients", fr: "Ingrédients", nl: "Ingrediënten", ja: "成分" },
     care: { en: "How to use", fr: "Mode d'emploi", nl: "Gebruiksaanwijzing", ja: "使い方" },
+  },
+  home: {
+    id: "home",
+    label: "Maison / diffusion",
+    emoji: "🕯️",
+    presets: ["One size"],
+    sizeNoun: null,
+    sizeNounAdmin: "Variantes",
+    sizeGuide: false,
+    showGender: false,
+    size_fit: { en: "Dimensions", fr: "Dimensions", nl: "Afmetingen", ja: "サイズ詳細" },
+    care: { en: "Usage", fr: "Conseils d'utilisation", nl: "Gebruik", ja: "使用方法" },
   },
   other: {
     id: "other",
