@@ -14,6 +14,7 @@ const IMAGE_CLICK_THRESHOLD = 8
 
 const Product = ({
   product,
+  scrollRef,
   isFirst = false,
 }: {
   product: ProductType
