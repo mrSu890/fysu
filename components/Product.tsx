@@ -274,6 +274,12 @@ const Product = ({
               {product.name}
             </p>
   
+            {product.evocation && (
+              <p className="line-clamp-2 text-[11px] italic text-foreground/60">
+                {product.evocation}
+              </p>
+            )}
+
             {/* Couleurs */}
             {uniqueColors.length > 0 && (
               <div className="flex items-center gap-2">
