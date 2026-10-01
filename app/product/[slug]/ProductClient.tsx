@@ -16,6 +16,8 @@ import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { getTypeCopy } from "@/lib/productTypes"
 import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
 import { getColorCopy } from "@/lib/colorCopy"
+import { getFamilyCopy, isFamilyId } from "@/lib/olfactive"
+import { getFygrancesCopy } from "@/lib/fygrancesCopy"
 import {
   formatReleaseDate,
   getAvailabilityCopy,
@@ -178,6 +180,8 @@ export default function ProductClient() {
   const canBuy = isBuyable(mode)
 
   const colorCopy = getColorCopy(locale)
+  const family = isFamilyId(product.olfactive_family) ? getFamilyCopy(product.olfactive_family, locale) : null
+  const familyLabel = getFygrancesCopy(locale).familyLabel
   const brand = BRANDS[brandId]
   const hasColors = colorList.length > 1
   // achat possible mais plus rien en stock dans cette couleur
@@ -335,9 +339,25 @@ export default function ProductClient() {
             <WishlistHeart productId={product.id} size={26} className="-mr-1.5 -mt-1 shrink-0" />
           </div>
 
+          {product.evocation && (
+            <p className="text-sm italic opacity-70">{product.evocation}</p>
+          )}
+
           <p className="text-sm whitespace-pre-line">
             {formatText(product.description)}
           </p>
+
+          {family && (
+            <Link
+              href={`/fygrances?family=${family.id}`}
+              style={{ color: "inherit", border: "1px solid color-mix(in srgb, currentColor 22%, transparent)" }}
+              className="block rounded-2xl px-4 py-3 transition hover:opacity-80"
+            >
+              <span className="block text-[10px] uppercase tracking-[0.2em] opacity-60">{familyLabel}</span>
+              <span className="mt-1 block text-sm font-medium">{family.name}</span>
+              <span className="mt-0.5 block text-xs opacity-70">{family.line}</span>
+            </Link>
+          )}
   
           <p className="text-sm font-bold">
             {format.number(product.price, {
