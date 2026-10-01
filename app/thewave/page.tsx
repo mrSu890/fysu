@@ -6,6 +6,7 @@ import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import CroppedLogo from "@/components/CroppedLogo"
 import PageBar from "@/components/PageBar"
+import WaveLoader from "@/components/WaveLoader"
 import Link from "next/link"
 import { Music } from "lucide-react"
 import { useMusicCopy } from "@/lib/musicCopy"
@@ -137,7 +138,6 @@ export default function TheWavePage() {
         html.wave-page .flower-light,
         html.wave-page .flower-dark { display: none !important; }
         html.wave-page .page-bar { background: #ffffff; color: #171717; }
-        html.wave-page .page-bar .bg-background { background-color: ${RED} !important; }
       `}</style>
 
       {/* Fond fixe : tout rouge, puis la grande vague rose apparaît au niveau des produits */}
@@ -151,6 +151,8 @@ export default function TheWavePage() {
           <path d={WAVE_PATH} fill={PINK} />
         </svg>
       </div>
+
+      <WaveLoader />
 
       <Navbar />
 
