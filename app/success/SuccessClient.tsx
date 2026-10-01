@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+const LINE = "color-mix(in srgb, var(--foreground) 14%, transparent)";
+const CARD = "color-mix(in srgb, var(--foreground) 5%, var(--background))";
 
 export default function SuccessClient() {
   const t = useTranslations("Success");
@@ -53,15 +57,20 @@ export default function SuccessClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-neutral-500 text-sm tracking-wide">
-        {t("checking")}
+      <div className="flex min-h-[100svh] items-center justify-center text-sm tracking-wide opacity-60">
+        <motion.span
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ repeat: Infinity, duration: 1.4 }}
+        >
+          {t("checking")}
+        </motion.span>
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-neutral-500 text-sm">
+      <div className="flex min-h-[100svh] items-center justify-center px-6 text-center text-sm opacity-70">
         {t("notFound")}
       </div>
     );
@@ -72,53 +81,55 @@ export default function SuccessClient() {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen flex items-center justify-center px-6"
+      className="flex min-h-[100svh] items-center justify-center px-5 pb-24 pt-32"
     >
-      <div className="max-w-2xl w-full text-center">
+      <div className="w-full max-w-xl text-center">
+        {/* Coche */}
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 220, damping: 16, delay: 0.15 }}
+          className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-full"
+          style={{ background: "var(--foreground)", color: "var(--background)" }}
+        >
+          <Check size={28} strokeWidth={2} />
+        </motion.div>
 
-        {/* Header */}
-        <h1 className="text-4xl font-semibold tracking-tight mb-4">
+        <h1 className="mb-10 text-3xl font-medium tracking-tight sm:text-4xl">
           {t("confirmed")}
         </h1>
 
-        {/* <p className="text-neutral-500 text-sm mb-12">
-          Un email de confirmation a été envoyé à{" "}
-          <span className="text-neutral-900 font-medium">
-            {session.customer_email}
-          </span>
-        </p> */}
-
-        {/* Order card */}
-        <div className="border border-neutral-200 rounded-2xl p-8 text-left bg-white">
-
+        {/* Récapitulatif */}
+        <div
+          className="rounded-[28px] p-7 text-left sm:p-8"
+          style={{ background: CARD, border: `1px solid ${LINE}` }}
+        >
           <div className="space-y-4">
             {session.line_items?.data?.map((item: any) => (
-              <div
-                key={item.id}
-                className="flex justify-between text-sm text-neutral-700"
-              >
-                <span>
+              <div key={item.id} className="flex justify-between gap-4 text-sm">
+                <span className="min-w-0 opacity-80">
                   {item.description} × {item.quantity}
                 </span>
-                <span className="font-medium text-neutral-900">
+                <span className="shrink-0 font-medium">
                   €{(item.amount_total / 100).toFixed(2)}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="border-t border-neutral-200 mt-6 pt-6 flex justify-between text-sm font-medium">
+          <div
+            className="mt-6 flex justify-between pt-6 text-sm font-medium"
+            style={{ borderTop: `1px solid ${LINE}` }}
+          >
             <span>{t("paidTotal")}</span>
-            <span className="text-neutral-900">
-              €{(session.amount_total / 100).toFixed(2)}
-            </span>
+            <span>€{(session.amount_total / 100).toFixed(2)}</span>
           </div>
         </div>
 
-        {/* CTA */}
         <Link
           href="/"
-          className="inline-block mt-10 text-sm font-medium text-neutral-900 hover:opacity-60 transition"
+          className="mt-10 inline-block rounded-full px-8 py-3.5 text-xs font-medium uppercase tracking-[0.2em] transition active:scale-[0.98]"
+          style={{ background: "var(--foreground)", color: "var(--background)" }}
         >
           {t("continueShopping")}
         </Link>

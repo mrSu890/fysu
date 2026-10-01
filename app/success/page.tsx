@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import SuccessClient from "./SuccessClient";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function SuccessPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        Vérification du paiement...
-      </div>
-    }>
-      <SuccessClient />
-    </Suspense>
+    <>
+      <Navbar />
+      <Suspense fallback={<div className="min-h-[100svh]" />}>
+        <SuccessClient />
+      </Suspense>
+      <Footer />
+    </>
   );
 }
