@@ -12,6 +12,7 @@ import RegionGate from "@/components/RegionGate";
 import ExtraCopyBridge from "@/components/ExtraCopyBridge";
 import MiniPlayer from "@/components/MusicMiniPlayer";
 import MusicPrompt from "@/components/MusicPrompt";
+import AccessibilityMenu from "@/components/AccessibilityMenu";
 import { MusicPlayerProvider } from "@/context/MusicPlayerContext";
 import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
@@ -53,6 +54,19 @@ export default async function RootLayout({
                   document.documentElement.classList.add("dark");
                 }
               } catch (e) {}
+              try {
+                const a = JSON.parse(localStorage.getItem("fysu-a11y") || "null");
+                if (a) {
+                  const h = document.documentElement;
+                  const sizes = ["", "112.5%", "125%", "140%"];
+                  if (a.size) h.style.fontSize = sizes[a.size] || "";
+                  if (a.readable) h.classList.add("a11y-readable");
+                  if (a.contrast) h.classList.add("a11y-contrast");
+                  if (a.calm) h.classList.add("a11y-calm");
+                  if (a.nodots) h.classList.add("a11y-nodots");
+                  if (a.focus) h.classList.add("a11y-focus");
+                }
+              } catch (e) {}
             `,
           }}
         />
@@ -73,6 +87,8 @@ export default async function RootLayout({
                 {/* Musique : pop-up sur les collections + pastille de lecture */}
                 <MusicPrompt />
                 <MiniPlayer />
+                {/* Accessibilité : pastille en bas à gauche */}
+                <AccessibilityMenu />
               </MusicPlayerProvider>
             </CartProvider>
           </NextIntlClientProvider>

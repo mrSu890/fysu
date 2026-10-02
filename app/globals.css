@@ -250,7 +250,86 @@
   margin-left: 18px;
 }
 
+/* ===== ACCESSIBILITÉ (voir components/AccessibilityMenu.tsx) ===== */
 
+/* Texte plus lisible : police sans empattement très ouverte, lettres et lignes aérées */
+html.a11y-readable body,
+html.a11y-readable button,
+html.a11y-readable input,
+html.a11y-readable select,
+html.a11y-readable textarea {
+  font-family: Verdana, Tahoma, "Trebuchet MS", sans-serif !important;
+  letter-spacing: 0.03em;
+  word-spacing: 0.12em;
+}
 
+html.a11y-readable p,
+html.a11y-readable li {
+  line-height: 1.8 !important;
+}
 
+/* Contraste renforcé */
+html.a11y-contrast {
+  --background: #ffffff;
+  --foreground: #000000;
+  --menu: #ffffff;
+}
 
+html.a11y-contrast.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --menu: #000000;
+}
+
+html.a11y-contrast body {
+  font-weight: 400;
+}
+
+html.a11y-contrast .opacity-60,
+html.a11y-contrast .opacity-65,
+html.a11y-contrast .opacity-70,
+html.a11y-contrast .opacity-75,
+html.a11y-contrast .opacity-80 {
+  opacity: 1 !important;
+}
+
+html.a11y-contrast main a,
+html.a11y-contrast footer a {
+  text-decoration: underline;
+}
+
+/* Moins d'animations (et mode concentration) */
+html.a11y-calm *,
+html.a11y-calm *::before,
+html.a11y-calm *::after,
+html.a11y-focus *,
+html.a11y-focus *::before,
+html.a11y-focus *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.a11y-calm .reveal,
+html.a11y-focus .reveal {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Sans points décoratifs (et mode concentration) */
+html.a11y-nodots .deco-dot,
+html.a11y-focus .deco-dot {
+  display: none !important;
+}
+
+/* Mode concentration : lignes plus aérées, liens soulignés */
+html.a11y-focus p,
+html.a11y-focus li {
+  line-height: 1.75;
+}
+
+html.a11y-focus main a,
+html.a11y-focus footer a {
+  text-decoration: underline;
+}
