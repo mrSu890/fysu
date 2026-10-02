@@ -189,9 +189,13 @@ async function translateMany(texts: string[], locale: string) {
 
 /* ====== Parcours des données (copie, sans modifier l'original) ====== */
 
-// Un produit (a un slug et un prix) : son nom reste toujours celui de l'admin (ex. « Gigil »)
+// Noms propres qui ne se traduisent jamais :
+// - un produit (slug + prix) : son nom, ex. « Gigil »
+// - une page, collection ou album (slug + titre) : son titre, ex. « For her »
 function keepsName(obj: Record<string, unknown>, key: string) {
-  return key === "name" && "slug" in obj && "price" in obj
+  if (!("slug" in obj)) return false
+  if (key === "name") return "price" in obj
+  return key === "title"
 }
 
 function collect(node: unknown, inside: boolean, out: string[]) {
