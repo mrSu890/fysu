@@ -99,5 +99,16 @@ export async function GET(req: Request) {
     .filter((a: any) => (a.music_tracks ?? []).length > 0)
     .map(({ music_tracks, ...album }: any) => ({ ...album, track_count: music_tracks.length }))
 
-  return NextResponse.json(albums)
+  // Pour chaque album : les pages / collections auxquelles il appartient (page « Tous les albums »)
+  const allSlugs = [...new Set(albums.flatMap((a: any) => a.collection_slugs ?? []))] as string[]
+  const resolved = await resolveCollections(allSlugs)
+  const byslug = new Map(resolved.map((c) => [c.slug, c]))
+  const withCollections = albums.map((a: any) => ({
+    ...a,
+    collections: (a.collection_slugs ?? [])
+      .map((s: string) => byslug.get(s))
+      .filter(Boolean),
+  }))
+
+  return NextResponse.json(withCollections)
 }
