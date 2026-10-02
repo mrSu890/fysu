@@ -27,8 +27,13 @@ const inter = Inter({
 //import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "Fysu",
-  description: "Fysu",
+  title: "FYSU",
+  description: "FYSU",
+  icons: {
+    icon: [{ url: "/api/favicon", type: "image/png" }],
+    shortcut: "/api/favicon",
+    apple: "/api/favicon",
+  },
 };
 
 export default async function RootLayout({
