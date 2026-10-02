@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useLocale } from "next-intl"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import ProductFilters from "@/components/ProductFilters"
 import KibanLogo from "@/components/KibanLogo"
 import { useSiteCopy } from "@/lib/siteCopy"
+import { getKibanCategories } from "@/lib/kibanCategories"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
@@ -20,8 +22,29 @@ const COLLECTION_SLUG = "kiban-collector"
 
 /* =================================== */
 
+/* Une rangée de produits qui défile (même comportement que les autres pages) */
+function Row({ products }: { products: any[] }) {
+  const rowRef = useRef<HTMLDivElement | null>(null)
+  return (
+    <div
+      ref={rowRef}
+      className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth overscroll-x-contain pb-2"
+    >
+      {products.map((product) => (
+        <div
+          key={product.id}
+          className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px]"
+        >
+          <Product product={product} scrollRef={rowRef} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function KibanCollectorPage() {
   const copy = useSiteCopy()
+  const locale = useLocale()
   const [products, setProducts] = useState<any[]>([])
   const [heroImage, setHeroImage] = useState<string | null>(null)
   const [heroFailed, setHeroFailed] = useState(false)
@@ -78,6 +101,22 @@ export default function KibanCollectorPage() {
       return 0
     })
 
+  // produits rangés par catégorie (objets collector, vêtements, accessoires…)
+  const categories = useMemo(() => {
+    const defs = getKibanCategories(locale)
+    return defs
+      .map((cat) => ({
+        ...cat,
+        products: filteredProducts.filter((p) => cat.types.includes(p.product_type ?? "clothing")),
+      }))
+      .filter((cat) => cat.products.length > 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, products, filters])
+
+  const goTo = (id: string) => {
+    document.getElementById(`kiban-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
   return (
     <>
       <Navbar />
@@ -114,26 +153,45 @@ export default function KibanCollectorPage() {
         </div>
       </section>
 
-      {/* ================= PRODUITS ================= */}
-      <div className="relative px-6 pt-20 pb-44">
+      {/* ================= PRODUITS PAR CATÉGORIE ================= */}
+      <div className="relative px-6 pt-16 pb-44">
         {products.length > 0 && (
           <>
             <ProductFilters filters={filters} setFilters={setFilters} />
-            <div className="relative top-12">
-              <div
-                className="
-                  grid
-                  grid-cols-2
-                  gap-x-4 gap-y-8
-                  md:grid-cols-3
-                  lg:grid-cols-4
-                "
-              >
-                {filteredProducts.map((product) => (
-                  <Product key={product.id} product={product} />
+
+            {/* raccourcis vers les catégories */}
+            {categories.length > 1 && (
+              <div className="mx-auto mb-4 mt-6 flex w-full max-w-6xl flex-wrap justify-center gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => goTo(cat.id)}
+                    className="cursor-pointer touch-manipulation rounded-full px-4 py-2 text-xs transition active:scale-95"
+                    style={{ border: "1px solid color-mix(in srgb, currentColor 25%, transparent)" }}
+                  >
+                    {cat.title}
+                  </button>
                 ))}
               </div>
-            </div>
+            )}
+
+            {categories.map((cat, index) => (
+              <section
+                key={cat.id}
+                id={`kiban-${cat.id}`}
+                className="mx-auto w-full max-w-6xl scroll-mt-28 pt-16 sm:pt-24"
+              >
+                <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">
+                  {String(index + 1).padStart(2, "0")}
+                </p>
+                <h2 className="mt-3 text-3xl font-light tracking-tight sm:text-5xl">{cat.title}</h2>
+                <p className="mb-10 mt-4 max-w-md text-sm leading-relaxed opacity-75 sm:text-base">
+                  {cat.body}
+                </p>
+                <Row products={cat.products} />
+              </section>
+            ))}
           </>
         )}
       </div>
