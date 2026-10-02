@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
@@ -7,6 +8,8 @@ import { ChevronDown, ListMusic, Music, Pause, Play, SkipBack, SkipForward } fro
 import { useMusicPlayer } from "@/context/MusicPlayerContext"
 import { useMusicCopy } from "@/lib/musicCopy"
 import Equalizer from "@/components/MusicEqualizer"
+import DraggableFab from "@/components/DraggableFab"
+import MusicVinyl from "@/components/MusicVinyl"
 
 /* ====================================================================
    PASTILLE DU LECTEUR (en bas de l'écran, comme la barre de navigation)
@@ -38,6 +41,12 @@ export default function MiniPlayer() {
   const copy = useMusicCopy()
   const { album, current, playing, time, duration, collapsed, setCollapsed, toggle, next, prev } =
     useMusicPlayer()
+  const [vinylOpen, setVinylOpen] = useState(false)
+
+  // pastille repliée : le vinyle se ferme
+  useEffect(() => {
+    if (collapsed) setVinylOpen(false)
+  }, [collapsed])
 
   if (!current || !album || pathname.startsWith("/admin")) return null
 
@@ -45,25 +54,25 @@ export default function MiniPlayer() {
   const bottom = "calc(16px + env(safe-area-inset-bottom))"
 
   return (
+    <>
+    <AnimatePresence>{vinylOpen && !collapsed && <MusicVinyl key="vinyl" onClose={() => setVinylOpen(false)} />}</AnimatePresence>
     <AnimatePresence mode="wait" initial={false}>
       {collapsed ? (
-        <motion.button
+        <DraggableFab
           key="bubble"
-          type="button"
-          onClick={() => setCollapsed(false)}
-          aria-label={copy.expand}
-          initial={{ opacity: 0, scale: 0.6 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.6 }}
-          transition={{ duration: 0.2 }}
-          className="liquid-glass fixed right-4 z-[60] flex h-[56px] w-[56px] cursor-pointer items-center justify-center rounded-full"
-          style={{ bottom, color: "var(--menu)" }}
+          storageKey="fysu-music-bubble"
+          side="right"
+          size={56}
+          label={copy.expand}
+          onTap={() => setCollapsed(false)}
+          className="liquid-glass"
+          style={{ color: "var(--menu)" }}
         >
           <Cover src={album.cover_url} size={44} />
           <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/35 text-white">
             <Equalizer playing={playing} size={16} />
           </span>
-        </motion.button>
+        </DraggableFab>
       ) : (
         <motion.div
           key="pill"
@@ -78,8 +87,18 @@ export default function MiniPlayer() {
             className="liquid-glass relative flex w-full max-w-[440px] items-center gap-2 rounded-full py-2 pl-2 pr-2"
             style={{ color: "var(--menu)", pointerEvents: "auto" }}
           >
+            <button
+              type="button"
+              onClick={() => setVinylOpen((v) => !v)}
+              aria-label={copy.openVinyl}
+              title={copy.openVinyl}
+              className="shrink-0 cursor-pointer rounded-full active:scale-95"
+            >
+              <span className={playing ? "block animate-[spin_6s_linear_infinite]" : "block"}>
+                <Cover src={album.cover_url} size={42} />
+              </span>
+            </button>
             <Link href={`/music/${album.slug}`} className="flex min-w-0 flex-1 items-center gap-3">
-              <Cover src={album.cover_url} size={42} />
               <span className="min-w-0 flex-1 leading-tight">
                 <span className="block truncate text-[13px] font-medium">{current.title}</span>
                 <span className="block truncate text-[11px] opacity-70">
@@ -146,5 +165,6 @@ export default function MiniPlayer() {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   )
 }
