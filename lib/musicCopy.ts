@@ -20,6 +20,8 @@ export type MusicCopy = {
   expand: string
   backTo: string
   allAlbums: string
+  otherAlbums: string
+  albumsCount: (count: number) => string
   musicTitle: string
   projects: string
   loading: string
@@ -43,6 +45,8 @@ const COPY: Record<string, MusicCopy> = {
     expand: "Open the player",
     backTo: "Back to",
     allAlbums: "All albums",
+    otherAlbums: "Other albums",
+    albumsCount: (n) => `${n} ${n > 1 ? "albums" : "album"}`,
     musicTitle: "Music",
     projects: "Projects",
     loading: "Loading",
@@ -64,6 +68,8 @@ const COPY: Record<string, MusicCopy> = {
     expand: "Ouvrir le lecteur",
     backTo: "Retour à",
     allAlbums: "Tous les albums",
+    otherAlbums: "Autres albums",
+    albumsCount: (n) => `${n} ${n > 1 ? "albums" : "album"}`,
     musicTitle: "Musique",
     projects: "Projets",
     loading: "Chargement",
@@ -85,6 +91,8 @@ const COPY: Record<string, MusicCopy> = {
     expand: "Speler openen",
     backTo: "Terug naar",
     allAlbums: "Alle albums",
+    otherAlbums: "Andere albums",
+    albumsCount: (n) => `${n} ${n > 1 ? "albums" : "album"}`,
     musicTitle: "Muziek",
     projects: "Projecten",
     loading: "Laden",
@@ -106,6 +114,8 @@ const COPY: Record<string, MusicCopy> = {
     expand: "プレーヤーを開く",
     backTo: "戻る：",
     allAlbums: "すべてのアルバム",
+    otherAlbums: "その他のアルバム",
+    albumsCount: (n) => `${n} アルバム`,
     musicTitle: "ミュージック",
     projects: "プロジェクト",
     loading: "読み込み中",
