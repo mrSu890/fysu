@@ -1,15 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Music } from "lucide-react"
+import { ArrowRight, Music } from "lucide-react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { useMusicCopy } from "@/lib/musicCopy"
 
 /* ====================================================================
    TOUS LES ALBUMS
+   Classés par page / collection : un album qui appartient à plusieurs pages
+   apparaît dans chacune. Les albums sans page sont à la fin.
    ==================================================================== */
+
+type Collection = { slug: string; href: string; title: string }
 
 type AlbumCard = {
   id: number
@@ -18,7 +22,12 @@ type AlbumCard = {
   artist: string | null
   cover_url: string | null
   track_count: number
+  collections?: Collection[]
 }
+
+type Group = { key: string; title: string; href: string | null; albums: AlbumCard[] }
+
+const FIRST = ["thewave", "kiban-collector"]
 
 export default function MusicIndexPage() {
   const copy = useMusicCopy()
@@ -33,35 +42,86 @@ export default function MusicIndexPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const groups = useMemo<Group[]>(() => {
+    const map = new Map<string, Group>()
+    const orphans: AlbumCard[] = []
+
+    for (const album of albums) {
+      const cols = album.collections ?? []
+      if (cols.length === 0) {
+        orphans.push(album)
+        continue
+      }
+      for (const c of cols) {
+        if (!map.has(c.slug)) map.set(c.slug, { key: c.slug, title: c.title, href: c.href, albums: [] })
+        map.get(c.slug)!.albums.push(album)
+      }
+    }
+
+    const list = [...map.values()].sort((a, b) => {
+      const ia = FIRST.indexOf(a.key)
+      const ib = FIRST.indexOf(b.key)
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+      return a.title.localeCompare(b.title)
+    })
+
+    if (orphans.length) {
+      list.push({ key: "__other", title: copy.otherAlbums, href: null, albums: orphans })
+    }
+    return list
+  }, [albums, copy.otherAlbums])
+
   return (
     <>
       <Navbar />
       <main className="mx-auto min-h-[70svh] w-11/12 max-w-3xl pb-44 pt-28 sm:pt-36">
-        <h1 className="mb-8 text-3xl font-semibold tracking-tight">{copy.musicTitle}</h1>
+        <h1 className="mb-10 text-3xl font-semibold tracking-tight">{copy.musicTitle}</h1>
 
         {loading && <p className="text-sm opacity-70">{copy.loading}…</p>}
         {!loading && albums.length === 0 && <p className="text-sm opacity-70">{copy.notFound}</p>}
 
-        <ul className="grid grid-cols-2 gap-5 sm:grid-cols-3">
-          {albums.map((a) => (
-            <li key={a.id}>
-              <Link href={`/music/${a.slug}`} className="block">
-                <span className="relative block aspect-square w-full overflow-hidden rounded-2xl bg-current/10">
-                  {a.cover_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.cover_url} alt={a.title} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center">
-                      <Music size={36} className="opacity-50" />
-                    </span>
-                  )}
-                </span>
-                <span className="mt-2 block truncate text-sm font-medium">{a.title}</span>
-                {a.artist && <span className="block truncate text-xs opacity-65">{a.artist}</span>}
-              </Link>
-            </li>
+        <div className="space-y-14">
+          {groups.map((group) => (
+            <section key={group.key}>
+              <div className="mb-5 flex items-end justify-between gap-4 border-b border-current/15 pb-3">
+                <div>
+                  <h2 className="text-xl font-light tracking-tight sm:text-2xl">{group.title}</h2>
+                  <p className="mt-0.5 text-xs opacity-60">{copy.albumsCount(group.albums.length)}</p>
+                </div>
+                {group.href && (
+                  <Link
+                    href={group.href}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-current/25 px-3.5 py-1.5 text-xs transition hover:bg-current/10"
+                  >
+                    {group.title}
+                    <ArrowRight size={13} />
+                  </Link>
+                )}
+              </div>
+
+              <ul className="grid grid-cols-2 gap-5 sm:grid-cols-3">
+                {group.albums.map((a) => (
+                  <li key={`${group.key}-${a.id}`}>
+                    <Link href={`/music/${a.slug}`} className="block">
+                      <span className="relative block aspect-square w-full overflow-hidden rounded-2xl bg-current/10">
+                        {a.cover_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={a.cover_url} alt={a.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center">
+                            <Music size={36} className="opacity-50" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="mt-2 block truncate text-sm font-medium">{a.title}</span>
+                      {a.artist && <span className="block truncate text-xs opacity-65">{a.artist}</span>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       </main>
       <Footer />
     </>
