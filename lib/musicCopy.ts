@@ -21,6 +21,8 @@ export type MusicCopy = {
   backTo: string
   allAlbums: string
   otherAlbums: string
+  vinylHint: string
+  openVinyl: string
   albumsCount: (count: number) => string
   musicTitle: string
   projects: string
@@ -46,6 +48,8 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "Back to",
     allAlbums: "All albums",
     otherAlbums: "Other albums",
+    vinylHint: "Turn the record to rewind or fast-forward",
+    openVinyl: "Open the record",
     albumsCount: (n) => `${n} ${n > 1 ? "albums" : "album"}`,
     musicTitle: "Music",
     projects: "Projects",
@@ -69,6 +73,8 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "Retour à",
     allAlbums: "Tous les albums",
     otherAlbums: "Autres albums",
+    vinylHint: "Tournez le disque pour reculer ou avancer",
+    openVinyl: "Ouvrir le vinyle",
     albumsCount: (n) => `${n} ${n > 1 ? "albums" : "album"}`,
     musicTitle: "Musique",
     projects: "Projets",
@@ -92,6 +98,8 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "Terug naar",
     allAlbums: "Alle albums",
     otherAlbums: "Andere albums",
+    vinylHint: "Draai de plaat om terug of vooruit te spoelen",
+    openVinyl: "Plaat openen",
     albumsCount: (n) => `${n} ${n > 1 ? "albums" : "album"}`,
     musicTitle: "Muziek",
     projects: "Projecten",
@@ -115,6 +123,8 @@ const COPY: Record<string, MusicCopy> = {
     backTo: "戻る：",
     allAlbums: "すべてのアルバム",
     otherAlbums: "その他のアルバム",
+    vinylHint: "レコードを回して巻き戻し・早送り",
+    openVinyl: "レコードを開く",
     albumsCount: (n) => `${n} アルバム`,
     musicTitle: "ミュージック",
     projects: "プロジェクト",
