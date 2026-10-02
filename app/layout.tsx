@@ -7,6 +7,7 @@ import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
 import ScrollReveal from "@/components/ScrollReveal";
 import SiteLoader from "@/components/SiteLoader";
+import PixelTransition from "@/components/PixelTransition";
 import NotificationToasts from "@/components/NotificationToasts";
 import RegionGate from "@/components/RegionGate";
 import ExtraCopyBridge from "@/components/ExtraCopyBridge";
@@ -87,6 +88,8 @@ export default async function RootLayout({
                 {/* Musique : pop-up sur les collections + pastille de lecture */}
                 <MusicPrompt />
                 <MiniPlayer />
+                {/* Transition en pixels entre les pages */}
+                <PixelTransition />
                 {/* Accessibilité : pastille en bas à gauche */}
                 <AccessibilityMenu />
               </MusicPlayerProvider>

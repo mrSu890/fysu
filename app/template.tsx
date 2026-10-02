@@ -1,9 +1,17 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { usePathname } from "next/navigation"
+import { isPixelExcluded } from "@/components/PixelTransition"
 
-/* Fondu doux à chaque changement de page (opacité seulement : le menu fixe ne bouge pas) */
+/* Pages avec la transition en pixels (voir components/PixelTransition.tsx) : pas de fondu en plus.
+   Les autres pages (Kiban Collector, The Wave, FY'grances, admin) gardent un fondu doux.
+   Opacité seulement : le menu fixe ne bouge pas. */
 export default function Template({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
+  if (!isPixelExcluded(pathname)) return <>{children}</>
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
