@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import PixelGrid from "@/components/PixelGrid"
 
 const DURATION = 2800 // durée de la ligne et du pourcentage (ms)
 const LOGO_DURATION = 700 // durée d'apparition du logo (ms) : rapide
@@ -31,7 +32,7 @@ const finishLoader = () => {
 export default function SiteLoader() {
   const [progress, setProgress] = useState(0)
   const [logoReveal, setLogoReveal] = useState(0)
-  const [fading, setFading] = useState(false)
+  const [dissolving, setDissolving] = useState(false)
   const [visible, setVisible] = useState(true)
   const [ready, setReady] = useState(false)
 
@@ -131,11 +132,8 @@ export default function SiteLoader() {
         done = true
         setProgress(100)
         setLogoReveal(100)
-        setFading(true)
-        window.setTimeout(() => {
-          setVisible(false)
-          finishLoader()
-        }, 700)
+        // 100 % reste affiché un court instant, puis l'écran se dissout en pixels
+        window.setTimeout(() => setDissolving(true), 350)
         return
       }
 
@@ -156,17 +154,13 @@ export default function SiteLoader() {
     <div
       aria-hidden="true"
       className="fixed inset-0 z-[10000] flex select-none touch-none flex-col items-center justify-center text-foreground"
-      style={{
-        backgroundColor: "var(--background)",
-        opacity: fading ? 0 : 1,
-        transition: "opacity 0.7s ease",
-      }}
+      style={{ backgroundColor: dissolving ? "transparent" : "var(--background)" }}
     >
-      {ready && (
+      {ready && !dissolving && (
         <>
           {/* Logo qui se dévoile rapidement de haut en bas */}
           <div
-            className="aspect-[1195/359] w-[200px] sm:w-[260px]"
+            className="aspect-[1195/359] w-[120px] sm:w-[150px]"
             style={{ clipPath: `inset(0 0 ${100 - logoReveal}% 0)` }}
           >
             <div
@@ -180,18 +174,36 @@ export default function SiteLoader() {
           </div>
 
           {/* Ligne fine */}
-          <div className="mt-16 h-[2px] w-[70vw] max-w-[360px] bg-foreground/15">
+          <div className="mt-7 h-[2px] w-[70vw] max-w-[360px] bg-foreground/15">
             <div
               className="h-full bg-foreground"
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          {/* Pourcentage */}
-          <div className="mt-8 text-sm tracking-[0.2em] text-foreground/50 tabular-nums">
-            {progress}%
+          {/* Pourcentage : style terminal */}
+          <div
+            className="mt-5 text-sm tracking-[0.25em] text-foreground/60 tabular-nums"
+            style={{
+              fontFamily:
+                'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+            }}
+          >
+            {String(progress).padStart(3, "0")}%
           </div>
         </>
+      )}
+
+      {/* L'écran se dissout en carrés, du bas vers le haut, et laisse apparaître le site */}
+      {dissolving && (
+        <PixelGrid
+          mode="out"
+          color="var(--background)"
+          onDone={() => {
+            setVisible(false)
+            finishLoader()
+          }}
+        />
       )}
     </div>
   )

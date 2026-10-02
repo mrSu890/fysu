@@ -1,0 +1,124 @@
+"use client"
+
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import PixelGrid, { type PixelMode } from "@/components/PixelGrid"
+
+/* ====================================================================
+   TRANSITION EN PIXELS ENTRE LES PAGES
+   Au clic sur un lien : les carrés couvrent l'écran très vite, la page change
+   derrière, puis les carrés disparaissent au hasard, du bas vers le haut.
+   Pas d'animation depuis / vers : Kiban Collector, The Wave, FY'grances et l'admin
+   (pour en ajouter d'autres : complète la liste ci-dessous).
+   Désactivée avec « Moins d'animations » / mode concentration (accessibilité)
+   ou si l'appareil demande moins de mouvement.
+   ==================================================================== */
+
+export const PIXEL_EXCLUDED = ["/kiban-collector", "/thewave", "/fygrances", "/admin"]
+
+export const isPixelExcluded = (pathname: string) =>
+  PIXEL_EXCLUDED.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+
+const isCalm = () => {
+  const html = document.documentElement
+  return (
+    html.classList.contains("a11y-calm") ||
+    html.classList.contains("a11y-focus") ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  )
+}
+
+export default function PixelTransition() {
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const [phase, setPhase] = useState<"idle" | PixelMode>("idle")
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
+  const destRef = useRef<string | null>(null)
+  const prevPath = useRef(pathname)
+
+  // 1. clic sur un lien du site : on couvre l'écran avant de changer de page
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+
+      const target = e.target as Element | null
+      if (!target?.closest) return
+      // un bouton / champ dans le lien garde son propre comportement
+      if (target.closest("button, [role='button'], input, select, textarea, label")) return
+
+      const a = target.closest("a[href]") as HTMLAnchorElement | null
+      if (!a || a.target === "_blank" || a.hasAttribute("download")) return
+
+      let url: URL
+      try {
+        url = new URL(a.href, window.location.href)
+      } catch {
+        return
+      }
+      if (url.origin !== window.location.origin) return
+      if (url.pathname === window.location.pathname) return
+      if (isPixelExcluded(url.pathname) || isPixelExcluded(window.location.pathname)) return
+      if (isCalm()) return
+      // pas pendant l'écran de chargement du début, ni si une transition est déjà en cours
+      if (!(window as any).__loaderVisualDone) return
+      if (phaseRef.current !== "idle") return
+
+      e.preventDefault()
+      e.stopPropagation()
+      destRef.current = url.pathname + url.search + url.hash
+      setPhase("in")
+    }
+
+    document.addEventListener("click", onClick, true)
+    return () => document.removeEventListener("click", onClick, true)
+  }, [])
+
+  // 2. la nouvelle page est affichée : les carrés se dissolvent
+  useLayoutEffect(() => {
+    if (prevPath.current === pathname) return
+    const from = prevPath.current
+    prevPath.current = pathname
+
+    if (isPixelExcluded(pathname) || isPixelExcluded(from) || isCalm()) {
+      setPhase("idle")
+      return
+    }
+    if (!(window as any).__loaderVisualDone) return
+
+    // changement de page sans clic (retour arrière, bouton qui change de page) :
+    // on couvre tout de suite, avant que l'écran ne se redessine
+    if (phaseRef.current === "idle") setPhase("solid")
+
+    const timer = window.setTimeout(() => setPhase("out"), 90)
+    return () => window.clearTimeout(timer)
+  }, [pathname])
+
+  // sécurité : si la page ne change pas, le rideau ne reste jamais bloqué
+  useEffect(() => {
+    if (phase !== "solid") return
+    const timer = window.setTimeout(() => setPhase("out"), 5000)
+    return () => window.clearTimeout(timer)
+  }, [phase])
+
+  if (phase === "idle") return null
+
+  return (
+    <div className="fixed inset-0" style={{ zIndex: 9000 }}>
+      <PixelGrid
+        mode={phase}
+        onDone={() => {
+          if (phase === "in") {
+            setPhase("solid")
+            const dest = destRef.current
+            destRef.current = null
+            if (dest) router.push(dest)
+          } else if (phase === "out") {
+            setPhase("idle")
+          }
+        }}
+      />
+    </div>
+  )
+}
