@@ -38,6 +38,21 @@ export default function PixelTransition() {
   const destRef = useRef<string | null>(null)
   const prevPath = useRef(pathname)
 
+  // 0. on compte les requêtes réseau en cours (la page attend ses données avant de se montrer)
+  useEffect(() => {
+    const w = window as any
+    if (w.__pxFetchPatched) return
+    w.__pxFetchPatched = true
+    w.__pxPending = 0
+    const original = window.fetch.bind(window)
+    window.fetch = (...args: Parameters<typeof fetch>) => {
+      w.__pxPending++
+      return original(...args).finally(() => {
+        w.__pxPending = Math.max(0, w.__pxPending - 1)
+      })
+    }
+  }, [])
+
   // 1. clic sur un lien du site : on couvre l'écran avant de changer de page
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -91,21 +106,62 @@ export default function PixelTransition() {
     // on couvre tout de suite, avant que l'écran ne se redessine
     if (phaseRef.current === "idle") setPhase("solid")
 
-    const timer = window.setTimeout(() => setPhase("out"), 90)
-    return () => window.clearTimeout(timer)
+    // on attend que la nouvelle page soit vraiment prête avant de dissoudre les carrés :
+    // plus rien ne s'ajoute à l'écran, plus de chargement en cours, images du haut affichées
+    const started = Date.now()
+    let lastChange = started
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type !== "childList" || m.addedNodes.length === 0) continue
+        const t = m.target as Element
+        if (t.closest?.("[data-px]")) continue
+        lastChange = Date.now()
+        return
+      }
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    const imagesReady = () => {
+      const imgs = Array.from(document.images)
+      return imgs.every((img) => {
+        const r = img.getBoundingClientRect()
+        const visible = r.bottom > 0 && r.top < window.innerHeight && r.width > 0
+        return !visible || img.complete
+      })
+    }
+
+    const poll = window.setInterval(() => {
+      const now = Date.now()
+      const elapsed = now - started
+      const quiet = now - lastChange > 320
+      const pending = ((window as any).__pxPending ?? 0) === 0
+      const skeleton = !!document.querySelector(".animate-pulse")
+      const ready = elapsed > 160 && quiet && pending && !skeleton && imagesReady()
+      if (ready || elapsed > 4000) {
+        window.clearInterval(poll)
+        observer.disconnect()
+        // un dernier battement pour laisser la page se dessiner
+        window.setTimeout(() => setPhase("out"), 120)
+      }
+    }, 80)
+
+    return () => {
+      window.clearInterval(poll)
+      observer.disconnect()
+    }
   }, [pathname])
 
   // sécurité : si la page ne change pas, le rideau ne reste jamais bloqué
   useEffect(() => {
     if (phase !== "solid") return
-    const timer = window.setTimeout(() => setPhase("out"), 5000)
+    const timer = window.setTimeout(() => setPhase("out"), 6000)
     return () => window.clearTimeout(timer)
   }, [phase])
 
   if (phase === "idle") return null
 
   return (
-    <div className="fixed inset-0" style={{ zIndex: 9000 }}>
+    <div data-px className="fixed inset-0" style={{ zIndex: 9000 }}>
       <PixelGrid
         mode={phase}
         onDone={() => {
