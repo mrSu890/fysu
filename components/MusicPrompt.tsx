@@ -25,6 +25,7 @@ type PromptAlbum = {
 }
 
 const HIDE_HOURS = 24
+const PROMPT_DELAY = 11000 // pause avant la question (ms) : la bienvenue passe d'abord
 
 // Quelle collection / page est affichée ? (/thewave, /collections/xxx, /for-her…)
 function slugFromPath(pathname: string): string | null {
@@ -51,7 +52,7 @@ function recentlyClosed(slug: string) {
 export default function MusicPrompt() {
   const pathname = usePathname()
   const copy = useMusicCopy()
-  const { album: playingAlbum, playing, prime, unprime } = useMusicPlayer()
+  const { album: playingAlbum, playing, prime, unprime, setCollapsed } = useMusicPlayer()
   const [albums, setAlbums] = useState<PromptAlbum[]>([])
   const [slug, setSlug] = useState<string | null>(null)
   const [regionReady, setRegionReady] = useState(false)
@@ -59,11 +60,19 @@ export default function MusicPrompt() {
   const [hidden, setHidden] = useState(false)
 
   // On attend que la zone soit choisie (le pop-up de région passe en premier)
+  // puis on laisse passer le message de bienvenue avant de poser la question
   useEffect(() => {
-    const check = () => setRegionReady(Boolean(getStoredCountry()))
+    let timer: number | undefined
+    const check = () => {
+      if (!getStoredCountry() || timer) return
+      timer = window.setTimeout(() => setRegionReady(true), PROMPT_DELAY)
+    }
     check()
     window.addEventListener("region-done", check)
-    return () => window.removeEventListener("region-done", check)
+    return () => {
+      window.removeEventListener("region-done", check)
+      if (timer) window.clearTimeout(timer)
+    }
   }, [])
 
   useEffect(() => {
@@ -132,6 +141,11 @@ export default function MusicPrompt() {
     playingAlbum && playing && albums.some((a) => a.id === playingAlbum.id)
   )
   const visible = regionReady && !hidden && !closed && albums.length > 0 && !alreadyListening
+
+  // Quand la question « écouter ? » apparaît, la pastille de musique se referme
+  useEffect(() => {
+    if (visible) setCollapsed(true)
+  }, [visible, setCollapsed])
 
   return (
     <AnimatePresence>
