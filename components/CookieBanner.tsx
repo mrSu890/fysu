@@ -7,6 +7,9 @@ import { useTranslations } from "next-intl";
 
 type Mode = "banner" | "prefs";
 
+// délai entre la fin du chargement / choix de zone et l'apparition des cookies (ms)
+const COOKIE_DELAY = 16000;
+
 export default function CookieBanner() {
   const t = useTranslations("CookieBanner");
   const [visible, setVisible] = useState(false);
@@ -28,19 +31,27 @@ export default function CookieBanner() {
       return;
     }
 
-    // On attend la fin du chargement ET le choix de la zone avant d'afficher les cookies
+    // On attend la fin du chargement ET le choix de la zone, puis un bon moment :
+    // le message de bienvenue passe d'abord, les cookies arrivent plus tard
+    let timer: number | undefined;
     const show = () => {
       setVisible(true);
       setMode("banner");
     };
+    const later = () => {
+      timer = window.setTimeout(show, COOKIE_DELAY);
+    };
 
     if ((window as any).__siteLoaderDone) {
-      show();
-      return;
+      later();
+    } else {
+      window.addEventListener("site-loader-done", later, { once: true });
     }
 
-    window.addEventListener("site-loader-done", show, { once: true });
-    return () => window.removeEventListener("site-loader-done", show);
+    return () => {
+      window.removeEventListener("site-loader-done", later);
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   const openPrefs = () => {

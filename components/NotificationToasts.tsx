@@ -7,6 +7,7 @@ import { AnimatePresence, motion, type PanInfo } from "framer-motion"
 import { useLocale, useMessages } from "next-intl"
 import { X } from "lucide-react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { getConsent } from "@/lib/cookieConsent"
 
 /* ====== TEXTES (faciles à modifier) ====== */
 
@@ -102,6 +103,7 @@ function fromMessages(m?: Record<string, string>): Copy | null {
 
 /* ====== RYTHME ====== */
 
+const WELCOME_DELAY = 3500 // pause après le choix de zone, avant la bienvenue (ms)
 const WELCOME_VISIBLE = 6500 // durée d'affichage (ms)
 const SHIPPING_GAP = 14000 // silence avant la livraison offerte
 const SHIPPING_VISIBLE = 8000
@@ -265,6 +267,19 @@ export default function NotificationToasts() {
         timers.push(window.setTimeout(done, 300000)) // sécurité (le choix de zone peut prendre du temps)
       })
 
+    // Les notifications suivantes attendent que le choix des cookies soit fait
+    // (au plus 60 s, pour ne jamais bloquer)
+    const waitCookies = () =>
+      new Promise<void>((resolve) => {
+        if (getConsent()) return resolve()
+        const done = () => {
+          window.removeEventListener("cookie-consent-changed", done)
+          resolve()
+        }
+        window.addEventListener("cookie-consent-changed", done)
+        timers.push(window.setTimeout(done, 60000))
+      })
+
     const waitUser = async () => {
       for (let i = 0; i < 20 && userRef.current.loading; i++) {
         await sleep(150)
@@ -301,7 +316,7 @@ export default function NotificationToasts() {
 
     const run = async () => {
       await waitLoader()
-      await sleep(800)
+      await sleep(WELCOME_DELAY)
       if (cancelled) return
 
       // 1. Bienvenue (une fois par visite)
@@ -316,6 +331,8 @@ export default function NotificationToasts() {
       // 2. Livraison offerte (une fois par jour)
       if (!cancelled && shippingOk()) {
         await sleep(SHIPPING_GAP)
+        await waitCookies()
+        await sleep(3000)
         if (cancelled) return
         if (!isExcluded() && shippingOk()) {
           writeStore("fysu:toast:shipping", todayKey())
@@ -327,6 +344,8 @@ export default function NotificationToasts() {
       // 3. Inscription (si pas connecté, pas plus d'une fois par semaine)
       if (!cancelled && signupOk()) {
         await sleep(SIGNUP_GAP)
+        await waitCookies()
+        await sleep(3000)
         if (cancelled) return
         if (!isExcluded() && signupOk()) {
           writeStore("fysu:toast:signup", String(Date.now()))
