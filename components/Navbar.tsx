@@ -9,14 +9,15 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { useBrandPage } from "@/lib/useBrandPage";
-import { Menu, X, ChevronDown, UserRound, ShoppingCart } from "lucide-react";
+import { Menu, X, ChevronDown, UserRound, ShoppingCart, Search } from "lucide-react";
 import Image from "next/image";
 import CartDrawer from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import LocaleSwitcher from "./LocaleSwitcher";
 import CroppedLogo from "./CroppedLogo";
 import { useMusicCopy } from "@/lib/musicCopy";
+import SearchOverlay, { searchLabel } from "./SearchOverlay";
 
 const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
@@ -61,6 +62,8 @@ function MobileMenu({
   const { cart, isCartOpen, setIsCartOpen } = useCart();
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const locale = useLocale();
 
   const brandPage = useBrandPage();
   const isKiban = brandPage === "kiban";
@@ -256,7 +259,15 @@ function MobileMenu({
     targets.forEach(([mv, v]) => animate(mv, v, SPRING));
   }, [rowW, topH, open, contentH, logoWidth, rightWidth, rightX, rightY, rightHeight, iconsRight]);
 
+  const openSearch = () => {
+    setIsCartOpen(false);
+    setActivePanel(null);
+    setSearchOpen(true);
+  };
+
   return (
+    <>
+    <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     <div className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
       <div ref={rowRef} className="relative">
         {/* Pastille du logo : elle s'étend pour combler le vide laissé par l'autre pastille */}
@@ -310,6 +321,17 @@ function MobileMenu({
               )}
             </div>
           </Link>
+
+          {/* Loupe : ouvre la recherche */}
+          <button
+            type="button"
+            onClick={openSearch}
+            aria-label={searchLabel(locale)}
+            title={searchLabel(locale)}
+            className="absolute right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full"
+          >
+            <Search size={20} />
+          </button>
         </motion.div>
 
         {/* Pastille panier / menu : elle descend et s'agrandit en panneau */}
@@ -480,6 +502,7 @@ function MobileMenu({
         </motion.div>
       </div>
     </div>
+    </>
   );
 }
 

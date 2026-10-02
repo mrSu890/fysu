@@ -172,6 +172,13 @@ export default function AccessibilityMenu() {
     setPrefs(load())
   }, [])
 
+  // ouverture depuis la recherche
+  useEffect(() => {
+    const onOpen = () => setOpen(true)
+    window.addEventListener("open-accessibility", onOpen)
+    return () => window.removeEventListener("open-accessibility", onOpen)
+  }, [])
+
   useEffect(() => {
     if (!open) return
     const html = document.documentElement
