@@ -48,6 +48,13 @@ export default function MiniPlayer() {
     if (collapsed) setVinylOpen(false)
   }, [collapsed])
 
+  // la pastille ouverte pousse vers le haut le bouton d'accessibilité (bas gauche)
+  useEffect(() => {
+    const lifted = Boolean(current && album && !collapsed && !pathname.startsWith("/admin"))
+    document.documentElement.style.setProperty("--fab-lift", lifted ? "70px" : "0px")
+    return () => document.documentElement.style.setProperty("--fab-lift", "0px")
+  }, [current, album, collapsed, pathname])
+
   if (!current || !album || pathname.startsWith("/admin")) return null
 
   const progress = duration > 0 ? Math.min(100, (time / duration) * 100) : 0

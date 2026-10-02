@@ -286,8 +286,10 @@ export default function NotificationToasts() {
       }
     }
 
+    // Mode concentration (accessibilité) : aucune notification
     const isExcluded = () =>
-      EXCLUDED.some((p) => pathRef.current.startsWith(p))
+      EXCLUDED.some((p) => pathRef.current.startsWith(p)) ||
+      document.documentElement.classList.contains("a11y-focus")
 
     const show = (id: ToastId, visibleMs: number) =>
       new Promise<void>((resolve) => {

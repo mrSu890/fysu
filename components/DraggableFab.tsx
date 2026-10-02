@@ -19,6 +19,8 @@ type Props = {
   label: string
   onTap: () => void
   zIndex?: number
+  // se décale vers le haut quand la pastille de musique est ouverte
+  lift?: boolean
   className?: string
   style?: CSSProperties
   children: ReactNode
@@ -31,6 +33,7 @@ export default function DraggableFab({
   label,
   onTap,
   zIndex = 60,
+  lift = false,
   className = "",
   style,
   children,
@@ -125,7 +128,8 @@ export default function DraggableFab({
           width: size,
           height: size,
           ...(side === "right" ? { right: MARGIN } : { left: MARGIN }),
-          bottom: `calc(${MARGIN}px + env(safe-area-inset-bottom))`,
+          bottom: `calc(${MARGIN}px + env(safe-area-inset-bottom) + ${lift ? "var(--fab-lift, 0px)" : "0px"})`,
+          transition: lift ? "bottom 0.3s ease" : undefined,
           touchAction: "none",
         }}
       >

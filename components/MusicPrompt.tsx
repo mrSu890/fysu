@@ -140,7 +140,11 @@ export default function MusicPrompt() {
   const alreadyListening = Boolean(
     playingAlbum && playing && albums.some((a) => a.id === playingAlbum.id)
   )
-  const visible = regionReady && !hidden && !closed && albums.length > 0 && !alreadyListening
+  // Mode concentration (accessibilité) : pas de pop-up
+  const focusMode =
+    typeof document !== "undefined" && document.documentElement.classList.contains("a11y-focus")
+  const visible =
+    regionReady && !hidden && !closed && albums.length > 0 && !alreadyListening && !focusMode
 
   // Quand la question « écouter ? » apparaît, la pastille de musique se referme
   useEffect(() => {
