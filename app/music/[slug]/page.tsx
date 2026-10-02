@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { Music, Pause, Play, Shuffle } from "lucide-react"
+import { ArrowLeft, Music, Pause, Play, Shuffle } from "lucide-react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Equalizer from "@/components/MusicEqualizer"
@@ -143,20 +143,31 @@ export default function MusicAlbumPage() {
 
         {album && (
           <>
-            <nav className="mb-6 flex flex-col items-start gap-2 text-xs">
+            {/* Boutons de retour : bien visibles, et ils restent accrochés en haut en faisant défiler */}
+            <nav className="sticky top-[76px] z-30 -mx-1 mb-8 flex flex-wrap items-center gap-2 px-1 py-2 text-sm">
+              <Link
+                href="/music"
+                className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 font-medium text-[#171717] shadow-lg transition active:scale-95"
+              >
+                <ArrowLeft size={16} /> {copy.allAlbums}
+              </Link>
               {(album.collections ?? []).map((c) => (
-                <Link key={c.slug} href={c.href} className="opacity-80 hover:opacity-100">
-                  ← {copy.backTo} {c.title}
+                <Link
+                  key={c.slug}
+                  href={c.href}
+                  className="flex items-center gap-2 rounded-full border border-current/30 bg-black/20 px-4 py-2.5 backdrop-blur-md transition active:scale-95"
+                >
+                  <ArrowLeft size={16} /> {c.title}
                 </Link>
               ))}
               {(album.collections ?? []).length === 0 && brand.path && (
-                <Link href={brand.path} className="opacity-80 hover:opacity-100">
-                  ← {copy.backTo} {brand.label}
+                <Link
+                  href={brand.path}
+                  className="flex items-center gap-2 rounded-full border border-current/30 bg-black/20 px-4 py-2.5 backdrop-blur-md transition active:scale-95"
+                >
+                  <ArrowLeft size={16} /> {brand.label}
                 </Link>
               )}
-              <Link href="/music" className="opacity-80 hover:opacity-100">
-                ♪ {copy.allAlbums}
-              </Link>
             </nav>
 
             {/* ================= EN-TÊTE ================= */}
