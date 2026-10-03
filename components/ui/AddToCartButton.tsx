@@ -3,8 +3,8 @@
 import { ProductType } from "@/types/product";
 import { useCart, type CartColor } from "@/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X } from "lucide-react";
-import { useState } from "react";
+import { Check } from "lucide-react";
+import ExpressPay from "@/components/ExpressPay";
 import { useTranslations } from "next-intl";
 
 type Props = {
@@ -28,7 +28,6 @@ export default function AddToCartButton({
 }: Props) {
   const t = useTranslations("Product");
   const { addToCartWithFeedback, justAdded, setIsCartOpen } = useCart();
-  const [applePayOpen, setApplePayOpen] = useState(false);
 
   // clé unique produit + taille
   const key = selectedSizeId ? `${product.id}-${selectedSizeId}` : `${product.id}`;
@@ -36,85 +35,8 @@ export default function AddToCartButton({
 
   return (
     <div className={`w-full space-y-3 ${className || ""}`}>
-      {/* Apple Pay button */}
-      <button
-        type="button"
-        onClick={() => setApplePayOpen(true)}
-        className="
-          w-full
-          bg-white border
-          text-black
-          py-3
-          text-md
-          font-semibold
-          tracking-wide
-          transition-colors duration-300
-          hover:bg-neutral-200 cursor-pointer
-          rounded-none
-          flex items-center justify-center
-        "
-        aria-label="Apple Pay"
-      >
-        <span className="flex items-center gap-1">
-          <span className="text-base leading-none"></span>
-          <span>Pay</span>
-        </span>
-      </button>
-
-      {/* Popup */}
-      <AnimatePresence>
-        {applePayOpen && (
-          <motion.div
-            className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            role="dialog"
-            aria-modal="true"
-          >
-            {/* Backdrop */}
-            <button
-              type="button"
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setApplePayOpen(false)}
-              aria-label={t("closeApplePay")}
-            />
-
-            {/* Modal */}
-            <motion.div
-              className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-              initial={{ y: 16, opacity: 0, scale: 0.98 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 16, opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-            >
-              <button
-                type="button"
-                onClick={() => setApplePayOpen(false)}
-                className="absolute right-4 top-4 rounded-full p-2 hover:bg-neutral-100"
-                aria-label={t("closeApplePay")}
-              >
-                <X size={18} />
-              </button>
-
-              <h3 className="text-lg font-semibold mb-2">Apple Pay</h3>
-              <p className="text-sm text-neutral-600 leading-relaxed">
-                {t("applePayInfo")}
-              </p>
-
-              <div className="mt-5 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setApplePayOpen(false)}
-                  className="px-4 py-2 text-sm rounded-full border border-neutral-300 hover:bg-neutral-50"
-                >
-                  {t("gotIt")}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Apple Pay / Google Pay : vrai bouton Stripe, paiement direct depuis la fiche */}
+      <ExpressPay product={product} selectedSizeId={selectedSizeId} />
 
       {/* Bouton d'achat : « Ajouter au panier » ou « Précommander » selon le mode */}
       <motion.button
