@@ -11,6 +11,7 @@ import { useMusicPlayer } from "@/context/MusicPlayerContext"
 import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
 import { waveColors } from "@/lib/waveColor"
 import WaveLoader from "@/components/WaveLoader"
+import AutoContrast from "@/components/AutoContrast"
 import { formatTime, totalMinutes, type MusicAlbumFull } from "@/lib/music"
 import { useMusicCopy } from "@/lib/musicCopy"
 
@@ -137,6 +138,7 @@ export default function MusicAlbumPage() {
       )}
 
       {brandId === "thewave" && <WaveLoader />}
+    {brandId === "thewave" && <AutoContrast bg={wc.bg} />}
 
       <Navbar />
 
