@@ -258,6 +258,7 @@ export default function CollectionPage() {
                             "
                           >
                             <Product
+                              showArrows
                               product={product}
                               scrollRef={scrollRef}
                               isFirst={sectionIndex === 0 && index === 0}
