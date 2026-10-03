@@ -1,31 +1,27 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { WAVE } from "@/lib/brands"
 
 /* ====================================================================
    ÉCRAN DE CHARGEMENT THE WAVE
-   Une vague bleue qui ondule en boucle, 2 secondes maximum.
+   UNE vague bleue : elle monte, se cabre, s'écrase puis se retire — en boucle.
+   La forme est la vague officielle (lib/brands.ts).
    ==================================================================== */
 
 const SKY = "#dbedf5"
 const SEA = "#0393d1"
-const SEA_LIGHT = "#7cc4e6"
 
-const SHOW_MS = 1650 // temps d'affichage
-const FADE_MS = 350 // fondu de sortie (total = 2 s)
+const SHOW_MS = 1900 // temps d'affichage
+const FADE_MS = 350 // fondu de sortie
+const CYCLE_S = 2.2 // durée d'un cycle de vague
 
-// une houle qui se répète : on la dessine sur 2 largeurs pour que le défilement soit sans coupure
-function swell(offset: number, amp: number) {
-  const w = 600
-  let d = `M0 ${offset}`
-  for (let i = 0; i < 4; i++) {
-    const x = i * w
-    d += ` C${x + w * 0.2} ${offset - amp}, ${x + w * 0.45} ${offset - amp * 1.1}, ${x + w * 0.62} ${offset - amp * 0.2}`
-    d += ` C${x + w * 0.78} ${offset + amp * 0.7}, ${x + w * 0.9} ${offset + amp * 0.5}, ${x + w} ${offset}`
-  }
-  d += ` L${4 * w} 600 L0 600Z`
-  return d
-}
+// Forme unique et fermée : le contour de la vague, prolongé très loin à gauche, à droite et en bas
+// (aucun bord ni couture visible quand elle bouge).
+const cut = WAVE.PATH.indexOf(" L0 1852")
+const SHAPE =
+  (cut > 0 ? WAVE.PATH.slice(0, cut) : WAVE.PATH) +
+  " L0 1852 L-6000 1900 L-6000 7000 L6000 7000 L6000 1833Z"
 
 export default function WaveLoader() {
   const [show, setShow] = useState(true)
@@ -73,40 +69,22 @@ export default function WaveLoader() {
       }}
     >
       <style>{`
-        @keyframes waveSlideA { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes waveSlideB { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-        @keyframes waveBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
-        @keyframes waveRise { from { transform: translateY(18%); } to { transform: translateY(0); } }
+        @keyframes fysuSurge {
+          0%   { transform: translate(-80px, 3800px) rotate(-3deg); animation-timing-function: cubic-bezier(.2,.75,.3,1); }
+          40%  { transform: translate(0px, -320px) rotate(0deg); animation-timing-function: cubic-bezier(.4,0,.5,1); }
+          56%  { transform: translate(40px, -140px) rotate(3deg); animation-timing-function: cubic-bezier(.55,0,.85,.55); }
+          76%  { transform: translate(120px, 550px) rotate(11deg) scaleY(.88); animation-timing-function: cubic-bezier(.4,0,.7,1); }
+          100% { transform: translate(200px, 3800px) rotate(16deg) scaleY(.72); }
+        }
+        .fysu-wave-shape { transform-origin: 150px 6000px; animation: fysuSurge ${CYCLE_S}s linear infinite; }
       `}</style>
-
-      <div
-        className="absolute inset-x-0 bottom-0 h-[62%]"
-        style={{ animation: "waveRise 0.9s cubic-bezier(.2,.7,.2,1) both" }}
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox="0 0 1821 2576"
+        preserveAspectRatio="xMaxYMax slice"
       >
-        {/* vague claire, derrière, dans l'autre sens */}
-        <div className="absolute inset-0" style={{ animation: "waveBob 1.6s ease-in-out infinite" }}>
-          <svg
-            className="absolute bottom-0 left-0 h-full"
-            style={{ width: "200%", animation: "waveSlideB 2.6s linear infinite" }}
-            viewBox="0 0 2400 600"
-            preserveAspectRatio="none"
-          >
-            <path d={swell(190, 70)} fill={SEA_LIGHT} />
-          </svg>
-        </div>
-
-        {/* vague principale */}
-        <div className="absolute inset-0" style={{ animation: "waveBob 1.3s ease-in-out infinite reverse" }}>
-          <svg
-            className="absolute bottom-0 left-0 h-full"
-            style={{ width: "200%", animation: "waveSlideA 2.1s linear infinite" }}
-            viewBox="0 0 2400 600"
-            preserveAspectRatio="none"
-          >
-            <path d={swell(250, 90)} fill={SEA} />
-          </svg>
-        </div>
-      </div>
+        <path className="fysu-wave-shape" d={SHAPE} fill={SEA} />
+      </svg>
     </div>
   )
 }

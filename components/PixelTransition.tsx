@@ -14,7 +14,7 @@ import PixelGrid, { type PixelMode } from "@/components/PixelGrid"
    ou si l'appareil demande moins de mouvement.
    ==================================================================== */
 
-export const PIXEL_EXCLUDED = ["/kiban-collector", "/thewave", "/fygrances", "/admin"]
+export const PIXEL_EXCLUDED = ["/thewave", "/admin"]
 
 export const isPixelExcluded = (pathname: string) =>
   PIXEL_EXCLUDED.some((p) => pathname === p || pathname.startsWith(`${p}/`))
