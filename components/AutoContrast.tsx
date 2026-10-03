@@ -15,9 +15,40 @@ type RGBA = [number, number, number, number]
 const MIN_CONTRAST = 3.2
 const SKIP = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "IMG", "SVG", "CANVAS", "VIDEO", "INPUT", "TEXTAREA", "SELECT", "OPTION", "PATH"])
 
+// Couleurs que le navigateur ne rend pas sous forme rgb() (color-mix, oklab…) : on les fait résoudre par un canvas
+let probe: CanvasRenderingContext2D | null = null
+const probeCache = new Map<string, RGBA | null>()
+
+function viaCanvas(v: string): RGBA | null {
+  if (probeCache.has(v)) return probeCache.get(v) ?? null
+  let out: RGBA | null = null
+  try {
+    if (!probe) {
+      const c = document.createElement("canvas")
+      c.width = 1
+      c.height = 1
+      probe = c.getContext("2d", { willReadFrequently: true })
+    }
+    if (probe) {
+      probe.clearRect(0, 0, 1, 1)
+      probe.fillStyle = "#010203"
+      probe.fillStyle = v
+      const ok = probe.fillStyle !== "#010203" || v.replace(/\s/g, "").toLowerCase() === "#010203"
+      if (ok) {
+        probe.fillRect(0, 0, 1, 1)
+        const d = probe.getImageData(0, 0, 1, 1).data
+        out = [d[0], d[1], d[2], d[3] / 255]
+      }
+    }
+  } catch {}
+  probeCache.set(v, out)
+  return out
+}
+
 function parseColor(value: string): RGBA | null {
   const v = value.trim()
   if (!v || v === "transparent") return [0, 0, 0, 0]
+  if (!v.startsWith("rgb") && !v.startsWith("color(srgb")) return viaCanvas(v)
   const nums = (v.match(/-?\d*\.?\d+/g) ?? []).map(Number)
   if (v.startsWith("rgb")) {
     if (nums.length < 3) return null
@@ -63,16 +94,28 @@ export default function AutoContrast({ bg }: { bg: string }) {
 
     // fond réel derrière un élément : premier ancêtre opaque, sinon le fond de la page.
     // null = fond en image / dégradé : on ne touche pas.
+    // verre / dégradé translucide au-dessus du fond de page : on l'estime plus clair que le fond
+    const glassBg: RGBA = [
+      pageBg[0] + (255 - pageBg[0]) * 0.45,
+      pageBg[1] + (255 - pageBg[1]) * 0.45,
+      pageBg[2] + (255 - pageBg[2]) * 0.45,
+      1,
+    ]
     const backdrop = (el: Element): RGBA | null => {
       let a: Element | null = el
+      let glass = false
       while (a && a !== document.documentElement) {
         const cs = getComputedStyle(a)
         const c = parseColor(cs.backgroundColor)
         if (c && c[3] >= 0.6) return c
-        if (cs.backgroundImage && cs.backgroundImage !== "none") return null
+        if (cs.backgroundImage && cs.backgroundImage !== "none") {
+          // une vraie image (photo) : on ne touche pas ; un dégradé : verre
+          if (cs.backgroundImage.includes("url(")) return null
+          glass = true
+        }
         a = a.parentElement
       }
-      return pageBg
+      return glass ? glassBg : pageBg
     }
 
     const hasOwnText = (el: Element) => {
@@ -127,17 +170,38 @@ export default function AutoContrast({ bg }: { bg: string }) {
       })
     }
 
+    // logo The Wave (image blanche) : devient noir sur fond clair
+    const fixLogos = () => {
+      const lightBg = contrast(WHITE, glassBg) < MIN_CONTRAST || contrast(WHITE, pageBg) < MIN_CONTRAST
+      document.querySelectorAll<HTMLElement>('img[alt="TheWave"]').forEach((img) => {
+        if (lightBg) {
+          img.style.setProperty("filter", "brightness(0)", "important")
+          img.dataset.acLogo = "1"
+        } else if (img.dataset.acLogo) {
+          img.style.removeProperty("filter")
+          delete img.dataset.acLogo
+        }
+      })
+    }
+
     let timer: number | null = null
     const schedule = () => {
       if (timer) window.clearTimeout(timer)
       timer = window.setTimeout(() => {
         timer = null
         run()
+        fixLogos()
       }, 120)
     }
 
-    const first = window.setTimeout(run, 60)
-    const second = window.setTimeout(run, 700)
+    const first = window.setTimeout(() => {
+      run()
+      fixLogos()
+    }, 60)
+    const second = window.setTimeout(() => {
+      run()
+      fixLogos()
+    }, 700)
     const observer = new MutationObserver(schedule)
     observer.observe(document.body, { childList: true, subtree: true, characterData: true })
 
@@ -150,6 +214,10 @@ export default function AutoContrast({ bg }: { bg: string }) {
         el.style.removeProperty("color")
         el.removeAttribute("data-ac")
         delete el.dataset.acOrig
+      })
+      document.querySelectorAll<HTMLElement>("[data-ac-logo]").forEach((img) => {
+        img.style.removeProperty("filter")
+        delete img.dataset.acLogo
       })
       style.remove()
     }
