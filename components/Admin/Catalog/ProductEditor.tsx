@@ -10,6 +10,7 @@ import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
 import { BRAND_LIST, getBrandId } from "@/lib/brands"
+import WaveColorField from "@/components/Admin/WaveColorField"
 import { FAMILY_ADMIN_LIST } from "@/lib/olfactive"
 
 /* ====================================================================
@@ -50,6 +51,7 @@ type FormState = {
   availability: string
   release_date: string
   brand: string
+  wave_bg: string
   olfactive_family: string
   evocation: string
 }
@@ -151,6 +153,7 @@ export default function ProductEditor({ id }: { id: string }) {
     availability: "available",
     release_date: "",
     brand: "fysu",
+    wave_bg: "",
     olfactive_family: "",
     evocation: "",
   })
@@ -192,6 +195,7 @@ export default function ProductEditor({ id }: { id: string }) {
         availability: isAvailabilityId(p.availability) ? p.availability : "available",
         release_date: p.release_date ? String(p.release_date).slice(0, 10) : "",
         brand: getBrandId(p.brand),
+        wave_bg: (p as { wave_bg?: string | null }).wave_bg ?? "",
         olfactive_family: p.olfactive_family ?? "",
         evocation: p.evocation ?? "",
       }
@@ -546,6 +550,7 @@ export default function ProductEditor({ id }: { id: string }) {
             ? form.release_date || null
             : null,
         brand: form.brand,
+        wave_bg: form.wave_bg || null,
         olfactive_family: form.product_type === "fragrance" ? form.olfactive_family || null : null,
         evocation: form.evocation,
         size_guide_image_url: sizeGuide,
@@ -737,6 +742,11 @@ export default function ProductEditor({ id }: { id: string }) {
                   </select>
                 </Field>
               </div>
+              {form.brand === "thewave" && (
+                <div className="sm:col-span-2">
+                  <WaveColorField value={form.wave_bg} onChange={(v) => setField("wave_bg", v)} />
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <Field label="Nom">
                   <input
