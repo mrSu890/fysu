@@ -8,6 +8,7 @@ import { useBrandPage } from "@/lib/useBrandPage";
 import { useTranslations } from "next-intl";
 import CroppedLogo from "./CroppedLogo";
 import FygrancesIntro from "./FygrancesIntro";
+import HomeTiles from "./HomeTiles";
 
 const logo = "/images/footer_logo.png"
 
@@ -41,6 +42,9 @@ const Footer: React.FC = () => {
     <>
       {/* Présentation des FY'grances (image + texte + bouton) */}
       <FygrancesIntro />
+
+      {/* Page d'accueil : « Explore The Universe » juste au-dessus de l'anthurium */}
+      {pathname === "/" && <HomeTiles />}
 
       {/* Pastille du jeu FYSU Bird (page When the flowers bloom) */}
       {showGame && (
