@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
 import Link from "next/link"
 import { useLocale } from "next-intl"
 import KibanLogo from "@/components/KibanLogo"
@@ -43,71 +43,92 @@ function WaveIcon() {
 }
 
 function FygrancesIcon() {
+  // dessin épuré : un flacon d'échantillon 2 ml, simple trait clair sur fond vert sombre
+  const ink = "#e9e4d6"
   return (
     <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
-      <defs>
-        <linearGradient id="fy-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7bd36b" />
-          <stop offset="1" stopColor="#1b6e3e" />
-        </linearGradient>
-      </defs>
-      <rect width="100" height="100" fill="url(#fy-bg)" />
-      {/* feuilles */}
-      <ellipse cx="14" cy="80" rx="26" ry="9" transform="rotate(-38 14 80)" fill="#ffffff" opacity="0.14" />
-      <ellipse cx="88" cy="22" rx="24" ry="8" transform="rotate(34 88 22)" fill="#ffffff" opacity="0.14" />
-      <ellipse cx="84" cy="86" rx="20" ry="7" transform="rotate(-25 84 86)" fill="#0d4a2a" opacity="0.28" />
-      <ellipse cx="12" cy="20" rx="18" ry="6" transform="rotate(28 12 20)" fill="#0d4a2a" opacity="0.22" />
-      {/* flacon échantillon 2 ml */}
-      <g transform="rotate(-14 50 55)">
-        <path d="M41 30h18v43a9 9 0 0 1-18 0z" fill="#ffffff" fillOpacity="0.3" stroke="#ffffff" strokeOpacity="0.9" strokeWidth="1.6" />
-        <path d="M42 52h16v21a8 8 0 0 1-16 0z" fill="#f3b43c" />
-        <rect x="44" y="58" width="12" height="9" rx="1.5" fill="#ffffff" fillOpacity="0.92" />
-        <text x="50" y="65" textAnchor="middle" fontSize="5.2" fontWeight="800" fill="#1b6e3e" fontFamily="Helvetica, Arial, sans-serif">FY</text>
-        <rect x="39" y="17" width="22" height="14" rx="3" fill="#171717" />
-        <rect x="42" y="20" width="1.6" height="8" rx="0.8" fill="#ffffff" opacity="0.28" />
-        <rect x="46" y="20" width="1.6" height="8" rx="0.8" fill="#ffffff" opacity="0.28" />
-        <rect x="50" y="20" width="1.6" height="8" rx="0.8" fill="#ffffff" opacity="0.28" />
-        <rect x="54" y="20" width="1.6" height="8" rx="0.8" fill="#ffffff" opacity="0.28" />
-        <rect x="43.5" y="34" width="2.6" height="34" rx="1.3" fill="#ffffff" opacity="0.7" />
+      <rect width="100" height="100" fill="#233129" />
+      <g fill="none" stroke={ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* bouchon */}
+        <rect x="42.5" y="20" width="15" height="11" rx="1.5" />
+        <path d="M45.5 20v11M50 20v11M54.5 20v11" strokeWidth="0.8" opacity="0.55" />
+        {/* col + flacon */}
+        <path d="M44.5 31v3.5M55.5 31v3.5" />
+        <path d="M41 34.5h18v42a9 9 0 0 1-18 0z" />
+        {/* niveau du liquide */}
+        <path d="M41.2 55h17.6" strokeWidth="1" opacity="0.8" />
+        {/* étiquette */}
+        <path d="M45.5 64h9M45.5 68h6" strokeWidth="0.9" opacity="0.7" />
       </g>
+      <path d="M41.8 55.5h16.4v21a8.2 8.2 0 0 1-16.4 0z" fill={ink} opacity="0.1" />
+      <path d="M45 38v11" stroke={ink} strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+      <path d="M32 85h36" stroke={ink} strokeWidth="0.8" strokeLinecap="round" opacity="0.35" />
     </svg>
   )
 }
 
 function MusicIcon() {
+  // Liquid Glass : une plaque de verre (comme la barre de navigation) sur un décor vert aqua,
+  // avec une note de musique en verre
+  const glass = {
+    "--glass-color": "#d8ffe6",
+    "--glass-tint": "34%",
+    "--glass-brightness": "1.08",
+    "--glass-rim": "rgba(255,255,255,0.75)",
+    "--glass-shadow": "rgba(0,70,40,0.35)",
+  } as CSSProperties
   return (
-    <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
-      <defs>
-        <linearGradient id="mu-bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#c4f58a" />
-          <stop offset="0.5" stopColor="#2ccf78" />
-          <stop offset="1" stopColor="#09745e" />
-        </linearGradient>
-        <linearGradient id="mu-gloss" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.75" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0.05" />
-        </linearGradient>
-        <filter id="mu-shadow" x="-20%" y="-20%" width="140%" height="150%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#04483a" floodOpacity="0.55" />
-        </filter>
-      </defs>
-      <rect width="100" height="100" fill="url(#mu-bg)" />
-      {/* bulles */}
-      <circle cx="20" cy="74" r="10" fill="#ffffff" fillOpacity="0.14" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" />
-      <circle cx="80" cy="30" r="6" fill="#ffffff" fillOpacity="0.14" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" />
-      <circle cx="78" cy="78" r="4" fill="#ffffff" fillOpacity="0.18" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" />
-      {/* note de musique */}
-      <g filter="url(#mu-shadow)" fill="#ffffff">
-        <ellipse cx="36" cy="68" rx="9" ry="6.5" transform="rotate(-20 36 68)" />
-        <ellipse cx="65" cy="62" rx="9" ry="6.5" transform="rotate(-20 65 62)" />
-        <rect x="42" y="30" width="3.6" height="38" rx="1.4" />
-        <rect x="71" y="24" width="3.6" height="38" rx="1.4" />
-        <path d="M42 30 L74.6 23 L74.6 33.5 L42 40.5Z" />
-      </g>
-      {/* reflet verre (Frutiger Aero) */}
-      <path d="M0 0H100V46C78 56 28 56 0 40Z" fill="url(#mu-gloss)" opacity="0.55" />
-      <rect x="1" y="1" width="98" height="98" rx="0" fill="none" stroke="#ffffff" strokeOpacity="0.35" />
-    </svg>
+    <span className="relative block h-full w-full">
+      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+        <defs>
+          <linearGradient id="mu-bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#b6f27a" />
+            <stop offset="0.5" stopColor="#25c27a" />
+            <stop offset="1" stopColor="#067a68" />
+          </linearGradient>
+          <radialGradient id="mu-glow" cx="0.25" cy="0.2" r="0.7">
+            <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <rect width="100" height="100" fill="url(#mu-bg)" />
+        <rect width="100" height="100" fill="url(#mu-glow)" />
+        <circle cx="18" cy="78" r="13" fill="#ffffff" fillOpacity="0.22" />
+        <circle cx="84" cy="22" r="9" fill="#ffffff" fillOpacity="0.2" />
+        <circle cx="78" cy="84" r="6" fill="#d9ff9e" fillOpacity="0.45" />
+        <circle cx="30" cy="16" r="5" fill="#ffffff" fillOpacity="0.25" />
+      </svg>
+
+      {/* plaque de verre */}
+      <span
+        className="liquid-glass absolute"
+        style={{ ...glass, inset: "13%", borderRadius: "26%" }}
+      />
+
+      {/* note de musique en verre */}
+      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+        <defs>
+          <linearGradient id="mu-note" x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="0.55" stopColor="#ffffff" stopOpacity="0.4" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity="0.62" />
+          </linearGradient>
+          <filter id="mu-soft" x="-30%" y="-30%" width="160%" height="170%">
+            <feDropShadow dx="0" dy="2.2" stdDeviation="1.8" floodColor="#03402c" floodOpacity="0.35" />
+          </filter>
+        </defs>
+        <g filter="url(#mu-soft)" fill="url(#mu-note)" stroke="#ffffff" strokeOpacity="0.95" strokeWidth="1.1" strokeLinejoin="round">
+          <ellipse cx="38" cy="66" rx="8.5" ry="6.2" transform="rotate(-20 38 66)" />
+          <ellipse cx="64" cy="60" rx="8.5" ry="6.2" transform="rotate(-20 64 60)" />
+          <rect x="43.6" y="30" width="3.4" height="35" rx="1.6" />
+          <rect x="69.6" y="24" width="3.4" height="35" rx="1.6" />
+          <path d="M43.6 30 L73 23.6 L73 33.4 L43.6 39.8Z" />
+        </g>
+        {/* reflets */}
+        <path d="M33 62.6c2-2.2 5.4-3 8-2.2" stroke="#ffffff" strokeOpacity="0.9" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+        <path d="M45 33.5l25-5.4" stroke="#ffffff" strokeOpacity="0.8" strokeWidth="1" strokeLinecap="round" fill="none" />
+      </svg>
+    </span>
   )
 }
 
