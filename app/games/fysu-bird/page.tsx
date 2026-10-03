@@ -16,6 +16,8 @@ import { REWARD_SCORE, gamesCopyFor } from "@/lib/games"
 
 type Reward = { code: string; percent: number }
 
+const TERM = '"VT323", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
+
 export default function FysuBirdPage() {
   const copy = gamesCopyFor(useLocale())
   const token = useRef<string | null>(null)
@@ -92,50 +94,60 @@ export default function FysuBirdPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#bcd9ee]" style={{ zIndex: 45 }}>
+    <div className="fixed inset-0 flex items-center justify-center bg-black" style={{ zIndex: 45 }}>
+      <style>{`@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");`}</style>
       <FysuBirdGame copy={copy} onStart={onStart} onOver={onOver} />
 
       {/* retour : gros bouton facile à repérer */}
       <Link
         href="/games"
-        className="liquid-glass absolute left-4 top-4 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium active:scale-95"
-        style={{ color: "var(--menu)", zIndex: 50, marginTop: "env(safe-area-inset-top)" }}
+        className="absolute left-4 top-4 flex items-center gap-2 border-2 bg-black px-4 py-3 active:translate-y-0.5"
+        style={{
+          zIndex: 50,
+          marginTop: "env(safe-area-inset-top)",
+          borderColor: "#3fd0ff",
+          color: "#3fd0ff",
+          fontFamily: '"Press Start 2P", "VT323", ui-monospace, monospace',
+          fontSize: 12,
+        }}
       >
-        <ArrowLeft size={18} />
-        {copy.back}
+        <ArrowLeft size={16} />
+        {copy.back.toUpperCase()}
       </Link>
 
       {/* code gagné (ou déjà gagné) */}
       {reward && (
         <div
-          className="liquid-glass absolute left-1/2 w-[min(92vw,380px)] -translate-x-1/2 rounded-2xl p-4 text-center"
-          style={{ color: "var(--menu)", zIndex: 50, bottom: "calc(90px + env(safe-area-inset-bottom))" }}
+          className="absolute left-1/2 w-[min(92vw,380px)] -translate-x-1/2 border-2 bg-black p-4 text-center"
+          style={{ zIndex: 50, bottom: "calc(90px + env(safe-area-inset-bottom))", borderColor: "#ffd23f", fontFamily: TERM }}
         >
-          <p className="text-xs opacity-80">{fresh ? copy.yourCode : copy.alreadyWon}</p>
+          <p style={{ color: "#3fd0ff", fontSize: 20, letterSpacing: "0.1em" }}>{fresh ? copy.yourCode : copy.alreadyWon}</p>
           <button
             type="button"
             onClick={copyCode}
-            className="mt-2 inline-flex items-center gap-2 rounded-full border border-current/30 px-4 py-2 font-mono text-base tracking-widest active:scale-95"
+            className="mt-2 inline-flex items-center gap-2 border-2 px-4 py-2 active:translate-y-0.5"
+            style={{ borderColor: "#ff5a36", color: "#ffd23f", fontSize: 26, letterSpacing: "0.18em" }}
           >
             {reward.code}
-            {copied ? <Check size={16} /> : <Copy size={16} />}
+            {copied ? <Check size={18} /> : <Copy size={18} />}
           </button>
-          <p className="mt-2 text-[11px] opacity-70">{copied ? copy.copied : copy.codeHint}</p>
+          <p className="mt-2" style={{ color: "#bdbdbd", fontSize: 17 }}>{copied ? copy.copied : copy.codeHint}</p>
         </div>
       )}
 
       {/* objectif atteint sans être connecté */}
       {!reward && needLogin && (
         <div
-          className="liquid-glass absolute left-1/2 w-[min(92vw,380px)] -translate-x-1/2 rounded-2xl p-4 text-center"
-          style={{ color: "var(--menu)", zIndex: 50, bottom: "calc(90px + env(safe-area-inset-bottom))" }}
+          className="absolute left-1/2 w-[min(92vw,380px)] -translate-x-1/2 border-2 bg-black p-4 text-center"
+          style={{ zIndex: 50, bottom: "calc(90px + env(safe-area-inset-bottom))", borderColor: "#ffd23f", fontFamily: TERM }}
         >
-          <p className="text-sm">{copy.loginToWin}</p>
+          <p style={{ color: "#3fd0ff", fontSize: 21, letterSpacing: "0.06em" }}>{copy.loginToWin}</p>
           <Link
             href="/auth/signin"
-            className="mt-3 inline-block rounded-full bg-current/15 px-5 py-2 text-sm font-medium"
+            className="mt-3 inline-block border-2 px-5 py-2 active:translate-y-0.5"
+            style={{ borderColor: "#ff5a36", color: "#ffd23f", fontSize: 22, letterSpacing: "0.14em" }}
           >
-            {copy.loginCta}
+            {copy.loginCta.toUpperCase()}
           </Link>
         </div>
       )}
