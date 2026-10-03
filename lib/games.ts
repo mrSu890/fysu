@@ -4,7 +4,7 @@
    modifie les deux chiffres ci-dessous (REWARD_SCORE / REWARD_PERCENT).
    ==================================================================== */
 
-export const REWARD_SCORE = 25 // score à atteindre dans FYSU Bird pour gagner la réduction
+export const REWARD_SCORE = 100 // score à atteindre dans FYSU Bird pour gagner la réduction
 export const REWARD_PERCENT = 10 // pourcentage de réduction
 export const REWARD_DAYS = 30 // durée de validité du code
 
