@@ -50,7 +50,7 @@ export default function HomeSection({ slug }: { slug: string }) {
               lg:w-[320px]
             "
           >
-            <Product product={product} scrollRef={scrollRef} />
+            <Product showArrows product={product} scrollRef={scrollRef} />
           </div>
         ))}
       </div>
