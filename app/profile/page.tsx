@@ -20,36 +20,37 @@ export default function ProfilePage() {
   const tn = useTranslations("Navigation");
   const router = useRouter();
   const { user: hookUser, loading } = useCurrentUser();
-  // vérification directe auprès du serveur si la lecture rapide de la session n'a rien donné
+  // si la lecture rapide de la session n'a rien donné, on demande directement au serveur qui est connecté
   const [verifiedUser, setVerifiedUser] = useState<any>(null);
-  const [verifying, setVerifying] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
   const user = hookUser ?? verifiedUser;
   const [loggingOut, setLoggingOut] = useState(false);
   const [heroFailed, setHeroFailed] = useState(false);
 
-  // Si la session n'est pas lue assez vite, on ne renvoie PAS tout de suite vers la connexion
-  // (le site te renverrait alors à l'accueil parce que tu es en fait connecté) : on vérifie d'abord.
+  // Si la session n'est pas lue assez vite côté navigateur, on ne renvoie PAS tout de suite vers la connexion
+  // (le site te renverrait alors à l'accueil parce que tu es en fait connecté) : on demande au serveur.
   useEffect(() => {
     if (loading || hookUser || verifiedUser) return;
     let cancelled = false;
-    setVerifying(true);
-    supabaseClient.auth
-      .getUser()
-      .then(({ data }) => {
+    fetch("/api/auth/callback?me=1", { cache: "no-store" })
+      .then(async (res) => {
         if (cancelled) return;
-        if (data.user) {
-          setVerifiedUser(data.user);
-          setVerifying(false);
-        } else {
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user) {
+            setVerifiedUser(data.user);
+            return;
+          }
+        }
+        if (res.status === 401) {
           router.replace("/auth/signin");
           router.refresh();
+        } else {
+          setCheckFailed(true);
         }
       })
       .catch(() => {
-        if (!cancelled) {
-          router.replace("/auth/signin");
-          router.refresh();
-        }
+        if (!cancelled) setCheckFailed(true);
       });
     return () => {
       cancelled = true;
@@ -80,18 +81,23 @@ export default function ProfilePage() {
     }
   };
 
-    if (loading || (verifying && !user)) {
+  if (loading || !user) {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen" />
+        <div className="flex min-h-screen items-center justify-center">
+          {checkFailed && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-full border border-current px-5 py-2 text-sm"
+            >
+              Réessayer
+            </button>
+          )}
+        </div>
       </>
     );
-  }
-
-
-  if (!user) {
-    return null;
   }
 
   return (
