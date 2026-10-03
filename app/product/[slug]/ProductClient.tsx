@@ -17,6 +17,7 @@ import { getTypeCopy } from "@/lib/productTypes"
 import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
 import { waveColors } from "@/lib/waveColor"
 import WaveLoader from "@/components/WaveLoader"
+import AutoContrast from "@/components/AutoContrast"
 import { getColorCopy } from "@/lib/colorCopy"
 import { getFamilyCopy, isFamilyId } from "@/lib/olfactive"
 import { getFygrancesCopy } from "@/lib/fygrancesCopy"
@@ -250,6 +251,7 @@ export default function ProductClient() {
     )}
 
     {brandId === "thewave" && <WaveLoader />}
+    {brandId === "thewave" && <AutoContrast bg={wc.bg} />}
 
     <div className="max-w-6xl mx-auto py-12 relative top-0 sm:top-24">
       <div className="grid md:grid-cols-2 gap-12 items-start">
