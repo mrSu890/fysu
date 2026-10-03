@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { Accessibility, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useLocale } from "next-intl"
 import DraggableFab from "@/components/DraggableFab"
 
@@ -160,6 +160,30 @@ function Row({
   )
 }
 
+// Symbole universel d'accessibilité : un cercle, une personne les bras écartés
+function UniversalAccessIcon({ size = 24 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="7.2" r="1.3" fill="currentColor" stroke="none" />
+      <path d="M6.4 9.6 C9.6 10.5 14.4 10.5 17.6 9.6" />
+      <path d="M12 10.4 V14" />
+      <path d="M12 14 L9.9 18.2" />
+      <path d="M12 14 L14.1 18.2" />
+    </svg>
+  )
+}
+
 export default function AccessibilityMenu() {
   const locale = useLocale()
   const pathname = usePathname()
@@ -238,7 +262,7 @@ export default function AccessibilityMenu() {
             >
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-lg font-medium">
-                  <Accessibility size={20} /> {copy.title}
+                  <UniversalAccessIcon size={20} /> {copy.title}
                 </h2>
                 <button
                   type="button"
@@ -334,7 +358,7 @@ export default function AccessibilityMenu() {
         className="liquid-glass"
         style={{ color: "var(--menu)" }}
       >
-        <Accessibility size={24} />
+        <UniversalAccessIcon size={26} />
       </DraggableFab>
     </>
   )

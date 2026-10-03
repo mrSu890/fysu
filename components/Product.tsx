@@ -13,14 +13,20 @@ import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/l
 /* ====================================================================
    CARTE PRODUIT
    - un toucher sur l'image ouvre la fiche produit
-   - les images se font défiler UNIQUEMENT avec les petites flèches
-     (glisser le doigt sur la carte fait défiler la rangée de produits)
+   - dans une RANGÉE qui défile (showArrows) : les images se font défiler UNIQUEMENT avec les petites
+     flèches (glisser le doigt sur la carte fait défiler la rangée de produits)
+   - dans une page fixe (grille) : pas de flèches, on glisse le doigt / le curseur sur l'image
    ==================================================================== */
+
+const SWIPE_MIN = 35
 
 const Product = ({
   product,
+  showArrows = false,
 }: {
   product: ProductType
+  // true quand la carte est dans une rangée qui défile (flèches, pas de glissement sur l'image)
+  showArrows?: boolean
   // (ancien réglage de la rangée, plus utilisé : on le garde pour ne rien casser)
   scrollRef?: React.RefObject<HTMLDivElement | null>
   isFirst?: boolean
@@ -35,6 +41,8 @@ const Product = ({
   const [infoRevealed, setInfoRevealed] = useState(false)
   const hideInfoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const swipeStart = useRef<{ x: number; y: number } | null>(null)
+  const swipedRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -66,6 +74,7 @@ const Product = ({
 
   // Tactile : les infos apparaissent quand le doigt se pose, puis se recachent un peu après
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    swipeStart.current = { x: e.clientX, y: e.clientY }
     if (e.pointerType === "touch" || e.pointerType === "pen") {
       if (hideInfoTimeoutRef.current) {
         clearTimeout(hideInfoTimeoutRef.current)
@@ -75,7 +84,18 @@ const Product = ({
     }
   }
 
-  const handlePointerEnd = () => {
+  const handlePointerEnd = (e?: React.PointerEvent<HTMLDivElement>) => {
+    // page fixe : un glissement horizontal change d'image (sans ouvrir la fiche)
+    const start = swipeStart.current
+    swipeStart.current = null
+    if (!showArrows && e && start && images.length > 1 && e.type === "pointerup") {
+      const dx = e.clientX - start.x
+      const dy = e.clientY - start.y
+      if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        swipedRef.current = true
+        setCurrentIndex((i) => Math.min(images.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1))))
+      }
+    }
     if (hideInfoTimeoutRef.current) clearTimeout(hideInfoTimeoutRef.current)
     hideInfoTimeoutRef.current = setTimeout(() => {
       setInfoRevealed(false)
@@ -103,7 +123,14 @@ const Product = ({
       {/* Image */}
       <div
         className="relative mb-4 aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-2xl bg-neutral-100"
-        onClick={goToProduct}
+        style={showArrows ? undefined : { touchAction: "pan-y" }}
+        onClick={() => {
+          if (swipedRef.current) {
+            swipedRef.current = false
+            return
+          }
+          goToProduct()
+        }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
@@ -136,7 +163,7 @@ const Product = ({
         </div>
 
         {/* Flèches discrètes (seulement s'il y a plusieurs images) */}
-        {images.length > 1 && currentIndex > 0 && (
+        {showArrows && images.length > 1 && currentIndex > 0 && (
           <button
             type="button"
             aria-label="Previous image"
@@ -147,7 +174,7 @@ const Product = ({
             <ChevronLeft size={18} />
           </button>
         )}
-        {images.length > 1 && currentIndex < images.length - 1 && (
+        {showArrows && images.length > 1 && currentIndex < images.length - 1 && (
           <button
             type="button"
             aria-label="Next image"
