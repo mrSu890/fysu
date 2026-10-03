@@ -23,17 +23,17 @@ export default function GamesFab() {
     <DraggableFab
       storageKey="fysu-games-fab"
       side="left"
-      size={52}
+      size={50}
       label={copy.openGames}
       onTap={() => router.push(target)}
       zIndex={54}
       lift
       bottomOffset={64}
-      className="liquid-glass overflow-hidden"
-      style={{ color: "var(--menu)" }}
+      className="overflow-hidden shadow-lg"
+      style={{ borderRadius: 12, boxShadow: "0 4px 14px rgba(0,0,0,0.35)" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={GAMES[0].image} alt="" className="h-8 w-8 object-contain" draggable={false} />
+      <img src={GAMES[0].image} alt="" className="h-full w-full" style={{ imageRendering: "pixelated" }} draggable={false} />
     </DraggableFab>
   )
 }

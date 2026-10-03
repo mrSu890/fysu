@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useBrandPage } from "@/lib/useBrandPage";
 import { useTranslations } from "next-intl";
 import CroppedLogo from "./CroppedLogo";
@@ -32,12 +33,31 @@ const softEdges: React.CSSProperties = {
 const Footer: React.FC = () => {
   const t = useTranslations("Footer");
   const isWave = useBrandPage() === "thewave";
+  const pathname = usePathname();
+  const showGame = pathname === "/collections/when-the-flowers-bloom";
   const ink = isWave ? { color: WAVE_INK } : undefined;
 
   return (
     <>
       {/* Présentation des FY'grances (image + texte + bouton) */}
       <FygrancesIntro />
+
+      {/* Pastille du jeu FYSU Bird (page When the flowers bloom) */}
+      {showGame && (
+        <div className="mt-16 flex flex-col items-center gap-2">
+          <Link href="/games/fysu-bird" aria-label="FYSU Bird" className="block active:scale-95 transition">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/games-bird-icon.png"
+              alt=""
+              width={84}
+              height={84}
+              style={{ width: 84, height: 84, borderRadius: 19, imageRendering: "pixelated", boxShadow: "0 6px 18px rgba(0,0,0,0.3)" }}
+            />
+          </Link>
+          <span className="text-xs tracking-wide opacity-80">FYSU Bird</span>
+        </div>
+      )}
 
       {/* Image d'anthurium en bas de chaque page */}
       <div className="w-full flex justify-center mt-10 bg-background">
