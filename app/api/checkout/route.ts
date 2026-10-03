@@ -84,6 +84,9 @@ export async function POST(req: Request) {
 
       line_items,
 
+      // codes promo (ex. réduction gagnée aux jeux d'arcade)
+      allow_promotion_codes: true,
+
       shipping_address_collection: {
         allowed_countries: ALL_STRIPE_ALLOWED_COUNTRIES,
       },
