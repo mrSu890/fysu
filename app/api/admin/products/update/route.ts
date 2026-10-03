@@ -38,6 +38,7 @@ type ProductUpdatePayload = {
   availability?: string;
   release_date?: string | null;
   brand?: string;
+  wave_bg?: string | null;
   olfactive_family?: string | null;
   evocation?: string;
   care_instructions?: string;
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
       availability,
       release_date,
       brand,
+      wave_bg,
       olfactive_family,
       evocation,
       care_instructions,
@@ -133,6 +135,7 @@ export async function POST(req: Request) {
         availability,
         release_date,
         brand: isBrandId(brand) ? brand : undefined,
+        wave_bg: /^#[0-9a-f]{6}$/i.test(wave_bg ?? "") ? wave_bg!.toLowerCase() : wave_bg === undefined ? undefined : null,
         olfactive_family: isFamilyId(olfactive_family) ? olfactive_family : olfactive_family === null ? null : undefined,
         evocation,
         colors: colors.filter((c) => c.images?.length > 0).length,
