@@ -35,7 +35,7 @@ function Row({ products }: { products: any[] }) {
           key={product.id}
           className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px]"
         >
-          <Product product={product} scrollRef={rowRef} />
+          <Product showArrows product={product} scrollRef={rowRef} />
         </div>
       ))}
     </div>
