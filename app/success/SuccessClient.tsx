@@ -15,6 +15,8 @@ export default function SuccessClient() {
   const t = useTranslations("Success");
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  // paiement Apple Pay / Google Pay depuis la fiche produit
+  const paymentIntentId = searchParams.get("payment_intent");
 
   const { clearCart } = useCart();
 
@@ -22,7 +24,7 @@ export default function SuccessClient() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!sessionId && !paymentIntentId) {
       setSession(null);
       setLoading(false);
       return;
@@ -33,7 +35,7 @@ export default function SuccessClient() {
         const res = await fetch("/api/checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
+          body: JSON.stringify(paymentIntentId ? { paymentIntentId } : { sessionId }),
         });
 
         const data = await res.json();
@@ -53,7 +55,7 @@ export default function SuccessClient() {
     };
 
     fetchSession();
-  }, [sessionId, clearCart]);
+  }, [sessionId, paymentIntentId, clearCart]);
 
   if (loading) {
     return (
