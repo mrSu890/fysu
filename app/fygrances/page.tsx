@@ -31,7 +31,7 @@ function Row({ products }: { products: any[] }) {
   return (
     <div
       ref={rowRef}
-      className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth overscroll-x-contain pb-2"
+      className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto overflow-y-hidden scroll-smooth overscroll-x-contain pb-2"
     >
       {products.map((product) => (
         <div
