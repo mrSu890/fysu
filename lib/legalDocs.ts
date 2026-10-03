@@ -27,17 +27,17 @@ const EN: Record<LegalSlug, LegalDoc> = {
   shipping: {
     title: "Shipping",
     sections: [
-      { h: "Where we deliver", p: ["We deliver in Belgium and across Europe."] },
-      { h: "Delivery costs", p: ["Delivery is free for orders of €150 and more. Below that amount, any shipping cost is shown at checkout before you pay."] },
+      { h: "Where we deliver", p: ["We deliver worldwide. Delivery times are 2 to 4 working days in Belgium, the Netherlands and Luxembourg, and 4 to 8 working days in the rest of Europe. For other countries, delivery times depend on the destination and are confirmed on request (see the Contact page)."] },
+      { h: "Delivery costs", p: ["Delivery is free for orders of €150 and more. Below that amount, a flat fee of €5 applies, shown at checkout before you pay."] },
       { h: "Preparing and sending your order", p: ["Every order is prepared and packed with care in our signature FYSU packaging. You receive a confirmation as soon as your payment is accepted, and tracking information when your parcel is on its way."] },
-      { h: "Pre-orders and upcoming products", p: ["Products marked “Pre-order” or “Coming soon” are sent from the release date shown on the product page. If you order several items together, your order leaves once everything is available, unless you ask us to send it in several parcels."] },
+      { h: "Pre-orders and upcoming products", p: ["The delivery times above do not apply to pre-orders. Products marked “Pre-order” or “Coming soon” are sent from the release date shown on the product page. If you order several items together, your order leaves once everything is available, unless you ask us to send it in several parcels."] },
       { h: "A problem with your delivery?", p: ["If your parcel is late, damaged or incomplete, contact us as soon as possible (see the Contact page) and we will sort it out."] },
     ],
   },
   payment: {
     title: "Payment",
     sections: [
-      { h: "Secure payment", p: ["Payments are processed by Stripe, a certified payment provider. You pay by card or by any other payment method offered at checkout. FYSU never sees or stores your card details."] },
+      { h: "Secure payment", p: ["Payments are processed by Stripe, a certified payment provider. You pay by card, Apple Pay, Google Pay or any other payment method offered at checkout. FYSU never sees or stores your card details."] },
       { h: "Prices", p: ["Prices are in euros. Applicable taxes are shown at checkout before you confirm your order."] },
       { h: "Promo codes", p: ["Promo codes, including the ones won in our arcade games, are entered at checkout. A code has the conditions stated when it is given (for example one use per code) and cannot be combined with another unless stated otherwise."] },
       { h: "Order confirmation", p: ["Your order is confirmed once your payment has been accepted. If a payment fails, nothing is charged and you can try again."] },
@@ -93,17 +93,17 @@ const FR: Record<LegalSlug, LegalDoc> = {
   shipping: {
     title: "Livraison",
     sections: [
-      { h: "Où livrons-nous", p: ["Nous livrons en Belgique et partout en Europe."] },
-      { h: "Frais de livraison", p: ["La livraison est offerte à partir de 150 € d'achat. En dessous de ce montant, les éventuels frais de livraison sont affichés au moment de payer."] },
+      { h: "Où livrons-nous", p: ["Nous livrons dans le monde entier. Les délais sont de 2 à 4 jours ouvrables en Belgique, aux Pays-Bas et au Luxembourg, et de 4 à 8 jours ouvrables dans le reste de l'Europe. Pour les autres pays, les délais dépendent de la destination et sont confirmés sur demande (voir la page Contact)."] },
+      { h: "Frais de livraison", p: ["La livraison est offerte à partir de 150 € d'achat. En dessous de ce montant, des frais forfaitaires de 5 € s'appliquent, affichés au moment de payer."] },
       { h: "Préparation et envoi", p: ["Chaque commande est préparée et emballée avec soin dans l'emballage signature FYSU. Tu reçois une confirmation dès que ton paiement est accepté, puis les informations de suivi quand ton colis part."] },
-      { h: "Précommandes et produits à venir", p: ["Les produits marqués « Précommande » ou « Bientôt disponible » sont envoyés à partir de la date de sortie indiquée sur la fiche produit. Si tu commandes plusieurs articles ensemble, ta commande part quand tout est disponible, sauf si tu nous demandes de l'envoyer en plusieurs colis."] },
+      { h: "Précommandes et produits à venir", p: ["Les délais ci-dessus ne s'appliquent pas aux précommandes. Les produits marqués « Précommande » ou « Bientôt disponible » sont envoyés à partir de la date de sortie indiquée sur la fiche produit. Si tu commandes plusieurs articles ensemble, ta commande part quand tout est disponible, sauf si tu nous demandes de l'envoyer en plusieurs colis."] },
       { h: "Un problème avec ta livraison ?", p: ["Si ton colis est en retard, abîmé ou incomplet, contacte-nous le plus vite possible (voir la page Contact) et nous réglons ça."] },
     ],
   },
   payment: {
     title: "Paiement",
     sections: [
-      { h: "Paiement sécurisé", p: ["Les paiements sont traités par Stripe, un prestataire de paiement certifié. Tu paies par carte ou par un autre moyen proposé au moment de payer. FYSU ne voit ni ne conserve jamais tes données de carte."] },
+      { h: "Paiement sécurisé", p: ["Les paiements sont traités par Stripe, un prestataire de paiement certifié. Tu paies par carte, Apple Pay, Google Pay ou un autre moyen proposé au moment de payer. FYSU ne voit ni ne conserve jamais tes données de carte."] },
       { h: "Prix", p: ["Les prix sont en euros. Les taxes applicables sont affichées au moment de payer, avant de confirmer ta commande."] },
       { h: "Codes promo", p: ["Les codes promo, y compris ceux gagnés dans nos jeux d'arcade, s'entrent au moment de payer. Un code a les conditions indiquées quand il est donné (par exemple une utilisation par code) et ne se cumule pas avec un autre, sauf mention contraire."] },
       { h: "Confirmation de commande", p: ["Ta commande est confirmée une fois ton paiement accepté. Si un paiement échoue, rien n'est débité et tu peux réessayer."] },
