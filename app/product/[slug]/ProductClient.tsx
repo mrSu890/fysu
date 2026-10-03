@@ -15,6 +15,8 @@ import ProductInfoBlocks from "@/components/Product/ProductInfoBlocks"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { getTypeCopy } from "@/lib/productTypes"
 import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
+import { waveColors } from "@/lib/waveColor"
+import WaveLoader from "@/components/WaveLoader"
 import { getColorCopy } from "@/lib/colorCopy"
 import { getFamilyCopy, isFamilyId } from "@/lib/olfactive"
 import { getFygrancesCopy } from "@/lib/fygrancesCopy"
@@ -65,6 +67,7 @@ export default function ProductClient() {
   /* ================= MARQUE (style de la fiche) ================= */
 
   const brandId = getBrandId(product?.brand)
+  const wc = waveColors(product?.wave_bg)
 
   // The Wave et Kiban Collector ont leur propre ambiance (comme leurs pages)
   useLayoutEffect(() => {
@@ -217,8 +220,8 @@ export default function ProductClient() {
         ${
           brandId === "thewave"
             ? `
-        html.wave-page { background: ${WAVE.RED}; }
-        html.wave-page body { background: transparent !important; color: #fff; }
+        html.wave-page { background: ${wc.bg}; }
+        html.wave-page body { background: transparent !important; color: ${wc.ink}; }
         html.wave-page .bg-background { background-color: transparent !important; }
         html.wave-page .flower-light,
         html.wave-page .flower-dark { display: none !important; }
@@ -227,7 +230,7 @@ export default function ProductClient() {
         html.wave-page .ant-collapse-header-text,
         html.wave-page .ant-collapse-content,
         html.wave-page .ant-collapse-content-box,
-        html.wave-page .ant-collapse-expand-icon { color: #fff !important; }
+        html.wave-page .ant-collapse-expand-icon { color: ${wc.ink} !important; }
         `
             : ""
         }
@@ -235,16 +238,18 @@ export default function ProductClient() {
     )}
 
     {brandId === "thewave" && (
-      <div className="fixed inset-0 -z-10" style={{ background: WAVE.RED }} aria-hidden="true">
+      <div className="fixed inset-0 -z-10" style={{ background: wc.bg }} aria-hidden="true">
         <svg
           className="h-full w-full"
           viewBox="0 0 1821 2576"
           preserveAspectRatio="xMidYMax slice"
         >
-          <path d={WAVE.PATH} fill={WAVE.PINK} />
+          <path d={WAVE.PATH} fill={wc.wave} />
         </svg>
       </div>
     )}
+
+    {brandId === "thewave" && <WaveLoader />}
 
     <div className="max-w-6xl mx-auto py-12 relative top-0 sm:top-24">
       <div className="grid md:grid-cols-2 gap-12 items-start">
@@ -515,7 +520,7 @@ export default function ProductClient() {
             {t("youMayAlsoLike")}
           </h2>
 
-          <div ref={scrollRef} className="flex gap-8 overflow-x-auto no-scrollbar overscroll-x-contain">
+          <div ref={scrollRef} className="flex gap-8 overflow-x-auto overflow-y-hidden no-scrollbar overscroll-x-contain touch-pan-x">
             {product.product_suggestions.map((p) => (
               <div key={p.id} className="flex-shrink-0 w-[280px]">
                 <Product product={p} scrollRef={scrollRef} />
