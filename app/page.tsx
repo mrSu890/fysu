@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HomeHero from "@/components/Home/Hero";
 import NewSelectionIntro from "@/components/Home/NewSelectionIntro";
+import HomeTiles from "@/components/HomeTiles";
 import ThemeToggle from "@/components/ThemeToggle";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -34,6 +35,8 @@ export default async function Home() {
     <>
       <Navbar />
       <HomeHero initialSlides={slides} />
+      {/* « Explore The Universe » : une pastille par page */}
+      <HomeTiles />
       <ThemeToggle />
       <NewSelectionIntro />
       <div className="flex flex-col gap-28">
