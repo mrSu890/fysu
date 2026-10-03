@@ -35,6 +35,8 @@ export default function PixelTransition() {
   const [phase, setPhase] = useState<"idle" | PixelMode>("idle")
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  // indique à l'écran de chargement The Wave que les pixels jouent (pour ne pas les mélanger)
+  if (typeof window !== "undefined" && phase !== "idle") (window as any).__pxActiveUntil = Date.now() + 1800
   const destRef = useRef<string | null>(null)
   const prevPath = useRef(pathname)
 

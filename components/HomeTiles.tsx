@@ -10,7 +10,7 @@ import { gamesCopyFor } from "@/lib/games"
 /* ====================================================================
    PAGE D'ACCUEIL : « Explore The Universe »
    Une pastille (carré à bouts arrondis, comme une icône d'appli) par page :
-   Kiban Collector, TheWave, FY'grances, Music, Arcade.
+   Kiban Collector, TheWave, FY'grances, Music, Arcade + Instagram.
    Une pastille disparaît si la page est masquée dans l'admin.
    Toutes les images sont dessinées ici en code (rien à envoyer en plus).
    ==================================================================== */
@@ -168,9 +168,42 @@ function ArcadeIcon() {
 
 /* ---------- une pastille ---------- */
 
-function Tile({ href, label, children }: { href: string; label: string; children: ReactNode }) {
+const INSTAGRAM_URL = "https://www.instagram.com/fysustudios?stkn=czExZWs1MnE0dHpn"
+
+function InstagramIcon() {
   return (
-    <Link href={href} className="group flex w-[88px] flex-col items-center gap-2.5 text-center sm:w-[112px]">
+    <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
+      <defs>
+        <radialGradient id="ig-bg" cx="0.3" cy="1.05" r="1.25">
+          <stop offset="0" stopColor="#ffd776" />
+          <stop offset="0.25" stopColor="#fa8f21" />
+          <stop offset="0.5" stopColor="#e1306c" />
+          <stop offset="0.78" stopColor="#a02fbf" />
+          <stop offset="1" stopColor="#515bd4" />
+        </radialGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#ig-bg)" />
+      <rect x="24" y="24" width="52" height="52" rx="15" fill="none" stroke="#fff" strokeWidth="5" />
+      <circle cx="50" cy="50" r="12.5" fill="none" stroke="#fff" strokeWidth="5" />
+      <circle cx="65" cy="35" r="3.4" fill="#fff" />
+    </svg>
+  )
+}
+
+function Tile({
+  href,
+  label,
+  children,
+  external = false,
+}: {
+  href: string
+  label: string
+  children: ReactNode
+  external?: boolean
+}) {
+  const className = "group flex w-[88px] flex-col items-center gap-2.5 text-center sm:w-[112px]"
+  const inner = (
+    <>
       <span
         className="relative block aspect-square w-full overflow-hidden shadow-lg transition duration-300 group-hover:-translate-y-1 group-active:scale-95"
         style={{ borderRadius: "22.4%", boxShadow: "0 8px 22px rgba(0,0,0,0.28)" }}
@@ -178,6 +211,15 @@ function Tile({ href, label, children }: { href: string; label: string; children
         {children}
       </span>
       <span className="text-xs font-medium leading-tight sm:text-sm">{label}</span>
+    </>
+  )
+  return external ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      {inner}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {inner}
     </Link>
   )
 }
@@ -229,6 +271,11 @@ export default function HomeTiles() {
         {visible && (
           <Tile href="/games" label="Arcade">
             <ArcadeIcon />
+          </Tile>
+        )}
+        {visible && (
+          <Tile href={INSTAGRAM_URL} label="Instagram" external>
+            <InstagramIcon />
           </Tile>
         )}
       </div>
