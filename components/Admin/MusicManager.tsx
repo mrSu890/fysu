@@ -1,5 +1,6 @@
 "use client"
 
+import WaveColorField from "@/components/Admin/WaveColorField"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   ArrowDown,
@@ -37,6 +38,7 @@ type AlbumForm = {
   artist: string
   description: string
   brand: "fysu" | "thewave" | "kiban"
+  wave_bg: string
   collection_slugs: string[]
   visible: boolean
   cover_url: string | null
@@ -52,6 +54,7 @@ const EMPTY_FORM: AlbumForm = {
   artist: "",
   description: "",
   brand: "fysu",
+  wave_bg: "",
   collection_slugs: [],
   visible: true,
   cover_url: null,
@@ -166,6 +169,7 @@ export default function MusicManager() {
       artist: a.artist ?? "",
       description: a.description ?? "",
       brand: a.brand,
+      wave_bg: a.wave_bg ?? "",
       collection_slugs: a.collection_slugs ?? [],
       visible: a.visible,
       cover_url: a.cover_url,
@@ -206,6 +210,7 @@ export default function MusicManager() {
         artist: form.artist,
         description: form.description,
         brand: form.brand,
+        wave_bg: form.wave_bg || null,
         collection_slugs: form.collection_slugs,
         visible: form.visible,
         cover_url,
@@ -612,6 +617,10 @@ export default function MusicManager() {
                 ))}
               </select>
             </Field>
+
+            {form.brand === "thewave" && (
+              <WaveColorField value={form.wave_bg} onChange={(v) => setForm({ ...form, wave_bg: v })} />
+            )}
 
             <div>
               <p className="mb-1.5 text-xs font-medium text-[#3d3a35]">
