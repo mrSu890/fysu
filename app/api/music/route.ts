@@ -60,7 +60,7 @@ export async function GET(req: Request) {
     const { data, error } = await supabaseAdmin
       .from("music_albums")
       .select(
-        "id, slug, title, artist, description, cover_url, brand, collection_slugs, visible, display_order, music_tracks(*)"
+        "id, slug, title, artist, description, cover_url, brand, wave_bg, collection_slugs, visible, display_order, music_tracks(*)"
       )
       .eq("slug", slug)
       .eq("visible", true)
