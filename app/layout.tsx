@@ -14,6 +14,7 @@ import ExtraCopyBridge from "@/components/ExtraCopyBridge";
 import MiniPlayer from "@/components/MusicMiniPlayer";
 import MusicPrompt from "@/components/MusicPrompt";
 import AccessibilityMenu from "@/components/AccessibilityMenu";
+import GamesFab from "@/components/GamesFab";
 import { MusicPlayerProvider } from "@/context/MusicPlayerContext";
 import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
@@ -97,6 +98,8 @@ export default async function RootLayout({
                 <PixelTransition />
                 {/* Accessibilité : pastille en bas à gauche */}
                 <AccessibilityMenu />
+                {/* Jeux d'arcade : pastille sur les pages Projets */}
+                <GamesFab />
               </MusicPlayerProvider>
             </CartProvider>
           </NextIntlClientProvider>
