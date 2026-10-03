@@ -109,9 +109,9 @@ const Footer: React.FC = () => {
           <div>
             <h2 className="font-bold uppercase mb-2">{t("clientServices")}</h2>
             <ul className="space-y-2">
-              <li><Link href="/privacy" className="hover:underline" style={ink}>{t("shipping")}</Link></li>
-              <li><Link href="/privacy" className="hover:underline" style={ink}>{t("payment")}</Link></li>
-              <li><Link href="/privacy" className="hover:underline" style={ink}>{t("returns")}</Link></li>
+              <li><Link href="/legal/shipping" className="hover:underline" style={ink}>{t("shipping")}</Link></li>
+              <li><Link href="/legal/payment" className="hover:underline" style={ink}>{t("payment")}</Link></li>
+              <li><Link href="/legal/returns" className="hover:underline" style={ink}>{t("returns")}</Link></li>
             </ul>
           </div>
 
@@ -140,8 +140,8 @@ const Footer: React.FC = () => {
         {/* Bottom links */}
         <div className={isWave ? "border-t border-current mt-10 pt-6" : "border-t border-white mt-10 pt-6"}>
           <div className="max-w-6xl mx-auto flex flex-wrap justify-center md:justify-between text-xs md:text-sm gap-4 md:gap-8 text-center">
-            <Link href="/privacy" className="hover:underline" style={ink}>{t("legalTerms").toUpperCase()}</Link>
-            <Link href="/privacy" className="hover:underline" style={ink}>{t("contact").toUpperCase()}</Link>
+            <Link href="/legal/terms" className="hover:underline" style={ink}>{t("legalTerms").toUpperCase()}</Link>
+            <Link href="/legal/contact" className="hover:underline" style={ink}>{t("contact").toUpperCase()}</Link>
             <Link href="/privacy" className="hover:underline" style={ink}>{t("privacyPolicy").toUpperCase()}</Link>
           </div>
         </div>
