@@ -18,7 +18,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { sessionId } = await req.json();
+    const { sessionId, paymentIntentId } = await req.json();
+
+    // Paiement Apple Pay / Google Pay depuis la fiche produit : on reconstruit le même récapitulatif
+    if (paymentIntentId) {
+      const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      if (intent.metadata?.userId !== user.id || intent.metadata?.source !== "express") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      let lines: { d: string; q: number; a: number }[] = [];
+      try {
+        lines = JSON.parse(intent.metadata.lines || "[]");
+      } catch {}
+
+      return NextResponse.json({
+        session: {
+          amount_total: intent.amount,
+          line_items: {
+            data: lines.map((l, i) => ({
+              id: `${intent.id}-${i}`,
+              description: l.d,
+              quantity: l.q,
+              amount_total: l.a,
+            })),
+          },
+        },
+      });
+    }
 
     if (!sessionId) {
       return NextResponse.json(
