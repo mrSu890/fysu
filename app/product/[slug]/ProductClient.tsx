@@ -525,7 +525,7 @@ export default function ProductClient() {
           <div ref={scrollRef} className="flex gap-8 overflow-x-auto overflow-y-hidden no-scrollbar overscroll-x-contain touch-pan-x">
             {product.product_suggestions.map((p) => (
               <div key={p.id} className="flex-shrink-0 w-[280px]">
-                <Product product={p} scrollRef={scrollRef} />
+                <Product showArrows product={p} scrollRef={scrollRef} />
               </div>
             ))}
           </div>
