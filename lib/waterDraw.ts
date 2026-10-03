@@ -5,26 +5,31 @@
 
 export type Bubble = { x: number; y: number; r: number; vy: number; ph: number; wob: number }
 
-export const RISE_MS = 1250
+export const RISE_MS = 1100
 export const HOLD_MS = 160
-export const DROP_MS = 1150
+export const DROP_MS = 1050
 export const TOTAL_MS = RISE_MS + HOLD_MS + DROP_MS
 
-const TOP = -0.2 // niveau d'eau quand tout l'écran est couvert (au-dessus du haut de l'écran)
-const BOTTOM = 1.1 // niveau d'eau quand l'écran est vide (sous le bas de l'écran)
+export const TOP = -0.2 // niveau d'eau quand tout l'écran est couvert (au-dessus du haut de l'écran)
+export const BOTTOM = 1.1 // niveau d'eau quand l'écran est vide (sous le bas de l'écran)
 
 const easeInOut = (p: number) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2)
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
 
-// niveau de l'eau (0 = haut de l'écran, 1 = bas) à l'instant ms
+// niveau de l'eau (0 = haut de l'écran, 1 = bas)
+export const riseLevel = (ms: number) => BOTTOM + (TOP - BOTTOM) * easeInOut(clamp01(ms / RISE_MS))
+export const dropLevel = (ms: number) => TOP + (BOTTOM - TOP) * easeInOut(clamp01(ms / DROP_MS))
+
+// montée + descente d'affilée (écran de chargement)
 export function levelAt(ms: number) {
-  if (ms <= RISE_MS) return BOTTOM + (TOP - BOTTOM) * easeInOut(clamp01(ms / RISE_MS))
+  if (ms <= RISE_MS) return riseLevel(ms)
   if (ms <= RISE_MS + HOLD_MS) return TOP
-  return TOP + (BOTTOM - TOP) * easeInOut(clamp01((ms - RISE_MS - HOLD_MS) / DROP_MS))
+  return dropLevel(ms - RISE_MS - HOLD_MS)
 }
 
-// true quand l'eau couvre tout l'écran (le fond blanc peut alors disparaître sans qu'on le voie)
-export const isCovered = (ms: number) => levelAt(ms) < -0.1
+// fonction « niveau à l'instant + décalage » (le décalage sert à la crête claire, légèrement en avance)
+export type LevelFn = (offsetMs: number) => number
+
 
 function surfaceY(x: number, w: number, h: number, level: number, t: number, amp: number, seed: number) {
   const k = (Math.PI * 2) / Math.max(320, w * 0.75)
@@ -57,9 +62,7 @@ function layer(
   ctx.fill()
 }
 
-export function stepBubbles(bubbles: Bubble[], dt: number, w: number, h: number, ms: number) {
-  const t = ms / 1000
-  const level = levelAt(ms)
+export function stepBubbles(bubbles: Bubble[], dt: number, w: number, h: number, t: number, level: number) {
   const amp = Math.min(34, h * 0.035)
   // nouvelles bulles, tant qu'il y a de l'eau
   const surface = level * h
@@ -83,19 +86,18 @@ export function stepBubbles(bubbles: Bubble[], dt: number, w: number, h: number,
   }
 }
 
-export function drawWater(ctx: CanvasRenderingContext2D, w: number, h: number, ms: number, bubbles: Bubble[]) {
-  const t = ms / 1000
+export function drawWater(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, lv: LevelFn, bubbles: Bubble[]) {
   ctx.clearRect(0, 0, w, h)
   const amp = Math.min(34, h * 0.035)
 
   // couche claire : un peu en avance sur la principale, elle forme la crête
-  layer(ctx, w, h, levelAt(ms + 130), t, amp * 1.15, 2.1, "#6cc3ea")
+  layer(ctx, w, h, lv(130), t, amp * 1.15, 2.1, "#6cc3ea")
   // couche principale
-  layer(ctx, w, h, levelAt(ms), t, amp, 0, "#0393d1")
+  layer(ctx, w, h, lv(0), t, amp, 0, "#0393d1")
 
   // reflets de la surface
   ctx.beginPath()
-  const level = levelAt(ms)
+  const level = lv(0)
   const step = Math.max(6, w / 90)
   for (let x = 0; x <= w + step; x += step) {
     const y = surfaceY(x, w, h, level, t, amp, 0)
