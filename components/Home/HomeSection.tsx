@@ -30,6 +30,8 @@ export default function HomeSection({ slug }: { slug: string }) {
           flex
           gap-6
           overflow-x-auto
+          overflow-y-hidden
+          overscroll-x-contain
           scroll-smooth
           snap-x snap-mandatory
           no-scrollbar
