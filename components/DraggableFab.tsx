@@ -21,6 +21,8 @@ type Props = {
   zIndex?: number
   // se décale vers le haut quand la pastille de musique est ouverte
   lift?: boolean
+  // décalage vers le haut (pour empiler plusieurs pastilles du même côté)
+  bottomOffset?: number
   className?: string
   style?: CSSProperties
   children: ReactNode
@@ -34,6 +36,7 @@ export default function DraggableFab({
   onTap,
   zIndex = 60,
   lift = false,
+  bottomOffset = 0,
   className = "",
   style,
   children,
@@ -128,7 +131,7 @@ export default function DraggableFab({
           width: size,
           height: size,
           ...(side === "right" ? { right: MARGIN } : { left: MARGIN }),
-          bottom: `calc(${MARGIN}px + env(safe-area-inset-bottom) + ${lift ? "var(--fab-lift, 0px)" : "0px"})`,
+          bottom: `calc(${MARGIN + bottomOffset}px + env(safe-area-inset-bottom) + ${lift ? "var(--fab-lift, 0px)" : "0px"})`,
           transition: lift ? "bottom 0.3s ease" : undefined,
           touchAction: "none",
         }}

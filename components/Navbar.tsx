@@ -17,6 +17,7 @@ import { useLocale, useTranslations } from "next-intl";
 import LocaleSwitcher from "./LocaleSwitcher";
 import CroppedLogo from "./CroppedLogo";
 import { useMusicCopy } from "@/lib/musicCopy";
+import { gamesCopyFor } from "@/lib/games";
 import SearchOverlay, { searchLabel } from "./SearchOverlay";
 
 const logoWhite = "/images/fysu-light.png";
@@ -507,13 +508,18 @@ function MobileMenu({
 }
 
 export default function Navbar() {
+  const locale = useLocale();
   const t = useTranslations("Navigation");
   const [activePanel, setActivePanel] = useState<"menu" | null>(null);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const musicCopy = useMusicCopy();
   // Projets hors catégories de produits (la musique pour l'instant)
-  const projects = [{ label: musicCopy.musicTitle, href: "/music" }];
+  const gamesCopy = gamesCopyFor(locale);
+  const projects = [
+    { label: musicCopy.musicTitle, href: "/music" },
+    { label: gamesCopy.title, href: "/games" },
+  ];
 
   const [links, setLinks] = useState<{ label: string; href: string }[]>([]);
   const [collections, setCollections] = useState<
