@@ -46,6 +46,7 @@ export type ProductType = {
   product_type?: string | null;
   availability?: string | null;
   brand?: string | null;
+  wave_bg?: string | null;
   olfactive_family?: string | null;
   evocation?: string | null;
   release_date?: string | null;
