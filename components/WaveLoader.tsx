@@ -1,18 +1,17 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { drawWater, isCovered, stepBubbles, TOTAL_MS, type Bubble } from "@/lib/waterDraw"
+import { drawWater, stepBubbles, TOTAL_MS, type Bubble } from "@/lib/waterDraw"
 
 /* ====================================================================
    TRANSITION THE WAVE
-   Fond blanc, puis de l'eau qui monte en faisant des bulles jusqu'en haut de l'écran
+   Sans fond : de l'eau qui monte en faisant des bulles jusqu'en haut de l'écran
    et qui redescend en révélant la page déjà chargée derrière.
    Pas affichée si la transition en pixels est déjà en train de jouer (pour ne pas les mélanger).
    ==================================================================== */
 
 export default function WaveLoader() {
   const [show, setShow] = useState(true)
-  const [covered, setCovered] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
@@ -62,7 +61,6 @@ export default function WaveLoader() {
     const start = performance.now()
     let last = start
     let raf = 0
-    let wasCovered = false
 
     const frame = (now: number) => {
       const ms = now - start
@@ -74,11 +72,6 @@ export default function WaveLoader() {
       }
       stepBubbles(bubbles, dt, W, H, ms)
       drawWater(ctx, W, H, ms, bubbles)
-      const c = isCovered(ms)
-      if (c !== wasCovered) {
-        wasCovered = c
-        setCovered(c)
-      }
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
@@ -102,7 +95,7 @@ export default function WaveLoader() {
     <div
       aria-hidden="true"
       className="fixed inset-0 z-[90] overflow-hidden"
-      style={{ background: covered ? "transparent" : "#ffffff", pointerEvents: "all" }}
+      style={{ pointerEvents: "all" }}
     >
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
     </div>
