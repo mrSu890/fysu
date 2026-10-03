@@ -9,7 +9,7 @@ export const REWARD_PERCENT = 10 // pourcentage de réduction
 export const REWARD_DAYS = 30 // durée de validité du code
 
 export const GAMES = [
-  { slug: "fysu-bird", name: "FYSU Bird", image: "/games-bird-pie-haut.png", cover: "/games-bird-fond.jpg" },
+  { slug: "fysu-bird", name: "FYSU Bird", image: "/games-bird-icon.png", cover: "/games-bird-fond.jpg" },
 ] as const
 
 export type GameSlug = (typeof GAMES)[number]["slug"]
@@ -37,6 +37,15 @@ export type GamesCopy = {
   codeHint: string
   alreadyWon: string
   offlineHint: string
+  insertCoin: string
+  pressStart: string
+  highScore: string
+  rewardLabel: string
+  goalLabel: string
+  offlineLabel: string
+  offlineValue: string
+  comingSoon: string
+  player2: string
 }
 
 export const GAMES_COPY: Record<string, GamesCopy> = {
@@ -62,6 +71,15 @@ export const GAMES_COPY: Record<string, GamesCopy> = {
     codeHint: "Enter it at checkout, in the “Add promotion code” field. Single use.",
     alreadyWon: "You already won your code:",
     offlineHint: "Works offline after your first visit.",
+    insertCoin: "INSERT COIN TO START",
+    pressStart: "PRESS START",
+    highScore: "HIGH SCORE",
+    rewardLabel: "REWARD",
+    goalLabel: "GOAL",
+    offlineLabel: "OFFLINE",
+    offlineValue: "YES",
+    comingSoon: "COMING SOON",
+    player2: "PLAYER 2",
   },
   fr: {
     title: "Jeux d'arcade",
@@ -85,6 +103,15 @@ export const GAMES_COPY: Record<string, GamesCopy> = {
     codeHint: "À saisir au paiement, dans « Ajouter un code promo ». Utilisable une seule fois.",
     alreadyWon: "Tu as déjà gagné ton code :",
     offlineHint: "Fonctionne hors-ligne après ta première visite.",
+    insertCoin: "INSÈRE UNE PIÈCE POUR JOUER",
+    pressStart: "APPUIE SUR START",
+    highScore: "MEILLEUR SCORE",
+    rewardLabel: "RÉCOMPENSE",
+    goalLabel: "OBJECTIF",
+    offlineLabel: "HORS-LIGNE",
+    offlineValue: "OUI",
+    comingSoon: "BIENTÔT",
+    player2: "JOUEUR 2",
   },
 }
 
