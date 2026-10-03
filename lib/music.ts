@@ -25,6 +25,7 @@ export type MusicAlbum = {
   cover_url: string | null
   cover_path?: string | null
   brand: BrandId
+  wave_bg?: string | null
   collection_slugs: string[]
   visible: boolean
   display_order: number
