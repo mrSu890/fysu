@@ -100,10 +100,10 @@ export default function PixelTransition() {
   // 0b. on prépare à l'avance la marque des fiches produit / albums vers lesquels on s'apprête à cliquer
   useEffect(() => {
     const prefetch = (e: Event) => {
-      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null
-      if (!a) return
+      const el = (e.target as Element | null)?.closest?.("a[href], [data-href]") as HTMLElement | null
+      if (!el) return
       try {
-        const url = new URL(a.href, window.location.href)
+        const url = new URL(el.getAttribute("href") ?? el.getAttribute("data-href") ?? "", window.location.href)
         if (url.origin === window.location.origin) lookupBrand(url.pathname)
       } catch {}
     }
@@ -117,8 +117,50 @@ export default function PixelTransition() {
     }
   }, [])
 
-  // 1. clic sur un lien du site : on couvre l'écran avant de changer de page
+  // 1. clic sur un lien du site (ou navigation demandée par le code, ex. une carte produit) :
+  //    on couvre l'écran avant de changer de page
   useEffect(() => {
+    // renvoie true si la transition a pris la main (la navigation se fera à la fin de la montée)
+    const begin = (url: URL): boolean => {
+      if (url.origin !== window.location.origin) return false
+      if (url.pathname === window.location.pathname) return false
+      if (isPixelExcluded(url.pathname) || isPixelExcluded(window.location.pathname)) return false
+      if (isCalm()) return false
+      // pas pendant l'écran de chargement du début, ni si une transition est déjà en cours
+      if (!(window as any).__loaderVisualDone) return false
+      if (phaseRef.current !== "idle" || busyRef.current) return false
+
+      const dest = url.pathname + url.search + url.hash
+      const start = (k: Kind) => {
+        busyRef.current = false
+        destRef.current = dest
+        setKind(k)
+        setPhase("in")
+      }
+
+      const quick = quickKind(url.pathname)
+      if (quick !== "lookup") {
+        start(quick)
+        return true
+      }
+      // on demande la marque de la fiche (déjà en cache dans la plupart des cas) ; au pire pixels après 0,8 s
+      busyRef.current = true
+      const lookup = lookupBrand(url.pathname)
+      Promise.race([lookup ?? Promise.resolve("fysu"), new Promise<string>((r) => setTimeout(() => r("fysu"), 800))]).then((b) =>
+        start(b === "thewave" ? "water" : "pixel")
+      )
+      return true
+    }
+
+    // utilisable par les boutons / cartes qui changent de page par code
+    ;(window as any).__fysuNavigate = (path: string) => {
+      try {
+        return begin(new URL(path, window.location.href))
+      } catch {
+        return false
+      }
+    }
+
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
 
@@ -136,39 +178,17 @@ export default function PixelTransition() {
       } catch {
         return
       }
-      if (url.origin !== window.location.origin) return
-      if (url.pathname === window.location.pathname) return
-      if (isPixelExcluded(url.pathname) || isPixelExcluded(window.location.pathname)) return
-      if (isCalm()) return
-      // pas pendant l'écran de chargement du début, ni si une transition est déjà en cours
-      if (!(window as any).__loaderVisualDone) return
-      if (phaseRef.current !== "idle" || busyRef.current) return
-
-      e.preventDefault()
-      e.stopPropagation()
-      const dest = url.pathname + url.search + url.hash
-      const start = (k: Kind) => {
-        busyRef.current = false
-        destRef.current = dest
-        setKind(k)
-        setPhase("in")
+      if (begin(url)) {
+        e.preventDefault()
+        e.stopPropagation()
       }
-
-      const quick = quickKind(url.pathname)
-      if (quick !== "lookup") {
-        start(quick)
-        return
-      }
-      // on demande la marque de la fiche (déjà en cache dans la plupart des cas) ; au pire pixels après 0,8 s
-      busyRef.current = true
-      const lookup = lookupBrand(url.pathname)
-      Promise.race([lookup ?? Promise.resolve("fysu"), new Promise<string>((r) => setTimeout(() => r("fysu"), 800))]).then((b) =>
-        start(b === "thewave" ? "water" : "pixel")
-      )
     }
 
     document.addEventListener("click", onClick, true)
-    return () => document.removeEventListener("click", onClick, true)
+    return () => {
+      document.removeEventListener("click", onClick, true)
+      delete (window as any).__fysuNavigate
+    }
   }, [])
 
   // 2. la nouvelle page est affichée : les carrés se dissolvent

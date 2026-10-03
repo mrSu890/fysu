@@ -58,7 +58,10 @@ const Product = ({
     : ["/placeholder.png"]
 
   const goToProduct = () => {
-    router.push(`/product/${product.slug}`)
+    const path = `/product/${product.slug}`
+    // la transition (eau / pixels) prend la main si elle est prête ; sinon navigation normale
+    const handled = (window as unknown as { __fysuNavigate?: (p: string) => boolean }).__fysuNavigate?.(path)
+    if (!handled) router.push(path)
   }
 
   // Tactile : les infos apparaissent quand le doigt se pose, puis se recachent un peu après
@@ -90,7 +93,7 @@ const Product = ({
     "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white/90 backdrop-blur-sm transition hover:bg-black/40 active:scale-90"
 
   return (
-    <div className="relative w-full group">
+    <div className="relative w-full group" data-href={`/product/${product.slug}`}>
       {/* Bouton like */}
       <WishlistHeart
         productId={product.id}
