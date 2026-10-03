@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { drawWater, stepBubbles, TOTAL_MS, type Bubble } from "@/lib/waterDraw"
+import { drawWater, levelAt, stepBubbles, TOTAL_MS, type Bubble } from "@/lib/waterDraw"
 
 /* ====================================================================
    TRANSITION THE WAVE
@@ -70,8 +70,8 @@ export default function WaveLoader() {
         setShow(false)
         return
       }
-      stepBubbles(bubbles, dt, W, H, ms)
-      drawWater(ctx, W, H, ms, bubbles)
+      stepBubbles(bubbles, dt, W, H, ms / 1000, levelAt(ms))
+      drawWater(ctx, W, H, ms / 1000, (o) => levelAt(ms + o), bubbles)
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
