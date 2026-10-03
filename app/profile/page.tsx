@@ -19,16 +19,42 @@ export default function ProfilePage() {
   const t = useTranslations("Profile");
   const tn = useTranslations("Navigation");
   const router = useRouter();
-  const { user, loading } = useCurrentUser();
+  const { user: hookUser, loading } = useCurrentUser();
+  // vérification directe auprès du serveur si la lecture rapide de la session n'a rien donné
+  const [verifiedUser, setVerifiedUser] = useState<any>(null);
+  const [verifying, setVerifying] = useState(false);
+  const user = hookUser ?? verifiedUser;
   const [loggingOut, setLoggingOut] = useState(false);
   const [heroFailed, setHeroFailed] = useState(false);
 
+  // Si la session n'est pas lue assez vite, on ne renvoie PAS tout de suite vers la connexion
+  // (le site te renverrait alors à l'accueil parce que tu es en fait connecté) : on vérifie d'abord.
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/auth/signin");
-      router.refresh();
-    }
-  }, [loading, user, router]);
+    if (loading || hookUser || verifiedUser) return;
+    let cancelled = false;
+    setVerifying(true);
+    supabaseClient.auth
+      .getUser()
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (data.user) {
+          setVerifiedUser(data.user);
+          setVerifying(false);
+        } else {
+          router.replace("/auth/signin");
+          router.refresh();
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          router.replace("/auth/signin");
+          router.refresh();
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, hookUser, verifiedUser, router]);
 
   const handleLogout = async () => {
     try {
@@ -54,7 +80,7 @@ export default function ProfilePage() {
     }
   };
 
-    if (loading) {
+    if (loading || (verifying && !user)) {
     return (
       <>
         <Navbar />
