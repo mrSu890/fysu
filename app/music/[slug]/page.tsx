@@ -9,6 +9,8 @@ import Footer from "@/components/Footer"
 import Equalizer from "@/components/MusicEqualizer"
 import { useMusicPlayer } from "@/context/MusicPlayerContext"
 import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
+import { waveColors } from "@/lib/waveColor"
+import WaveLoader from "@/components/WaveLoader"
 import { formatTime, totalMinutes, type MusicAlbumFull } from "@/lib/music"
 import { useMusicCopy } from "@/lib/musicCopy"
 
@@ -57,6 +59,7 @@ export default function MusicAlbumPage() {
 
   const brandId = getBrandId(album?.brand)
   const brand = BRANDS[brandId]
+  const wc = waveColors(album?.wave_bg)
 
   useLayoutEffect(() => {
     if (brandId === "fysu") return
@@ -114,8 +117,8 @@ export default function MusicAlbumPage() {
           ${
             brandId === "thewave"
               ? `
-          html.wave-page { background: ${WAVE.RED}; }
-          html.wave-page body { background: transparent !important; color: #fff; }
+          html.wave-page { background: ${wc.bg}; }
+          html.wave-page body { background: transparent !important; color: ${wc.ink}; }
           html.wave-page .bg-background { background-color: transparent !important; }
           html.wave-page .flower-light,
           html.wave-page .flower-dark { display: none !important; }
@@ -126,12 +129,14 @@ export default function MusicAlbumPage() {
       )}
 
       {brandId === "thewave" && (
-        <div className="fixed inset-0 -z-10" style={{ background: WAVE.RED }} aria-hidden="true">
+        <div className="fixed inset-0 -z-10" style={{ background: wc.bg }} aria-hidden="true">
           <svg className="h-full w-full" viewBox="0 0 1821 2576" preserveAspectRatio="xMidYMax slice">
-            <path d={WAVE.PATH} fill={WAVE.PINK} />
+            <path d={WAVE.PATH} fill={wc.wave} />
           </svg>
         </div>
       )}
+
+      {brandId === "thewave" && <WaveLoader />}
 
       <Navbar />
 
