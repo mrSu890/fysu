@@ -331,7 +331,7 @@ export default function ProductClient() {
         </div>
   
         {/* ================= INFO ================= */}
-        <div className="space-y-6 sticky top-24 self-start w-11/12 mx-auto">
+        <div className="space-y-8 sticky top-24 self-start w-11/12 mx-auto">
   
           {brand.path && (
             <Link
@@ -344,7 +344,7 @@ export default function ProductClient() {
           )}
 
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-xl font-medium">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">
               {product.name}
             </h1>
             <WishlistHeart productId={product.id} size={26} className="-mr-1.5 -mt-1 shrink-0" />
@@ -356,7 +356,7 @@ export default function ProductClient() {
 
           <ShareButton productId={product.id} slug={slug} />
 
-          <p className="text-sm whitespace-pre-line">
+          <p className="text-sm font-light leading-relaxed whitespace-pre-line">
             {formatText(product.description)}
           </p>
 
@@ -372,7 +372,7 @@ export default function ProductClient() {
             </Link>
           )}
   
-          <p className="text-sm font-bold">
+          <p className="text-lg font-light tracking-tight">
             {format.number(product.price, {
               style: "currency",
               currency: "EUR",
