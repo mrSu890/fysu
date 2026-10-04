@@ -9,7 +9,7 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { useBrandPage } from "@/lib/useBrandPage";
-import { Menu, X, ChevronDown, UserRound, ShoppingCart, Search } from "lucide-react";
+import { ChevronDown, UserRound, ShoppingBag, Search } from "lucide-react";
 import Image from "next/image";
 import CartDrawer from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
@@ -35,6 +35,34 @@ const HEADER_H = 42; // hauteur de la ligne avec les icônes
 const GAP = 12; // écart entre les deux pastilles
 const ICONS_W = 60; // largeur approximative du groupe d'icônes (panier + menu)
 const ICONS_PAD = 24; // marge à droite des icônes quand le panneau est ouvert
+
+/* Icône du menu : trois traits très fins qui se transforment en croix */
+function MenuIcon({ open }: { open: boolean }) {
+  const line = "absolute left-0 block h-[1.25px] w-full rounded-full bg-current";
+  const spring = { type: "spring" as const, stiffness: 420, damping: 30 };
+  return (
+    <span className="relative block h-[16px] w-[22px]" aria-hidden="true">
+      <motion.span
+        className={line}
+        style={{ top: 0 }}
+        animate={{ y: open ? 7.4 : 0, rotate: open ? 45 : 0 }}
+        transition={spring}
+      />
+      <motion.span
+        className={line}
+        style={{ top: 7.4 }}
+        animate={{ opacity: open ? 0 : 1, scaleX: open ? 0.2 : 1 }}
+        transition={{ duration: 0.2 }}
+      />
+      <motion.span
+        className={line}
+        style={{ top: 14.8 }}
+        animate={{ y: open ? -7.4 : 0, rotate: open ? -45 : 0 }}
+        transition={spring}
+      />
+    </span>
+  );
+}
 
 function MobileMenu({
   activePanel,
@@ -353,15 +381,18 @@ function MobileMenu({
           </Link>
 
           {/* Loupe : ouvre la recherche */}
-          <button
+          <motion.button
             type="button"
             onClick={openSearch}
             aria-label={searchLabel(locale)}
             title={searchLabel(locale)}
+            whileHover={{ scale: 1.1, rotate: -8 }}
+            whileTap={{ scale: 0.88 }}
+            transition={{ type: "spring", stiffness: 400, damping: 18 }}
             className="absolute right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full"
           >
-            <Search size={20} />
-          </button>
+            <Search size={20} strokeWidth={1.25} />
+          </motion.button>
         </motion.div>
 
         {/* Pastille panier / menu : elle descend et s'agrandit en panneau */}
@@ -380,27 +411,41 @@ function MobileMenu({
               style={{ right: iconsRight, width: ICONS_W }}
               className="absolute top-1/2 -translate-y-1/2 flex items-center justify-between"
             >
-              <button
+              <motion.button
                 onClick={toggleCart}
                 className="relative cursor-pointer"
                 type="button"
+                aria-label="Cart"
+                whileHover={{ scale: 1.1, y: -1.5 }}
+                whileTap={{ scale: 0.88 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
               >
-                <ShoppingCart size={20} />
+                <ShoppingBag size={20} strokeWidth={1.25} />
 
                 {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-green-900 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  <motion.span
+                    key={totalItems}
+                    initial={{ scale: 1.6 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 16 }}
+                    className="absolute -top-2 -right-2 bg-green-900 text-white text-[10px] font-light leading-none px-1.5 py-1 rounded-full"
+                  >
                     {totalItems}
-                  </span>
+                  </motion.span>
                 )}
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
                 onClick={toggleMenu}
                 className="text-[var(--menu)] cursor-pointer"
                 type="button"
+                aria-label="Menu"
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.88 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
               >
-                {panel === "menu" ? <X size={24} /> : <Menu size={24} />}
-              </button>
+                <MenuIcon open={panel === "menu"} />
+              </motion.button>
             </motion.div>
           </div>
 
