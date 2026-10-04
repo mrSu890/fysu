@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Tag, Spin, Empty } from "antd";
 import { motion } from "framer-motion";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 
 type OrderItem = {
   product_id?: number;
@@ -24,11 +24,40 @@ type Order = {
   status: string;
   total: number; // cents
   createdAt?: string;
+  tracking_number?: string | null;
   items: OrderItem[] | string;
 };
 
+// Étiquettes de statut lisibles (fr / en ; les autres langues voient l'anglais)
+const STATUS_COPY = {
+  fr: {
+    pending: "En attente de paiement",
+    paid: "Commande confirmée",
+    shipped: "Expédiée",
+    cancelled: "Annulée",
+    refunded: "Remboursée",
+    tracking: "Numéro de suivi",
+    track: "Suivre mon colis",
+    preparing: "Ta commande est en préparation.",
+    onTheWay: "Ton colis est en route.",
+  },
+  en: {
+    pending: "Awaiting payment",
+    paid: "Order confirmed",
+    shipped: "Shipped",
+    cancelled: "Cancelled",
+    refunded: "Refunded",
+    tracking: "Tracking number",
+    track: "Track my parcel",
+    preparing: "Your order is being prepared.",
+    onTheWay: "Your parcel is on its way.",
+  },
+} as const;
+
 export default function UserOrders() {
   const t = useTranslations("Profile");
+  const locale = useLocale();
+  const sc = locale === "fr" ? STATUS_COPY.fr : STATUS_COPY.en;
   const format = useFormatter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,8 +101,10 @@ export default function UserOrders() {
     let color: "blue" | "green" | "orange" | "red" = "blue";
     if (s === "paid") color = "green";
     if (s === "pending") color = "orange";
-    if (s === "cancelled") color = "red";
-    return <Tag color={color}>{s.toUpperCase()}</Tag>;
+    if (s === "cancelled" || s === "refunded") color = "red";
+    if (s === "shipped") color = "blue";
+    const label = (sc as Record<string, string>)[s] ?? s;
+    return <Tag color={color}>{label}</Tag>;
   }
 
   return (
@@ -138,6 +169,31 @@ export default function UserOrders() {
                     {statusTag(order.status)}
                   </div>
                 </div>
+
+                {/* Suivi de la commande */}
+                {order.status?.toLowerCase() === "paid" && (
+                  <p className="mb-3 text-sm text-gray-500">{sc.preparing}</p>
+                )}
+                {order.status?.toLowerCase() === "shipped" && (
+                  <div className="mb-3 rounded-xl bg-gray-50 p-3 text-sm">
+                    <p className="text-gray-600">{sc.onTheWay}</p>
+                    {order.tracking_number && (
+                      <p className="mt-1">
+                        <span className="text-gray-500">{sc.tracking} : </span>
+                        <span className="font-medium">{order.tracking_number}</span>
+                        {" · "}
+                        <a
+                          href={`https://parcelsapp.com/${locale === "fr" ? "fr" : "en"}/tracking/${encodeURIComponent(order.tracking_number)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline"
+                        >
+                          {sc.track}
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Liste des items */}
                 <div className="flex gap-4 overflow-x-auto py-2">
