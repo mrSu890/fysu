@@ -258,7 +258,7 @@ export default function ProductClient() {
     {brandId === "thewave" && <AutoContrast bg={wc.bg} />}
 
     <div className="max-w-6xl mx-auto py-12 relative top-0 sm:top-24">
-      <div className="grid md:grid-cols-2 gap-12 items-start">
+      <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-start">
   
         {/* ================= IMAGES ================= */}
         <div
@@ -277,7 +277,6 @@ export default function ProductClient() {
             <div
               className="
                 relative w-full aspect-[3/4] overflow-hidden
-                rounded-3xl sm:rounded-none
               "
             >
               <Image
@@ -331,59 +330,59 @@ export default function ProductClient() {
         </div>
   
         {/* ================= INFO ================= */}
-        <div className="space-y-8 sticky top-24 self-start w-11/12 mx-auto">
+        <div className="space-y-10 sticky top-24 lg:top-[14vh] self-start w-11/12 mx-auto lg:pr-8">
   
           {brand.path && (
             <Link
               href={brand.path}
               style={{ color: "inherit" }}
-              className="block text-xs uppercase tracking-[0.18em] opacity-70 hover:opacity-100 transition"
+              className="block text-[10px] font-light uppercase tracking-[0.3em] opacity-50 hover:opacity-100 transition"
             >
               ← {colorCopy.backTo} {brand.label}
             </Link>
           )}
 
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">
-              {product.name}
-            </h1>
-            <WishlistHeart productId={product.id} size={26} className="-mr-1.5 -mt-1 shrink-0" />
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
+                {product.name}
+              </h1>
+              <WishlistHeart productId={product.id} size={24} className="-mr-1.5 -mt-1 shrink-0" />
+            </div>
+
+            {product.evocation && (
+              <p className="text-xs font-light italic opacity-60">{product.evocation}</p>
+            )}
+
+            <p className="pt-2 text-base font-light tracking-wide">
+              {format.number(product.price, {
+                style: "currency",
+                currency: "EUR",
+              })}
+            </p>
           </div>
 
-          {product.evocation && (
-            <p className="text-sm italic opacity-70">{product.evocation}</p>
-          )}
-
-          <ShareButton productId={product.id} slug={slug} />
-
-          <p className="text-sm font-light leading-relaxed whitespace-pre-line">
+          <p className="max-w-md text-[13px] font-light leading-[1.9] whitespace-pre-line opacity-80">
             {formatText(product.description)}
           </p>
 
           {family && (
             <Link
               href={`/fygrances?family=${family.id}`}
-              style={{ color: "inherit", border: "1px solid color-mix(in srgb, currentColor 22%, transparent)" }}
-              className="block rounded-2xl px-4 py-3 transition hover:opacity-80"
+              style={{ color: "inherit", borderTop: "1px solid color-mix(in srgb, currentColor 15%, transparent)", borderBottom: "1px solid color-mix(in srgb, currentColor 15%, transparent)" }}
+              className="block py-4 transition hover:opacity-70"
             >
-              <span className="block text-[10px] uppercase tracking-[0.2em] opacity-60">{familyLabel}</span>
-              <span className="mt-1 block text-sm font-medium">{family.name}</span>
+              <span className="block text-[10px] font-light uppercase tracking-[0.3em] opacity-50">{familyLabel}</span>
+              <span className="mt-1 block text-lg font-light tracking-tight">{family.name}</span>
               <span className="mt-0.5 block text-xs opacity-70">{family.line}</span>
             </Link>
           )}
   
-          <p className="text-lg font-light tracking-tight">
-            {format.number(product.price, {
-              style: "currency",
-              currency: "EUR",
-            })}
-          </p>
-  
           {/* COLORS */}
           {hasColors && (
             <div className="space-y-3">
-              <p className="text-sm font-medium">
-                {colorCopy.color} : <span className="font-normal">{selectedColor?.name}</span>
+              <p className="text-[11px] font-light uppercase tracking-[0.25em] opacity-60">
+                {colorCopy.color} <span className="ml-2 normal-case tracking-normal opacity-100">{selectedColor?.name}</span>
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -422,13 +421,13 @@ export default function ProductClient() {
             <div className="space-y-3">
 
               <div className="flex justify-between items-center">
-                <p className="text-sm font-medium">{copy.sizeTitle ?? t("size")}</p>
+                <p className="text-[11px] font-light uppercase tracking-[0.25em] opacity-60">{copy.sizeTitle ?? t("size")}</p>
 
                 {copy.sizeGuide && (
                   <button
                     type="button"
                     onClick={() => setSizeGuideOpen(true)}
-                    className="text-sm underline text-foreground hover:text-foreground/60 cursor-pointer"
+                    className="text-[11px] font-light uppercase tracking-[0.2em] underline underline-offset-4 text-foreground/60 hover:text-foreground cursor-pointer"
                   >
                     {t("sizeGuide")}
                   </button>
@@ -453,14 +452,14 @@ export default function ProductClient() {
                         min-w-[48px]
                         px-4 py-2
                         text-sm tracking-wide
-                        border rounded-md
+                        border rounded-none
                         transition-all duration-200
                         ${
                           isOut
-                            ? "cursor-not-allowed border-neutral-300 text-foreground/30 line-through"
+                            ? "cursor-not-allowed border-foreground/10 text-foreground/30 line-through"
                             : isSelected
-                              ? "border-black bg-black text-white"
-                              : "border-neutral-300 text-foreground hover:border-black"
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-foreground/20 text-foreground hover:border-foreground"
                         }
                       `}
                     >
@@ -483,7 +482,7 @@ export default function ProductClient() {
             </div>
           )}
   
-                    <div className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
+                    <div className="relative flex flex-col gap-4">
             {canBuy && colorSoldOut ? (
               <div className="w-full space-y-3">
                 <div
@@ -529,6 +528,8 @@ export default function ProductClient() {
     
             {items.length > 0 && <Collapse items={items} bordered={false} ghost />}
           </div>
+
+          <ShareButton productId={product.id} slug={slug} />
   
         </div>
       </div>
@@ -540,8 +541,8 @@ export default function ProductClient() {
       {/* ================= SUGGESTIONS ================= */}
   
       {product.product_suggestions?.length > 0 && (
-        <section className="mt-24 w-11/12 mx-auto">
-          <h2 className="text-2xl font-dior text-start mb-12">
+        <section className="mt-32 w-11/12 mx-auto sm:mt-48">
+          <h2 className="mb-12 text-start text-3xl font-bold tracking-tight sm:mb-16 sm:text-5xl">
             {t("youMayAlsoLike")}
           </h2>
 
