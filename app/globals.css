@@ -333,3 +333,40 @@ html.a11y-focus main a,
 html.a11y-focus footer a {
   text-decoration: underline;
 }
+
+
+/* ====================================================================
+   ÉPURE (direction artistique générale — hors TheWave, arcade et admin)
+   Pour revenir en arrière : supprimer tout ce bloc, jusqu'à « FIN ÉPURE ».
+   Le fond (clair et sombre) n'est PAS modifié.
+   ==================================================================== */
+
+/* Réglages « de base » : toute classe Tailwind posée sur un élément reste prioritaire */
+@layer base {
+  main p,
+  footer p {
+    line-height: 1.65;
+  }
+
+  /* Étiquettes en majuscules : un peu plus d'espace entre les lettres */
+  .uppercase {
+    letter-spacing: 0.12em;
+  }
+
+  /* Grands titres de page : plus serrés, plus nets */
+  main h1 {
+    letter-spacing: -0.035em;
+  }
+}
+
+/* Les « font-medium » des petits textes deviennent normaux ; les titres restent gras */
+body:not(:has(.admin-root)) .font-medium {
+  font-weight: 400;
+}
+
+body:not(:has(.admin-root)) h1.font-medium,
+body:not(:has(.admin-root)) h2.font-medium,
+body:not(:has(.admin-root)) h3.font-medium {
+  font-weight: 700;
+}
+/* FIN ÉPURE */
