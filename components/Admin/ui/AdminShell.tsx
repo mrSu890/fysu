@@ -22,6 +22,7 @@ import {
   Clapperboard,
   Droplets,
   Users,
+  UserCircle,
   X,
   type LucideIcon,
 } from "lucide-react"
@@ -46,6 +47,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Codes promo", href: "/admin/promo-codes", icon: Tag },
       { label: "Demandes", href: "/admin/requests", icon: Inbox },
       { label: "Clients", href: "/admin/users", icon: Users },
+      { label: "Avatars", href: "/admin/avatars", icon: UserCircle },
     ],
   },
   {
