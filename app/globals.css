@@ -483,4 +483,20 @@ html.a11y-calm [data-tap], html.a11y-calm [data-tap] * {
 .fysu-wave { animation: fysu-wave 0.7s ease-in-out infinite; }
 .fysu-wave-2 { animation-delay: 0.12s; }
 .fysu-wave-3 { animation-delay: 0.24s; }
+
+/* ---- Passage clair <-> sombre : fondu lent (activé par ClickFeedback pendant ~1 s) ---- */
+html.theme-fade,
+html.theme-fade *,
+html.theme-fade *::before,
+html.theme-fade *::after {
+  transition-property: background-color, color, border-color, fill, stroke, box-shadow, text-decoration-color !important;
+  transition-duration: 0.9s !important;
+  transition-timing-function: ease-in-out !important;
+  transition-delay: 0s !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
+    transition-duration: 0.01s !important;
+  }
+}
 /* FIN ÉPURE */
