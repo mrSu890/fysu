@@ -619,7 +619,11 @@ export default function MusicManager() {
             </Field>
 
             {form.brand === "thewave" && (
-              <WaveColorField value={form.wave_bg} onChange={(v) => setForm({ ...form, wave_bg: v })} />
+              <WaveColorField
+                value={form.wave_bg}
+                onChange={(v) => setForm({ ...form, wave_bg: v })}
+                imageUrl={form.coverPreview || form.cover_url}
+              />
             )}
 
             <div>
