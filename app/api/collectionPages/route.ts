@@ -41,7 +41,16 @@ async function homeVisibility() {
     hidden("pages", "fygrances"),
   ])
 
-  return { kibanCollector: !kiban, thewave: !wave, fygrances: !fy, music }
+  // l'Arcade : visible sauf si tu l'as masquée dans l'admin (table « site_settings »)
+  let arcade = true
+  try {
+    const { data } = await supabaseAdmin.from("site_settings").select("value").eq("key", "arcade_visible").maybeSingle()
+    arcade = (data as any)?.value !== false
+  } catch {
+    arcade = true
+  }
+
+  return { kibanCollector: !kiban, thewave: !wave, fygrances: !fy, music, arcade }
 }
 
 export async function GET(req: Request) {
