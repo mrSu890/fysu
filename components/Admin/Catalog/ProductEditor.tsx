@@ -10,6 +10,8 @@ import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
 import { BRAND_LIST, getBrandId } from "@/lib/brands"
+import SizeGuideEditor from "@/components/Admin/Catalog/SizeGuideEditor"
+import { cleanSizeGuide, type SizeGuide } from "@/lib/sizeGuide"
 import WaveColorField from "@/components/Admin/WaveColorField"
 import { FAMILY_ADMIN_LIST } from "@/lib/olfactive"
 
@@ -160,6 +162,7 @@ export default function ProductEditor({ id }: { id: string }) {
   const [colors, setColors] = useState<ColorState[]>([])
   const [infoBlocks, setInfoBlocks] = useState<InfoBlockState[]>([])
   const [sizeGuide, setSizeGuide] = useState<string | null>(null)
+  const [sizeChart, setSizeChart] = useState<SizeGuide | null>(null)
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
   // image en cours de recadrage
@@ -168,8 +171,8 @@ export default function ProductEditor({ id }: { id: string }) {
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
   const snapshot = useMemo(
-    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, related }),
-    [form, colors, infoBlocks, sizeGuide, related]
+    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, related }),
+    [form, colors, infoBlocks, sizeGuide, sizeChart, related]
   )
   const dirty = !loading && saved !== "" && snapshot !== saved
 
@@ -264,6 +267,7 @@ export default function ProductEditor({ id }: { id: string }) {
       setColors(nextColors)
       setInfoBlocks(nextInfo)
       setSizeGuide(p.size_guide_image_url ?? null)
+      setSizeChart(cleanSizeGuide(p.size_guide))
       setRelated(nextRelated)
       setCategories(cats)
       setAllProducts(list.products)
@@ -273,6 +277,7 @@ export default function ProductEditor({ id }: { id: string }) {
           colors: nextColors,
           infoBlocks: nextInfo,
           sizeGuide: p.size_guide_image_url ?? null,
+          sizeChart: cleanSizeGuide(p.size_guide),
           related: nextRelated,
         })
       )
@@ -554,6 +559,7 @@ export default function ProductEditor({ id }: { id: string }) {
         olfactive_family: form.product_type === "fragrance" ? form.olfactive_family || null : null,
         evocation: form.evocation,
         size_guide_image_url: sizeGuide,
+        size_guide: sizeChart,
         colors: colors.map((c) => ({
           id: c.id,
           name: c.name.trim(),
@@ -934,7 +940,7 @@ export default function ProductEditor({ id }: { id: string }) {
           </Panel>
 
           {typeCfg.sizeGuide && (
-          <Panel title="Guide des tailles" description="Image affichée dans la fiche produit du site.">
+          <Panel title="Guide des tailles" description="Tableau de mesures (cm / pouces) avec dessin, et/ou une image. Affiché dans la fiche produit du site.">
             <div className="flex flex-wrap items-end gap-4">
               {sizeGuide && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -950,6 +956,9 @@ export default function ProductEditor({ id }: { id: string }) {
                   </AdminButton>
                 )}
               </div>
+            </div>
+            <div className="mt-6 border-t border-[#eee9e1] pt-5">
+              <SizeGuideEditor value={sizeChart} onChange={setSizeChart} />
             </div>
           </Panel>
           )}
