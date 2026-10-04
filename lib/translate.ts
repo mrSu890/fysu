@@ -53,6 +53,12 @@ const TRANSLATABLE_KEYS = new Set([
   "category",
   "evocation",
   "body",
+  // guide des tailles + pages légales
+  "columns",
+  "note",
+  "intro",
+  "h",
+  "p",
 ])
 
 const memory = new Map<string, string>()
