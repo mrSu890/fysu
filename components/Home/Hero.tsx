@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import Link from "next/link";
-import { useSiteCopy } from "@/lib/siteCopy";
+import { useLocale } from "next-intl";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type HeroMedia = {
   media_path: string;
@@ -16,8 +17,14 @@ const SLIDE_DURATION = 6000; // ms
 const LEFT_LINK = "/for-him";
 const RIGHT_LINK = "/for-her";
 
-// Bouton "Discover" quand il n'y a qu'une seule image
-const DISCOVER_LINK = "/product/saku-t-1";
+/* ====================================================================
+   TEXTE DE LA PREMIÈRE PAGE (facile à modifier)
+   ==================================================================== */
+const PRONUNCIATION = "fai.su";
+const INTRO: Record<string, string> = {
+  fr: "FYSU est une maison discrète de vêtements, de parfums et de sons. Des pièces faites lentement, pour être gardées et portées.",
+  en: "FYSU is a quiet house of clothing, scent and sound. Pieces made slowly, to be kept and lived in.",
+};
 
 const isVideoMedia = (item: HeroMedia) =>
   item.media_type === "video" || /\.(mp4|webm|mov)$/i.test(item.media_path);
@@ -51,7 +58,7 @@ function Media({ item, alt, eager }: { item: HeroMedia; alt: string; eager?: boo
 }
 
 const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
-  const copy = useSiteCopy();
+  const locale = useLocale();
   const [slides, setSlides] = useState<HeroMedia[]>(initialSlides);
   const [current, setCurrent] = useState(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -92,46 +99,21 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
     };
   }, [initialSlides.length]);
 
-  const split = slides.length >= 2;
   const count = slides.length;
 
-  // Défilement automatique (mode une seule image ou plus de 2 : ici mode "une image à la fois")
+  // Défilement lent entre les images (s'il y en a plusieurs)
   useEffect(() => {
-    if (split || count <= 1) return;
+    if (count <= 1) return;
     const timer = setTimeout(() => setCurrent((c) => (c + 1) % count), SLIDE_DURATION);
     return () => clearTimeout(timer);
-  }, [current, count, split]);
+  }, [current, count]);
 
-  // Mode "split" : les 2 premiers médias côte à côte, chacun cliquable
-  if (split) {
-    const panels = [
-      { item: slides[0], href: LEFT_LINK, label: "For him" },
-      { item: slides[1], href: RIGHT_LINK, label: "For her" },
-    ];
-    return (
-      <section
-        data-no-reveal
-        className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden bg-neutral-900"
-      >
-        <div className="absolute inset-0 grid grid-cols-2">
-          {panels.map(({ item, href, label }) => (
-            <div key={href} className="relative h-full w-full">
-              <Link href={href} aria-label={label} className="absolute inset-0 block">
-                <Media item={item} alt={label} eager />
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  const height = "h-[65svh] sm:h-[75svh] lg:h-[100svh] min-h-[400px]";
+  const intro = INTRO[locale] ?? INTRO.en;
 
   return (
     <section
       data-no-reveal
-      className={`relative w-full ${height} overflow-hidden bg-neutral-900`}
+      className="relative w-full lg:grid lg:h-[100svh] lg:grid-cols-2"
       onTouchStart={(e) => {
         const t = e.touches[0];
         touchStartRef.current = { x: t.clientX, y: t.clientY };
@@ -148,43 +130,43 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
         }
       }}
     >
-      {slides.map((item, index) => (
-        <div
-          key={item.media_path + index}
-          className="absolute inset-0 transition-opacity duration-700 ease-in-out"
-          style={{ opacity: index === current ? 1 : 0, pointerEvents: index === current ? "auto" : "none" }}
-          aria-hidden={index !== current}
-        >
-          <Media item={item} alt={`Hero media ${index + 1}`} eager={index === 0} />
-
-          <div className="absolute inset-0 flex items-end justify-start px-4">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
-
-            <div className="relative text-white pb-8 sm:pb-12 max-w-[92%]">
-              <h2 className="text-xl sm:text-3xl uppercase font-normal tracking-[0.08em] leading-tight">
-                {copy.heroTitle}
-              </h2>
-
-              <p className="mt-3 font-serif text-sm sm:text-lg">{copy.heroSubtitle}</p>
-
-              <Link
-                href={DISCOVER_LINK}
-                className="mt-4 inline-flex items-center gap-2 text-xs sm:text-sm uppercase tracking-[0.12em]"
-                style={{ color: "#ffffff" }}
-              >
-                {copy.discover}
-                <span aria-hidden="true">&rsaquo;</span>
-              </Link>
-            </div>
+      {/* IMAGE : moitié haute (téléphone, iPad) ou moitié gauche (ordinateur) */}
+      <div className="relative h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:h-full">
+        {slides.map((item, index) => (
+          <div
+            key={item.media_path + index}
+            className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+            style={{ opacity: index === current ? 1 : 0 }}
+            aria-hidden={index !== current}
+          >
+            <Media item={item} alt={`FYSU ${index + 1}`} eager={index === 0} />
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
-      {count > 1 && (
-        <div className="absolute bottom-0 left-0 w-full h-[3px] bg-white/20">
-          <div key={current} className="h-full bg-white animate-progress" />
+      {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
+      <div className="relative flex min-h-[50svh] flex-col items-center justify-center px-8 py-16 text-center lg:min-h-0 lg:px-20">
+        <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
+          ( {PRONUNCIATION} )
+        </p>
+
+        <p className="mt-8 max-w-[22rem] text-[13px] font-light leading-[1.9] text-foreground/80 sm:mt-10 sm:max-w-md sm:text-sm">
+          {intro}
+        </p>
+
+        <div className="mt-10 -mb-4 sm:mt-12">
+          <ThemeToggle />
         </div>
-      )}
+
+        <div className="absolute inset-x-0 bottom-6 flex justify-center gap-8 text-[10px] font-light uppercase tracking-[0.3em] text-foreground/45 sm:bottom-8">
+          <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
+            For him
+          </Link>
+          <Link href={RIGHT_LINK} className="transition-opacity hover:opacity-60">
+            For her
+          </Link>
+        </div>
+      </div>
     </section>
   );
 };
