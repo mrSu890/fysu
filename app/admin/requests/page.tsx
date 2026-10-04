@@ -89,16 +89,21 @@ export default function RequestsPage() {
 
   // Personnes en attente d'un produit (« me prévenir » non traités)
   const waiting = useMemo(() => {
-    const map = new Map<number, { productId: number; name: string; emails: string[] }>()
+    // un groupe par produit ET par taille / couleur demandée (le message contient « Taille : M · Couleur : Noir »)
+    const map = new Map<string, { key: string; productId: number; name: string; detail: string; emails: string[] }>()
     for (const r of rows ?? []) {
       if (r.kind !== "notify" || r.status !== "new") continue
-      const entry = map.get(r.productId) ?? {
+      const detail = (r.message ?? "").trim()
+      const key = `${r.productId}|${detail}`
+      const entry = map.get(key) ?? {
+        key,
         productId: r.productId,
         name: r.productName,
+        detail,
         emails: [] as string[],
       }
       entry.emails.push(r.email)
-      map.set(r.productId, entry)
+      map.set(key, entry)
     }
     return Array.from(map.values()).sort((a, b) => b.emails.length - a.emails.length)
   }, [rows])
@@ -125,9 +130,13 @@ export default function RequestsPage() {
     }
   }
 
-  async function markProductDone(productId: number) {
+  async function markProductDone(productId: number, detail: string) {
     const targets = (rows ?? []).filter(
-      (r) => r.productId === productId && r.kind === "notify" && r.status === "new"
+      (r) =>
+        r.productId === productId &&
+        r.kind === "notify" &&
+        r.status === "new" &&
+        (r.message ?? "").trim() === detail
     )
     try {
       await Promise.all(targets.map((r) => api.put(`/api/admin/requests/${r.id}`, { status: "done" })))
@@ -170,11 +179,14 @@ export default function RequestsPage() {
             <div className="space-y-2">
               {waiting.map((w) => (
                 <div
-                  key={w.productId}
+                  key={w.key}
                   className="flex flex-wrap items-center gap-3 rounded-2xl bg-[#faf8f5] p-3 ring-1 ring-[#eee9e1]"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{w.name}</p>
+                    <p className="truncate text-sm font-medium">
+                      {w.name}
+                      {w.detail && <span className="font-normal text-[#7a756d]"> · {w.detail}</span>}
+                    </p>
                     <p className="text-xs text-[#7a756d]">
                       {w.emails.length} personne{w.emails.length > 1 ? "s" : ""}
                     </p>
@@ -188,7 +200,7 @@ export default function RequestsPage() {
                   >
                     Copier les e-mails
                   </AdminButton>
-                  <AdminButton icon={Check} onClick={() => markProductDone(w.productId)}>
+                  <AdminButton icon={Check} onClick={() => markProductDone(w.productId, w.detail)}>
                     Tout marquer traité
                   </AdminButton>
                 </div>
