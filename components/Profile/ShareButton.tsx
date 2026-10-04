@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { useLocale } from "next-intl"
 import { Share2, X } from "lucide-react"
@@ -13,6 +14,8 @@ type Person = { username: string; display_name: string | null; avatar_url: strin
 export default function ShareButton({ productId, slug }: { productId: number; slug: string }) {
   const c = socialCopy(useLocale())
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   const [loading, setLoading] = useState(false)
   const [loggedIn, setLoggedIn] = useState(true)
   const [friends, setFriends] = useState<Person[]>([])
@@ -83,8 +86,8 @@ export default function ShareButton({ productId, slug }: { productId: number; sl
         <Share2 className="h-4 w-4" /> {c.shareButton}
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center" onClick={() => setOpen(false)}>
+      {open && mounted && createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/50 sm:items-center" onClick={() => setOpen(false)}>
           <div
             className="max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-background p-5 text-foreground shadow-2xl sm:max-w-md sm:rounded-3xl sm:p-6"
             onClick={(e) => e.stopPropagation()}
@@ -157,7 +160,8 @@ export default function ShareButton({ productId, slug }: { productId: number; sl
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
