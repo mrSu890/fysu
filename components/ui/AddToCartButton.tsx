@@ -51,25 +51,25 @@ export default function AddToCartButton({
           addToCartWithFeedback(product, selectedSizeId, selectedSizeLabel, 1500, color);
           setIsCartOpen(true);
         }}
+        data-no-green
         className={`
           w-full
-          bg-black
-          text-white
-          py-3
-          text-[11px]
-          font-light
-          uppercase
-          tracking-[0.22em]
-          transition-colors duration-300
-          hover:bg-neutral-800
+          bg-[#4eac6c]
+          px-4
+          py-4
+          text-left
+          text-base
+          font-bold
+          text-black
+          transition-[filter] duration-300
+          hover:brightness-95
           disabled:cursor-not-allowed
           cursor-pointer
-          disabled:bg-black
           relative
           overflow-hidden
         `}
       >
-        <div className="relative flex items-center justify-center gap-2">
+        <div className="relative flex items-center justify-between gap-3">
           <AnimatePresence mode="wait">
             {isAdded ? (
               <motion.div
@@ -95,6 +95,7 @@ export default function AddToCartButton({
               </motion.div>
             )}
           </AnimatePresence>
+          <span className="shrink-0">€{Number(product.price).toFixed(2).replace(".", ",")}</span>
         </div>
       </motion.button>
     </div>
