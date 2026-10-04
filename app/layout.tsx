@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "@/context/CartContext";
-import { Inter } from "next/font/google";
+import { Inter, DM_Mono } from "next/font/google";
+import ClickFeedback from "@/components/ClickFeedback";
 import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -23,6 +24,13 @@ import { getLocale, getMessages } from "next-intl/server";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+// Police « fiche technique » pour les textes d'information (tailles, matières, prix…)
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400"],
+  variable: "--font-dm-mono",
   display: "swap",
 });
 //import AuthProvider from "@/components/AuthProvider";
@@ -60,7 +68,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={rtlLocales.includes(locale) ? "rtl" : "ltr"}
-      className={inter.variable}
+      className={`${inter.variable} ${dmMono.variable}`}
     >
       <head>
         <script
@@ -118,6 +126,7 @@ export default async function RootLayout({
         <Toaster />
         <DecorativeDots />
         <ScrollReveal />
+        <ClickFeedback />
       </body>
     </html>
   );
