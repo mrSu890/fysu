@@ -49,22 +49,31 @@ export default function HomeTiles() {
       </p>
       <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-7xl">Explore The Universe</h2>
 
-      <ul className="mt-14 min-h-[140px] border-t border-foreground/15 sm:mt-24">
+      <ul className="mt-12 min-h-[140px] border-t border-foreground/15 sm:mt-20">
         {rows.map((row, i) => {
           const inner = (
             <>
-              <span className="w-10 shrink-0 text-[10px] font-light tracking-[0.3em] text-foreground/40 sm:w-16 sm:text-xs">
+              <span className="w-8 shrink-0 text-[9px] font-light tracking-[0.3em] text-foreground/40 sm:w-14 sm:text-[11px]">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span className="flex-1 text-2xl font-light tracking-tight transition-transform duration-500 group-hover:translate-x-2 sm:text-5xl">
+              <span className="flex-1 text-base font-light tracking-tight transition-transform duration-500 group-hover:translate-x-1.5 sm:text-2xl">
                 {row.label}
               </span>
-              <span className="text-lg font-light text-foreground/40 transition-all duration-500 group-hover:translate-x-1 group-hover:text-foreground sm:text-2xl" aria-hidden="true">
-                {row.external ? "↗" : "→"}
-              </span>
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4 self-center text-foreground/40 transition-all duration-500 group-hover:translate-x-1 group-hover:text-foreground sm:h-5 sm:w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {row.external ? <path d="M7 17L17 7M9 7h8v8" /> : <path d="M4 12h16M14 6l6 6-6 6" />}
+              </svg>
             </>
           )
-          const cls = "group flex items-baseline gap-2 border-b border-foreground/15 py-6 sm:py-9"
+          const cls = "group flex items-center gap-2 border-b border-foreground/15 py-4 sm:py-6"
           return (
             <li key={row.href}>
               {row.external ? (
