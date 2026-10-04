@@ -11,6 +11,7 @@ import { Collapse, Modal } from "antd"
 import type { CollapseProps } from "antd"
 import AddToCartButton from "@/components/ui/AddToCartButton"
 import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
+import SizeNotify from "@/components/Product/SizeNotify"
 import ProductInfoBlocks from "@/components/Product/ProductInfoBlocks"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { getTypeCopy } from "@/lib/productTypes"
@@ -466,16 +467,33 @@ export default function ProductClient() {
                 })}
               </div>
 
+              {canBuy && !colorSoldOut && sizesForColor.some((s) => s.stock <= 0) && (
+                <div className="mt-4">
+                  <SizeNotify
+                    product={product}
+                    sizes={sizesForColor.filter((s) => s.stock <= 0).map((s) => s.size)}
+                    colorName={hasColors ? selectedColor?.name ?? null : null}
+                  />
+                </div>
+              )}
+
             </div>
           )}
   
                     <div className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
             {canBuy && colorSoldOut ? (
-              <div
-                aria-disabled="true"
-                className="w-full cursor-not-allowed border border-neutral-300 py-3 text-center text-sm font-medium tracking-wide text-foreground/50"
-              >
-                {colorCopy.colorSoldOut}
+              <div className="w-full space-y-3">
+                <div
+                  aria-disabled="true"
+                  className="w-full cursor-not-allowed border border-neutral-300 py-3 text-center text-sm font-medium tracking-wide text-foreground/50"
+                >
+                  {colorCopy.colorSoldOut}
+                </div>
+                <SizeNotify
+                  product={product}
+                  sizes={sizesForColor.map((s) => s.size)}
+                  colorName={hasColors ? selectedColor?.name ?? null : null}
+                />
               </div>
             ) : canBuy ? (
               <AddToCartButton
