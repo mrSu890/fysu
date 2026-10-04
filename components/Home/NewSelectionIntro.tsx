@@ -13,7 +13,7 @@ const NewSelectionIntro = () => {
   const copy = useSiteCopy();
 
   return (
-    <section className="w-full mt-10 mb-20 sm:mt-16 sm:mb-28 grid grid-cols-2 items-center">
+    <section className="w-full mt-16 mb-28 sm:mt-28 sm:mb-44 grid grid-cols-2 items-center">
       {/* Image collée à gauche, recadrée (elle ne s'affiche pas en entier) */}
       <div className="relative w-full aspect-[3/4] overflow-hidden bg-neutral-200">
         {!imageFailed && (
@@ -29,17 +29,17 @@ const NewSelectionIntro = () => {
 
       {/* Texte + bouton à droite */}
       <div className="px-4 sm:px-10 lg:px-16 max-w-xl">
-        <h2 className="text-sm sm:text-xl uppercase text-foreground">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-5xl">
           {copy.bloomTitle}
         </h2>
 
-        <p className="mt-3 text-xs sm:text-base leading-snug text-foreground/80">
+        <p className="mt-4 text-xs font-light leading-relaxed text-foreground/75 sm:mt-6 sm:text-base">
           {copy.bloomText}
         </p>
 
         <Link
           href={COLLECTION_LINK}
-          className="mt-6 inline-flex items-center gap-2 border border-foreground px-3 py-2 sm:px-5 sm:py-3 text-[10px] sm:text-sm uppercase tracking-widest text-foreground transition-opacity hover:opacity-60"
+          className="mt-8 inline-flex items-center gap-2 border-b border-foreground/40 pb-1 text-[10px] font-light uppercase tracking-[0.25em] text-foreground transition-opacity hover:opacity-60 sm:mt-10 sm:text-xs"
         >
           {copy.learnMore}
           <span aria-hidden="true">→</span>

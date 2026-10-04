@@ -21,8 +21,8 @@ export default function HomeSection({ slug }: { slug: string }) {
   if (!products.length) return null;
 
   return (
-       <section className="relative top-10 w-11/12 mx-auto">
-      <h2 className="text-xl sm:text-2xl mb-8">{title}</h2>
+       <section className="relative top-10 w-11/12 mx-auto sm:mb-24">
+      <h2 className="mb-10 text-3xl font-bold tracking-tight sm:mb-14 sm:text-5xl">{title}</h2>
 
       <div
         ref={scrollRef}
