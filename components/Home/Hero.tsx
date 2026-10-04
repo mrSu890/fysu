@@ -5,7 +5,6 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import ThemeToggle from "@/components/ThemeToggle";
-import SpeakButton from "@/components/SpeakButton";
 
 type HeroMedia = {
   media_path: string;
@@ -132,7 +131,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       }}
     >
       {/* IMAGE : moitié haute (téléphone, iPad) ou moitié gauche (ordinateur) */}
-      <div className="relative h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:h-full">
+      <div className="sticky top-0 z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:static lg:h-full">
         {slides.map((item, index) => (
           <div
             key={item.media_path + index}
@@ -146,13 +145,10 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       </div>
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
-      <div className="relative flex min-h-[50svh] flex-col items-center justify-center px-8 py-16 text-center lg:min-h-0 lg:px-20">
-        <div className="flex items-center gap-3">
-          <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
-            {PRONUNCIATION}
-          </p>
-          <SpeakButton label={locale === "fr" ? "Écouter la prononciation" : "Listen to the pronunciation"} />
-        </div>
+      <div className="relative z-10 flex min-h-[50svh] flex-col items-center justify-center bg-background px-8 py-16 text-center lg:min-h-0 lg:px-20">
+        <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
+          {PRONUNCIATION}
+        </p>
 
         <p className="mt-8 max-w-[22rem] text-[13px] font-light leading-[1.9] text-foreground/80 sm:mt-10 sm:max-w-md sm:text-sm">
           {intro}
