@@ -18,6 +18,7 @@ import {
   Scale,
   Shirt,
   ShoppingBag,
+  Tag,
   Clapperboard,
   Droplets,
   Users,
@@ -42,6 +43,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: "Produits", href: "/admin/catalog", icon: Shirt },
       { label: "Commandes", href: "/admin/orders", icon: ShoppingBag },
+      { label: "Codes promo", href: "/admin/promo-codes", icon: Tag },
       { label: "Demandes", href: "/admin/requests", icon: Inbox },
       { label: "Clients", href: "/admin/users", icon: Users },
     ],
