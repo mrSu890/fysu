@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useLocale } from "next-intl"
 import DraggableFab from "@/components/DraggableFab"
@@ -14,8 +15,18 @@ export default function GamesFab() {
   const pathname = usePathname()
   const router = useRouter()
   const copy = gamesCopyFor(useLocale())
+  const [hidden, setHidden] = useState(false)
 
-  if (!pathname.startsWith("/music")) return null
+  // pastille masquée si l'Arcade est désactivée dans l'admin
+  useEffect(() => {
+    if (!pathname.startsWith("/music")) return
+    fetch("/api/collectionPages?visibility=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setHidden(d?.arcade === false))
+      .catch(() => {})
+  }, [pathname])
+
+  if (!pathname.startsWith("/music") || hidden) return null
 
   const target = GAMES.length === 1 ? `/games/${GAMES[0].slug}` : "/games"
 
