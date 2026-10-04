@@ -57,6 +57,7 @@ export type ProductType = {
   care_instructions: string | null;
   shipping: string | null;
   size_guide_image_url?: string | null
+  size_guide?: import("@/lib/sizeGuide").SizeGuide | null
 
   category_id: number | null;  
 
