@@ -354,7 +354,7 @@ export default function ProductClient() {
               <p className="text-xs font-light italic opacity-60">{product.evocation}</p>
             )}
 
-            <p className="pt-2 text-base font-light tracking-wide">
+            <p className="font-info pt-2 text-base font-light">
               {format.number(product.price, {
                 style: "currency",
                 currency: "EUR",
@@ -380,60 +380,52 @@ export default function ProductClient() {
   
           {/* COLORS */}
           {hasColors && (
-            <div className="space-y-3 border-t border-foreground/15 pt-8">
-              <p className="text-[11px] font-light uppercase tracking-[0.25em] opacity-60">
-                {colorCopy.color} <span className="ml-2 normal-case tracking-normal opacity-100">{selectedColor?.name}</span>
+            <div className="grid grid-cols-[6rem_1fr] items-start gap-x-4 border-t border-foreground/15 py-5 sm:grid-cols-[7rem_1fr]">
+              <p className="font-info pt-1 text-[11px] font-light uppercase tracking-[0.12em] text-foreground/55">
+                {colorCopy.color}
               </p>
 
-              <div className="flex flex-wrap gap-3">
-                {colorList.map((c) => {
-                  const isSelected = selectedColor?.id === c.id
-                  const isOut = (stockByColor[c.id] ?? 0) <= 0
+              <div>
+                <div className="flex flex-wrap gap-3">
+                  {colorList.map((c) => {
+                    const isSelected = selectedColor?.id === c.id
+                    const isOut = (stockByColor[c.id] ?? 0) <= 0
 
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      title={c.name}
-                      aria-label={c.name}
-                      onClick={() => handleColorClick(c)}
-                      className={`relative h-8 w-8 cursor-pointer rounded-full border border-black/20 transition ${
-                        isSelected
-                          ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
-                          : "hover:scale-105"
-                      }`}
-                      style={{ backgroundColor: c.hex }}
-                    >
-                      {isOut && (
-                        <span className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full">
-                          <span className="block h-px w-[150%] rotate-45 bg-foreground/70" />
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        title={c.name}
+                        aria-label={c.name}
+                        onClick={() => handleColorClick(c)}
+                        className="flex cursor-pointer flex-col items-center gap-1.5"
+                      >
+                        <span
+                          className="relative block h-7 w-7 overflow-hidden border border-foreground/15"
+                          style={{ backgroundColor: c.hex }}
+                        >
+                          {isOut && (
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <span className="block h-px w-[150%] rotate-45 bg-foreground/70" />
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </button>
-                  )
-                })}
+                        <span className={`block h-px w-full transition-colors duration-300 ${isSelected ? "bg-foreground" : "bg-transparent"}`} />
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="font-info mt-2 text-xs font-light text-foreground/60">{selectedColor?.name}</p>
               </div>
             </div>
           )}
   
           {/* SIZES */}
           {canBuy && sizesForColor.length > 0 && (
-            <div className="space-y-3 border-t border-foreground/15 pt-8">
+            <div className="grid grid-cols-[6rem_1fr] items-start gap-x-4 border-t border-foreground/15 py-5 sm:grid-cols-[7rem_1fr]">
+              <p className="font-info pt-2 text-[11px] font-light uppercase tracking-[0.12em] text-foreground/55">{copy.sizeTitle ?? t("size")}</p>
 
-              <div className="flex justify-between items-center">
-                <p className="text-[11px] font-light uppercase tracking-[0.25em] opacity-60">{copy.sizeTitle ?? t("size")}</p>
-
-                {copy.sizeGuide && (
-                  <button
-                    type="button"
-                    onClick={() => setSizeGuideOpen(true)}
-                    className="text-[11px] font-light uppercase tracking-[0.2em] underline underline-offset-4 text-foreground/60 hover:text-foreground cursor-pointer"
-                  >
-                    {t("sizeGuide")}
-                  </button>
-                )}
-              </div>
-
+              <div>
               <div className="flex flex-wrap gap-3">
                 {sizesForColor.map((s) => {
                   const isSelected = selectedSizeId === s.id
@@ -450,8 +442,8 @@ export default function ProductClient() {
                       }}
                       className={`
                         min-w-[48px]
-                        px-4 py-2
-                        text-sm tracking-wide
+                        font-info px-4 py-2
+                        text-sm
                         border rounded-none
                         transition-all duration-200
                         ${
@@ -469,6 +461,16 @@ export default function ProductClient() {
                 })}
               </div>
 
+              {copy.sizeGuide && (
+                <button
+                  type="button"
+                  onClick={() => setSizeGuideOpen(true)}
+                  className="font-info mt-3 cursor-pointer text-xs font-light text-foreground/60 underline underline-offset-4 hover:text-foreground"
+                >
+                  {t("sizeGuide")}
+                </button>
+              )}
+
               {canBuy && !colorSoldOut && sizesForColor.some((s) => s.stock <= 0) && (
                 <div className="mt-4">
                   <SizeNotify
@@ -478,7 +480,7 @@ export default function ProductClient() {
                   />
                 </div>
               )}
-
+              </div>
             </div>
           )}
   
@@ -531,8 +533,8 @@ export default function ProductClient() {
                 <style>{`
                   .pdp-collapse .ant-collapse-item { border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent) !important; }
                   .pdp-collapse .ant-collapse-item:last-child { border-bottom: 0 !important; }
-                  .pdp-collapse .ant-collapse-header { padding: 14px 0 !important; font-size: 11px !important; font-weight: 300 !important; letter-spacing: 0.2em; text-transform: uppercase; align-items: center !important; }
-                  .pdp-collapse .ant-collapse-content-box { padding: 0 0 16px 0 !important; font-size: 12px; font-weight: 300; line-height: 1.8; }
+                  .pdp-collapse .ant-collapse-header { padding: 14px 0 !important; font-family: var(--font-dm-mono), ui-monospace, Menlo, monospace !important; font-size: 11px !important; font-weight: 300 !important; letter-spacing: 0.12em; text-transform: uppercase; align-items: center !important; }
+                  .pdp-collapse .ant-collapse-content-box { padding: 0 0 16px 0 !important; font-family: var(--font-dm-mono), ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 300; line-height: 1.8; }
                 `}</style>
                 <Collapse items={items} bordered={false} ghost />
               </div>
