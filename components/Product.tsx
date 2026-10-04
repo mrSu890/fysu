@@ -117,7 +117,7 @@ const Product = ({
       {/* Bouton like */}
       <WishlistHeart
         productId={product.id}
-        className="absolute top-2 right-2 z-10 hover:bg-gray-200"
+        className="absolute top-2 right-2 z-10 text-neutral-900 hover:bg-gray-200"
       />
 
       {/* Image */}

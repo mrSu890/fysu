@@ -428,7 +428,7 @@ function MobileMenu({
                     initial={{ scale: 1.6 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 16 }}
-                    className="absolute -top-2 -right-2 bg-green-900 text-white text-[10px] font-light leading-none px-1.5 py-1 rounded-full"
+                    className="absolute -top-2 -right-2 bg-[#4eac6c] text-black text-[10px] font-normal leading-none px-1.5 py-1 rounded-full"
                   >
                     {totalItems}
                   </motion.span>

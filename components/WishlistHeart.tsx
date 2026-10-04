@@ -44,7 +44,7 @@ export default function WishlistHeart({
       <Heart
         size={size}
         strokeWidth={1.5}
-        className={`transition-colors ${liked ? "fill-green-900 text-green-900" : "text-current opacity-80"}`}
+        className={`transition-colors ${liked ? "fill-[#4eac6c] text-[#4eac6c]" : "text-current opacity-80"}`}
       />
     </button>
   )

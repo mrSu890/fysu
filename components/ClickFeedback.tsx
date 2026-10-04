@@ -13,6 +13,26 @@ export default function ClickFeedback() {
   const pathname = usePathname() ?? ""
   const off = pathname.startsWith("/admin") || pathname.startsWith("/thewave") || pathname.startsWith("/games")
 
+  // Passage clair <-> sombre en douceur : à chaque changement du mode, on active un fondu lent sur toute la page
+  useEffect(() => {
+    const html = document.documentElement
+    let was = html.classList.contains("dark")
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const obs = new MutationObserver(() => {
+      const now = html.classList.contains("dark")
+      if (now === was) return
+      was = now
+      html.classList.add("theme-fade")
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => html.classList.remove("theme-fade"), 1100)
+    })
+    obs.observe(html, { attributes: true, attributeFilter: ["class"] })
+    return () => {
+      obs.disconnect()
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
+
   useEffect(() => {
     // les pages « hors ligne principale » (admin, TheWave, arcade) gardent leur style d'origine
     if (off) document.documentElement.setAttribute("data-fysu-off", "1")
