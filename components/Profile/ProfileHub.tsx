@@ -1,20 +1,24 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import Image from "next/image"
 import { useLocale, useTranslations } from "next-intl"
-import { Link2, Pencil } from "lucide-react"
-import PageBar from "@/components/PageBar"
 import { DEFAULT_ACCENT, type ProfileData } from "@/lib/profile"
 import Avatar from "./Avatar"
 import Badges, { type Reward } from "./Badges"
 import Closet from "./Closet"
+import UserWishlist from "./UserWishlist"
+import UserOrders from "./UserOrders"
 import Social from "@/components/Profile/Social"
 import ProfileEditor, { type GalleryAvatar } from "./ProfileEditor"
 import { profileCopy } from "./profileCopy"
 
-// Image d'en-tête de la page compte (à déposer dans public/images/)
-const PROFILE_HERO_SRC = "/images/profile-hero.jpeg"
+type TabId = "wardrobe" | "favorites" | "orders" | "friends" | "badges"
+const TABS: Record<"fr" | "en", Record<TabId, string>> = {
+  fr: { wardrobe: "Garde-robe", favorites: "Favoris", orders: "Commandes", friends: "Amis", badges: "Badges" },
+  en: { wardrobe: "Wardrobe", favorites: "Favorites", orders: "Orders", friends: "Friends", badges: "Badges" },
+}
+const TAB_ORDER: TabId[] = ["wardrobe", "favorites", "orders", "friends", "badges"]
+
 const ONBOARD_KEY = "fysu_profile_onboarding_seen"
 
 type Payload = {
@@ -40,7 +44,7 @@ export default function ProfileHub({
   const copy = profileCopy(locale)
 
   const [data, setData] = useState<Payload | null>(null)
-  const [heroFailed, setHeroFailed] = useState(false)
+  const [tab, setTab] = useState<TabId>("wardrobe")
   const [editing, setEditing] = useState(false)
   const [welcome, setWelcome] = useState(false)
   const [rewards, setRewards] = useState<Reward[]>([])
@@ -95,117 +99,93 @@ export default function ProfileHub({
   const since = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString(locale, { month: "long", year: "numeric" })
     : null
+  const labels = TABS[locale === "fr" ? "fr" : "en"]
+  const link = "text-[11px] font-light uppercase tracking-[0.18em] underline-offset-[6px] hover:underline disabled:opacity-40"
 
   return (
     <>
-      {/* HERO */}
-      <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden bg-neutral-300 dark:bg-neutral-800">
-        {!heroFailed && (
-          <Image
-            src={PROFILE_HERO_SRC}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-            onError={() => setHeroFailed(true)}
-          />
-        )}
-        <div className="absolute inset-0 bg-black/25" />
-        <div className="absolute inset-x-0 bottom-0 h-1.5" style={{ background: accent }} />
+      <main className="mx-auto w-11/12 max-w-6xl pb-24 pt-32 sm:pt-44">
+        {/* EN-TÊTE */}
+        <p className="text-[11px] font-light uppercase tracking-[0.22em] text-foreground/50">( {tn("myFysu")} )</p>
 
-        <div className="absolute inset-0 flex items-end">
-          <div className="flex items-end gap-4 pb-5 pl-4 pr-4 sm:gap-6 sm:pb-10 sm:pl-10 sm:pr-10">
-            <Avatar url={profile?.avatar_url ?? null} name={name} accent={accent} size={96} />
-            <div className="min-w-0 pb-1 text-white">
-              <h1 className="font-dior font-bold text-3xl sm:text-5xl tracking-tight leading-none">
-                {t("hello", { name })}
-              </h1>
-              {profile?.username && <p className="mt-1.5 text-sm text-white/80 sm:text-base">@{profile.username}</p>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* BANDE BLANCHE : chemin / interrupteur */}
-      <PageBar trail={[{ label: tn("myFysu") }]} />
-
-      {/* CARTE PROFIL */}
-      <section className="mx-auto w-11/12 max-w-7xl pt-6">
-        <div className="flex flex-col gap-5 rounded-3xl border border-foreground/15 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="mt-8 flex items-center gap-5 sm:gap-8">
+          <Avatar url={profile?.avatar_url ?? null} name={name} accent={accent} size={72} thin />
           <div className="min-w-0">
-            <p className="text-foreground/80">
-              {profile?.bio ? profile.bio : <span className="text-foreground/50">{copy.noBio}</span>}
-            </p>
-            {since && (
-              <p className="mt-1 text-xs uppercase tracking-wider text-foreground/45">
-                {copy.memberSince} {since}
+            <h1 className="break-words font-dior text-4xl font-bold leading-[1.02] tracking-tight sm:text-6xl">{name}</h1>
+            {profile?.username && (
+              <p className="mt-2 text-sm font-light text-foreground/55">
+                @{profile.username}
+                {since && <span> · {copy.memberSince} {since}</span>}
               </p>
             )}
-            <div className="mt-4 flex gap-6">
-              {[
-                [data?.stats.orders ?? 0, copy.stats.orders],
-                [data?.stats.pieces ?? 0, copy.stats.pieces],
-                [data?.stats.wishlist ?? 0, copy.stats.favorites],
-              ].map(([n, label]) => (
-                <div key={String(label)}>
-                  <p className="font-dior text-2xl leading-none" style={{ color: accent }}>
-                    {n}
-                  </p>
-                  <p className="mt-1 text-xs text-foreground/55">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-          {profile?.username && (
-            <button
-              type="button"
-              onClick={() => copyLink(profile.username!)}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/30 px-5 py-3 text-sm"
-            >
-              <Link2 className="h-4 w-4" /> {linkCopied ? copy.linkCopied : copy.copyLink}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            disabled={!data}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium text-white disabled:opacity-40"
-            style={{ background: accent }}
-          >
-            <Pencil className="h-4 w-4" /> {copy.editProfile}
-          </button>
           </div>
         </div>
 
-        <div className="flex justify-end pt-3">
-          <button
-            type="button"
-            onClick={onLogout}
-            disabled={loggingOut}
-            className="w-fit text-foreground/40 rounded cursor-pointer underline underline-offset-1 disabled:opacity-50"
-          >
+        {profile?.bio && <p className="mt-8 max-w-md text-sm font-light leading-relaxed text-foreground/70">{profile.bio}</p>}
+
+        {/* CHIFFRES */}
+        <div className="mt-10 grid grid-cols-3 border-y border-foreground/15 sm:max-w-md">
+          {[
+            [data?.stats.orders ?? 0, copy.stats.orders],
+            [data?.stats.pieces ?? 0, copy.stats.pieces],
+            [data?.stats.wishlist ?? 0, copy.stats.favorites],
+          ].map(([n, label], i) => (
+            <div key={String(label)} className={`py-5 ${i > 0 ? "border-l border-foreground/15 pl-5" : ""}`}>
+              <p className="text-3xl font-light leading-none tabular-nums">{n}</p>
+              <p className="mt-2 text-[10px] font-light uppercase tracking-[0.18em] text-foreground/55">{label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ACTIONS */}
+        <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <button type="button" onClick={() => setEditing(true)} disabled={!data} className={link}>
+            {copy.editProfile}
+          </button>
+          {profile?.username && (
+            <button type="button" onClick={() => copyLink(profile.username!)} className={link}>
+              {linkCopied ? copy.linkCopied : copy.copyLink}
+            </button>
+          )}
+          <button type="button" onClick={onLogout} disabled={loggingOut} className={link + " text-foreground/45"}>
             {loggingOut ? t("signingOut") : t("signOut")}
           </button>
         </div>
-      </section>
 
-      {data && (
-        <>
-          <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />
-          <Closet copy={copy} accent={accent} />
-          <Badges
-            earned={data.earned}
-            rewards={rewards}
-            stats={data.stats}
-            copy={copy}
-            locale={locale}
-            accent={accent}
-            onRewards={setRewards}
-          />
-        </>
-      )}
+        {/* ONGLETS */}
+        <nav className="mt-16 flex gap-8 overflow-x-auto border-b border-foreground/15 sm:gap-12">
+          {TAB_ORDER.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              className={`-mb-px shrink-0 border-b py-4 text-[11px] uppercase tracking-[0.2em] transition ${
+                tab === id ? "border-foreground font-normal" : "border-transparent font-light text-foreground/50 hover:text-foreground"
+              }`}
+            >
+              {labels[id]}
+            </button>
+          ))}
+        </nav>
+
+        <div className="pt-10">
+          {tab === "wardrobe" && <Closet copy={copy} />}
+          {tab === "favorites" && <UserWishlist />}
+          {tab === "orders" && <UserOrders />}
+          {tab === "friends" && data && <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />}
+          {tab === "badges" && data && (
+            <Badges
+              earned={data.earned}
+              rewards={rewards}
+              stats={data.stats}
+              copy={copy}
+              locale={locale}
+              accent={accent}
+              onRewards={setRewards}
+            />
+          )}
+        </div>
+      </main>
 
       {editing && data && (
         <ProfileEditor

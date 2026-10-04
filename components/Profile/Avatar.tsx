@@ -6,16 +6,18 @@ export default function Avatar({
   name,
   accent,
   size = 96,
+  thin = false,
 }: {
   url: string | null
   name: string
   accent: string
   size?: number
+  thin?: boolean
 }) {
   const initial = (name.trim()[0] ?? "F").toUpperCase()
   return (
     <div
-      className="relative shrink-0 overflow-hidden rounded-full bg-neutral-200 ring-4"
+      className={`relative shrink-0 overflow-hidden rounded-full bg-neutral-200 ${thin ? "ring-1 ring-offset-2 ring-offset-background" : "ring-4"}`}
       style={{ width: size, height: size, ["--tw-ring-color" as any]: accent }}
     >
       {url ? (

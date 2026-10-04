@@ -58,91 +58,77 @@ export default function Badges({
   const dateFmt = (iso?: string | null) =>
     iso ? new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" }) : ""
 
-  return (
-    <section className="mx-auto w-11/12 max-w-7xl py-8">
-      <h2 className="font-dior text-2xl">{copy.badges}</h2>
-      <p className="mt-1 text-sm text-foreground/60">{copy.badgesIntro}</p>
+  const ghost =
+    "border border-foreground/40 px-4 py-2 text-[11px] font-light uppercase tracking-[0.18em] disabled:opacity-40"
 
-      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {BADGES.map((b) => {
+  return (
+    <div>
+      <p className="max-w-md text-sm font-light text-foreground/60">{copy.badgesIntro}</p>
+
+      <div className="mt-8 border-t border-foreground/15">
+        {BADGES.map((b, idx) => {
           const got = earned.includes(b.id)
           const reward = rewards.find((r) => r.badge === b.id && r.code)
           const prog = !got && b.progress ? b.progress(stats) : null
           return (
-            <div
-              key={b.id}
-              className={`rounded-2xl border p-4 transition ${got ? "border-foreground/25" : "border-foreground/10 opacity-70"}`}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-2xl ${got ? "" : "grayscale"}`}
-                  style={{ background: got ? `${accent}22` : "rgba(128,128,128,.12)" }}
-                >
-                  {b.icon}
-                </div>
+            <div key={b.id} className={`border-b border-foreground/15 py-6 ${got ? "" : "opacity-60"}`}>
+              <div className="flex items-start gap-5 sm:gap-8">
+                <span className="w-6 shrink-0 pt-1 text-[11px] font-light tabular-nums tracking-[0.18em] text-foreground/50">
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium">{b[lang].name}</p>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <p className="text-lg font-bold tracking-tight sm:text-xl">{b[lang].name}</p>
                     <span
-                      className="shrink-0 rounded-full px-2 py-0.5 text-[11px]"
-                      style={got ? { background: accent, color: "#fff" } : { background: "rgba(128,128,128,.15)" }}
+                      className="shrink-0 text-[10px] font-light uppercase tracking-[0.2em]"
+                      style={got ? { color: accent } : undefined}
                     >
                       {got ? copy.earned : copy.locked}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-sm text-foreground/60">{b[lang].desc}</p>
+                  <p className="mt-1 text-sm font-light text-foreground/60">{b[lang].desc}</p>
+
+                  {prog && (
+                    <div className="mt-4 max-w-xs">
+                      <div className="h-px bg-foreground/20">
+                        <div
+                          className="h-px"
+                          style={{ width: `${Math.min(100, (prog.value / prog.max) * 100)}%`, background: accent }}
+                        />
+                      </div>
+                      <p className="mt-2 text-[10px] font-light tabular-nums tracking-[0.18em] text-foreground/50">
+                        {Math.min(prog.value, prog.max)} / {prog.max}
+                      </p>
+                    </div>
+                  )}
+
+                  {b.reward && got && !reward && (
+                    <button type="button" onClick={() => claim(b.id)} disabled={busy === b.id} className={`mt-4 ${ghost}`}>
+                      {busy === b.id ? copy.claiming : `${copy.claim} · −${b.reward.percent} %`}
+                    </button>
+                  )}
+
+                  {reward?.code && (
+                    <div className="mt-4 max-w-sm border-t border-foreground/15 pt-3">
+                      <p className="text-[10px] font-light uppercase tracking-[0.18em] text-foreground/50">
+                        {copy.yourCode} · −{reward.percent} %
+                        {reward.expires_at ? ` · ${copy.validUntil} ${dateFmt(reward.expires_at)}` : ""}
+                      </p>
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <span className="font-mono text-sm tracking-[0.12em]">{reward.code}</span>
+                        <button type="button" onClick={() => copyCode(reward.code!)} className="text-xs font-light underline underline-offset-4">
+                          {copied === reward.code ? copy.copied : copy.copy}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {prog && (
-                <div className="mt-3">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.min(100, (prog.value / prog.max) * 100)}%`, background: accent }}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-foreground/50">
-                    {Math.min(prog.value, prog.max)} / {prog.max}
-                  </p>
-                </div>
-              )}
-
-              {b.reward && got && !reward && (
-                <button
-                  type="button"
-                  onClick={() => claim(b.id)}
-                  disabled={busy === b.id}
-                  className="mt-3 w-full rounded-full py-2.5 text-sm font-medium text-white disabled:opacity-50"
-                  style={{ background: accent }}
-                >
-                  {busy === b.id ? copy.claiming : `${copy.claim} · −${b.reward.percent} %`}
-                </button>
-              )}
-
-              {reward?.code && (
-                <div className="mt-3 rounded-xl border border-dashed border-foreground/30 p-3">
-                  <p className="text-xs text-foreground/50">
-                    {copy.yourCode} · −{reward.percent} %
-                    {reward.expires_at ? ` · ${copy.validUntil} ${dateFmt(reward.expires_at)}` : ""}
-                  </p>
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="font-mono text-base tracking-wider">{reward.code}</span>
-                    <button
-                      type="button"
-                      onClick={() => copyCode(reward.code!)}
-                      className="rounded-full border border-foreground/30 px-3 py-1 text-xs"
-                    >
-                      {copied === reward.code ? copy.copied : copy.copy}
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )
         })}
       </div>
       {msg && <p className="mt-3 text-sm text-red-600">{msg}</p>}
-    </section>
+    </div>
   )
 }

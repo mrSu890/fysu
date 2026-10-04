@@ -99,34 +99,37 @@ export default function Social({
     await post({ action: "react", id: item.id, reaction: next })
   }
 
-  const btn = "rounded-full px-4 py-2 text-sm font-medium"
+  const ghost = "border border-foreground/40 px-4 py-2 text-[11px] font-light uppercase tracking-[0.18em]"
+  const solid = "bg-foreground text-background px-4 py-2 text-[11px] font-light uppercase tracking-[0.18em]"
+  const linkBtn = "text-xs font-light text-foreground/55 underline underline-offset-4"
+  const label = "text-[10px] font-light uppercase tracking-[0.2em] text-foreground/50"
   const nameOf = (p: Person) => p.display_name || p.username
 
   const Row = ({ p, children }: { p: Person; children: React.ReactNode }) => (
-    <div className="flex items-center justify-between gap-3 py-2">
+    <div className="flex items-center justify-between gap-3 py-3">
       <Link href={`/u/${p.username}`} className="flex min-w-0 items-center gap-3">
-        <Avatar url={p.avatar_url} name={nameOf(p)} accent={accent} size={44} />
+        <Avatar url={p.avatar_url} name={nameOf(p)} accent={accent} size={40} thin />
         <span className="min-w-0">
-          <span className="block truncate text-sm font-medium">{nameOf(p)}</span>
-          <span className="block truncate text-xs text-foreground/50">@{p.username}</span>
+          <span className="block truncate text-sm">{nameOf(p)}</span>
+          <span className="block truncate text-xs font-light text-foreground/50">@{p.username}</span>
         </span>
       </Link>
-      <div className="flex shrink-0 gap-2">{children}</div>
+      <div className="flex shrink-0 items-center gap-3">{children}</div>
     </div>
   )
 
   return (
     <>
       {/* AMIS */}
-      <section className="mx-auto w-11/12 max-w-7xl py-8">
-        <h2 className="font-dior text-2xl">{c.friends}</h2>
-        <p className="mt-1 text-sm text-foreground/60">{hasUsername ? c.friendsIntro : c.needUsername}</p>
+      <section>
+        <h2 className="font-dior text-2xl font-bold tracking-tight sm:text-3xl">{c.friends}</h2>
+        <p className="mt-2 max-w-md text-sm font-light text-foreground/60">{hasUsername ? c.friendsIntro : c.needUsername}</p>
 
         {hasUsername && (
-          <div className="mt-5 grid gap-6 lg:grid-cols-2">
+          <div className="mt-8 grid gap-10 lg:grid-cols-2">
             <div>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">@</span>
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-foreground/50">@</span>
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value.replace(/^@/, ""))}
@@ -134,23 +137,23 @@ export default function Social({
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
-                  className="w-full rounded-xl border border-foreground/20 bg-transparent py-3 pl-9 pr-4 text-base outline-none focus:border-foreground/60"
+                  className="w-full rounded-none border-0 border-b border-foreground/25 bg-transparent py-3 pl-6 pr-2 text-base font-light outline-none focus:border-foreground/70"
                 />
               </div>
               {results && (
-                <div className="mt-2 divide-y divide-foreground/10 rounded-2xl border border-foreground/15 px-4">
-                  {results.length === 0 && <p className="py-3 text-sm text-foreground/50">{c.noResult}</p>}
+                <div className="divide-y divide-foreground/15">
+                  {results.length === 0 && <p className="py-3 text-sm font-light text-foreground/50">{c.noResult}</p>}
                   {results.map((u) => (
                     <Row key={u.username} p={u}>
                       {u.relation === "none" && (
-                        <button className={btn + " text-white"} style={{ background: accent }} onClick={() => act("request", u.username)}>
+                        <button className={solid} onClick={() => act("request", u.username)}>
                           {c.add}
                         </button>
                       )}
-                      {u.relation === "outgoing" && <span className="text-xs text-foreground/50">{c.requested}</span>}
-                      {u.relation === "friends" && <span className="text-xs text-foreground/50">{c.alreadyFriends}</span>}
+                      {u.relation === "outgoing" && <span className="text-xs font-light text-foreground/50">{c.requested}</span>}
+                      {u.relation === "friends" && <span className="text-xs font-light text-foreground/50">{c.alreadyFriends}</span>}
                       {u.relation === "incoming" && (
-                        <button className={btn + " text-white"} style={{ background: accent }} onClick={() => act("accept", u.username)}>
+                        <button className={solid} onClick={() => act("accept", u.username)}>
                           {c.accept}
                         </button>
                       )}
@@ -160,15 +163,15 @@ export default function Social({
               )}
 
               {incoming.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-xs uppercase tracking-wider text-foreground/50">{c.incoming}</p>
-                  <div className="divide-y divide-foreground/10">
+                <div className="mt-8">
+                  <p className={label}>{c.incoming}</p>
+                  <div className="mt-2 divide-y divide-foreground/15">
                     {incoming.map((p) => (
                       <Row key={p.username} p={p}>
-                        <button className={btn + " text-white"} style={{ background: accent }} onClick={() => act("accept", p.username)}>
+                        <button className={solid} onClick={() => act("accept", p.username)}>
                           {c.accept}
                         </button>
-                        <button className={btn + " border border-foreground/30"} onClick={() => act("decline", p.username)}>
+                        <button className={ghost} onClick={() => act("decline", p.username)}>
                           {c.decline}
                         </button>
                       </Row>
@@ -178,12 +181,12 @@ export default function Social({
               )}
 
               {outgoing.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-xs uppercase tracking-wider text-foreground/50">{c.pending}</p>
-                  <div className="divide-y divide-foreground/10">
+                <div className="mt-8">
+                  <p className={label}>{c.pending}</p>
+                  <div className="mt-2 divide-y divide-foreground/15">
                     {outgoing.map((p) => (
                       <Row key={p.username} p={p}>
-                        <button className="text-sm text-foreground/50 underline" onClick={() => act("cancel", p.username)}>
+                        <button className={linkBtn} onClick={() => act("cancel", p.username)}>
                           {c.cancel}
                         </button>
                       </Row>
@@ -195,14 +198,12 @@ export default function Social({
 
             <div>
               {friends.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-foreground/25 px-6 py-8 text-center text-sm text-foreground/55">
-                  {c.noFriends}
-                </p>
+                <p className="border-t border-foreground/15 pt-6 text-sm font-light text-foreground/55">{c.noFriends}</p>
               ) : (
-                <div className="divide-y divide-foreground/10 rounded-2xl border border-foreground/15 px-4">
+                <div className="divide-y divide-foreground/15 border-y border-foreground/15">
                   {friends.map((p) => (
                     <Row key={p.username} p={p}>
-                      <button className="text-sm text-foreground/50 underline" onClick={() => act("remove", p.username)}>
+                      <button className={linkBtn} onClick={() => act("remove", p.username)}>
                         {c.remove}
                       </button>
                     </Row>
@@ -215,54 +216,48 @@ export default function Social({
       </section>
 
       {/* BOÎTE DE RÉCEPTION */}
-      <section className="mx-auto w-11/12 max-w-7xl py-8">
-        <h2 className="font-dior text-2xl">{c.inbox}</h2>
-        <p className="mt-1 text-sm text-foreground/60">{c.inboxIntro}</p>
+      <section className="mt-16 border-t border-foreground/15 pt-12">
+        <h2 className="font-dior text-2xl font-bold tracking-tight sm:text-3xl">{c.inbox}</h2>
+        <p className="mt-2 max-w-md text-sm font-light text-foreground/60">{c.inboxIntro}</p>
 
         {inbox.length === 0 ? (
-          <p className="mt-5 rounded-2xl border border-dashed border-foreground/25 px-6 py-8 text-center text-sm text-foreground/55">
-            {c.inboxEmpty}
-          </p>
+          <p className="mt-8 text-sm font-light text-foreground/55">{c.inboxEmpty}</p>
         ) : (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 lg:grid-cols-4">
             {inbox.map((i) => (
-              <div key={i.id} className="overflow-hidden rounded-2xl border border-foreground/15">
-                <Link href={i.product.slug ? `/product/${i.product.slug}` : "#"} className="relative block aspect-[4/3] bg-foreground/10">
+              <div key={i.id}>
+                <Link href={i.product.slug ? `/product/${i.product.slug}` : "#"} className="relative block aspect-[3/4] bg-foreground/5">
                   {i.product.image && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={i.product.image} alt={i.product.name} className="h-full w-full object-cover" />
                   )}
                   {!i.seen && (
-                    <span className="absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs text-white" style={{ background: accent }}>
+                    <span className="absolute left-2 top-2 bg-background/85 px-2 py-0.5 text-[10px] font-light uppercase tracking-[0.18em]">
+                      <span className="mr-1.5 inline-block h-1 w-1 rounded-full align-middle" style={{ background: accent }} />
                       {c.newTag}
                     </span>
                   )}
                 </Link>
-                <div className="p-4">
-                  <p className="truncate text-sm font-medium uppercase tracking-wide">{i.product.name}</p>
-                  {i.from && (
-                    <Link href={`/u/${i.from.username}`} className="mt-2 flex items-center gap-2 text-xs text-foreground/60">
-                      <Avatar url={i.from.avatar_url} name={nameOf(i.from)} accent={accent} size={24} />
-                      {c.from} {nameOf(i.from)}
-                    </Link>
-                  )}
-                  {i.message && <p className="mt-2 text-sm">« {i.message} »</p>}
-                  <div className="mt-3 flex gap-1.5">
-                    {REACTIONS.map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => react(i, r)}
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-lg"
-                        style={{
-                          background: i.reaction === r ? `${accent}30` : "transparent",
-                          boxShadow: i.reaction === r ? `inset 0 0 0 2px ${accent}` : "inset 0 0 0 1px rgba(128,128,128,.25)",
-                        }}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
+                <p className="mt-3 truncate text-[11px] font-light uppercase tracking-[0.16em]">{i.product.name}</p>
+                {i.from && (
+                  <Link href={`/u/${i.from.username}`} className="mt-1 block truncate text-xs font-light text-foreground/55">
+                    {c.from} {nameOf(i.from)}
+                  </Link>
+                )}
+                {i.message && <p className="mt-2 text-sm font-light">« {i.message} »</p>}
+                <div className="mt-3 flex gap-0.5">
+                  {REACTIONS.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => react(i, r)}
+                      className={`flex h-8 w-8 items-center justify-center text-base transition ${
+                        i.reaction === r ? "bg-foreground/10" : "opacity-40 hover:opacity-100"
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}

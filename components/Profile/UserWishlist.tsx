@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Product from "../Product";
 import { useTranslations } from "next-intl";
 
+/* Favoris : la liste de souhaits (la garde-robe, ce sont les pièces déjà achetées). */
 export default function Wishlist() {
   const t = useTranslations("Profile");
   const [wishlist, setWishlist] = useState<any[]>([]);
@@ -36,21 +37,18 @@ export default function Wishlist() {
     loadWishlist();
   }, []);
 
-  return (
-    <div className="w-11/12 mx-auto max-w-7xl relative top-44">
-      <h1 className="text-2xl font-dior mb-6">{t("wardrobe")}</h1>
+  if (loading) {
+    return <p className="text-sm font-light text-foreground/55">{t("loading")}</p>;
+  }
+  if (wishlist.length === 0) {
+    return <p className="border-t border-foreground/15 pt-6 text-sm font-light text-foreground/55">{t("noProducts")}</p>;
+  }
 
-      {loading ? (
-        <p>{t("loading")}</p>
-      ) : wishlist.length === 0 ? (
-        <p>{t("noProducts")}</p>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {wishlist.map((w, idx) => (
-            <Product key={w?.product_id ?? idx} product={w.products} />
-          ))}
-        </div>
-      )}
+  return (
+    <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+      {wishlist.map((w, idx) => (
+        <Product key={w?.product_id ?? idx} product={w.products} />
+      ))}
     </div>
   );
 }
