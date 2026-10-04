@@ -70,15 +70,14 @@ const Footer: React.FC = () => {
           <div key={cls} className={`${cls} relative w-full max-w-3xl`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/anthurium.png"
+              src="/images/anthurium-sans-fond.png"
               alt=""
               className="h-auto w-full"
-              style={{ filter: "drop-shadow(14px 18px 16px rgba(0,0,0,0.22))" }}
             />
-            {/* ombre posée au sol, sous le vase */}
+            {/* petite ombre de contact sous le vase (supprimer ce bloc pour la retirer) */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-[50%] top-[92.3%] h-[1.7%] w-[19%] -translate-x-1/2 rounded-[50%] bg-black/45 blur-[8px]"
+              className="pointer-events-none absolute left-[49%] top-[92.5%] h-[1.1%] w-[13%] -translate-x-1/2 rounded-[50%] bg-black/30 blur-[5px]"
             />
           </div>
         ))}
