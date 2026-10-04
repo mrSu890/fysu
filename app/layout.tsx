@@ -27,9 +27,20 @@ const inter = Inter({
 });
 //import AuthProvider from "@/components/AuthProvider";
 
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://f-y-s-u.com").replace(/\/$/, "")
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE),
   title: "FYSU",
   description: "FYSU",
+  openGraph: {
+    siteName: "FYSU",
+    type: "website",
+    title: "FYSU",
+    description: "FYSU",
+    url: SITE,
+  },
+  twitter: { card: "summary_large_image" },
   icons: {
     icon: [{ url: "/api/favicon", type: "image/png" }],
     shortcut: "/api/favicon",
