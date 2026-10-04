@@ -104,7 +104,7 @@ export default function PageBar({ trail, filters, setFilters, middle }: Props) {
         {/* GAUCHE : chemin parcouru */}
         <nav
           aria-label="Breadcrumb"
-          className="min-w-0 truncate whitespace-nowrap text-xs sm:text-sm opacity-70"
+          className="font-info min-w-0 truncate whitespace-nowrap text-xs sm:text-sm opacity-70"
         >
           {crumbs.map((crumb, i) => (
             <span key={`${crumb.label}-${i}`}>

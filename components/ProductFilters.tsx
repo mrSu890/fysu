@@ -81,7 +81,7 @@ export default function ProductFilters({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex cursor-pointer touch-manipulation items-center gap-2 rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] transition active:scale-95"
+          className="font-info flex cursor-pointer touch-manipulation items-center gap-2 rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] transition active:scale-95"
           style={{ border: `1px solid ${LINE}`, background: "transparent", color: "inherit" }}
         >
           <SlidersHorizontal size={14} />

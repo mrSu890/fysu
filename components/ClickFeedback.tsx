@@ -14,6 +14,9 @@ export default function ClickFeedback() {
   const off = pathname.startsWith("/admin") || pathname.startsWith("/thewave") || pathname.startsWith("/games")
 
   useEffect(() => {
+    // les pages « hors ligne principale » (admin, TheWave, arcade) gardent leur style d'origine
+    if (off) document.documentElement.setAttribute("data-fysu-off", "1")
+    else document.documentElement.removeAttribute("data-fysu-off")
     if (off) return
 
     function onDown(e: PointerEvent) {

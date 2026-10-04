@@ -228,7 +228,7 @@ const Product = ({
             )}
           </div>
 
-          <p className="whitespace-nowrap text-xs">{product.price} EUR</p>
+          <p className="font-info whitespace-nowrap text-xs">{product.price} EUR</p>
         </div>
       </Link>
     </div>

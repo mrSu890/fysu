@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useMusicCopy } from "@/lib/musicCopy"
+import CountUp from "@/components/CountUp"
 
 /* ====================================================================
    PAGE D'ACCUEIL : « Explore The Universe »
@@ -44,8 +45,8 @@ export default function HomeTiles() {
 
   return (
     <section className="mx-auto w-11/12 max-w-5xl py-24 sm:py-40">
-      <p className="text-[10px] font-light uppercase tracking-[0.4em] text-foreground/40 sm:text-xs">
-        ( {String(rows.length || 0).padStart(2, "0")} )
+      <p className="text-[10px] font-light uppercase tracking-[0.4em] sm:text-xs">
+        <CountUp value={rows.length} prefix="( " suffix=" )" />
       </p>
       <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-7xl">Explore The Universe</h2>
 
@@ -53,10 +54,10 @@ export default function HomeTiles() {
         {rows.map((row, i) => {
           const inner = (
             <>
-              <span className="w-8 shrink-0 text-[9px] font-light tracking-[0.3em] text-foreground/40 sm:w-14 sm:text-[11px]">
-                {String(i + 1).padStart(2, "0")}
+              <span className="w-8 shrink-0 text-[9px] font-light tracking-[0.3em] sm:w-14 sm:text-[11px]">
+                <CountUp value={i + 1} />
               </span>
-              <span className="flex-1 text-base font-light tracking-tight transition-transform duration-500 group-hover:translate-x-1.5 sm:text-2xl">
+              <span className="font-info flex-1 text-base font-light transition-transform duration-500 group-hover:translate-x-1.5 sm:text-2xl">
                 {row.label}
               </span>
               <svg
