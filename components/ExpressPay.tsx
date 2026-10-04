@@ -148,7 +148,16 @@ export default function ExpressPay({ product, selectedSizeId }: Props) {
         expressEl.on("ready", (e: any) => {
           const m = e?.availablePaymentMethods
           setStatus(m && (m.applePay || m.googlePay) ? "ready" : "unavailable")
-          if (!(m && (m.applePay || m.googlePay))) setReason("aucun-portefeuille:" + JSON.stringify(m ?? null))
+          if (!(m && (m.applePay || m.googlePay))) {
+            let dev = "ApplePaySession=absent"
+            try {
+              const A = (window as any).ApplePaySession
+              if (A) dev = "ApplePaySession=oui,canMakePayments=" + A.canMakePayments() + ",version=" + (A.supportsVersion?.(6) ? "6+" : "<6")
+            } catch (err: any) {
+              dev = "ApplePaySession=erreur:" + (err?.message || "?")
+            }
+            setReason("aucun-portefeuille:" + JSON.stringify(m ?? null) + " | " + dev + " | cle=" + String(PUBLISHABLE_KEY).slice(0, 8) + " | hote=" + window.location.host)
+          }
         })
 
         expressEl.on("loaderror", (e: any) => {
