@@ -5,6 +5,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import ThemeToggle from "@/components/ThemeToggle";
+import SpeakButton from "@/components/SpeakButton";
 
 type HeroMedia = {
   media_path: string;
@@ -146,15 +147,18 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
       <div className="relative flex min-h-[50svh] flex-col items-center justify-center px-8 py-16 text-center lg:min-h-0 lg:px-20">
-        <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
-          {PRONUNCIATION}
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
+            {PRONUNCIATION}
+          </p>
+          <SpeakButton label={locale === "fr" ? "Écouter la prononciation" : "Listen to the pronunciation"} />
+        </div>
 
         <p className="mt-8 max-w-[22rem] text-[13px] font-light leading-[1.9] text-foreground/80 sm:mt-10 sm:max-w-md sm:text-sm">
           {intro}
         </p>
 
-        <div className="mt-10 -mb-4 sm:mt-12">
+        <div className="mt-5 -mb-4 sm:mt-7">
           <ThemeToggle />
         </div>
 
