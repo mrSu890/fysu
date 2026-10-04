@@ -6,8 +6,6 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import UserOders from "@/components/Profile/UserOrders";
-import UserWishlist from "@/components/Profile/UserWishlist";
 import ProfileHub from "@/components/Profile/ProfileHub";
 
 export default function ProfilePage() {
@@ -97,12 +95,6 @@ export default function ProfilePage() {
       <Navbar />
 
       <ProfileHub user={user} onLogout={handleLogout} loggingOut={loggingOut} />
-
-      {/* Les blocs ci-dessous ont un décalage interne : on le compense */}
-      <div className="relative -top-28">
-        <UserWishlist />
-        <UserOders />
-      </div>
 
       <Footer />
     </>
