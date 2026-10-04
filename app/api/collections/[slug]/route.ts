@@ -54,6 +54,7 @@ export async function GET(
       )
     `)
     .in("id", page.products)
+    .eq("is_hidden", false)
 
   if (productsError) {
     console.error(productsError)
