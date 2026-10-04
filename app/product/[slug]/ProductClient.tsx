@@ -17,6 +17,8 @@ import { getTypeCopy } from "@/lib/productTypes"
 import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
 import { waveColors } from "@/lib/waveColor"
 import WaveLoader from "@/components/WaveLoader"
+import SizeGuideView from "@/components/SizeGuideView"
+import { cleanSizeGuide } from "@/lib/sizeGuide"
 import AutoContrast from "@/components/AutoContrast"
 import { getColorCopy } from "@/lib/colorCopy"
 import { getFamilyCopy, isFamilyId } from "@/lib/olfactive"
@@ -537,18 +539,15 @@ export default function ProductClient() {
       footer={null}
       onCancel={() => setSizeGuideOpen(false)}
       centered
-      width={500}
+      width={560}
     >
 
-      {product.size_guide_image_url ? (
-        <div className="relative w-full aspect-[3/4]">
-          <Image
-            src={product.size_guide_image_url}
-            alt={t("sizeGuide")}
-            fill
-            className="object-contain"
-          />
-        </div>
+      {product.size_guide_image_url || cleanSizeGuide(product.size_guide) ? (
+        <SizeGuideView
+          guide={cleanSizeGuide(product.size_guide)}
+          imageUrl={product.size_guide_image_url}
+          lang={locale === "fr" ? "fr" : "en"}
+        />
       ) : (
         <p>{t("noSizeGuide")}</p>
       )}
