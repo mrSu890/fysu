@@ -201,14 +201,22 @@
 .navbar-root .liquid-glass img {
   opacity: 0.85;
 }
-/* Mode sombre : gris chaud terreux, moins noir */
+/* Mode sombre : gris-taupe chaud, plus clair (#938A85) */
 .dark {
-  --background: #4a4742;
+  --background: #938a85;
   --toggle-button-bg: #3a3834;
   --toggle-button-btn: #55524c;
 }
 
 .dark .collection-bg {
+  background-color: #938a85;
+}
+
+/* Kiban Collector garde son ancien fond sombre (#4A4742) */
+.dark.kiban-dark {
+  --background: #4a4742;
+}
+.dark.kiban-dark .collection-bg {
   background-color: #4a4742;
 }
 /* Image d'anthurium : version claire / version sombre */
@@ -230,8 +238,12 @@
 }
 
 .dark .page-bar {
-  background: #3f3c38;
+  background: #877e79;
   color: #ffffff;
+}
+
+.dark.kiban-dark .page-bar {
+  background: #3f3c38;
 }
 /* Écran de chargement : logo noir en mode clair, blanc en mode sombre */
 .loader-logo-darkmode {
