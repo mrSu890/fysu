@@ -12,6 +12,7 @@ import StoryBar from "@/components/Stories/StoryBar"
 import { ProductType } from "@/types/product"
 import ThemeToggle from "@/components/ThemeToggle"
 import { useTranslations } from "next-intl"
+import CountUp from "@/components/CountUp"
 
 type SectionType = {
   id: string
@@ -226,6 +227,9 @@ export default function CollectionPage() {
                     {/* SECTION TITLE */}
                     <h2 className="text-xl font-pagetitle mb-6">
                       {section.title}
+                      <sup className="ml-2 align-top text-[10px]">
+                        <CountUp value={section.filteredProducts.length} prefix="(" suffix=")" />
+                      </sup>
                     </h2>
 
                     {/* PRODUCTS HORIZONTAL SCROLL */}
