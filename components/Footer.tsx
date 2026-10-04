@@ -65,20 +65,23 @@ const Footer: React.FC = () => {
 
       {/* Image d'anthurium en bas de chaque page */}
       <div className="w-full flex justify-center mt-10 bg-background">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/anthurium-light.JPG"
-          alt=""
-          className="flower-light w-full max-w-3xl h-auto"
-          style={softEdges}
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/anthurium-dark.JPG"
-          alt=""
-          className="flower-dark w-full max-w-3xl h-auto"
-          style={softEdges}
-        />
+        {/* Même anthurium détouré (sans fond) en clair et en sombre, avec une ombre portée */}
+        {["flower-light", "flower-dark"].map((cls) => (
+          <div key={cls} className={`${cls} relative w-full max-w-3xl`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/anthurium.png"
+              alt=""
+              className="h-auto w-full"
+              style={{ filter: "drop-shadow(14px 18px 16px rgba(0,0,0,0.22))" }}
+            />
+            {/* ombre posée au sol, sous le vase */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-[50%] top-[92.3%] h-[1.7%] w-[19%] -translate-x-1/2 rounded-[50%] bg-black/45 blur-[8px]"
+            />
+          </div>
+        ))}
       </div>
 
       <footer
