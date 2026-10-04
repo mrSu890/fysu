@@ -251,6 +251,26 @@ export default function AdminHome() {
 
   const loading = !stats && !error
 
+  // pastille Arcade (accueil + page musique) : visible ou masquée
+  const [arcade, setArcade] = useState<boolean | null>(null)
+  useEffect(() => {
+    api
+      .get<{ arcade: boolean }>("/api/admin/site-settings")
+      .then((r) => setArcade(r.arcade))
+      .catch(() => setArcade(true))
+  }, [])
+  async function toggleArcade() {
+    if (arcade === null) return
+    const next = !arcade
+    setArcade(next)
+    try {
+      await api.post("/api/admin/site-settings", { arcade: next })
+    } catch (e) {
+      setArcade(!next)
+      alert(errorMessage(e, "Impossible de changer ce réglage"))
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -447,6 +467,32 @@ export default function AdminHome() {
         ) : (
           <EmptyState title="Tout est bien approvisionné" description="Aucune taille en stock bas." />
         )}
+      </Panel>
+
+      {/* Interrupteur Arcade */}
+      <Panel title="Pastille Arcade" description="Affiche ou masque les jeux d'arcade sur le site (accueil et page musique)" className="mt-6">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-[#3d3a35]">
+            {arcade === null ? "Chargement…" : arcade ? "Visible sur le site" : "Masquée sur le site"}
+          </p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={arcade !== false}
+            aria-label="Afficher la pastille Arcade"
+            disabled={arcade === null}
+            onClick={toggleArcade}
+            className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors disabled:opacity-50 ${
+              arcade === false ? "bg-[#d4cfc6]" : "bg-[#171717]"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                arcade === false ? "left-0.5" : "left-[22px]"
+              }`}
+            />
+          </button>
+        </div>
       </Panel>
 
       {/* Raccourcis contenu */}
