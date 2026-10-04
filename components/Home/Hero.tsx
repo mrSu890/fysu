@@ -20,7 +20,7 @@ const RIGHT_LINK = "/for-her";
 /* ====================================================================
    TEXTE DE LA PREMIÈRE PAGE (facile à modifier)
    ==================================================================== */
-const PRONUNCIATION = "fai.su";
+const PRONUNCIATION = "/faɪ.su/"; // transcription phonétique (API)
 const INTRO: Record<string, string> = {
   fr: "FYSU est une maison discrète de vêtements, de parfums et de sons. Des pièces faites lentement, pour être gardées et portées.",
   en: "FYSU is a quiet house of clothing, scent and sound. Pieces made slowly, to be kept and lived in.",
@@ -147,7 +147,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
       <div className="relative flex min-h-[50svh] flex-col items-center justify-center px-8 py-16 text-center lg:min-h-0 lg:px-20">
         <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
-          ( {PRONUNCIATION} )
+          {PRONUNCIATION}
         </p>
 
         <p className="mt-8 max-w-[22rem] text-[13px] font-light leading-[1.9] text-foreground/80 sm:mt-10 sm:max-w-md sm:text-sm">
