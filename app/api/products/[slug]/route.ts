@@ -53,6 +53,7 @@ export async function GET(
         display_order,
         suggested:products!product_suggestions_suggested_product_id_fkey (
           id,
+          is_hidden,
           name,
           slug,
           price,
@@ -71,6 +72,7 @@ export async function GET(
       )
     `)
     .eq("slug", slug)
+    .eq("is_hidden", false)
     .single()
 
   if (error || !data) {
@@ -104,7 +106,8 @@ export async function GET(
   const suggested_products =
     product.product_suggestions
       ?.sort((a: any, b: any) => a.display_order - b.display_order)
-      .map((s: any) => s.suggested) ?? []
+      .map((s: any) => s.suggested)
+      .filter((p: any) => p && !p.is_hidden) ?? []
 
   /* ================= MARQUE ================= */
 
