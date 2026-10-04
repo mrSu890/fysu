@@ -103,7 +103,7 @@ export default function UserOrders() {
                 </p>
                 <p className="mt-2 text-[11px] font-light uppercase tracking-[0.18em]">{label}</p>
               </div>
-              <p className="text-xl font-light tabular-nums">€{((order.total ?? 0) / 100).toFixed(2)}</p>
+              <p className="font-info text-xl font-light tabular-nums">€{((order.total ?? 0) / 100).toFixed(2)}</p>
             </div>
 
             {s === "paid" && <p className="mt-4 text-sm font-light text-foreground/60">{sc.preparing}</p>}

@@ -11,6 +11,7 @@ import UserOrders from "./UserOrders"
 import Social from "@/components/Profile/Social"
 import ProfileEditor, { type GalleryAvatar } from "./ProfileEditor"
 import { profileCopy } from "./profileCopy"
+import CountUp from "@/components/CountUp"
 
 type TabId = "wardrobe" | "favorites" | "orders" | "friends" | "badges"
 const TABS: Record<"fr" | "en", Record<TabId, string>> = {
@@ -131,7 +132,7 @@ export default function ProfileHub({
             [data?.stats.wishlist ?? 0, copy.stats.favorites],
           ].map(([n, label], i) => (
             <div key={String(label)} className={`py-5 ${i > 0 ? "border-l border-foreground/15 pl-5" : ""}`}>
-              <p className="text-3xl font-light leading-none tabular-nums">{n}</p>
+              <p className="text-3xl font-light leading-none"><CountUp value={Number(n)} opacity={1} /></p>
               <p className="mt-2 text-[10px] font-light uppercase tracking-[0.18em] text-foreground/55">{label}</p>
             </div>
           ))}
