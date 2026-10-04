@@ -8,6 +8,7 @@ export type ProfileData = {
   bio: string | null
   avatar_url: string | null
   accent: string | null
+  is_public?: boolean
   created_at: string | null
 }
 
