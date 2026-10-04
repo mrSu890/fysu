@@ -61,7 +61,8 @@ export async function GET(
         color
       )
     `)
-    .in("id", productIds);
+    .in("id", productIds)
+    .eq("is_hidden", false);
 
   if (productsError) {
     return NextResponse.json({ error: productsError.message }, { status: 500 });
