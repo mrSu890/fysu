@@ -362,7 +362,7 @@ export default function ProductClient() {
             </p>
           </div>
 
-          <p className="max-w-md text-[13px] font-light leading-[1.9] whitespace-pre-line opacity-80">
+          <p className="max-w-md border-t border-foreground/15 pt-8 text-[13px] font-light leading-[1.9] whitespace-pre-line opacity-80">
             {formatText(product.description)}
           </p>
 
@@ -380,7 +380,7 @@ export default function ProductClient() {
   
           {/* COLORS */}
           {hasColors && (
-            <div className="space-y-3">
+            <div className="space-y-3 border-t border-foreground/15 pt-8">
               <p className="text-[11px] font-light uppercase tracking-[0.25em] opacity-60">
                 {colorCopy.color} <span className="ml-2 normal-case tracking-normal opacity-100">{selectedColor?.name}</span>
               </p>
@@ -418,7 +418,7 @@ export default function ProductClient() {
   
           {/* SIZES */}
           {canBuy && sizesForColor.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 border-t border-foreground/15 pt-8">
 
               <div className="flex justify-between items-center">
                 <p className="text-[11px] font-light uppercase tracking-[0.25em] opacity-60">{copy.sizeTitle ?? t("size")}</p>
@@ -482,7 +482,7 @@ export default function ProductClient() {
             </div>
           )}
   
-                    <div className="relative flex flex-col gap-4">
+                    <div className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
             {canBuy && colorSoldOut ? (
               <div className="w-full space-y-3">
                 <div
@@ -529,7 +529,9 @@ export default function ProductClient() {
             {items.length > 0 && <Collapse items={items} bordered={false} ghost />}
           </div>
 
-          <ShareButton productId={product.id} slug={slug} />
+          <div className="border-t border-foreground/15 pt-6">
+            <ShareButton productId={product.id} slug={slug} />
+          </div>
   
         </div>
       </div>
