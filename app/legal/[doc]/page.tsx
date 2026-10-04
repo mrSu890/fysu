@@ -3,7 +3,9 @@ import { notFound } from "next/navigation"
 import { getLocale } from "next-intl/server"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import { getLegalDoc, isLegalSlug } from "@/lib/legalDocs"
+import { isLegalSlug } from "@/lib/legalDocs"
+import { getLegalDocResolved } from "@/lib/legalStore"
+import { localize } from "@/lib/translate"
 
 type Props = { params: Promise<{ doc: string }> }
 
@@ -11,14 +13,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { doc } = await params
   if (!isLegalSlug(doc)) return {}
   const locale = await getLocale()
-  return { title: `${getLegalDoc(doc, locale).title} — FYSU` }
+  const lang = locale === "fr" ? "fr" : "en"
+  return { title: `${(await getLegalDocResolved(doc, lang)).title} — FYSU` }
 }
 
 export default async function LegalPage({ params }: Props) {
   const { doc } = await params
   if (!isLegalSlug(doc)) notFound()
   const locale = await getLocale()
-  const page = getLegalDoc(doc, locale)
+  // français et anglais : textes écrits (ou modifiés dans l'admin) ; les autres langues : anglais traduit par DeepL
+  const lang = locale === "fr" ? "fr" : "en"
+  let page = await getLegalDocResolved(doc, lang)
+  if (locale !== "fr" && locale !== "en") page = await localize(page)
 
   return (
     <div className="bg-background text-foreground">
