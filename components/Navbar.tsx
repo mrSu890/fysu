@@ -260,6 +260,32 @@ function MobileMenu({
     targets.forEach(([mv, v]) => animate(mv, v, SPRING));
   }, [rowW, topH, open, contentH, logoWidth, rightWidth, rightX, rightY, rightHeight, iconsRight]);
 
+  /* Barre qui se cache pendant le défilement et revient dès qu'on s'arrête */
+  const [hiddenBar, setHiddenBar] = useState(false);
+  const keepBarRef = useRef(false);
+  keepBarRef.current = open || searchOpen;
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const moved = Math.abs(y - lastY) > 2;
+      lastY = y;
+      if (!moved) return;
+      if (y > 80 && !keepBarRef.current) setHiddenBar(true);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setHiddenBar(false), 450);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+  useEffect(() => {
+    if (open || searchOpen) setHiddenBar(false);
+  }, [open, searchOpen]);
+
   const openSearch = () => {
     setIsCartOpen(false);
     setActivePanel(null);
@@ -269,7 +295,10 @@ function MobileMenu({
   return (
     <>
     <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-    <div className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl">
+    <div
+      className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl transition-[transform,opacity] duration-500 ease-out"
+      style={hiddenBar ? { transform: "translateY(-140%)", opacity: 0, pointerEvents: "none" } : undefined}
+    >
       <div ref={rowRef} className="relative">
         {/* Pastille du logo : elle s'étend pour combler le vide laissé par l'autre pastille */}
         <motion.div
