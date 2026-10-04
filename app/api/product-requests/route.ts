@@ -56,14 +56,16 @@ export async function POST(req: Request) {
 
     // Même personne, même produit, même type, déjà en attente : on ne crée pas de doublon
     if (kind === "notify") {
-      const { data: existing } = await supabaseAdmin
+      // une même personne peut demander des tailles différentes : on compare aussi le message (taille / couleur)
+      let dup = supabaseAdmin
         .from("product_requests")
         .select("id")
         .eq("product_id", productId)
         .eq("kind", "notify")
         .eq("email", email)
         .eq("status", "new")
-        .limit(1)
+      dup = message ? dup.eq("message", message) : dup.is("message", null)
+      const { data: existing } = await dup.limit(1)
 
       if (existing && existing.length > 0) {
         return NextResponse.json({ ok: true })
