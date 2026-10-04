@@ -11,7 +11,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("products")
     .select(
-      "id, name, slug, price, gender, product_type, category_id, createdAt, product_images(url), product_sizes(stock, is_active)"
+      "id, name, slug, price, gender, product_type, category_id, createdAt, is_hidden, product_images(url), product_sizes(stock, is_active)"
     )
     .order("createdAt", { ascending: false })
 
@@ -43,6 +43,7 @@ export async function GET() {
       product_type: p.product_type ?? "clothing",
       category_id: p.category_id ?? null,
       createdAt: p.createdAt,
+      is_hidden: !!p.is_hidden,
       thumbnail: p.product_images?.[0]?.url ?? null,
       totalStock,
       sizeCount: sizes.length,
