@@ -2,7 +2,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HomeHero from "@/components/Home/Hero";
 import NewSelectionIntro from "@/components/Home/NewSelectionIntro";
-import ThemeToggle from "@/components/ThemeToggle";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 import HomeSection from "@/components/Home/HomeSection";
@@ -34,7 +33,6 @@ export default async function Home() {
     <>
       <Navbar />
       <HomeHero initialSlides={slides} />
-      <ThemeToggle />
       <NewSelectionIntro />
       <div className="flex flex-col gap-28">
         <HomeSection slug="solos" />
