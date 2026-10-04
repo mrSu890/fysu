@@ -70,6 +70,7 @@ export default function ExpressPay({ product, selectedSizeId }: Props) {
 
   const mountRef = useRef<HTMLDivElement | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading")
+  const [reason, setReason] = useState("")
   const [needLogin, setNeedLogin] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -99,6 +100,7 @@ export default function ExpressPay({ product, selectedSizeId }: Props) {
 
   useEffect(() => {
     if (!PUBLISHABLE_KEY || !mountRef.current) {
+      setReason(!PUBLISHABLE_KEY ? "cle-publique-absente" : "zone-absente")
       setStatus("unavailable")
       return
     }
@@ -146,6 +148,12 @@ export default function ExpressPay({ product, selectedSizeId }: Props) {
         expressEl.on("ready", (e: any) => {
           const m = e?.availablePaymentMethods
           setStatus(m && (m.applePay || m.googlePay) ? "ready" : "unavailable")
+          if (!(m && (m.applePay || m.googlePay))) setReason("aucun-portefeuille:" + JSON.stringify(m ?? null))
+        })
+
+        expressEl.on("loaderror", (e: any) => {
+          setReason("loaderror:" + (e?.error?.message || e?.error?.code || "inconnu"))
+          setStatus("unavailable")
         })
 
         expressEl.on("click", (e: any) => {
@@ -233,8 +241,11 @@ export default function ExpressPay({ product, selectedSizeId }: Props) {
 
         expressEl.mount(mountRef.current)
       })
-      .catch(() => {
-        if (!cancelled) setStatus("unavailable")
+      .catch((err: any) => {
+        if (!cancelled) {
+          setReason("erreur:" + (err?.message || "stripe.js"))
+          setStatus("unavailable")
+        }
       })
 
     return () => {
@@ -252,7 +263,10 @@ export default function ExpressPay({ product, selectedSizeId }: Props) {
       <div ref={mountRef} className={status === "ready" ? "" : "h-0 overflow-hidden"} />
 
       {status === "unavailable" && (
-        <p className="text-center text-xs opacity-60">{copy.unavailable}</p>
+        <p className="text-center text-xs opacity-60">
+          {copy.unavailable}
+          {reason && <span className="mt-1 block break-all text-[10px] opacity-70">[{reason}]</span>}
+        </p>
       )}
 
       {needLogin && (
