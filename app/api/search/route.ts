@@ -25,6 +25,7 @@ export async function GET(req: Request) {
       .select(
         "id, name, slug, price, product_type, product_images:product_images!product_images_productId_fkey(url)"
       )
+      .eq("is_hidden", false)
       .limit(has ? 6 : 4)
 
     productsQuery = has
