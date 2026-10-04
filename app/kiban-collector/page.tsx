@@ -57,8 +57,11 @@ export default function KibanCollectorPage() {
   useLayoutEffect(() => {
     const html = document.documentElement
     html.classList.add("dark")
+    // marque la page : elle garde son fond sombre d'origine
+    html.classList.add("kiban-dark")
 
     return () => {
+      html.classList.remove("kiban-dark")
       // En partant, on remet le mode choisi par le visiteur
       let saved: string | null = null
       try {
