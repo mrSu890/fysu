@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   ExternalLink,
+  FileText,
   Image as ImageIcon,
   Images,
   Inbox,
@@ -55,7 +56,8 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Musique", href: "/admin/music", icon: Music },
       { label: "FY'grances", href: "/admin/fygrances", icon: Droplets },
       { label: "About", href: "/admin/about", icon: ScrollText },
-      { label: "Légal", href: "/admin/legal", icon: Scale },
+      { label: "Confidentialité", href: "/admin/legal", icon: Scale },
+      { label: "Pages légales", href: "/admin/legal-pages", icon: FileText },
     ],
   },
 ]
