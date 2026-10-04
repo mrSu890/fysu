@@ -27,6 +27,7 @@ type Product = {
   totalStock: number
   sizeCount: number
   stockState: "none" | "out" | "low" | "ok"
+  is_hidden: boolean
 }
 
 type Category = { id: number; name: string; slug: string }
@@ -157,6 +158,19 @@ export default function AdminCatalog() {
       notify.error(errorMessage(e, "Erreur lors de la suppression"))
     } finally {
       setBusy(null)
+    }
+  }
+
+  async function toggleHidden(p: Product) {
+    const next = !p.is_hidden
+    // on change tout de suite à l'écran, puis on confirme avec le serveur
+    setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, is_hidden: next } : x)))
+    try {
+      await api.post("/api/admin/products/visibility", { id: p.id, hidden: next })
+      notify.success(next ? "Produit masqué sur le site" : "Produit de nouveau visible")
+    } catch (e) {
+      setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, is_hidden: !next } : x)))
+      notify.error(errorMessage(e, "Impossible de changer la visibilité"))
     }
   }
 
@@ -402,7 +416,7 @@ export default function AdminCatalog() {
                     <img
                       src={p.thumbnail}
                       alt={p.name}
-                      className="h-16 w-12 rounded-lg bg-[#f0ece5] object-cover"
+                      className={`h-16 w-12 rounded-lg bg-[#f0ece5] object-cover ${p.is_hidden ? "opacity-40" : ""}`}
                     />
                   ) : (
                     <div className="h-16 w-12 rounded-lg bg-[#f0ece5]" />
@@ -416,6 +430,11 @@ export default function AdminCatalog() {
                     className="block truncate text-sm font-medium"
                   >
                     {p.name}
+                    {p.is_hidden && (
+                      <span className="ml-2 rounded-full bg-[#171717]/[0.08] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#6b665d]">
+                        Masqué
+                      </span>
+                    )}
                   </Link>
                   <p className="mt-0.5 truncate text-xs text-[#9a948a]">
                     {getProductType(p.product_type).label}
@@ -436,6 +455,23 @@ export default function AdminCatalog() {
                 <p className="w-20 text-right text-sm font-medium">{p.price.toFixed(2)} €</p>
 
                 <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!p.is_hidden}
+                    aria-label={p.is_hidden ? "Afficher ce produit sur le site" : "Masquer ce produit du site"}
+                    title={p.is_hidden ? "Masqué : touche pour afficher" : "Visible : touche pour masquer"}
+                    onClick={() => toggleHidden(p)}
+                    className={`relative mr-1 h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+                      p.is_hidden ? "bg-[#d4cfc6]" : "bg-[#171717]"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                        p.is_hidden ? "left-0.5" : "left-[22px]"
+                      }`}
+                    />
+                  </button>
                   <Link
                     href={`/admin/catalog/${p.id}`}
                     title="Modifier"
@@ -470,8 +506,8 @@ export default function AdminCatalog() {
       {!loading && filtered.length > 0 && (
         <p className="mt-3 text-center text-xs text-[#9a948a]">
           {filtered.length} produit(s) affiché(s)
-          {hasFilters ? ` sur ${products.length}` : ""} · Dupliquer et supprimer sont dans la fiche
-          produit sur téléphone.
+          {hasFilters ? ` sur ${products.length}` : ""} · L'interrupteur à droite affiche ou masque le produit sur le site.
+          Dupliquer et supprimer sont dans la fiche produit sur téléphone.
         </p>
       )}
     </>
