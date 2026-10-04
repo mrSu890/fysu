@@ -369,4 +369,42 @@ body:not(:has(.admin-root)) h2.font-medium,
 body:not(:has(.admin-root)) h3.font-medium {
   font-weight: 700;
 }
+
+/* ---- TROIS NIVEAUX DE TEXTE ----
+   1 · très grands titres (h1) : très gras, opacité pleine
+   2 · titres (h2, h3, h4)     : moins gras, un peu moins opaques
+   3 · tout le reste           : très fin, faible opacité (comme « For him / For her »)
+   Réglages : changer les 3 valeurs ci-dessous. */
+:root {
+  --ink-2: 0.85;
+  --ink-3: 0.58;
+}
+
+/* Niveau 1 */
+body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) h1 {
+  font-weight: 800;
+}
+
+/* Niveau 2 */
+body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) :is(h2, h3, h4) {
+  font-weight: 600;
+  opacity: var(--ink-2);
+}
+
+/* Niveau 3 : paragraphes et petits textes */
+body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) :is(p, li, label, small, dd, dt, figcaption):not([class*="text-red"], [class*="text-green"], [class*="text-foreground/"], .font-bold, .font-semibold) {
+  font-weight: 300;
+  opacity: var(--ink-3);
+}
+
+/* Les textes déjà posés en « text-foreground/xx » prennent la même opacité */
+body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) [class*="text-foreground/"]:not(h1, h2, h3, h4, .font-bold, .font-semibold) {
+  color: color-mix(in srgb, var(--foreground) calc(var(--ink-3) * 100%), transparent);
+  font-weight: 300;
+}
+
+/* Petites tailles (textes, boutons, liens) : fines */
+body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) :is(.text-xs, .text-sm, .text-base):not(h1, h2, h3, h4, .font-bold, .font-semibold) {
+  font-weight: 300;
+}
 /* FIN ÉPURE */
