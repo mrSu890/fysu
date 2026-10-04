@@ -3,7 +3,7 @@
 import { useCart } from "@/context/CartContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -14,8 +14,35 @@ const CARD = "color-mix(in srgb, var(--foreground) 5%, var(--background))";
 export default function CheckoutClient() {
   const t = useTranslations("Checkout");
   const { cart } = useCart();
-  const { user, loading: userLoading } = useCurrentUser();
+  const { user: hookUser, loading: hookLoading } = useCurrentUser();
   const router = useRouter();
+
+  // Si le navigateur n'a pas lu la session à temps, on demande au serveur qui est connecté
+  // (sinon le bouton affichait « Se connecter pour payer » alors que tu es déjà connecté).
+  const [serverUser, setServerUser] = useState<any>(null);
+  const [serverChecked, setServerChecked] = useState(false);
+  useEffect(() => {
+    if (hookLoading || hookUser) return;
+    let cancelled = false;
+    fetch("/api/auth/callback?me=1", { cache: "no-store" })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json().catch(() => null);
+          if (data?.user) setServerUser(data.user);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setServerChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hookLoading, hookUser]);
+
+  const user = hookUser ?? serverUser;
+  const userLoading = hookLoading || (!hookUser && !serverChecked);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
