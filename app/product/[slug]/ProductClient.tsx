@@ -534,7 +534,8 @@ export default function ProductClient() {
                   .pdp-collapse .ant-collapse-item { border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent) !important; }
                   .pdp-collapse .ant-collapse-item:last-child { border-bottom: 0 !important; }
                   .pdp-collapse .ant-collapse-header { padding: 14px 0 !important; font-family: var(--font-dm-mono), ui-monospace, Menlo, monospace !important; font-size: 11px !important; font-weight: 300 !important; letter-spacing: 0.12em; text-transform: uppercase; align-items: center !important; }
-                  .pdp-collapse .ant-collapse-content-box { padding: 0 0 16px 0 !important; font-family: var(--font-dm-mono), ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 300; line-height: 1.8; }
+                  .pdp-collapse .ant-collapse-content-box { padding: 0 0 16px 0 !important; }
+                  .pdp-collapse .ant-collapse-content-box, .pdp-collapse .ant-collapse-content-box * { font-family: var(--font-dm-mono), ui-monospace, Menlo, monospace !important; font-size: 12px !important; font-weight: 300 !important; line-height: 1.8 !important; }
                 `}</style>
                 <Collapse items={items} bordered={false} ghost />
               </div>
