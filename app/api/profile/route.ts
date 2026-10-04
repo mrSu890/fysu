@@ -18,7 +18,7 @@ async function currentUser() {
   return user
 }
 
-const COLUMNS = "username, display_name, bio, avatar_url, accent, created_at"
+const COLUMNS = "username, display_name, bio, avatar_url, accent, created_at, is_public"
 
 /* Profil + avatars proposés + statistiques + badges + codes déjà gagnés */
 export async function GET() {
@@ -41,6 +41,7 @@ export async function GET() {
       bio: profile?.bio ?? null,
       avatar_url: profile?.avatar_url ?? null,
       accent: profile?.accent ?? null,
+      is_public: profile?.is_public ?? true,
       created_at: profile?.created_at ?? user.created_at ?? null,
     },
     avatars: avatarsRes.data ?? [],
@@ -78,6 +79,9 @@ export async function PUT(req: Request) {
   }
   if ("accent" in body) {
     patch.accent = isAccent(body.accent) ? body.accent : null
+  }
+  if ("is_public" in body) {
+    patch.is_public = body.is_public !== false
   }
   if ("avatar_id" in body) {
     if (body.avatar_id === null) {
