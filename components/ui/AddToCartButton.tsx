@@ -56,9 +56,10 @@ export default function AddToCartButton({
           bg-black
           text-white
           py-3
-          text-sm
-          font-medium
-          tracking-wide
+          text-[11px]
+          font-light
+          uppercase
+          tracking-[0.22em]
           transition-colors duration-300
           hover:bg-neutral-800
           disabled:cursor-not-allowed
