@@ -744,7 +744,11 @@ export default function ProductEditor({ id }: { id: string }) {
               </div>
               {form.brand === "thewave" && (
                 <div className="sm:col-span-2">
-                  <WaveColorField value={form.wave_bg} onChange={(v) => setField("wave_bg", v)} />
+                  <WaveColorField
+                    value={form.wave_bg}
+                    onChange={(v) => setField("wave_bg", v)}
+                    imageUrl={colors.flatMap((c) => c.images)[0] ?? null}
+                  />
                 </div>
               )}
               <div className="sm:col-span-2">
