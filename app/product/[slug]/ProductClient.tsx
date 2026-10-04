@@ -12,6 +12,7 @@ import type { CollapseProps } from "antd"
 import AddToCartButton from "@/components/ui/AddToCartButton"
 import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
 import SizeNotify from "@/components/Product/SizeNotify"
+import ShareButton from "@/components/Profile/ShareButton"
 import ProductInfoBlocks from "@/components/Product/ProductInfoBlocks"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { getTypeCopy } from "@/lib/productTypes"
@@ -352,6 +353,8 @@ export default function ProductClient() {
           {product.evocation && (
             <p className="text-sm italic opacity-70">{product.evocation}</p>
           )}
+
+          <ShareButton productId={product.id} slug={slug} />
 
           <p className="text-sm whitespace-pre-line">
             {formatText(product.description)}
