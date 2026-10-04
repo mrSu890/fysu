@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   Clapperboard,
+  FileText,
   Images,
   Inbox,
   Layers,
@@ -64,7 +65,8 @@ const SHORTCUTS = [
   { label: "Collections & pages", href: "/admin/pages", icon: Layers },
   { label: "Stories", href: "/admin/stories", icon: Clapperboard },
   { label: "About", href: "/admin/about", icon: ScrollText },
-  { label: "Légal", href: "/admin/legal", icon: Scale },
+  { label: "Confidentialité", href: "/admin/legal", icon: Scale },
+  { label: "Pages légales", href: "/admin/legal-pages", icon: FileText },
 ]
 
 /* ====================================================================
