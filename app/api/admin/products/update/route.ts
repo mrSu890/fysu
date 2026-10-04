@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cleanSizeGuide } from "@/lib/sizeGuide";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isBrandId } from "@/lib/brands";
 import { isFamilyId } from "@/lib/olfactive";
@@ -44,6 +45,7 @@ type ProductUpdatePayload = {
   care_instructions?: string;
   shipping?: string;
   size_guide_image_url?: string | null;
+  size_guide?: unknown;
   colors?: ColorInput[];
   info_blocks?: ProductInfoBlockInput[];
   suggested_product_ids?: number[];
@@ -74,6 +76,7 @@ export async function POST(req: Request) {
       care_instructions,
       shipping,
       size_guide_image_url,
+      size_guide,
       colors,
       info_blocks,
       suggested_product_ids
@@ -142,6 +145,7 @@ export async function POST(req: Request) {
         care_instructions,
         shipping,
         size_guide_image_url,
+        size_guide: size_guide === undefined ? undefined : cleanSizeGuide(size_guide),
       })
       .eq("id", id);
 
