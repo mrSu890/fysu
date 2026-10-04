@@ -43,6 +43,7 @@ export default function ProfileEditor({
   const [displayName, setDisplayName] = useState(profile.display_name ?? "")
   const [bio, setBio] = useState(profile.bio ?? "")
   const [accent, setAccent] = useState(profile.accent ?? DEFAULT_ACCENT)
+  const [isPublic, setIsPublic] = useState(profile.is_public !== false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url)
   const [avatarId, setAvatarId] = useState<string | null | undefined>(undefined) // undefined = inchangé
   const [uploading, setUploading] = useState(false)
@@ -80,6 +81,7 @@ export default function ProfileEditor({
         display_name: displayName,
         bio,
         accent,
+        is_public: isPublic,
       }
       if (avatarId !== undefined) body.avatar_id = avatarId
       const res = await fetch("/api/profile", {
@@ -233,6 +235,19 @@ export default function ProfileEditor({
             </div>
           </div>
         </div>
+
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-foreground/15 p-4">
+          <input
+            type="checkbox"
+            checked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+            className="mt-1 h-5 w-5 shrink-0"
+          />
+          <span>
+            <span className="block text-sm font-medium">{copy.publicProfile}</span>
+            <span className="block text-xs text-foreground/55">{copy.publicHint}</span>
+          </span>
+        </label>
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 

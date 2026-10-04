@@ -16,6 +16,10 @@ export type PCopy = {
   bio: string
   bioHint: string
   color: string
+  publicProfile: string
+  publicHint: string
+  copyLink: string
+  linkCopied: string
   save: string
   saving: string
   later: string
@@ -57,6 +61,10 @@ const fr: PCopy = {
   bio: "Bio",
   bioHint: "160 caractères maximum",
   color: "Ma couleur",
+  publicProfile: "Profil public",
+  publicHint: "Visible par tous via ton lien. Désactivé : seuls tes amis voient ta garde-robe et tes favoris.",
+  copyLink: "Copier le lien de mon profil",
+  linkCopied: "Lien copié",
   save: "Enregistrer",
   saving: "Enregistrement…",
   later: "Plus tard",
@@ -98,6 +106,10 @@ const en: PCopy = {
   bio: "Bio",
   bioHint: "160 characters max",
   color: "My color",
+  publicProfile: "Public profile",
+  publicHint: "Visible to everyone via your link. Off: only friends see your wardrobe and favorites.",
+  copyLink: "Copy my profile link",
+  linkCopied: "Link copied",
   save: "Save",
   saving: "Saving…",
   later: "Later",

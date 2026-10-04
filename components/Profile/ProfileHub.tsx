@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import { useLocale, useTranslations } from "next-intl"
-import { Pencil } from "lucide-react"
+import { Link2, Pencil } from "lucide-react"
 import PageBar from "@/components/PageBar"
 import { DEFAULT_ACCENT, type ProfileData } from "@/lib/profile"
 import Avatar from "./Avatar"
 import Badges, { type Reward } from "./Badges"
 import Closet from "./Closet"
+import Social from "@/components/Profile/Social"
 import ProfileEditor, { type GalleryAvatar } from "./ProfileEditor"
 import { profileCopy } from "./profileCopy"
 
@@ -43,6 +44,15 @@ export default function ProfileHub({
   const [editing, setEditing] = useState(false)
   const [welcome, setWelcome] = useState(false)
   const [rewards, setRewards] = useState<Reward[]>([])
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  async function copyLink(username: string) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/u/${username}`)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 1800)
+    } catch {}
+  }
 
   const load = useCallback(async () => {
     try {
@@ -147,6 +157,16 @@ export default function ProfileHub({
               ))}
             </div>
           </div>
+          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          {profile?.username && (
+            <button
+              type="button"
+              onClick={() => copyLink(profile.username!)}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/30 px-5 py-3 text-sm"
+            >
+              <Link2 className="h-4 w-4" /> {linkCopied ? copy.linkCopied : copy.copyLink}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setEditing(true)}
@@ -156,6 +176,7 @@ export default function ProfileHub({
           >
             <Pencil className="h-4 w-4" /> {copy.editProfile}
           </button>
+          </div>
         </div>
 
         <div className="flex justify-end pt-3">
@@ -172,6 +193,7 @@ export default function ProfileHub({
 
       {data && (
         <>
+          <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />
           <Closet copy={copy} accent={accent} />
           <Badges
             earned={data.earned}
