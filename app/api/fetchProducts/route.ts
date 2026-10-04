@@ -12,6 +12,7 @@ export async function GET() {
         product_images (*),
         product_sizes (*)
       `)
+      .eq("is_hidden", false)
       .order("createdAt", { ascending: false });
 
     if (error) {
