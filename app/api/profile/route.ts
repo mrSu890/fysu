@@ -89,13 +89,28 @@ export async function PUT(req: Request) {
     }
   }
 
-  const { error } = await supabaseAdmin.from("profiles").upsert(patch, { onConflict: "id" })
+  // première fois : la ligne n'existe pas encore, on la crée avec le nom habituel (colonne "name")
+  const { data: existing } = await supabaseAdmin.from("profiles").select("id").eq("id", user.id).maybeSingle()
+  let error: any = null
+  if (existing) {
+    const { id: _id, ...rest } = patch
+    const r = await supabaseAdmin.from("profiles").update(rest).eq("id", user.id)
+    error = r.error
+  } else {
+    const fallbackName =
+      patch.display_name || (user.user_metadata?.name as string | undefined) || (user.email ?? "").split("@")[0] || "FYSU"
+    const r = await supabaseAdmin.from("profiles").insert({ ...patch, name: fallbackName })
+    error = r.error
+  }
   if (error) {
-    if ((error as any).code === "23505") {
+    if (error.code === "23505") {
       return NextResponse.json({ error: "Ce pseudo est déjà pris" }, { status: 409 })
     }
     console.error("profile update:", error)
-    return NextResponse.json({ error: "Impossible d'enregistrer" }, { status: 500 })
+    return NextResponse.json(
+      { error: `Impossible d'enregistrer (${error.message ?? "erreur inconnue"})` },
+      { status: 500 }
+    )
   }
 
   return NextResponse.json({ ok: true })
@@ -139,8 +154,13 @@ async function uploadAvatar(req: Request) {
   const { data: pub } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(path)
   const url = `${pub.publicUrl}?v=${Date.now()}`
 
-  const { error } = await supabaseAdmin.from("profiles").upsert({ id: user.id, avatar_url: url }, { onConflict: "id" })
-  if (error) return NextResponse.json({ error: "Impossible d'enregistrer" }, { status: 500 })
+  const { data: row } = await supabaseAdmin.from("profiles").select("id").eq("id", user.id).maybeSingle()
+  const r = row
+    ? await supabaseAdmin.from("profiles").update({ avatar_url: url }).eq("id", user.id)
+    : await supabaseAdmin
+        .from("profiles")
+        .insert({ id: user.id, avatar_url: url, name: (user.user_metadata?.name as string | undefined) || (user.email ?? "").split("@")[0] || "FYSU" })
+  if (r.error) return NextResponse.json({ error: `Impossible d'enregistrer (${r.error.message})` }, { status: 500 })
 
   return NextResponse.json({ ok: true, url })
 }
