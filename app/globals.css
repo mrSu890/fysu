@@ -462,4 +462,13 @@ html:not([data-fysu-off]) :is(main, footer, section) .uppercase:not(h1, h2, h3, 
 html.a11y-calm [data-tap], html.a11y-calm [data-tap] * {
   animation: none !important;
 }
+
+/* ---- Petite tête qui parle : les ondes pulsent pendant la lecture ---- */
+@keyframes fysu-wave {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+.fysu-wave { animation: fysu-wave 0.7s ease-in-out infinite; }
+.fysu-wave-2 { animation-delay: 0.12s; }
+.fysu-wave-3 { animation-delay: 0.24s; }
 /* FIN ÉPURE */
