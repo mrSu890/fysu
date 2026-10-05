@@ -97,7 +97,7 @@ export default function ProductInfoBlocks({ blocks }: { blocks: InfoBlock[] }) {
             viewport={{ once: true, margin: "-60px" }}
           >
             <div
-              className={`relative aspect-[4/5] w-full overflow-hidden bg-neutral-300 lg:max-h-[92svh] dark:bg-neutral-800 ${
+              className={`relative aspect-[79/100] w-full overflow-hidden bg-neutral-300 lg:max-h-[92svh] dark:bg-neutral-800 ${
                 flip ? "lg:order-2" : ""
               }`}
             >
