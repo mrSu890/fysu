@@ -301,8 +301,13 @@ function MobileMenu({
       lastY = y;
       if (!moved) return;
       // sur l'accueil, la barre ne se cache pas pendant l'intro du logo
-      const introEnd = Number(document.documentElement.dataset.introEnd) || 0;
-      if (y > Math.max(80, introEnd + 40) && !keepBarRef.current) setHiddenBar(true);
+      const limit = Math.max(80, Number(document.documentElement.dataset.introEnd) || 0);
+      if (y <= limit) {
+        setHiddenBar(false);
+        if (timer) clearTimeout(timer);
+        return;
+      }
+      if (y > limit && !keepBarRef.current) setHiddenBar(true);
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => setHiddenBar(false), 450);
     };
