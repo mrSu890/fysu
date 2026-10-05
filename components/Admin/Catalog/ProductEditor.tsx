@@ -310,6 +310,28 @@ export default function ProductEditor({ id }: { id: string }) {
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
 
+  /* ---------- Copier / coller les blocs d'infos (photo/vidéo + texte) ---------- */
+  const copyBlocks = (list: InfoBlockState[]) =>
+    alert(
+      clipCopy("info-blocks", list)
+        ? `${list.length > 1 ? "Blocs copiés" : "Bloc copié"}. Ouvre un autre produit (onglet Infos) et clique sur « Coller les blocs ».`
+        : "Copie impossible."
+    )
+  const pasteBlocks = () => {
+    const data = clipPaste<InfoBlockState[]>("info-blocks")
+    if (!Array.isArray(data) || data.length === 0) {
+      alert("Rien à coller : copie d'abord un bloc sur un autre produit.")
+      return
+    }
+    const clean: InfoBlockState[] = data.map((b) => ({
+      image_url: typeof b?.image_url === "string" ? b.image_url : null,
+      title: typeof b?.title === "string" ? b.title : "",
+      subtitle: typeof b?.subtitle === "string" ? b.subtitle : "",
+      content: typeof b?.content === "string" ? b.content : "",
+    }))
+    setInfoBlocks((cur) => [...cur, ...clean])
+  }
+
   /* ---------- Copier / coller les textes d'un produit à l'autre ---------- */
   const TEXT_KEYS = ["description", "details", "size_fit", "care_instructions", "shipping"] as const
   const copyTexts = () => {
@@ -1274,13 +1296,18 @@ export default function ProductEditor({ id }: { id: string }) {
               key={i}
               title={`Bloc ${i + 1}`}
               action={
-                <AdminButton
-                  variant="danger"
-                  icon={Trash2}
-                  onClick={() => setInfoBlocks((cur) => cur.filter((_, k) => k !== i))}
-                >
-                  Supprimer
-                </AdminButton>
+                <div className="flex gap-2">
+                  <AdminButton icon={Copy} onClick={() => copyBlocks([b])}>
+                    Copier
+                  </AdminButton>
+                  <AdminButton
+                    variant="danger"
+                    icon={Trash2}
+                    onClick={() => setInfoBlocks((cur) => cur.filter((_, k) => k !== i))}
+                  >
+                    Supprimer
+                  </AdminButton>
+                </div>
               }
             >
               <div className="space-y-4">
@@ -1330,14 +1357,24 @@ export default function ProductEditor({ id }: { id: string }) {
               </div>
             </Panel>
           ))}
-          <AdminButton
-            icon={Plus}
-            onClick={() =>
-              setInfoBlocks((cur) => [...cur, { image_url: null, title: "", subtitle: "", content: "" }])
-            }
-          >
-            Ajouter un bloc
-          </AdminButton>
+          <div className="flex flex-wrap gap-2">
+            <AdminButton
+              icon={Plus}
+              onClick={() =>
+                setInfoBlocks((cur) => [...cur, { image_url: null, title: "", subtitle: "", content: "" }])
+              }
+            >
+              Ajouter un bloc
+            </AdminButton>
+            {infoBlocks.length > 0 && (
+              <AdminButton icon={Copy} onClick={() => copyBlocks(infoBlocks)}>
+                Copier tous les blocs
+              </AdminButton>
+            )}
+            <AdminButton icon={Copy} onClick={pasteBlocks}>
+              Coller les blocs
+            </AdminButton>
+          </div>
         </div>
       )}
 
