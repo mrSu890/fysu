@@ -48,6 +48,7 @@ export async function GET(
           price,
           gender,
           createdAt,
+          is_hidden,
           categories (
             id,
             name,
@@ -86,6 +87,8 @@ export async function GET(
     title: cleanTitle(section.title),
     rank: getRowRank(section),
     section_products: [...(section.section_products ?? [])]
+      // les produits masqués dans l'admin ne s'affichent pas
+      .filter((sp: any) => sp?.product && !sp.product.is_hidden)
       .sort((a: any, b: any) => a.display_order - b.display_order)
       .map((sp: any) => ({
         ...sp,
