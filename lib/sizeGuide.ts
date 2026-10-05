@@ -4,7 +4,24 @@
    montre les lignes de mesure A, B, C, D qui correspondent aux colonnes du tableau.
    ==================================================================== */
 
-export type SizeGuideTemplate = "top" | "bottom" | "none"
+export type SizeGuideTemplate =
+  | "coat"
+  | "jacket"
+  | "blazer"
+  | "shirt"
+  | "tshirt"
+  | "longsleeve"
+  | "pants"
+  | "skirt"
+  | "short"
+  | "tie"
+  | "bag"
+  | "none"
+  // anciens modèles (remplacés automatiquement : « top » -> T-shirt, « bottom » -> Pantalon)
+  | "top"
+  | "bottom"
+
+export type DrawingTemplate = Exclude<SizeGuideTemplate, "none" | "top" | "bottom">
 
 export type SizeGuide = {
   template: SizeGuideTemplate
@@ -13,42 +30,97 @@ export type SizeGuide = {
   note?: string
 }
 
-export const TEMPLATE_COLUMNS: Record<"top" | "bottom", { fr: string[]; en: string[] }> = {
-  top: {
-    fr: ["Poitrine", "Longueur", "Épaules", "Manche"],
-    en: ["Chest", "Length", "Shoulders", "Sleeve"],
+// Types de produits proposés dans l'admin (chaque type a son dessin et ses colonnes A, B, C, D)
+export const TEMPLATE_LIST: { id: DrawingTemplate; label: string }[] = [
+  { id: "coat", label: "Manteau" },
+  { id: "jacket", label: "Veste" },
+  { id: "blazer", label: "Blazer" },
+  { id: "shirt", label: "Chemise" },
+  { id: "tshirt", label: "T-shirt" },
+  { id: "longsleeve", label: "Manches longues" },
+  { id: "pants", label: "Pantalon" },
+  { id: "skirt", label: "Jupe" },
+  { id: "short", label: "Short" },
+  { id: "tie", label: "Cravate" },
+  { id: "bag", label: "Sac" },
+]
+
+const UPPER = {
+  fr: ["Épaules", "Poitrine", "Manche", "Longueur"],
+  en: ["Shoulder width", "Chest width", "Sleeve length", "Body length"],
+}
+const LOWER = {
+  fr: ["Taille", "Hanches", "Entrejambe", "Longueur"],
+  en: ["Waist", "Hips", "Inseam", "Length"],
+}
+
+// Colonnes proposées pour chaque type : A, B, C, D dans l'ordre (elles correspondent aux lettres du dessin)
+export const TEMPLATE_COLUMNS: Record<DrawingTemplate, { fr: string[]; en: string[] }> = {
+  coat: UPPER,
+  jacket: UPPER,
+  blazer: UPPER,
+  shirt: UPPER,
+  tshirt: UPPER,
+  longsleeve: UPPER,
+  pants: LOWER,
+  short: LOWER,
+  skirt: {
+    fr: ["Taille", "Hanches", "Longueur", "Bas (ourlet)"],
+    en: ["Waist", "Hips", "Length", "Hem"],
   },
-  bottom: {
-    fr: ["Taille", "Hanches", "Entrejambe", "Longueur"],
-    en: ["Waist", "Hips", "Inseam", "Length"],
+  tie: {
+    fr: ["Longueur", "Largeur", "Largeur haut"],
+    en: ["Length", "Blade width", "Narrow width"],
+  },
+  bag: {
+    fr: ["Largeur", "Hauteur", "Profondeur", "Anse"],
+    en: ["Width", "Height", "Depth", "Handle drop"],
   },
 }
 
+export const isDrawingTemplate = (t: unknown): t is DrawingTemplate =>
+  typeof t === "string" && Object.prototype.hasOwnProperty.call(TEMPLATE_COLUMNS, t)
+
 export const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"]
 
-export const emptyGuide = (template: SizeGuideTemplate = "none", lang: "fr" | "en" = "fr"): SizeGuide => ({
-  template,
-  columns: template === "none" ? ["", ""] : [...TEMPLATE_COLUMNS[template][lang]],
-  rows: DEFAULT_SIZES.map((size) => ({
-    size,
-    values: Array(template === "none" ? 2 : 4).fill(""),
-  })),
-  note: "",
-})
+export const emptyGuide = (template: SizeGuideTemplate = "none", lang: "fr" | "en" = "fr"): SizeGuide => {
+  const cols = isDrawingTemplate(template) ? [...TEMPLATE_COLUMNS[template][lang]] : ["", ""]
+  return {
+    template,
+    columns: cols,
+    rows: DEFAULT_SIZES.map((size) => ({ size, values: Array(cols.length).fill("") })),
+    note: "",
+  }
+}
 
 // nettoie / valide un guide venant du navigateur (côté serveur) ou de la base
 export function cleanSizeGuide(input: unknown): SizeGuide | null {
   if (!input || typeof input !== "object") return null
   const g = input as any
   const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "")
-  const template: SizeGuideTemplate = g.template === "top" || g.template === "bottom" ? g.template : "none"
-  const columns = (Array.isArray(g.columns) ? g.columns : []).slice(0, 12).map((c: unknown) => str(c, 40))
+  let template: SizeGuideTemplate = isDrawingTemplate(g.template) ? g.template : "none"
+  let columns: string[] = (Array.isArray(g.columns) ? g.columns : []).slice(0, 12).map((c: unknown) => str(c, 40))
   if (!columns.length) return null
+  let order: number[] = columns.map((_, i) => i)
+
+  // anciens modèles : « top » devient T-shirt, « bottom » devient Pantalon
+  if (g.template === "top") {
+    template = "tshirt"
+    const low = columns.map((c) => c.toLowerCase())
+    const oldFr = ["poitrine", "longueur", "épaules", "manche"]
+    const oldEn = ["chest", "length", "shoulders", "sleeve"]
+    const same = (ref: string[]) => low.length === 4 && ref.every((r, i) => low[i] === r)
+    // l'ancien ordre (poitrine, longueur, épaules, manche) est remis dans le nouvel ordre A B C D
+    if (same(oldFr) || same(oldEn)) order = [2, 0, 3, 1]
+  } else if (g.template === "bottom") {
+    template = "pants"
+  }
+  columns = order.map((i) => columns[i])
   const rows = (Array.isArray(g.rows) ? g.rows : [])
     .slice(0, 30)
     .map((r: any) => ({
       size: str(r?.size, 20),
-      values: columns.map((_: string, i: number) => str(Array.isArray(r?.values) ? r.values[i] : "", 20)),
+      values: order.map((i: number) => str(Array.isArray(r?.values) ? r.values[i] : "", 20)),
     }))
     .filter((r: { size: string; values: string[] }) => r.size)
   if (!rows.length) return null
