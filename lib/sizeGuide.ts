@@ -7,6 +7,7 @@
 export type SizeGuideTemplate =
   | "coat"
   | "jacket"
+  | "bomber"
   | "blazer"
   | "shirt"
   | "tshirt"
@@ -34,6 +35,7 @@ export type SizeGuide = {
 export const TEMPLATE_LIST: { id: DrawingTemplate; label: string }[] = [
   { id: "coat", label: "Manteau" },
   { id: "jacket", label: "Veste" },
+  { id: "bomber", label: "Bomber" },
   { id: "blazer", label: "Blazer" },
   { id: "shirt", label: "Chemise" },
   { id: "tshirt", label: "T-shirt" },
@@ -45,28 +47,34 @@ export const TEMPLATE_LIST: { id: DrawingTemplate; label: string }[] = [
   { id: "bag", label: "Sac" },
 ]
 
+// Les lettres A, B, C, D du dessin = l'ordre des colonnes
 const UPPER = {
-  fr: ["Épaules", "Poitrine", "Manche", "Longueur"],
-  en: ["Shoulder width", "Chest width", "Sleeve length", "Body length"],
+  fr: ["Poitrine", "Longueur", "Épaules", "Manche"],
+  en: ["Chest width", "Body length", "Shoulder width", "Sleeve length"],
 }
 const LOWER = {
   fr: ["Taille", "Hanches", "Entrejambe", "Longueur"],
   en: ["Waist", "Hips", "Inseam", "Length"],
+}
+const PANTS = {
+  fr: ["Taille", "Hanches", "Montant", "Longueur"],
+  en: ["Waist", "Hips", "Rise", "Length"],
 }
 
 // Colonnes proposées pour chaque type : A, B, C, D dans l'ordre (elles correspondent aux lettres du dessin)
 export const TEMPLATE_COLUMNS: Record<DrawingTemplate, { fr: string[]; en: string[] }> = {
   coat: UPPER,
   jacket: UPPER,
+  bomber: UPPER,
   blazer: UPPER,
   shirt: UPPER,
   tshirt: UPPER,
   longsleeve: UPPER,
-  pants: LOWER,
+  pants: PANTS,
   short: LOWER,
   skirt: {
-    fr: ["Taille", "Hanches", "Longueur", "Bas (ourlet)"],
-    en: ["Waist", "Hips", "Length", "Hem"],
+    fr: ["Taille", "Longueur"],
+    en: ["Waist", "Length"],
   },
   tie: {
     fr: ["Longueur", "Largeur", "Largeur haut"],
@@ -111,7 +119,8 @@ export function cleanSizeGuide(input: unknown): SizeGuide | null {
     const oldEn = ["chest", "length", "shoulders", "sleeve"]
     const same = (ref: string[]) => low.length === 4 && ref.every((r, i) => low[i] === r)
     // l'ancien ordre (poitrine, longueur, épaules, manche) est remis dans le nouvel ordre A B C D
-    if (same(oldFr) || same(oldEn)) order = [2, 0, 3, 1]
+    // (poitrine, longueur, épaules, manche) est déjà l'ordre A B C D actuel : rien à changer
+    if (same(oldFr) || same(oldEn)) order = [0, 1, 2, 3]
   } else if (g.template === "bottom") {
     template = "pants"
   }
