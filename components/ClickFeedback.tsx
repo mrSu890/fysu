@@ -45,6 +45,13 @@ export default function ClickFeedback() {
       if (!el) return
       if ((el as HTMLButtonElement).disabled || el.getAttribute("aria-disabled") === "true") return
       if (el.closest(".admin-root")) return
+      // interrupteurs (mode sombre, options…) : aucun effet
+      if (el.matches("[aria-pressed], [aria-checked], [role='switch'], [role='tab'], [data-no-tap]") || el.querySelector("input, select, textarea")) return
+      if (el.closest("[data-no-tap], [role='switch'], .theme-switch, .bar-theme")) return
+      // le vert n'est réservé qu'aux liens / boutons faits de texte seul (pas d'icône, d'image ni de bouton rempli)
+      const plain = !el.querySelector("svg, img, video, canvas, picture") && (el.textContent ?? "").trim().length > 0
+      if (plain) el.removeAttribute("data-no-green")
+      else el.setAttribute("data-no-green", "")
 
       const inline = getComputedStyle(el).display === "inline"
       el.removeAttribute("data-tap")

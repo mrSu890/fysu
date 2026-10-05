@@ -70,7 +70,7 @@ const Footer: React.FC = () => {
           <div key={cls} className={`${cls} relative w-full max-w-3xl`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/anthurium-sans-fond.png"
+              src="/images/anthurium-v3.png"
               alt=""
               className="h-auto w-full"
             />
