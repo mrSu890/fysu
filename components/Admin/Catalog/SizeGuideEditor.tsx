@@ -14,8 +14,7 @@ const CELL =
   "h-9 w-full min-w-[64px] rounded-lg border border-[#e0dbd3] bg-white px-2 text-center text-sm text-[#171717] outline-none focus:ring-2 focus:ring-[#171717]/10"
 
 const TEMPLATES: { id: SizeGuideTemplate; label: string; hint: string }[] = [
-  { id: "top", label: "Haut", hint: "T-shirt, chemise, veste… (dessin A B C D)" },
-  { id: "bottom", label: "Bas", hint: "Pantalon, short… (dessin A B C D)" },
+  ...TEMPLATE_LIST.map((t) => ({ id: t.id as SizeGuideTemplate, label: t.label, hint: `${t.label} : dessin de face et de dos avec les lignes A B C D` })),
   { id: "none", label: "Libre", hint: "Tes colonnes, sans dessin" },
 ]
 
@@ -43,7 +42,7 @@ export default function SizeGuideEditor({
     return (
       <div>
         <p className="mb-3 text-sm text-[#7a756d]">
-          Ajoute un tableau de mesures que les clients verront en cm ou en pouces, avec un dessin du vêtement.
+          Choisis le type de produit : le site affiche un dessin du vêtement (de face et de dos) avec les lignes A, B, C, D, et le tableau de mesures en cm ou en pouces.
         </p>
         <div className="flex flex-wrap gap-2">
           {TEMPLATES.map((t) => (
@@ -74,8 +73,8 @@ export default function SizeGuideEditor({
 
   function changeTemplate(t: SizeGuideTemplate) {
     if (t === g.template) return
-    if (!confirm("Changer de modèle remplace les noms des colonnes (les mesures déjà écrites sont gardées). Continuer ?")) return
-    const cols = t === "none" ? g.columns : [...TEMPLATE_COLUMNS[t].fr]
+    if (!confirm("Changer de type remplace les noms des colonnes (les mesures déjà écrites sont gardées). Continuer ?")) return
+    const cols = isDrawingTemplate(t) ? [...TEMPLATE_COLUMNS[t].fr] : g.columns
     onChange({
       ...g,
       template: t,
@@ -140,7 +139,7 @@ export default function SizeGuideEditor({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-[#7a756d]">Modèle de dessin :</span>
+        <span className="text-xs font-medium text-[#7a756d]">Type de produit :</span>
         {TEMPLATES.map((t) => (
           <button
             key={t.id}
@@ -158,7 +157,7 @@ export default function SizeGuideEditor({
 
       {g.template !== "none" && (
         <p className="text-xs text-[#7a756d]">
-          Sur le site, un dessin montre les lignes A, B, C, D : elles correspondent aux 4 premières colonnes, dans l'ordre. Si tu
+          Sur le site, le dessin montre les lignes A, B, C, D : elles correspondent aux colonnes ci-dessous, dans l'ordre. Si tu
           ajoutes une image ci-dessus, elle remplace le dessin.
         </p>
       )}
