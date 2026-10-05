@@ -47,7 +47,7 @@ export default function ProductClient() {
   const [loading, setLoading] = useState(true)
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
   const [packagingOpen, setPackagingOpen] = useState(false)
-  const packagingBlock = (product.product_info_blocks ?? []).find(isPackagingBlock) ?? null
+  const packagingBlock = (product?.product_info_blocks ?? []).find(isPackagingBlock) ?? null
 
   const colorParam: string | null = searchParams?.get("color") ?? null
 
