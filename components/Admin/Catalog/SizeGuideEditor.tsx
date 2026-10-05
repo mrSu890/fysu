@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { Plus, Trash2, Wand2 } from "lucide-react"
-import { parseMeasure, DEFAULT_SIZES, TEMPLATE_COLUMNS, emptyGuide, type SizeGuide, type SizeGuideTemplate } from "@/lib/sizeGuide"
+import { clipCopy, clipPaste } from "@/lib/adminClipboard"
+import { cleanSizeGuide, parseMeasure, DEFAULT_SIZES, TEMPLATE_COLUMNS, emptyGuide, type SizeGuide, type SizeGuideTemplate } from "@/lib/sizeGuide"
 
 /* ====================================================================
    ÉDITEUR DU TABLEAU DES TAILLES (admin)
@@ -28,6 +29,16 @@ export default function SizeGuideEditor({
   // écart (en cm) entre deux tailles, pour chaque colonne : sert au remplissage automatique
   const [steps, setSteps] = useState<string[]>([])
 
+  function pasteGuide() {
+    const g2 = cleanSizeGuide(clipPaste("sizeguide"))
+    if (!g2) {
+      alert("Rien à coller : ouvre d'abord un produit qui a un tableau et clique sur « Copier le tableau ».")
+      return
+    }
+    if (value && !confirm("Remplacer le tableau actuel par le tableau copié ?")) return
+    onChange(g2)
+  }
+
   if (!value) {
     return (
       <div>
@@ -46,6 +57,13 @@ export default function SizeGuideEditor({
               + Tableau « {t.label} »
             </button>
           ))}
+          <button
+            type="button"
+            onClick={pasteGuide}
+            className="cursor-pointer rounded-full bg-[#171717] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Coller un tableau copié
+          </button>
         </div>
       </div>
     )
@@ -254,6 +272,20 @@ export default function SizeGuideEditor({
           className="cursor-pointer rounded-full bg-white px-3.5 py-2 text-xs font-medium text-[#171717] ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
         >
           Tout recalculer
+        </button>
+        <button
+          type="button"
+          onClick={() => alert(clipCopy("sizeguide", g) ? "Tableau copié. Ouvre un autre produit et clique sur « Coller un tableau copié »." : "Copie impossible.")}
+          className="cursor-pointer rounded-full bg-white px-3.5 py-2 text-xs font-medium text-[#171717] ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+        >
+          Copier le tableau
+        </button>
+        <button
+          type="button"
+          onClick={pasteGuide}
+          className="cursor-pointer rounded-full bg-white px-3.5 py-2 text-xs font-medium text-[#171717] ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+        >
+          Coller un tableau copié
         </button>
         <div className="flex-1" />
         <button
