@@ -3,9 +3,12 @@ import type { DrawingTemplate } from "@/lib/sizeGuide"
 
 /* ====================================================================
    DESSINS DU GUIDE DES TAILLES
-   Un dessin au trait fin par type de produit (manteau, veste, blazer, chemise, t-shirt,
-   manches longues, pantalon, jupe, short, cravate, sac), vu de face et de dos,
-   avec les lignes de mesure A, B, C, D qui correspondent aux lignes du tableau.
+   Manteau, veste, bomber, blazer, chemise, manches longues, pantalon, jupe, cravate : les dessins
+   sont les images fournies (public/images/sg-*.png, fond transparent) affichées en masque,
+   donc le trait suit la couleur du texte (mode clair / sombre). Les flèches A, B, C, D sont
+   dessinées par-dessus, positionnées en % de l'image.
+   T-shirt, short, sac : dessins codés en attendant les images.
+   Quand il n'y a qu'une seule vue, toutes les flèches sont sur cette vue.
    Les traits utilisent la couleur du texte : ils suivent le mode clair / sombre tout seuls.
    ==================================================================== */
 
@@ -227,14 +230,14 @@ function UpperFront({ k }: { k: keyof typeof UPPERS }) {
       )}
 
       {/* B : largeur de poitrine ; C : longueur de manche */}
-      <Dim a={[CX - u.ch + 1, u.armY + 15]} b={[CX + u.ch - 1, u.armY + 15]} letter="B" />
+      <Dim a={[CX - u.ch + 1, u.armY + 15]} b={[CX + u.ch - 1, u.armY + 15]} letter="A" />
       {(() => {
         const off = 13
         const nx = -Math.cos(g.t)
         const ny = -Math.sin(g.t)
         const a: Pt = [g.S[0] + nx * off, g.S[1] + ny * off]
         const b: Pt = [g.cuffO[0] + nx * off, g.cuffO[1] + ny * off]
-        return <Dim a={a} b={b} letter="C" />
+        return <Dim a={a} b={b} letter="D" />
       })()}
     </g>
   )
@@ -278,11 +281,11 @@ function UpperBack({ k }: { k: keyof typeof UPPERS }) {
       {/* A : largeur d'épaules ; D : longueur */}
       <Guide a={[CX - u.sh, u.shY - 2]} b={[CX - u.sh, dimY]} />
       <Guide a={[CX + u.sh, u.shY - 2]} b={[CX + u.sh, dimY]} />
-      <Dim a={[CX - u.sh, dimY]} b={[CX + u.sh, dimY]} letter="A" />
+      <Dim a={[CX - u.sh, dimY]} b={[CX + u.sh, dimY]} letter="C" />
 
       <Guide a={[CX + u.nh, u.ny]} b={[right + 12, u.ny]} />
       <Guide a={[CX + u.hh, u.hemY]} b={[right + 12, u.hemY]} />
-      <Dim a={[right + 12, u.ny + 1]} b={[right + 12, u.hemY - 1]} letter="D" />
+      <Dim a={[right + 12, u.ny + 1]} b={[right + 12, u.hemY - 1]} letter="B" />
     </g>
   )
 }
@@ -292,7 +295,6 @@ function UpperBack({ k }: { k: keyof typeof UPPERS }) {
    ==================================================================== */
 
 type Lower = { wh: number; wy: number; hip: number; hipY: number; crY: number; hemY: number; hemO: number; hemI: number }
-const PANTS: Lower = { wh: 38, wy: 20, hip: 44, hipY: 62, crY: 98, hemY: 232, hemO: 36, hemI: 8 }
 const SHORT: Lower = { wh: 38, wy: 20, hip: 45, hipY: 62, crY: 96, hemY: 150, hemO: 47, hemI: 5 }
 
 function lowerOutline(l: Lower) {
@@ -348,89 +350,6 @@ function LowerDraw({ l, view }: { l: Lower; view: "front" | "back" }) {
   )
 }
 
-function SkirtDraw({ view }: { view: "front" | "back" }) {
-  const wy = 24
-  const wh = 34
-  const hip = 42
-  const hipY = 70
-  const hem = 64
-  const hemY = 196
-  return (
-    <g>
-      <Outline d={`M${CX - wh} ${wy} L${CX - hip} ${hipY} L${CX - hem} ${hemY} Q${CX} ${hemY + 5} ${CX + hem} ${hemY} L${CX + hip} ${hipY} L${CX + wh} ${wy} Z`} />
-      <Detail d={`M${CX - wh} ${wy + 10} L${CX + wh} ${wy + 10}`} />
-      {view === "front" ? (
-        <>
-          <Detail d={`M${CX} ${wy + 10} L${CX} ${hemY + 3}`} />
-          <Dot p={[CX + 3, wy + 5]} r={1.1} />
-          <Detail d={`M${CX - 20} ${wy + 10} L${CX - 24} ${wy + 54}`} />
-          <Detail d={`M${CX + 20} ${wy + 10} L${CX + 24} ${wy + 54}`} />
-        </>
-      ) : (
-        <>
-          <Detail d={`M${CX} ${wy + 10} L${CX} ${hemY + 3}`} />
-          <Detail d={`M${CX - 22} ${wy + 10} L${CX - 4} ${wy + 40} M${CX + 22} ${wy + 10} L${CX + 4} ${wy + 40}`} />
-        </>
-      )}
-      {view === "front" ? (
-        <>
-          <Guide a={[CX - wh, wy]} b={[CX - wh, wy - 12]} />
-          <Guide a={[CX + wh, wy]} b={[CX + wh, wy - 12]} />
-          <Dim a={[CX - wh, wy - 12]} b={[CX + wh, wy - 12]} letter="A" />
-          <Dim a={[CX - hip + 1, hipY + 12]} b={[CX + hip - 1, hipY + 12]} letter="B" />
-          <Dim a={[CX - hem, hemY + 14]} b={[CX + hem, hemY + 14]} letter="D" />
-          <Guide a={[CX - hem, hemY + 3]} b={[CX - hem, hemY + 14]} />
-          <Guide a={[CX + hem, hemY + 3]} b={[CX + hem, hemY + 14]} />
-        </>
-      ) : (
-        <>
-          <Guide a={[CX - wh, wy]} b={[CX - hem - 18, wy]} />
-          <Guide a={[CX - hem, hemY]} b={[CX - hem - 18, hemY]} />
-          <Dim a={[CX - hem - 18, wy + 1]} b={[CX - hem - 18, hemY - 1]} letter="C" />
-        </>
-      )}
-    </g>
-  )
-}
-
-/* ====================================================================
-   CRAVATE
-   ==================================================================== */
-
-function TieDraw({ view }: { view: "front" | "back" }) {
-  const top = 14
-  const body = `M${CX - 11} ${top} L${CX + 11} ${top} L${CX + 8} ${top + 30} L${CX + 6} ${top + 44} L${CX + 21} ${top + 178} L${CX} ${top + 206} L${CX - 21} ${top + 178} L${CX - 6} ${top + 44} L${CX - 8} ${top + 30} Z`
-  return (
-    <g>
-      <Outline d={body} />
-      <Detail d={`M${CX - 11} ${top + 5} L${CX + 11} ${top + 5}`} />
-      <Detail d={`M${CX - 8} ${top + 30} Q${CX} ${top + 36} ${CX + 8} ${top + 30}`} />
-      {view === "back" && (
-        <>
-          <Detail d={`M${CX - 9} ${top + 130} L${CX + 9} ${top + 130} L${CX + 9} ${top + 140} L${CX - 9} ${top + 140} Z`} />
-          <Detail d={`M${CX - 14} ${top + 158} L${CX + 14} ${top + 158}`} />
-        </>
-      )}
-      {view === "front" ? (
-        <>
-          {/* A : longueur ; C : largeur en haut */}
-          <Guide a={[CX - 11, top]} b={[CX - 40, top]} />
-          <Guide a={[CX, top + 220]} b={[CX - 40, top + 220]} />
-          <Dim a={[CX - 40, top + 1]} b={[CX - 40, top + 219]} letter="A" />
-          <Guide a={[CX + 6, top + 44]} b={[CX + 38, top + 44]} />
-          <Guide a={[CX - 6, top + 44]} b={[CX - 6, top + 54]} />
-          <Dim a={[CX - 6, top + 54]} b={[CX + 6, top + 54]} letter="C" side="end" />
-        </>
-      ) : (
-        <>
-          {/* B : largeur de la partie large */}
-          <Dim a={[CX - 20, top + 168]} b={[CX + 20, top + 168]} letter="B" />
-        </>
-      )}
-    </g>
-  )
-}
-
 /* ====================================================================
    SAC
    ==================================================================== */
@@ -478,7 +397,168 @@ function BagDraw({ view }: { view: "front" | "side" }) {
 }
 
 /* ====================================================================
-   ASSEMBLAGE : deux vues côte à côte
+   DESSINS À PARTIR D'IMAGES
+   Coordonnées en % de l'image (x vers la droite, y vers le bas).
+   ==================================================================== */
+
+type Pct = [number, number]
+type Arrow = { a: Pct; b: Pct; l: string; t?: number; out?: boolean }
+type ImgSpec = { src: string; w: number; h: number; max: number; arrows: Arrow[]; guides?: [Pct, Pct][] }
+
+const FS = 18 // taille des lettres (px à la largeur maximale)
+
+function ImgDim({ a, b, l, t = 0.5, out }: { a: [number, number]; b: [number, number]; l: string; t?: number; out?: boolean }) {
+  const dx = b[0] - a[0]
+  const dy = b[1] - a[1]
+  const len = Math.hypot(dx, dy) || 1
+  const ux = dx / len
+  const uy = dy / len
+  const L = 9
+  const ang = 0.45
+  const head = (p: [number, number], s: 1 | -1) => {
+    const bx = -ux * s
+    const by = -uy * s
+    const c = Math.cos(ang)
+    const sn = Math.sin(ang)
+    const r1 = [p[0] + L * (bx * c - by * sn), p[1] + L * (bx * sn + by * c)]
+    const r2 = [p[0] + L * (bx * c + by * sn), p[1] + L * (-bx * sn + by * c)]
+    return `M${r1[0]} ${r1[1]} L${p[0]} ${p[1]} L${r2[0]} ${r2[1]}`
+  }
+  const lx = out ? b[0] + ux * 17 : a[0] + dx * t
+  const ly = out ? b[1] + uy * 17 : a[1] + dy * t
+  const st = { fill: "none", stroke: "currentColor", strokeOpacity: 0.55, strokeWidth: 1.4, strokeLinecap: "round", strokeLinejoin: "round" } as const
+  return (
+    <g>
+      <path d={`M${a[0]} ${a[1]} L${b[0]} ${b[1]}`} {...st} />
+      <path d={head(a, -1)} {...st} />
+      <path d={head(b, 1)} {...st} />
+      {!out && <rect x={lx - 12} y={ly - 12} width={24} height={24} fill="var(--sg-bg, #fff)" />}
+      <text x={lx} y={ly} textAnchor="middle" dominantBaseline="central" fontSize={FS} fill="currentColor" fillOpacity={0.9}>
+        {l}
+      </text>
+    </g>
+  )
+}
+
+function ImageDrawing({ spec }: { spec: ImgSpec }) {
+  const W = spec.max
+  const H = (W * spec.h) / spec.w
+  const px = (p: Pct): [number, number] => [(p[0] / 100) * W, (p[1] / 100) * H]
+  const url = `url(${spec.src})`
+  return (
+    <div className="relative mx-auto w-full" style={{ maxWidth: spec.max, aspectRatio: `${spec.w} / ${spec.h}` }}>
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "currentColor",
+          WebkitMaskImage: url,
+          maskImage: url,
+          WebkitMaskSize: "100% 100%",
+          maskSize: "100% 100%",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          opacity: 0.85,
+        }}
+      />
+      <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full overflow-visible" fontFamily="inherit" aria-hidden="true">
+        {(spec.guides ?? []).map((g, i) => {
+          const a = px(g[0])
+          const b = px(g[1])
+          return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="currentColor" strokeOpacity={0.35} strokeWidth={1} strokeDasharray="3 3" />
+        })}
+        {spec.arrows.map((r) => (
+          <ImgDim key={r.l} a={px(r.a)} b={px(r.b)} l={r.l} t={r.t} out={r.out} />
+        ))}
+      </svg>
+    </div>
+  )
+}
+
+// A = poitrine, B = longueur, C = épaules, D = manche (même ordre que le tableau)
+const SPECS: Partial<Record<DrawingTemplate, ImgSpec>> = {
+  blazer: {
+    src: "/images/sg-blazer.png", w: 1000, h: 661, max: 620,
+    arrows: [
+      { l: "C", a: [9.2, 14.5], b: [43.2, 14.5], t: 0.2 },
+      { l: "D", a: [9.5, 17], b: [4.5, 85] },
+      { l: "A", a: [11.5, 30], b: [41.5, 30], t: 0.2 },
+      { l: "B", a: [68, 9], b: [68, 95.5] },
+    ],
+  },
+  coat: {
+    src: "/images/sg-coat.png", w: 1000, h: 971, max: 620,
+    arrows: [
+      { l: "C", a: [7.6, 10.3], b: [40.6, 10.3], t: 0.5 },
+      { l: "D", a: [7.8, 13], b: [4.3, 52] },
+      { l: "A", a: [10, 27], b: [38.3, 27], t: 0.5 },
+      { l: "B", a: [66.5, 6], b: [66.5, 96.5] },
+    ],
+  },
+  jacket: {
+    src: "/images/sg-jacket.png", w: 1000, h: 511, max: 620,
+    arrows: [
+      { l: "C", a: [13.6, 18.5], b: [40, 18.5], t: 0.2 },
+      { l: "D", a: [13, 22], b: [4.5, 88] },
+      { l: "A", a: [14.8, 36.5], b: [38.8, 36.5], t: 0.2 },
+      { l: "B", a: [68, 12], b: [68, 75.5] },
+    ],
+  },
+  bomber: {
+    src: "/images/sg-bomber.png", w: 1000, h: 556, max: 620,
+    arrows: [
+      { l: "C", a: [12.3, 17.5], b: [40, 17.5], t: 0.2 },
+      { l: "D", a: [11.5, 20], b: [5, 93] },
+      { l: "A", a: [11.5, 33], b: [38.7, 33], t: 0.2 },
+      { l: "B", a: [72, 17], b: [72, 92.5] },
+    ],
+  },
+  shirt: {
+    src: "/images/sg-shirt.png", w: 1000, h: 749, max: 620,
+    arrows: [
+      { l: "C", a: [10.3, 12.8], b: [43.7, 12.8], t: 0.18 },
+      { l: "D", a: [10.5, 16], b: [4.5, 80] },
+      { l: "A", a: [10.4, 23], b: [44.6, 23], t: 0.2 },
+      { l: "B", a: [66, 8], b: [66, 97] },
+    ],
+  },
+  longsleeve: {
+    src: "/images/sg-sweat.png", w: 700, h: 801, max: 330,
+    arrows: [
+      { l: "C", a: [20.6, 12], b: [79.4, 12], t: 0.72 },
+      { l: "A", a: [22.8, 33], b: [77.2, 33], t: 0.5 },
+      { l: "B", a: [28, 5], b: [28, 90.5] },
+      { l: "D", a: [82, 14], b: [88, 96] },
+    ],
+  },
+  pants: {
+    src: "/images/sg-pants.png", w: 1000, h: 1013, max: 560,
+    arrows: [
+      { l: "A", a: [9.8, 4.6], b: [39, 4.6], t: 0.14 },
+      { l: "C", a: [19, 2.5], b: [19, 30.5] },
+      { l: "B", a: [57.8, 24], b: [92.3, 24], t: 0.2 },
+      { l: "D", a: [67, 4.5], b: [67, 97.6] },
+    ],
+    guides: [[[19, 31], [24, 31]]],
+  },
+  skirt: {
+    src: "/images/sg-skirt.png", w: 1000, h: 1078, max: 560,
+    arrows: [
+      { l: "A", a: [11.8, 4.6], b: [39.2, 4.6], t: 0.5 },
+      { l: "B", a: [66, 3], b: [66, 97] },
+    ],
+  },
+  tie: {
+    src: "/images/sg-tie.png", w: 700, h: 1359, max: 250,
+    arrows: [
+      { l: "C", a: [8.2, 5], b: [27.8, 5], out: true },
+      { l: "B", a: [3.8, 90], b: [33.4, 90], t: 0.5 },
+      { l: "A", a: [74, 2.5], b: [74, 97.5], t: 0.3 },
+    ],
+  },
+}
+
+/* ====================================================================
+   ASSEMBLAGE
    ==================================================================== */
 
 function Frame({ children, h = 262 }: { children: ReactNode; h?: number }) {
@@ -490,41 +570,26 @@ function Frame({ children, h = 262 }: { children: ReactNode; h?: number }) {
 }
 
 export function SizeGuideDrawing({ template }: { template: DrawingTemplate }) {
+  const spec = SPECS[template]
+  if (spec) return <ImageDrawing spec={spec} />
+
   let left: ReactNode
   let right: ReactNode
   switch (template) {
-    case "coat":
-    case "jacket":
-    case "blazer":
-    case "shirt":
-    case "tshirt":
-    case "longsleeve":
-      left = <UpperFront k={template} />
-      right = <UpperBack k={template} />
-      break
-    case "pants":
-      left = <LowerDraw l={PANTS} view="front" />
-      right = <LowerDraw l={PANTS} view="back" />
-      break
     case "short":
       left = <LowerDraw l={SHORT} view="front" />
       right = <LowerDraw l={SHORT} view="back" />
-      break
-    case "skirt":
-      left = <SkirtDraw view="front" />
-      right = <SkirtDraw view="back" />
-      break
-    case "tie":
-      left = <TieDraw view="front" />
-      right = <TieDraw view="back" />
       break
     case "bag":
       left = <BagDraw view="front" />
       right = <BagDraw view="side" />
       break
+    default:
+      left = <UpperFront k="tshirt" />
+      right = <UpperBack k="tshirt" />
   }
   return (
-    <div className="mx-auto grid w-full max-w-[640px] grid-cols-2 items-end gap-2 sm:gap-6">
+    <div className="mx-auto grid w-full max-w-[560px] grid-cols-2 items-end gap-2 sm:gap-6">
       <Frame>{left}</Frame>
       <Frame>{right}</Frame>
     </div>
