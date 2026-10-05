@@ -10,6 +10,7 @@ import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
 import { BRAND_LIST, getBrandId } from "@/lib/brands"
+import { clipCopy, clipPaste } from "@/lib/adminClipboard"
 import SizeGuideEditor from "@/components/Admin/Catalog/SizeGuideEditor"
 import { cleanSizeGuide, type SizeGuide } from "@/lib/sizeGuide"
 import WaveColorField from "@/components/Admin/WaveColorField"
@@ -306,6 +307,29 @@ export default function ProductEditor({ id }: { id: string }) {
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
+
+  /* ---------- Copier / coller les textes d'un produit à l'autre ---------- */
+  const TEXT_KEYS = ["description", "details", "size_fit", "care_instructions", "shipping"] as const
+  const copyTexts = () => {
+    const data: Record<string, string> = {}
+    TEXT_KEYS.forEach((k) => (data[k] = form[k]))
+    alert(clipCopy("texts", data) ? "Textes copiés. Ouvre un autre produit et clique sur « Coller les textes »." : "Copie impossible.")
+  }
+  const pasteTexts = () => {
+    const data = clipPaste<Record<string, string>>("texts")
+    if (!data || typeof data !== "object") {
+      alert("Rien à coller : ouvre d'abord un produit et clique sur « Copier les textes ».")
+      return
+    }
+    if (!confirm("Remplacer les textes de cette fiche (description, détails, taille, entretien, livraison) par ceux copiés ?")) return
+    setForm((f) => {
+      const next = { ...f }
+      TEXT_KEYS.forEach((k) => {
+        if (typeof data[k] === "string") next[k] = data[k]
+      })
+      return next
+    })
+  }
 
   /* ---------- Envois d'images ---------- */
 
@@ -892,6 +916,22 @@ export default function ProductEditor({ id }: { id: string }) {
 
           <Panel title="Textes de la fiche">
             <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={copyTexts}
+                  className="cursor-pointer rounded-full bg-white px-3.5 py-2 text-xs font-medium text-[#171717] ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                >
+                  Copier les textes
+                </button>
+                <button
+                  type="button"
+                  onClick={pasteTexts}
+                  className="cursor-pointer rounded-full bg-white px-3.5 py-2 text-xs font-medium text-[#171717] ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                >
+                  Coller les textes
+                </button>
+              </div>
               <Field label="Description">
                 <textarea
                   rows={3}
