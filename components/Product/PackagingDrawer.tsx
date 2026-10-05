@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useLocale } from "next-intl"
-import { BlockMedia, type InfoBlock } from "@/components/Product/ProductInfoBlocks"
+import { isVideoUrl, type InfoBlock } from "@/components/Product/ProductInfoBlocks"
 
 /* ====================================================================
    PACKAGING
@@ -92,11 +92,13 @@ export default function PackagingDrawer({
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {block.image_url && (
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-black/10">
-                  <BlockMedia url={block.image_url} alt={block.title ?? copy.title} />
-                </div>
-              )}
+              {block.image_url &&
+                (isVideoUrl(block.image_url) ? (
+                  <video src={block.image_url} className="h-auto w-full rounded-2xl" muted autoPlay loop playsInline />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={block.image_url} alt={block.title ?? copy.title} className="h-auto w-full rounded-2xl" />
+                ))}
 
               {block.subtitle && (
                 <p className="font-info mt-7 text-[11px] font-light uppercase tracking-[0.25em] opacity-60">
