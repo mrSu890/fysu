@@ -300,7 +300,9 @@ function MobileMenu({
       const moved = Math.abs(y - lastY) > 2;
       lastY = y;
       if (!moved) return;
-      if (y > 80 && !keepBarRef.current) setHiddenBar(true);
+      // sur l'accueil, la barre ne se cache pas pendant l'intro du logo
+      const introEnd = Number(document.documentElement.dataset.introEnd) || 0;
+      if (y > Math.max(80, introEnd + 40) && !keepBarRef.current) setHiddenBar(true);
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => setHiddenBar(false), 450);
     };
@@ -341,6 +343,7 @@ function MobileMenu({
                   ? "relative"
                   : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
               }
+              data-nav-logo={!isKiban && !isWave ? "" : undefined}
             >
               {isKiban ? (
                 kibanLogoSrc ? (
