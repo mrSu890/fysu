@@ -99,8 +99,10 @@ function FileButton({
   multiple,
   onFiles,
   disabled,
+  accept = "image/*",
 }: {
   children: React.ReactNode
+  accept?: string
   multiple?: boolean
   onFiles: (files: File[]) => void
   disabled?: boolean
@@ -115,7 +117,7 @@ function FileButton({
       {children}
       <input
         type="file"
-        accept="image/*"
+        accept={accept}
         multiple={multiple}
         className="hidden"
         onChange={(e) => {
@@ -397,7 +399,7 @@ export default function ProductEditor({ id }: { id: string }) {
     setUploading(true)
     try {
       const fd = new FormData()
-      fd.append("file", await resizeImage(files[0]))
+      fd.append("file", files[0].type.startsWith("video") ? files[0] : await resizeImage(files[0]))
       fd.append("productId", String(productId))
       const data = await api.upload<{ url: string }>("/api/admin/products/upload-info-block", fd)
       setInfoBlocks((cur) => cur.map((b, i) => (i === index ? { ...b, image_url: data.url } : b)))
@@ -1263,7 +1265,7 @@ export default function ProductEditor({ id }: { id: string }) {
           {infoBlocks.length === 0 && (
             <Panel>
               <p className="text-sm text-[#7a756d]">
-                Les blocs d&apos;information sont des sections image + texte affichées sous le produit.
+                Les blocs d&apos;information sont des sections photo ou vidéo + texte affichées sous le produit. Le bloc dont le titre contient « packaging » n&apos;est pas affiché dans la page : il s&apos;ouvre avec le bouton « See packaging » (chaque phrase du texte devient une petite ligne).
               </p>
             </Panel>
           )}
@@ -1307,13 +1309,16 @@ export default function ProductEditor({ id }: { id: string }) {
                   />
                 </Field>
                 <div className="flex flex-wrap items-end gap-4">
-                  {b.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={b.image_url} alt="" className="w-40 rounded-xl border border-[#e9e5df]" />
-                  )}
+                  {b.image_url &&
+                    (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(b.image_url) ? (
+                      <video src={b.image_url} muted playsInline className="w-40 rounded-xl border border-[#e9e5df]" />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={b.image_url} alt="" className="w-40 rounded-xl border border-[#e9e5df]" />
+                    ))}
                   <div className="flex gap-2">
-                    <FileButton disabled={uploading} onFiles={(files) => uploadInfoBlockImage(i, files)}>
-                      {b.image_url ? "Remplacer l'image" : "Ajouter une image"}
+                    <FileButton accept="image/*,video/*" disabled={uploading} onFiles={(files) => uploadInfoBlockImage(i, files)}>
+                      {b.image_url ? "Remplacer le média" : "Ajouter une photo ou une vidéo"}
                     </FileButton>
                     {b.image_url && (
                       <AdminButton variant="danger" icon={Trash2} onClick={() => updateBlock(i, { image_url: null })}>
