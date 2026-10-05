@@ -75,7 +75,7 @@ export function BlockMedia({ url, alt, className = "" }: { url: string; alt: str
   return isVideoUrl(url) ? (
     <video src={url} className={`absolute inset-0 h-full w-full object-cover ${className}`} muted autoPlay loop playsInline />
   ) : (
-    <Image src={url} alt={alt} fill className={`object-cover ${className}`} sizes="(min-width: 1024px) 50vw, 100vw" />
+    <Image src={url} alt={alt} fill className={`object-cover object-top ${className}`} sizes="(min-width: 1024px) 50vw, 100vw" />
   )
 }
 
@@ -97,7 +97,7 @@ export default function ProductInfoBlocks({ blocks }: { blocks: InfoBlock[] }) {
             viewport={{ once: true, margin: "-60px" }}
           >
             <div
-              className={`relative aspect-[11/12] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 ${
+              className={`relative aspect-[4/5] w-full overflow-hidden bg-neutral-300 lg:max-h-[92svh] dark:bg-neutral-800 ${
                 flip ? "lg:order-2" : ""
               }`}
             >

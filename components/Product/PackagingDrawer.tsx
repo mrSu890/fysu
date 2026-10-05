@@ -93,7 +93,7 @@ export default function PackagingDrawer({
 
             <div className="flex-1 overflow-y-auto">
               {block.image_url && (
-                <div className="relative aspect-[11/12] w-full overflow-hidden rounded-2xl bg-black/10">
+                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-black/10">
                   <BlockMedia url={block.image_url} alt={block.title ?? copy.title} />
                 </div>
               )}
