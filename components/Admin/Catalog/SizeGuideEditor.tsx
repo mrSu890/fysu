@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Plus, Trash2, Wand2 } from "lucide-react"
 import { clipCopy, clipPaste } from "@/lib/adminClipboard"
-import { cleanSizeGuide, parseMeasure, DEFAULT_SIZES, TEMPLATE_COLUMNS, emptyGuide, type SizeGuide, type SizeGuideTemplate } from "@/lib/sizeGuide"
+import { TEMPLATE_LIST, isDrawingTemplate, cleanSizeGuide, parseMeasure, DEFAULT_SIZES, TEMPLATE_COLUMNS, emptyGuide, type SizeGuide, type SizeGuideTemplate } from "@/lib/sizeGuide"
 
 /* ====================================================================
    ÉDITEUR DU TABLEAU DES TAILLES (admin)
