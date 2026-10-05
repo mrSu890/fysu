@@ -7,7 +7,7 @@ import type { ProductType, ProductSize, ProductColor } from "@/types/product"
 import Product from "@/components/Product"
 import WishlistHeart from "@/components/WishlistHeart"
 import Image from "next/image"
-import { Collapse, Modal } from "antd"
+import { Collapse } from "antd"
 import type { CollapseProps } from "antd"
 import AddToCartButton from "@/components/ui/AddToCartButton"
 import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
@@ -20,7 +20,6 @@ import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
 import { waveColors } from "@/lib/waveColor"
 import WaveLoader from "@/components/WaveLoader"
 import SizeGuideView from "@/components/SizeGuideView"
-import { cleanSizeGuide } from "@/lib/sizeGuide"
 import AutoContrast from "@/components/AutoContrast"
 import { getColorCopy } from "@/lib/colorCopy"
 import { getFamilyCopy, isFamilyId } from "@/lib/olfactive"
@@ -571,25 +570,14 @@ export default function ProductClient() {
         </section>
       )}
     </div>
-    <Modal
+    <SizeGuideView
       open={sizeGuideOpen}
-      footer={null}
-      onCancel={() => setSizeGuideOpen(false)}
-      centered
-      width={560}
-    >
-
-      {product.size_guide_image_url || cleanSizeGuide(product.size_guide) ? (
-        <SizeGuideView
-          guide={cleanSizeGuide(product.size_guide)}
-          imageUrl={product.size_guide_image_url}
-          lang={locale === "fr" ? "fr" : "en"}
-        />
-      ) : (
-        <p>{t("noSizeGuide")}</p>
-      )}
-
-    </Modal>
+      onClose={() => setSizeGuideOpen(false)}
+      guide={product.size_guide}
+      imageUrl={product.size_guide_image_url}
+      lang={locale === "fr" ? "fr" : "en"}
+      light={brandId !== "fysu"}
+    />
     </>
   )
 }
