@@ -13,7 +13,8 @@ import AddToCartButton from "@/components/ui/AddToCartButton"
 import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
 import SizeNotify from "@/components/Product/SizeNotify"
 import ShareButton from "@/components/Profile/ShareButton"
-import ProductInfoBlocks from "@/components/Product/ProductInfoBlocks"
+import ProductInfoBlocks, { isPackagingBlock } from "@/components/Product/ProductInfoBlocks"
+import PackagingDrawer, { packagingLabel } from "@/components/Product/PackagingDrawer"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { getTypeCopy } from "@/lib/productTypes"
 import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
@@ -45,6 +46,8 @@ export default function ProductClient() {
   const [selectedSizeLabel, setSelectedSizeLabel] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
+  const [packagingOpen, setPackagingOpen] = useState(false)
+  const packagingBlock = (product.product_info_blocks ?? []).find(isPackagingBlock) ?? null
 
   const colorParam: string | null = searchParams?.get("color") ?? null
 
@@ -460,14 +463,27 @@ export default function ProductClient() {
                 })}
               </div>
 
-              {copy.sizeGuide && (
-                <button
-                  type="button"
-                  onClick={() => setSizeGuideOpen(true)}
-                  className="font-info mt-3 cursor-pointer text-xs font-light text-foreground/60 underline underline-offset-4 hover:text-foreground"
-                >
-                  {t("sizeGuide")}
-                </button>
+              {(copy.sizeGuide || packagingBlock) && (
+                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                  {copy.sizeGuide && (
+                    <button
+                      type="button"
+                      onClick={() => setSizeGuideOpen(true)}
+                      className="font-info cursor-pointer text-xs font-light text-foreground/60 underline underline-offset-4 hover:text-foreground"
+                    >
+                      {t("sizeGuide")}
+                    </button>
+                  )}
+                  {packagingBlock && (
+                    <button
+                      type="button"
+                      onClick={() => setPackagingOpen(true)}
+                      className="font-info cursor-pointer text-xs font-light text-foreground/60 underline underline-offset-4 hover:text-foreground"
+                    >
+                      {packagingLabel(locale)}
+                    </button>
+                  )}
+                </div>
               )}
 
               {canBuy && !colorSoldOut && sizesForColor.some((s) => s.stock <= 0) && (
@@ -570,6 +586,7 @@ export default function ProductClient() {
         </section>
       )}
     </div>
+    <PackagingDrawer open={packagingOpen} onClose={() => setPackagingOpen(false)} block={packagingBlock} />
     <SizeGuideView
       open={sizeGuideOpen}
       onClose={() => setSizeGuideOpen(false)}
