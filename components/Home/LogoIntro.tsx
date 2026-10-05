@@ -43,7 +43,10 @@ export default function LogoIntro({ children }: { children: ReactNode }) {
 
     const measure = () => {
       D = Math.max(1, spacer.offsetHeight)
-      root.dataset.introEnd = String(Math.round(D))
+      // la barre de navigation reste en place tant que la grande image de l'accueil est visible :
+      // intro + hauteur de l'image (elle est complètement défilée après ça)
+      const img = document.querySelector("[data-hero-image]") as HTMLElement | null
+      root.dataset.introEnd = String(Math.round(D + (img ? img.offsetHeight : 0)))
       const box = document.querySelector("[data-nav-logo]") as HTMLElement | null
       if (box) {
         const r = box.getBoundingClientRect()
@@ -129,7 +132,7 @@ export default function LogoIntro({ children }: { children: ReactNode }) {
       <div
         ref={logoRef}
         aria-hidden="true"
-        className="pointer-events-none fixed z-[60] transition-opacity duration-300"
+        className="pointer-events-none fixed z-[40] transition-opacity duration-300"
         style={{
           left: `${SIDE_MARGIN * 100}vw`,
           top: TOP_MARGIN,
