@@ -131,7 +131,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       }}
     >
       {/* IMAGE : moitié haute (téléphone, iPad) ou moitié gauche (ordinateur) */}
-      <div data-hero-image className="sticky top-0 z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:static lg:h-full">
+      <div data-hero-image className="relative z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:h-full">
         {slides.map((item, index) => (
           <div
             key={item.media_path + index}
