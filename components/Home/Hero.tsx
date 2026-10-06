@@ -163,7 +163,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
         </IntroReveal>
 
         <div className="mt-5 -mb-4 sm:mt-7">
-          <IntroReveal delay={0.75} pad={16}>
+          <IntroReveal delay={0.75} mask={false}>
             <ThemeToggle />
           </IntroReveal>
         </div>
