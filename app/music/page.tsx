@@ -6,6 +6,7 @@ import { ArrowRight, Music } from "lucide-react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { useMusicCopy } from "@/lib/musicCopy"
+import SectionTitle from "@/components/SectionTitle"
 
 /* ====================================================================
    TOUS LES ALBUMS
@@ -75,7 +76,9 @@ export default function MusicIndexPage() {
     <>
       <Navbar />
       <main data-no-reveal className="mx-auto min-h-[70svh] w-11/12 max-w-3xl pb-44 pt-28 sm:pt-36">
-        <h1 className="mb-10 text-3xl font-semibold tracking-tight">{copy.musicTitle}</h1>
+        <div className="mb-10">
+          <SectionTitle as="h1" className="text-3xl font-semibold tracking-tight sm:text-5xl">{copy.musicTitle}</SectionTitle>
+        </div>
 
         {loading && <p className="text-sm opacity-70">{copy.loading}…</p>}
         {!loading && albums.length === 0 && <p className="text-sm opacity-70">{copy.notFound}</p>}
