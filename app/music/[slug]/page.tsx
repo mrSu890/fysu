@@ -142,7 +142,7 @@ export default function MusicAlbumPage() {
 
       <Navbar />
 
-      <main className="mx-auto min-h-[70svh] w-11/12 max-w-3xl pb-44 pt-28 sm:pt-36">
+      <main data-no-reveal className="mx-auto min-h-[70svh] w-11/12 max-w-3xl pb-44 pt-28 sm:pt-36">
         {loading && <p className="text-center text-sm opacity-70">{copy.loading}…</p>}
         {!loading && (missing || !album) && (
           <p className="text-center text-sm opacity-70">{copy.notFound}</p>
