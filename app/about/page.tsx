@@ -3,6 +3,9 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ThemeToggle from "@/components/ThemeToggle"
 import { getTranslations } from "next-intl/server"
+import { PAGES, pageMeta } from "@/lib/seo"
+
+export const metadata = pageMeta(PAGES.about)
 
 export default async function AboutPage() {
   const t = await getTranslations("Pages")
