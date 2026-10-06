@@ -9,7 +9,7 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { useBrandPage } from "@/lib/useBrandPage";
-import { ChevronDown, UserRound, ShoppingBag, Search } from "lucide-react";
+import { ChevronDown, ArrowUpRight, UserRound, ShoppingBag, Search } from "lucide-react";
 import Image from "next/image";
 import CartDrawer from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
@@ -19,6 +19,16 @@ import CroppedLogo from "./CroppedLogo";
 import { useMusicCopy } from "@/lib/musicCopy";
 import { gamesCopyFor } from "@/lib/games";
 import SearchOverlay, { searchLabel } from "./SearchOverlay";
+
+// Un lien du menu ; « image » = l'aperçu qui s'ouvre quand la souris passe dessus
+type MenuLink = { label: string; href: string; image?: string | null };
+
+// Images de secours (si la page n'a pas de photo dans l'admin)
+const FALLBACK_PREVIEW: Record<string, string> = {
+  "/kiban-collector": "/images/kiban-collector.jpg",
+  "/thewave": "/images/the-wave-hero.jpg",
+  "/fygrances": "/images/Fygrances-hero.JPG",
+};
 
 const logoWhite = "/images/fysu-light.png";
 const logoBlack = "/images/fysu-dark.png";
@@ -81,11 +91,11 @@ function MobileMenu({
   collectionOpen: boolean;
   setCollectionOpen: (v: boolean) => void;
   handleMobileLinkClick: () => void;
-  links: { label: string; href: string }[];
-  collections: { label: string; href: string }[];
+  links: MenuLink[];
+  collections: MenuLink[];
   projectsOpen: boolean;
   setProjectsOpen: (v: boolean) => void;
-  projects: { label: string; href: string }[];
+  projects: MenuLink[];
 }) {
   const t = useTranslations("Navigation");
   const { cart, isCartOpen, setIsCartOpen } = useCart();
@@ -188,6 +198,17 @@ function MobileMenu({
       cancelled = true;
     };
   }, [isKiban, isDark]);
+
+  // aperçu au survol (souris uniquement : sur écran tactile, pas de survol)
+  const [preview, setPreview] = useState<{ label: string; image: string } | null>(null);
+  const hoverLink = (e: React.PointerEvent, link: MenuLink) => {
+    if (e.pointerType !== "mouse") return;
+    const image = link.image || FALLBACK_PREVIEW[link.href];
+    setPreview(image ? { label: link.label, image } : null);
+  };
+  useEffect(() => {
+    if (!open) setPreview(null);
+  }, [open]);
 
   const panel: "menu" | "cart" | null = isCartOpen
     ? "cart"
@@ -485,13 +506,14 @@ function MobileMenu({
                   transition: { delay: 0.18, duration: 0.35 },
                 }}
                 exit={{ opacity: 0, transition: { duration: 0.15 } }}
-                className="max-h-[calc(100dvh-7rem)] overflow-y-auto"
+                className="relative max-h-[calc(100dvh-7rem)] overflow-y-auto"
+                onPointerLeave={() => setPreview(null)}
               >
                 <p className="text-5xl font-bold tracking-tighter px-6 pb-4">
                   {t("menu")}
                 </p>
 
-                <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6">
+                <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6 md:pr-[44%]">
                   {links.map((link) => {
                     const isProjects = link.href === "#projects";
                     const isAccordion = link.href === "#" || isProjects;
@@ -505,6 +527,7 @@ function MobileMenu({
                       <React.Fragment key={link.href}>
                         <li>
                           <button
+                            onPointerEnter={(e) => hoverLink(e, link)}
                             onClick={toggle}
                             className="flex items-center justify-between w-full py-2 border-b border-white/20"
                             type="button"
@@ -531,6 +554,7 @@ function MobileMenu({
                                 <li key={col.label}>
                                   <Link
                                     href={col.href}
+                                    onPointerEnter={(e) => hoverLink(e, col)}
                                     onClick={handleMobileLinkClick}
                                     className="block py-1 border-b border-white/10"
                                   >
@@ -546,6 +570,7 @@ function MobileMenu({
                       <li key={link.href}>
                         <Link
                           href={link.href}
+                          onPointerEnter={(e) => hoverLink(e, link)}
                           onClick={handleMobileLinkClick}
                           className="block py-2 border-b border-white/20"
                         >
@@ -558,6 +583,7 @@ function MobileMenu({
                   <li>
                     <Link
                       href="/about"
+                      onPointerEnter={() => setPreview(null)}
                       onClick={handleMobileLinkClick}
                       className="block py-2 border-b border-white/20"
                     >
@@ -580,6 +606,40 @@ function MobileMenu({
                     </Link>
                   </li>
                 </ul>
+
+                {/* aperçu : s'ouvre au survol, se referme quand la souris s'éloigne (grand écran seulement) */}
+                <AnimatePresence>
+                  {preview && (
+                    <motion.div
+                      key="menu-preview"
+                      initial={{ opacity: 0, scale: 0.96, y: 6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.15 } }}
+                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                      className="pointer-events-none absolute right-6 top-0 hidden w-[38%] md:block"
+                    >
+                      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-black/5">
+                        <AnimatePresence mode="popLayout" initial={false}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <motion.img
+                            key={preview.image}
+                            src={preview.image}
+                            alt=""
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        </AnimatePresence>
+                        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
+                          <span className="text-sm font-bold uppercase tracking-wider">{preview.label}</span>
+                          <ArrowUpRight size={18} strokeWidth={1.5} />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
@@ -604,10 +664,8 @@ export default function Navbar() {
     { label: gamesCopy.title, href: "/games" },
   ];
 
-  const [links, setLinks] = useState<{ label: string; href: string }[]>([]);
-  const [collections, setCollections] = useState<
-    { label: string; href: string }[]
-  >([]);
+  const [links, setLinks] = useState<MenuLink[]>([]);
+  const [collections, setCollections] = useState<MenuLink[]>([]);
 
   useEffect(() => {
     const loadPages = async () => {
@@ -617,12 +675,13 @@ export default function Navbar() {
       const pageLinks = data.map((p: any) => ({
         label: p.title.toUpperCase(),
         href: `/${p.slug}`,
+        image: p.hero_image ?? null,
       }));
 
       // "Kiban Collector" et "TheWave" sont placés juste au-dessus de Fy'grances
       const kibanLink = { label: "KIBAN COLLECTOR", href: "/kiban-collector" };
       const waveLink = { label: "THEWAVE", href: "/thewave" };
-      const fyIndex = pageLinks.findIndex((l: { label: string; href: string }) =>
+      const fyIndex = pageLinks.findIndex((l: MenuLink) =>
         /fy.?grances/i.test(l.href + l.label)
       );
       if (fyIndex === -1) pageLinks.push(kibanLink, waveLink);
@@ -643,6 +702,7 @@ export default function Navbar() {
         data.map((c: any) => ({
           label: c.title,
           href: `/collections/${c.slug}`,
+          image: c.hero_image ?? null,
         }))
       );
     };
