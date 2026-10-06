@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowLeft, ArrowRight } from "lucide-react";
 import { useSiteCopy } from "@/lib/siteCopy";
 
 /* ====================================================================
@@ -13,6 +12,7 @@ import { useSiteCopy } from "@/lib/siteCopy";
    ==================================================================== */
 
 const COPIES = 5; // la liste est répétée pour pouvoir tourner sans fin
+const GAP_LEFT = 14; // petit espace à gauche de l'écran (en pixels)
 
 type Slide = { key: string; label: string; href: string; image: string; kind: string };
 
@@ -74,7 +74,7 @@ const NewSelectionIntro = () => {
       const first = el.querySelector<HTMLElement>(`[data-slide="${n * 2}"]`);
       if (!first) return;
       el.style.scrollSnapType = "none";
-      el.scrollLeft = first.offsetLeft - (el.clientWidth - first.offsetWidth) / 2;
+      el.scrollLeft = first.offsetLeft - GAP_LEFT;
       requestAnimationFrame(() => (el.style.scrollSnapType = ""));
     };
     place();
@@ -109,21 +109,13 @@ const NewSelectionIntro = () => {
     };
   }, [setWidth]);
 
-  const go = (dir: 1 | -1) => {
-    const el = scroller.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-slide]");
-    if (!card) return;
-    el.scrollBy({ left: dir * (card.offsetWidth + 14), behavior: "smooth" });
-  };
-
   const items = Array.from({ length: COPIES * n }, (_, i) => ({ s: slides[i % n], i }));
 
   return (
-    <section data-no-reveal className="relative mb-20 mt-10 w-full sm:mb-28 sm:mt-16" aria-label="FYSU">
+    <section data-no-reveal className="relative mb-20 mt-20 w-full sm:mb-28 sm:mt-28" aria-label="FYSU">
       <div
         ref={scroller}
-        className="flex snap-x snap-mandatory gap-[14px] overflow-x-auto overscroll-x-contain px-[14vw] pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-[calc(50vw-210px)]"
+        className="flex snap-x snap-mandatory scroll-pl-[14px] gap-[14px] overflow-x-auto overscroll-x-contain px-[14px] pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map(({ s, i }) => (
           <Link
@@ -132,47 +124,39 @@ const NewSelectionIntro = () => {
             href={s.href}
             aria-hidden={i < n * 2 || i >= n * 3 ? true : undefined}
             tabIndex={i < n * 2 || i >= n * 3 ? -1 : undefined}
-            className="group w-[72vw] max-w-[420px] shrink-0 snap-center"
+            className="group w-[80vw] max-w-[460px] shrink-0 snap-start"
           >
-            <p className="mb-3 flex items-baseline justify-between font-info text-[10px] uppercase tracking-[0.3em] text-foreground/60 sm:text-xs">
-              <span className="font-bold text-foreground">{s.label}</span>
-              <span>{s.kind}</span>
+            <p
+              className="mb-3 text-[13px] uppercase tracking-[0.02em] text-foreground sm:text-sm"
+              style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 200 }}
+            >
+              {s.label}
             </p>
             <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={s.image}
-                alt=""
-                draggable={false}
-                className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-              />
-              <span className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-black">
-                <ArrowUpRight size={16} strokeWidth={1.5} />
-              </span>
+              {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(s.image) ? (
+                <video
+                  src={s.image}
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={s.image}
+                  alt=""
+                  draggable={false}
+                  className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                />
+              )}
             </div>
           </Link>
         ))}
       </div>
 
-      {/* flèches (ordinateur) */}
-      <div className="mt-6 hidden justify-center gap-3 sm:flex">
-        <button
-          type="button"
-          onClick={() => go(-1)}
-          aria-label="Previous"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/30 text-foreground transition-opacity hover:opacity-60"
-        >
-          <ArrowLeft size={16} strokeWidth={1.5} />
-        </button>
-        <button
-          type="button"
-          onClick={() => go(1)}
-          aria-label="Next"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/30 text-foreground transition-opacity hover:opacity-60"
-        >
-          <ArrowRight size={16} strokeWidth={1.5} />
-        </button>
-      </div>
     </section>
   );
 };
