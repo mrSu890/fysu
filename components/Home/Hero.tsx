@@ -5,6 +5,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import ThemeToggle from "@/components/ThemeToggle";
+import IntroReveal from "@/components/IntroReveal";
 
 type HeroMedia = {
   media_path: string;
@@ -148,25 +149,36 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
       <div className="relative z-10 flex min-h-[50svh] flex-col items-center justify-center bg-background px-8 py-16 text-center max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
-        <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
-          {PRONUNCIATION}
-        </p>
+        {/* après l'intro, chaque élément monte du « sol » l'un après l'autre */}
+        <IntroReveal delay={0.45}>
+          <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
+            {PRONUNCIATION}
+          </p>
+        </IntroReveal>
 
-        <p className="mt-8 max-w-[22rem] text-[13px] font-light leading-[1.9] text-foreground/80 sm:mt-10 sm:max-w-md sm:text-sm">
-          {intro}
-        </p>
+        <IntroReveal className="mt-8 sm:mt-10" delay={0.6}>
+          <p className="max-w-[22rem] text-[13px] font-light leading-[1.9] text-foreground/80 sm:max-w-md sm:text-sm">
+            {intro}
+          </p>
+        </IntroReveal>
 
         <div className="mt-5 -mb-4 sm:mt-7">
-          <ThemeToggle />
+          <IntroReveal delay={0.75} pad={16}>
+            <ThemeToggle />
+          </IntroReveal>
         </div>
 
-        <div className="absolute inset-x-0 bottom-6 flex justify-center gap-8 text-[10px] font-light uppercase tracking-[0.3em] text-foreground/45 sm:bottom-8">
-          <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
-            For him
-          </Link>
-          <Link href={RIGHT_LINK} className="transition-opacity hover:opacity-60">
-            For her
-          </Link>
+        <div className="absolute inset-x-0 bottom-6 flex justify-center sm:bottom-8">
+          <IntroReveal delay={0.9}>
+            <div className="flex gap-8 text-[10px] font-light uppercase tracking-[0.3em] text-foreground/45">
+              <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
+                For him
+              </Link>
+              <Link href={RIGHT_LINK} className="transition-opacity hover:opacity-60">
+                For her
+              </Link>
+            </div>
+          </IntroReveal>
         </div>
       </div>
     </section>

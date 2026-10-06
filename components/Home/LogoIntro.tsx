@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import { usePageVisible } from "@/lib/usePageVisible"
 
 /* ====================================================================
    INTRO DE LA PAGE D'ACCUEIL
@@ -27,13 +28,16 @@ const clamp = (v: number) => Math.min(1, Math.max(0, v))
 
 export default function LogoIntro({ children }: { children: ReactNode }) {
   const logoRef = useRef<HTMLDivElement>(null)
+  const colorRef = useRef<HTMLDivElement>(null)
+  const shown = usePageVisible(150) // le logo descend d'en haut quand la page est visible
   const spacerRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(true) // true = barre de navigation cachée
 
   useLayoutEffect(() => {
     const el = logoRef.current
+    const colorEl = colorRef.current
     const spacer = spacerRef.current
-    if (!el || !spacer) return
+    if (!el || !colorEl || !spacer) return
     const root = document.documentElement
 
     let D = 1
@@ -83,7 +87,7 @@ export default function LogoIntro({ children }: { children: ReactNode }) {
       el.style.top = `${yy}px`
       el.style.width = `${w}px`
       el.style.height = `${w * ASPECT}px`
-      el.style.backgroundColor = `rgb(${col[0]},${col[1]},${col[2]})`
+      colorEl.style.backgroundColor = `rgb(${col[0]},${col[1]},${col[2]})`
       el.style.visibility = "visible"
       el.style.opacity = p >= 1 ? "0" : "1"
 
@@ -128,25 +132,35 @@ export default function LogoIntro({ children }: { children: ReactNode }) {
       {/* tant que le logo n'est pas arrivé, la barre de navigation reste cachée (elle apparaît en fondu ensuite) */}
       {active && <style>{`.navbar-root{opacity:0 !important;pointer-events:none !important}`}</style>}
 
-      {/* le grand logo : une forme découpée dans l'image du logo, remplie d'une couleur qui change */}
+      {/* le grand logo : une forme découpée dans l'image du logo, remplie d'une couleur qui change.
+          Le cadre découpe ; la forme à l'intérieur descend d'en haut à l'arrivée. */}
       <div
         ref={logoRef}
         aria-hidden="true"
-        className="pointer-events-none fixed z-[40] transition-opacity duration-300"
+        className="pointer-events-none fixed z-[40] overflow-hidden transition-opacity duration-300"
         style={{
           left: `${SIDE_MARGIN * 100}vw`,
           top: TOP_MARGIN,
           width: `${(1 - SIDE_MARGIN * 2) * 100}vw`,
           aspectRatio: `${1 / ASPECT}`,
-          backgroundColor: PINK,
-          WebkitMaskImage: `url(${LOGO_MASK})`,
-          maskImage: `url(${LOGO_MASK})`,
-          WebkitMaskSize: "100% 100%",
-          maskSize: "100% 100%",
-          WebkitMaskRepeat: "no-repeat",
-          maskRepeat: "no-repeat",
         }}
-      />
+      >
+        <div
+          ref={colorRef}
+          className="absolute inset-0"
+          style={{
+            backgroundColor: PINK,
+            WebkitMaskImage: `url(${LOGO_MASK})`,
+            maskImage: `url(${LOGO_MASK})`,
+            WebkitMaskSize: "100% 100%",
+            maskSize: "100% 100%",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            transform: shown ? "translateY(0)" : "translateY(-115%)",
+            transition: shown ? "transform 1.1s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+          }}
+        />
+      </div>
 
       {/* ordinateur : tout le contenu reste collé en haut pendant l'intro, puis défile normalement.
           téléphone / iPad : la photo reste fixe et la partie texte reste en place pendant l'intro (voir Hero), puis glisse par-dessus */}
