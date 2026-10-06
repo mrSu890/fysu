@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useRef } from "react"
 import { motion, useInView, useReducedMotion } from "framer-motion"
+import { usePageVisible } from "@/lib/usePageVisible"
 
 /* ====================================================================
    GROS TITRE AVEC TRAIT FIN
@@ -11,41 +12,6 @@ import { motion, useInView, useReducedMotion } from "framer-motion"
    ==================================================================== */
 
 const EASE = [0.22, 1, 0.36, 1] as const
-
-// vrai quand la page est vraiment visible : écran de chargement terminé
-// et rideau de pixels / d'eau en train de se lever (sinon l'animation se joue cachée)
-function usePageVisible() {
-  const [ok, setOk] = useState(false)
-  useEffect(() => {
-    let timer = 0
-    let done = false
-    const finish = () => {
-      if (done) return
-      done = true
-      window.clearTimeout(timer)
-      setOk(true)
-    }
-    const check = () => {
-      const w = window as any
-      if (!w.__loaderVisualDone || w.__pxCovering) return
-      window.clearTimeout(timer)
-      timer = window.setTimeout(finish, 220)
-    }
-    check()
-    window.addEventListener("loader-visual-done", check)
-    window.addEventListener("pixel-reveal", check)
-    const poll = window.setInterval(check, 250)
-    const safety = window.setTimeout(finish, 5000) // ne jamais rester caché
-    return () => {
-      window.clearTimeout(timer)
-      window.clearTimeout(safety)
-      window.clearInterval(poll)
-      window.removeEventListener("loader-visual-done", check)
-      window.removeEventListener("pixel-reveal", check)
-    }
-  }, [])
-  return ok
-}
 
 type Tag = "h1" | "h2" | "h3"
 

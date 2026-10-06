@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import PixelGrid from "@/components/PixelGrid"
+import HomeIntro, { type IntroMedia } from "@/components/HomeIntro"
 
 const DURATION = 2800 // durée de la ligne et du pourcentage (ms)
 const LOGO_DURATION = 700 // durée d'apparition du logo (ms) : rapide
@@ -29,12 +30,26 @@ const finishLoader = () => {
   else window.addEventListener("region-done", releasePopups, { once: true })
 }
 
+// l'image du hero (déjà dans la page) : sert à l'intro de l'accueil
+function findHeroMedia(): IntroMedia | null {
+  const el = document.querySelector("[data-hero-image] img, [data-hero-image] video") as
+    | HTMLImageElement
+    | HTMLVideoElement
+    | null
+  if (!el) return null
+  const src = (el as HTMLImageElement).currentSrc || (el as HTMLImageElement).src
+  return src ? { src, video: el instanceof HTMLVideoElement } : null
+}
+
 export default function SiteLoader() {
   const [progress, setProgress] = useState(0)
   const [logoReveal, setLogoReveal] = useState(0)
   const [dissolving, setDissolving] = useState(false)
   const [visible, setVisible] = useState(true)
   const [ready, setReady] = useState(false)
+  // « intro » = l'image du hero grandit (accueil, première arrivée) ; « classic » = logo + pourcentage
+  const [mode, setMode] = useState<"classic" | "intro">("classic")
+  const [media, setMedia] = useState<IntroMedia | null>(null)
 
   // Au démarrage : a-t-on déjà montré le chargement pendant cette visite ?
   useEffect(() => {
@@ -44,9 +59,27 @@ export default function SiteLoader() {
       if (!seen) sessionStorage.setItem(SESSION_KEY, "1")
     } catch {}
 
+    const html = document.documentElement
+    const calm =
+      html.classList.contains("a11y-calm") ||
+      html.classList.contains("a11y-focus") ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const isHome = window.location.pathname === "/"
+
     if (seen) {
       setVisible(false)
       finishLoader()
+    } else if (isHome && calm) {
+      // « moins d'animations » : pas d'intro, le site s'affiche directement
+      setVisible(false)
+      finishLoader()
+    } else if (isHome) {
+      const m = findHeroMedia()
+      if (m) {
+        setMedia(m)
+        setMode("intro")
+      }
+      setReady(true)
     } else {
       setReady(true)
     }
@@ -89,7 +122,7 @@ export default function SiteLoader() {
 
   // Fait monter le pourcentage de 0 à 100 et dévoile le logo
   useEffect(() => {
-    if (!ready) return
+    if (!ready || mode === "intro") return
 
     let raf = 0
     let loaded = document.readyState === "complete"
@@ -146,7 +179,7 @@ export default function SiteLoader() {
       cancelAnimationFrame(raf)
       window.removeEventListener("load", onLoad)
     }
-  }, [ready])
+  }, [ready, mode])
 
   if (!visible) return null
 
@@ -156,7 +189,18 @@ export default function SiteLoader() {
       className="fixed inset-0 z-[10000] flex select-none touch-none flex-col items-center justify-center text-foreground"
       style={{ backgroundColor: dissolving ? "transparent" : "var(--background)" }}
     >
-      {ready && !dissolving && (
+      {/* ACCUEIL, première arrivée : l'image du hero apparaît au centre puis grandit jusqu'à sa place */}
+      {ready && mode === "intro" && media && (
+        <HomeIntro
+          media={media}
+          onDone={() => {
+            setVisible(false)
+            finishLoader()
+          }}
+        />
+      )}
+
+      {ready && mode === "classic" && !dissolving && (
         <>
           {/* Logo qui se dévoile rapidement de haut en bas */}
           <div
