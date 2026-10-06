@@ -99,7 +99,7 @@ export default function Tips() {
         missing = 0
         const r = el.getBoundingClientRect()
         setBox((b) =>
-          b && Math.abs(b.left - r.left) < 0.5 && Math.abs(b.top - r.top) < 0.5 && Math.abs(b.width - r.width) < 0.5
+          b && Math.abs(b.left - r.left) < 2 && Math.abs(b.top - r.top) < 2 && Math.abs(b.width - r.width) < 2 && Math.abs(b.height - r.height) < 2
             ? b
             : { left: r.left, top: r.top, width: r.width, height: r.height }
         )
@@ -128,7 +128,12 @@ export default function Tips() {
   const vh = typeof window !== "undefined" ? window.innerHeight : 800
   const cardW = Math.min(vw - 32, 320)
   const cx = box.left + box.width / 2
-  const below = box.top + box.height / 2 < vh / 2
+  // la bulle va là où il y a de la place ; si l'élément est très grand (le vinyle), elle se pose dessus
+  const spaceBelow = vh - (box.top + box.height) - PAD
+  const spaceAbove = box.top - PAD
+  const NEED = 210
+  const inside = spaceBelow < NEED && spaceAbove < NEED
+  const below = spaceBelow >= NEED && (spaceBelow >= spaceAbove || spaceAbove < NEED)
   const left = Math.min(Math.max(16, cx - cardW / 2), vw - cardW - 16)
   const arrowX = Math.min(Math.max(cx - left, 24), cardW - 24)
   const gap = 18
@@ -169,9 +174,14 @@ export default function Tips() {
         style={{
           left,
           width: cardW,
-          ...(below ? { top: box.top + box.height + PAD + gap } : { bottom: vh - box.top + PAD + gap }),
+          ...(inside
+            ? { top: Math.max(16, box.top + box.height / 2 - 80) }
+            : below
+              ? { top: box.top + box.height + PAD + gap }
+              : { bottom: vh - box.top + PAD + gap }),
         }}
       >
+        {!inside && (
         <svg
           aria-hidden="true"
           width="22"
@@ -182,7 +192,7 @@ export default function Tips() {
           strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="absolute animate-bounce"
+          className="absolute"
           style={{
             left: arrowX - 11,
             ...(below ? { top: -gap - 4, transform: "none" } : { bottom: -gap - 4, transform: "rotate(180deg)" }),
@@ -190,6 +200,7 @@ export default function Tips() {
         >
           <path d="M12 20V5M6 11l6-6 6 6" />
         </svg>
+        )}
 
         <div
           className="rounded-3xl p-5"

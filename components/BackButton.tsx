@@ -16,7 +16,8 @@ import { useLocale } from "next-intl"
 const LABEL: Record<string, string> = { fr: "Retour", en: "Back" }
 
 const isHome = (p: string) => p === "/" || /^\/[a-z]{2}(-[A-Za-z]{2})?\/?$/.test(p)
-const HIDDEN = [/^\/admin/, /^\/password/, /^\/success/, /^\/auth/]
+// les pages musique et jeux ont déjà leurs propres boutons de retour
+const HIDDEN = [/^\/admin/, /^\/password/, /^\/success/, /^\/auth/, /^\/music/, /^\/games/]
 
 export default function BackButton() {
   const pathname = usePathname() ?? "/"

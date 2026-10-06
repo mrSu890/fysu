@@ -168,10 +168,10 @@ export default function MusicVinyl({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* disque */}
-        <div className="relative" style={{ width: size, height: size }}>
+        {/* (le repère des astuces est sur ce cadre fixe : le disque, lui, tourne) */}
+        <div className="relative" data-tip="vinyl-disc" style={{ width: size, height: size }}>
           <div
             ref={discRef}
-            data-tip="vinyl-disc"
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
