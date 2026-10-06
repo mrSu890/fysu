@@ -63,25 +63,7 @@ const Footer: React.FC = () => {
         </div>
       )}
 
-      {/* Image d'anthurium en bas de chaque page */}
-      <div className="w-full flex justify-center mt-10 bg-background">
-        {/* Même anthurium détouré (sans fond) en clair et en sombre, avec une ombre portée */}
-        {["flower-light", "flower-dark"].map((cls) => (
-          <div key={cls} className={`${cls} relative w-full max-w-3xl`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/anthurium-v3.png"
-              alt=""
-              className="h-auto w-full"
-            />
-            {/* petite ombre de contact sous le vase (supprimer ce bloc pour la retirer) */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-[49%] top-[92.5%] h-[1.1%] w-[13%] -translate-x-1/2 rounded-[50%] bg-black/30 blur-[5px]"
-            />
-          </div>
-        ))}
-      </div>
+      {/* L'anthurium est retiré (en attendant une nouvelle photo). Ancienne image : /images/anthurium-v3.png */}
 
       <footer
         className={
