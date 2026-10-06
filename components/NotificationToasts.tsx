@@ -231,10 +231,12 @@ function ToastCard({
 
 /* ====== BLOC D'INSCRIPTION : grand bloc rouge vif en verre, beaucoup d'air ====== */
 
+// verre rouge « à plat » : flou doux derrière, aucun reflet ni liseré
 const RED_GLASS = {
-  "--glass-color": "#d6001c",
-  "--navbar-bg": "#d6001c",
-  "--glass-tint": "86%",
+  background: "rgba(214, 0, 28, 0.9)",
+  WebkitBackdropFilter: "blur(18px) saturate(150%)",
+  backdropFilter: "blur(18px) saturate(150%)",
+  boxShadow: "0 16px 44px rgba(0, 0, 0, 0.22)",
   color: "#ffffff",
 } as React.CSSProperties
 
@@ -264,7 +266,7 @@ function SignupBlock({
       exit={{ opacity: 0, x: 48 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       style={RED_GLASS}
-      className="pointer-events-auto fixed right-3 top-[88px] z-40 flex h-[min(60dvh,480px)] w-[min(80vw,330px)] flex-col justify-between overflow-hidden rounded-[4px] liquid-glass p-5"
+      className="pointer-events-auto fixed right-3 top-[88px] z-40 flex h-[min(60dvh,480px)] w-[min(80vw,330px)] flex-col justify-between overflow-hidden rounded-[4px] p-5"
     >
       <div className="flex items-start justify-between">
         <p className="font-info text-[10px] uppercase tracking-[0.3em] opacity-90">{label}</p>
@@ -433,6 +435,13 @@ export default function NotificationToasts() {
   }, [])
 
   const close = () => dismissRef.current?.()
+
+  // la question d'inscription se ferme dès qu'on change de page (clic sur un de ses choix, retour…)
+  const toastRef = useRef<ToastId | null>(null)
+  toastRef.current = toast
+  useEffect(() => {
+    if (toastRef.current === "signup") dismissRef.current?.()
+  }, [pathname])
 
   const firstName = (
     profile?.name ??

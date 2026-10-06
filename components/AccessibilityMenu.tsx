@@ -254,12 +254,13 @@ export default function AccessibilityMenu() {
               exit={{ x: 48, opacity: 0 }}
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="liquid-glass absolute right-3 top-[88px] max-h-[calc(100dvh-88px-24px)] w-[min(88vw,360px)] overflow-y-auto rounded-[4px] p-5"
+              className="absolute right-3 top-[88px] max-h-[calc(100dvh-88px-24px)] w-[min(88vw,360px)] overflow-y-auto rounded-[4px] p-5"
               style={
                 {
-                  "--glass-color": "#c9ccd0",
-                  "--navbar-bg": "#c9ccd0",
-                  "--glass-tint": "80%",
+                  background: "rgba(201, 204, 208, 0.88)",
+                  WebkitBackdropFilter: "blur(18px) saturate(140%)",
+                  backdropFilter: "blur(18px) saturate(140%)",
+                  boxShadow: "0 16px 44px rgba(0, 0, 0, 0.18)",
                   "--foreground": "#1d1d1d",
                   "--background": "#f4f4f2",
                   color: "#1d1d1d",

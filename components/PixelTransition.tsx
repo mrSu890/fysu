@@ -82,6 +82,13 @@ export default function PixelTransition() {
   const destRef = useRef<string | null>(null)
   const prevPath = useRef(pathname)
 
+  // les titres animés attendent que le rideau se lève (voir components/SectionTitle.tsx)
+  useEffect(() => {
+    const covering = phase === "in" || phase === "solid"
+    ;(window as any).__pxCovering = covering
+    if (!covering) window.dispatchEvent(new Event("pixel-reveal"))
+  }, [phase])
+
   // 0. on compte les requêtes réseau en cours (la page attend ses données avant de se montrer)
   useEffect(() => {
     const w = window as any
