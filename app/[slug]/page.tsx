@@ -13,6 +13,8 @@ import { ProductType } from "@/types/product"
 import ThemeToggle from "@/components/ThemeToggle"
 import { useTranslations } from "next-intl"
 import CountUp from "@/components/CountUp"
+import EventPage from "@/components/EventPage"
+import { getEvent } from "@/lib/events"
 
 type SectionType = {
   id: string
@@ -25,7 +27,15 @@ type SectionType = {
   }[]
 }
 
-export default function CollectionPage() {
+// Les pages « évent » (lib/events.ts) ont leur propre mise en page ; les autres sont des pages de produits
+export default function SlugPage() {
+  const { slug } = useParams<{ slug: string }>()
+  const event = getEvent(slug)
+  if (event) return <EventPage event={event} />
+  return <CollectionPage />
+}
+
+function CollectionPage() {
   const t = useTranslations("Pages")
   const { slug } = useParams<{ slug: string }>()
   const router = useRouter()
