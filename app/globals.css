@@ -404,7 +404,7 @@ body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) :is(h2, h3
 }
 
 /* Niveau 3 : paragraphes et petits textes */
-body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) :is(p, li, label, small, dd, dt, figcaption):not([class*="text-red"], [class*="text-green"], [class*="text-foreground/"], .font-bold, .font-semibold) {
+body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) :is(p, li, label, small, dd, dt, figcaption):not([class*="text-red"], [class*="text-green"], [class*="text-foreground/"], .font-bold, .font-semibold, :has(img, video)) {
   font-weight: 300;
   opacity: var(--ink-3);
 }
