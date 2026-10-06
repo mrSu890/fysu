@@ -9,22 +9,24 @@
 export type Lang = { fr: string; en: string }
 export type EventImage = { src: string; alt: Lang; w: number; h: number }
 
+export type EventLogo = { src: string; alt: string; w: number; h: number }
+
 export type EventBlock =
   | { type: "text"; label?: Lang; paragraphs: Lang[] }
   | { type: "image"; image: EventImage; narrow?: boolean }
   | { type: "pair"; a: EventImage; b: EventImage }
+  | { type: "carousel"; images: EventImage[] } // petit carrousel (les looks)
   | { type: "link"; label: Lang; href: string }
   | {
+      // le menu des cocktails : schéma en deux cercles dans une ellipse (exactement 2 cocktails)
       type: "menu"
       label: Lang
       title: Lang
       intro: Lang
-      image: EventImage
-      // schéma en deux cercles (le menu de la soirée) : exactement 2 cocktails
-      top: string
+      top: EventLogo
       heading: string
-      bottom: string
-      items: { name: string; tag: Lang; ingredients: string[] }[]
+      bottom: EventLogo
+      items: { name: string; tag: string; ingredients: string[] }[]
     }
 
 export type EventData = {
@@ -48,19 +50,19 @@ const img = (n: string, w: number, h: number, fr: string, en: string): EventImag
 export const EVENTS: EventData[] = [
   {
     slug: "fysu-at-oken",
-    title: "FYSU at ōkën",
+    title: "FYSU at Ökēn",
     eyebrow: { fr: "Évent · Bruxelles", en: "Event · Brussels" },
     intro: {
-      fr: "Une soirée, un lieu, une collection. When the flowers bloom a pris place à ōkën, le bar caché sous TheMerode.",
-      en: "One evening, one place, one collection. When the flowers bloom took over ōkën, the bar hidden beneath TheMerode.",
+      fr: "Une soirée, un lieu, une collection. When the flowers bloom a pris place à Ökēn, le bar caché sous TheMerode.",
+      en: "One evening, one place, one collection. When the flowers bloom took over Ökēn, the bar hidden beneath TheMerode.",
     },
     facts: [
-      { label: { fr: "Lieu", en: "Place" }, value: { fr: "ōkën, sous TheMerode, place Poelaert 6, Bruxelles", en: "ōkën, beneath TheMerode, Place Poelaert 6, Brussels" } },
+      { label: { fr: "Lieu", en: "Place" }, value: { fr: "Ökēn, sous TheMerode, place Poelaert 6, Bruxelles", en: "Ökēn, beneath TheMerode, Place Poelaert 6, Brussels" } },
       { label: { fr: "Collection", en: "Collection" }, value: { fr: "When the flowers bloom", en: "When the flowers bloom" } },
       { label: { fr: "Collab", en: "Collab" }, value: { fr: "Labarik, cocktails", en: "Labarik, cocktails" } },
       { label: { fr: "Musique", en: "Music" }, value: { fr: "Curation FYSU", en: "FYSU curation" } },
     ],
-    hero: img("01", 2000, 1333, "Une silhouette FYSU sous une ombrelle, dans la pénombre d'ōkën", "A FYSU look under a parasol, in the half-light of ōkën"),
+    hero: img("01", 2000, 1333, "Une silhouette FYSU sous un kiban, dans la pénombre d'Ökēn", "A FYSU look under a kiban, in the half-light of Ökēn"),
     heroPosition: "72% 50%",
     blocks: [
       {
@@ -68,8 +70,8 @@ export const EVENTS: EventData[] = [
         label: { fr: "Le lieu", en: "The place" },
         paragraphs: [
           {
-            fr: "ōkën s'est installé dans l'ancien parking sous l'hôtel particulier de TheMerode. Les architectes d'Erased Studio y ont dressé des monolithes de bar et des parois lumineuses.",
-            en: "ōkën sits in the former car park beneath the TheMerode mansion. The architects of Erased Studio filled it with sculptural bar monoliths and glowing walls.",
+            fr: "Ökēn s'est installé dans l'ancien parking sous l'hôtel particulier de TheMerode. Les architectes d'Erased Studio y ont dressé des monolithes de bar et des parois lumineuses.",
+            en: "Ökēn sits in the former car park beneath the TheMerode mansion. The architects of Erased Studio filled it with sculptural bar monoliths and glowing walls.",
           },
           {
             fr: "Une pénombre chaude, où les pièces sortent de l'ombre une à une.",
@@ -77,18 +79,28 @@ export const EVENTS: EventData[] = [
           },
         ],
       },
-      { type: "pair", a: img("02", 1202, 1700, "Un trench sous une ombrelle noire", "A trench coat under a black parasol"), b: img("03", 1275, 1700, "Anthuriums sur le comptoir d'ōkën", "Anthuriums on the ōkën bar") },
+      { type: "image", image: img("03", 1275, 1700, "Anthuriums sur le comptoir d'Ökēn", "Anthuriums on the Ökēn bar"), narrow: true },
       {
         type: "text",
         label: { fr: "La collection", en: "The collection" },
         paragraphs: [
           {
-            fr: "Chaque silhouette a eu son piédestal et son ombrelle. La lumière a fait le reste.",
-            en: "Each look had its plinth and its parasol. The light did the rest.",
+            fr: "Chaque silhouette a eu son piédestal et son kiban. La lumière a fait le reste.",
+            en: "Each look had its plinth and its kiban. The light did the rest.",
           },
         ],
       },
-      { type: "image", image: img("04", 1900, 1266, "Une bougie et une coupe sur le bar", "A candle and a coupe on the bar") },
+      {
+        type: "carousel",
+        images: [
+          img("02", 1202, 1700, "Un trench sous un kiban noir", "A trench coat under a black kiban"),
+          img("06", 1202, 1700, "Veste en denim brodée de fleurs de cerisier", "Denim jacket embroidered with cherry blossoms"),
+          img("07", 1202, 1700, "Veste rouge et chemise blanche", "Red jacket and white shirt"),
+          img("10", 1202, 1700, "Blazer beige et chemise bleue", "Beige blazer and blue shirt"),
+          img("11", 1202, 1700, "Chemise bleue et pantalon noir", "Blue shirt and black trousers"),
+        ],
+      },
+      { type: "image", image: img("05", 847, 1500, "Aëro et Bira devant une paroi lumineuse", "Aëro and Bira in front of a glowing wall"), narrow: true },
       {
         type: "menu",
         label: { fr: "Le menu", en: "The menu" },
@@ -97,24 +109,14 @@ export const EVENTS: EventData[] = [
           fr: "Avec Labarik, deux cocktails, Aëro et Bira, ont été pensés comme des prolongements de l'atmosphère de la collection.",
           en: "With Labarik, two cocktails, Aëro and Bira, were developed as extensions of the collection's atmosphere.",
         },
-        image: img("05", 847, 1500, "Aëro et Bira devant une paroi lumineuse", "Aëro and Bira in front of a glowing wall"),
-        top: "FYSU",
+        top: { src: "/images/fysu-light.png", alt: "FYSU", w: 1195, h: 359 },
         heading: "[COCKTAILS]",
-        bottom: "Labarik",
+        bottom: { src: "/images/labarik-logo.png", alt: "Labarik", w: 274, h: 269 },
         items: [
-          {
-            name: "Aëro",
-            tag: { fr: "Avec alcool", en: "Alcoholic" },
-            ingredients: ["Gin Roku Sakura", "Choya", "Alizés winds tea", "Citrus fruits cordial", "Alizés winds tea foam"],
-          },
-          {
-            name: "Bira",
-            tag: { fr: "Sans alcool", en: "Non-alcoholic" },
-            ingredients: ["Hibiscus, Mint & Ginger", "Purple shiso leaves", "Yuzu", "CO₂"],
-          },
+          { name: "Aëro", tag: "Alcoholic", ingredients: ["Gin roku sakura", "Choya", "Alizes winds tea", "Citrus fruits cordial", "Alizes winds tea foam"] },
+          { name: "Bira", tag: "Non-alcoholic", ingredients: ["Hibiscus, Mint & Ginger", "Purple shiso leaves", "Yuzu", "CO²"] },
         ],
       },
-      { type: "pair", a: img("06", 1202, 1700, "Veste en denim brodée de fleurs de cerisier", "Denim jacket embroidered with cherry blossoms"), b: img("07", 1202, 1700, "Veste rouge et chemise blanche", "Red jacket and white shirt") },
       {
         type: "text",
         label: { fr: "La musique", en: "The music" },
@@ -127,7 +129,6 @@ export const EVENTS: EventData[] = [
       },
       { type: "image", image: img("08", 1900, 1266, "Un DJ en silhouette devant une paroi lumineuse", "A DJ in silhouette against a glowing wall") },
       { type: "link", label: { fr: "Écouter la sélection", en: "Listen to the selection" }, href: "/music" },
-      { type: "image", image: img("09", 1275, 1700, "Les invités autour d'une silhouette en trench", "Guests around a trench-coat look"), narrow: true },
     ],
   },
 ]
