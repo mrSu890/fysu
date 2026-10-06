@@ -50,7 +50,7 @@ export default function HomeTiles() {
       </p>
       <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-7xl">Explore The Universe</h2>
 
-      <ul className="mt-12 min-h-[140px] border-t border-foreground/15 sm:mt-20">
+      <ul className="-mx-3 mt-12 min-h-[140px] border-t border-foreground/15 sm:-mx-5 sm:mt-20">
         {rows.map((row, i) => {
           const inner = (
             <>
@@ -62,7 +62,7 @@ export default function HomeTiles() {
               </span>
               <svg
                 viewBox="0 0 24 24"
-                className="h-4 w-4 self-center text-foreground/40 transition-all duration-500 group-hover:translate-x-1 group-hover:text-foreground sm:h-5 sm:w-5"
+                className="h-4 w-4 self-center text-foreground/40 transition-all duration-500 group-hover:translate-x-1 group-hover:text-white sm:h-5 sm:w-5"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1"
@@ -74,7 +74,9 @@ export default function HomeTiles() {
               </svg>
             </>
           )
-          const cls = "group flex items-center gap-2 border-b border-foreground/15 py-4 sm:py-6"
+          // au survol (ou au toucher) la ligne devient verte d'un coup, puis reprend sa couleur doucement quand on la quitte
+          const cls =
+            "group flex items-center gap-2 border-b border-foreground/15 px-3 py-4 transition-[background-color,color] duration-[900ms] ease-out hover:bg-[#154733] hover:text-white hover:duration-150 active:bg-[#154733] active:text-white active:duration-100 sm:px-5 sm:py-6"
           return (
             <li key={row.href}>
               {row.external ? (
