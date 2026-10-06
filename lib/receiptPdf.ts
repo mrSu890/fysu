@@ -1,3 +1,4 @@
+import { LOGO_H, LOGO_HEX, LOGO_W } from "./receiptLogo"
 import { COPY, barcodeBars, dateText, money as moneyRaw, type ReceiptData, type ReceiptLang } from "./receipt"
 
 // « EUR 12.00 » dans le PDF : le symbole € n'est pas affiché de la même façon par tous les lecteurs de PDF
@@ -104,8 +105,11 @@ export function buildReceiptPdf(r: ReceiptData, lang: ReceiptLang, locale: strin
     ops.push((H) => `0.1 G 0.9 w ${M} ${n2(H - top)} m ${W - M} ${n2(H - top)} l S`)
 
   // en-tête
-  center(y + 16, "FYSU", 22, "F2", INK, 9)
-  y += 16
+  const logoH = 26
+  const logoW = (logoH * LOGO_W) / LOGO_H
+  const logoTop = y
+  ops.push((H) => `q ${n2(logoW)} 0 0 ${n2(logoH)} ${n2((W - logoW) / 2)} ${n2(H - logoTop - logoH)} cm /Im1 Do Q`)
+  y += 28
   center(y + 15, c.title.toUpperCase(), 6.5, "F1", SOFT, 3)
   y += 15 + 14
   dashed(y)
@@ -221,11 +225,12 @@ export function buildReceiptPdf(r: ReceiptData, lang: ReceiptLang, locale: strin
   const objs = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> >>`,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> /XObject << /Im1 8 0 R >> >> >>`,
     `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding /WinAnsiEncoding >>",
+    `<< /Type /XObject /Subtype /Image /Width ${LOGO_W} /Height ${LOGO_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter [/ASCIIHexDecode /FlateDecode] /Length ${LOGO_HEX.length + 1} >>\nstream\n${LOGO_HEX}>\nendstream`,
   ]
   let pdf = "%PDF-1.4\n"
   const offsets: number[] = []
