@@ -16,17 +16,33 @@ export default function IntroReveal({
   delay = 0,
   from = "bottom",
   pad = 0,
+  mask = true,
 }: {
   children: React.ReactNode
   className?: string
   delay?: number
   from?: "bottom" | "top"
   pad?: number
+  mask?: boolean // false : fondu + glissement, sans cache (pour les éléments avec une ombre, comme l'interrupteur)
 }) {
   const calm = useReducedMotion()
   const visible = usePageVisible()
 
   if (calm) return <div className={className}>{children}</div>
+
+  if (!mask) {
+    return (
+      <div className={className}>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={visible ? { opacity: 1, y: 0 } : undefined}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay }}
+        >
+          {children}
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
     <div className={className} style={pad ? { padding: pad, margin: -pad } : undefined}>
