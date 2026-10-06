@@ -34,6 +34,25 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // envoi d'une photo ou d'une vidéo pour le carrousel de l'accueil (max ~4 Mo : limite de Vercel)
+  if ((req.headers.get("content-type") || "").includes("multipart/form-data")) {
+    try {
+      const form = await req.formData()
+      const file = form.get("file") as File | null
+      if (!file) return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 })
+      if (!/^(image|video)\//.test(file.type)) return NextResponse.json({ error: "Format non accepté (photo ou vidéo seulement)" }, { status: 400 })
+      if (file.size > 4.4 * 1024 * 1024) return NextResponse.json({ error: "Fichier trop lourd (4 Mo maximum)" }, { status: 413 })
+      const ext = (file.name.split(".").pop() || (file.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase().replace(/[^a-z0-9]/g, "")
+      const path = `carousel/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
+      const { error } = await supabaseAdmin.storage.from("hero-images").upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: false })
+      if (error) return NextResponse.json({ error: "Envoi impossible (" + error.message + ")" }, { status: 500 })
+      const { data } = supabaseAdmin.storage.from("hero-images").getPublicUrl(path)
+      return NextResponse.json({ url: data.publicUrl })
+    } catch (err: any) {
+      return NextResponse.json({ error: "Envoi impossible (" + (err?.message || "erreur") + ")" }, { status: 500 })
+    }
+  }
+
   const body = await req.json().catch(() => null)
 
   if (body && "carousel" in body) {
