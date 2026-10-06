@@ -25,6 +25,8 @@ type Props = {
   bottomOffset?: number
   className?: string
   style?: CSSProperties
+  // repère pour les astuces guidées (voir lib/tips.ts)
+  tip?: string
   children: ReactNode
 }
 
@@ -39,6 +41,7 @@ export default function DraggableFab({
   bottomOffset = 0,
   className = "",
   style,
+  tip,
   children,
 }: Props) {
   const boundsRef = useRef<HTMLDivElement | null>(null)
@@ -102,6 +105,7 @@ export default function DraggableFab({
         type="button"
         aria-label={label}
         title={label}
+        data-tip={tip}
         drag
         dragConstraints={boundsRef}
         dragElastic={0}

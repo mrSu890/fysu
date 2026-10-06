@@ -28,6 +28,7 @@ export default function ThemeToggle() {
         onClick={toggle}
         aria-label={isOn ? "Switch to light mode" : "Switch to dark mode"}
         aria-pressed={isOn}
+        data-tip="theme"
         className="relative liquid-glass h-10 w-[88px] rounded-full cursor-pointer"
       >
         {/* Pastille qui glisse sous le soleil ou la lune */}

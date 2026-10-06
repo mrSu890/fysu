@@ -572,6 +572,7 @@ function MobileMenu({
                   <li className="mt-24">
                     <Link
                       href="/profile"
+                      data-tip="myfysu"
                       onClick={handleMobileLinkClick}
                       className="flex items-center gap-2"
                     >

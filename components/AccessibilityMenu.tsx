@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useLocale } from "next-intl"
 import DraggableFab from "@/components/DraggableFab"
+import { resetTips } from "@/lib/tips"
 
 /* ====================================================================
    ACCESSIBILITÉ
@@ -342,6 +343,18 @@ export default function AccessibilityMenu() {
               >
                 {copy.reset}
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  resetTips()
+                  setOpen(false)
+                }}
+                className="mt-2 w-full cursor-pointer rounded-full py-3 text-sm opacity-80 transition active:scale-[0.98]"
+                style={{ border: "1px solid color-mix(in srgb, currentColor 25%, transparent)" }}
+              >
+                {locale === "fr" ? "Revoir les astuces" : "Replay the tips"}
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -355,6 +368,7 @@ export default function AccessibilityMenu() {
         onTap={() => setOpen(true)}
         zIndex={55}
         lift
+        tip="a11y"
         className="liquid-glass"
         style={{ color: "var(--menu)" }}
       >

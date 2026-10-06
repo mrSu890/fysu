@@ -99,6 +99,8 @@ export default function MiniPlayer() {
               onClick={() => setVinylOpen((v) => !v)}
               aria-label={copy.openVinyl}
               title={copy.openVinyl}
+              data-tip="music-vinyl"
+              data-playing={playing ? "1" : "0"}
               className="shrink-0 cursor-pointer rounded-full active:scale-95"
             >
               <span className={playing ? "block animate-[spin_6s_linear_infinite]" : "block"}>
@@ -154,6 +156,7 @@ export default function MiniPlayer() {
               type="button"
               onClick={() => setCollapsed(true)}
               aria-label={copy.collapse}
+              data-tip="music-collapse"
               className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full opacity-70"
             >
               <ChevronDown size={18} />

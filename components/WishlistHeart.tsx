@@ -37,6 +37,7 @@ export default function WishlistHeart({
       type="button"
       onClick={onClick}
       aria-label={label}
+      data-tip="heart"
       data-liked={liked ? "true" : "false"}
       className={`cursor-pointer touch-manipulation select-none rounded-full p-1.5 transition active:scale-90 ${className}`}
       style={{ WebkitTapHighlightColor: "transparent" }}

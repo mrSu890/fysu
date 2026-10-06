@@ -171,6 +171,7 @@ export default function MusicVinyl({ onClose }: { onClose: () => void }) {
         <div className="relative" style={{ width: size, height: size }}>
           <div
             ref={discRef}
+            data-tip="vinyl-disc"
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
