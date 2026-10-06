@@ -5,7 +5,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Music, X } from "lucide-react"
-import { useMusicPlayer } from "@/context/MusicPlayerContext"
+import { useMusicPlayer, type PlayerAlbum } from "@/context/MusicPlayerContext"
+import type { MusicTrack } from "@/lib/music"
 import { useMusicCopy } from "@/lib/musicCopy"
 import { getStoredCountry } from "@/lib/regions"
 
@@ -13,7 +14,11 @@ import { getStoredCountry } from "@/lib/regions"
    POP-UP « ÉCOUTER LA MUSIQUE DE CETTE COLLECTION ? »
    - apparaît sur les pages liées à un album (réglé dans Admin > Musique)
    - ne disparaît pas tout seul : il faut le fermer
-   - une fois fermé, il reste caché 24 h pour cette collection
+   - il n'apparaît qu'UNE fois par visite, quelle que soit la collection : une fois la question posée
+     (ou si de la musique est déjà chargée), il ne revient plus tant que la visite continue
+   - si on refuse, il reste caché 24 h
+   - il n'apparaît jamais en même temps que la pastille de musique : la pastille attend
+     la réponse, puis apparaît
    ==================================================================== */
 
 type PromptAlbum = {
@@ -25,6 +30,8 @@ type PromptAlbum = {
 }
 
 const HIDE_HOURS = 24
+const SEEN_KEY = "fysu-music-prompt-seen" // sessionStorage : la question a déjà été posée pendant cette visite
+const REFUSED_KEY = "fysu-music-prompt-refused" // localStorage : refus (24 h)
 const PROMPT_DELAY = 11000 // pause avant la question (ms) : la bienvenue passe d'abord
 
 // Quelle collection / page est affichée ? (/thewave, /collections/xxx, /for-her…)
@@ -37,13 +44,11 @@ function slugFromPath(pathname: string): string | null {
 
 const RESERVED = new Set(["admin", "auth", "cart", "checkout", "success", "password", "profile", "music", "privacy"])
 
-const storageKey = (slug: string) => `fysu-music-prompt-${slug}`
-
-function recentlyClosed(slug: string) {
+function alreadyHandled(): boolean {
   try {
-    const raw = localStorage.getItem(storageKey(slug))
-    if (!raw) return false
-    return Date.now() - Number(raw) < HIDE_HOURS * 3600 * 1000
+    if (sessionStorage.getItem(SEEN_KEY)) return true
+    const raw = localStorage.getItem(REFUSED_KEY)
+    return !!raw && Date.now() - Number(raw) < HIDE_HOURS * 3600 * 1000
   } catch {
     return false
   }
@@ -52,12 +57,18 @@ function recentlyClosed(slug: string) {
 export default function MusicPrompt() {
   const pathname = usePathname()
   const copy = useMusicCopy()
-  const { album: playingAlbum, playing, prime, unprime, setCollapsed } = useMusicPlayer()
+  const { album: playingAlbum, prime, unprime } = useMusicPlayer()
   const [albums, setAlbums] = useState<PromptAlbum[]>([])
   const [slug, setSlug] = useState<string | null>(null)
   const [regionReady, setRegionReady] = useState(false)
   const [closed, setClosed] = useState(false)
-  const [hidden, setHidden] = useState(false)
+  // true = la question a déjà été posée (ou refusée) : on ne la repose pas. null = pas encore lu.
+  const [handled, setHandled] = useState<boolean | null>(null)
+  const [primeData, setPrimeData] = useState<{ album: PlayerAlbum; tracks: MusicTrack[] } | null>(null)
+
+  useEffect(() => {
+    setHandled(alreadyHandled())
+  }, [])
 
   // On attend que la zone soit choisie (le pop-up de région passe en premier)
   // puis on laisse passer le message de bienvenue avant de poser la question
@@ -79,14 +90,13 @@ export default function MusicPrompt() {
     const s = slugFromPath(pathname)
     setClosed(false)
     setAlbums([])
+    setPrimeData(null)
     if (!s || (parts1(pathname) && RESERVED.has(s))) {
       setSlug(null)
-      setHidden(false)
       unprime()
       return
     }
     setSlug(s)
-    setHidden(recentlyClosed(s))
 
     let cancelled = false
     fetch(`/api/music?collection=${encodeURIComponent(s)}`)
@@ -105,8 +115,9 @@ export default function MusicPrompt() {
           if (!res.ok || cancelled) return
           const full = await res.json()
           if (cancelled) return
-          prime(
-            {
+          // la pastille est préparée ici, mais affichée seulement quand la question a été réglée
+          setPrimeData({
+            album: {
               id: full.id,
               slug: full.slug,
               title: full.title,
@@ -114,8 +125,8 @@ export default function MusicPrompt() {
               cover_url: full.cover_url,
               brand: full.brand,
             },
-            full.tracks ?? []
-          )
+            tracks: full.tracks ?? [],
+          })
         } catch {
           /* pas de pastille */
         }
@@ -124,32 +135,45 @@ export default function MusicPrompt() {
     return () => {
       cancelled = true
     }
-  }, [pathname, prime, unprime])
+  }, [pathname, unprime])
 
-  function close() {
+  // accepted = vrai quand on clique sur « Oui » : plus de question pendant la visite.
+  // Sinon (« Non » ou croix) : plus de question non plus, et on attend 24 h avant la prochaine visite.
+  function close(accepted = false) {
     setClosed(true)
-    if (slug) {
-      try {
-        localStorage.setItem(storageKey(slug), String(Date.now()))
-      } catch {
-        /* ignore */
-      }
+    setHandled(true)
+    try {
+      sessionStorage.setItem(SEEN_KEY, "1")
+      if (!accepted) localStorage.setItem(REFUSED_KEY, String(Date.now()))
+    } catch {
+      /* ignore */
     }
   }
 
-  const alreadyListening = Boolean(
-    playingAlbum && playing && albums.some((a) => a.id === playingAlbum.id)
-  )
   // Mode concentration (accessibilité) : pas de pop-up
   const focusMode =
     typeof document !== "undefined" && document.documentElement.classList.contains("a11y-focus")
+  // De la musique est déjà chargée (pastille présente) : on ne pose pas la question
+  const musicLoaded = Boolean(playingAlbum)
   const visible =
-    regionReady && !hidden && !closed && albums.length > 0 && !alreadyListening && !focusMode
+    regionReady && handled === false && !closed && albums.length > 0 && !musicLoaded && !focusMode
 
-  // Quand la question « écouter ? » apparaît, la pastille de musique se referme
+  // La question est posée une seule fois par visite : on le note dès qu'elle apparaît
   useEffect(() => {
-    if (visible) setCollapsed(true)
-  }, [visible, setCollapsed])
+    if (!visible) return
+    try {
+      sessionStorage.setItem(SEEN_KEY, "1")
+    } catch {
+      /* ignore */
+    }
+  }, [visible])
+
+  // La pastille de musique n'apparaît que lorsqu'il n'y a plus de question à poser
+  useEffect(() => {
+    if (!primeData || handled === null) return
+    if (handled === false && !focusMode) return
+    prime(primeData.album, primeData.tracks)
+  }, [primeData, handled, focusMode, prime])
 
   return (
     <AnimatePresence>
@@ -171,7 +195,7 @@ export default function MusicPrompt() {
           >
             <button
               type="button"
-              onClick={close}
+              onClick={() => close()}
               aria-label={copy.close}
               className="absolute right-3 top-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-current/10"
             >
@@ -187,7 +211,7 @@ export default function MusicPrompt() {
               <div className="mt-3 flex items-center gap-3">
                 <Link
                   href={`/music/${albums[0].slug}`}
-                  onClick={close}
+                  onClick={() => close(true)}
                   className="flex min-w-0 flex-1 items-center gap-3"
                 >
                   {albums[0].cover_url ? (
@@ -212,14 +236,14 @@ export default function MusicPrompt() {
                 <div className="flex shrink-0 gap-2">
                   <button
                     type="button"
-                    onClick={close}
+                    onClick={() => close()}
                     className="cursor-pointer rounded-full px-3 py-2 text-xs opacity-70"
                   >
                     {copy.no}
                   </button>
                   <Link
                     href={`/music/${albums[0].slug}`}
-                    onClick={close}
+                    onClick={() => close(true)}
                     className="rounded-full bg-current px-4 py-2 text-xs font-medium"
                   >
                     <span style={{ color: "var(--navbar-bg, #fff)" }}>{copy.yes}</span>
@@ -232,7 +256,7 @@ export default function MusicPrompt() {
                   <li key={a.id}>
                     <Link
                       href={`/music/${a.slug}`}
-                      onClick={close}
+                      onClick={() => close(true)}
                       className="flex items-center gap-3 rounded-2xl p-1.5 hover:bg-current/10"
                     >
                       {a.cover_url ? (
