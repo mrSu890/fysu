@@ -8,6 +8,7 @@ import Product from "@/components/Product"
 import PageBar from "@/components/PageBar"
 import { getFygrancesCopy } from "@/lib/fygrancesCopy"
 import { FAMILY_ORDER, getFamilyCopy, isFamilyId, type FamilyId } from "@/lib/olfactive"
+import SectionTitle from "@/components/SectionTitle"
 
 /* ====================================================================
    PAGE FY'GRANCES
@@ -81,7 +82,9 @@ function ChapterBlock({
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">
             {String(index + 1).padStart(2, "0")}
           </p>
-          <h2 className="mt-3 text-3xl font-light tracking-tight sm:text-5xl">{title}</h2>
+          <div className="mt-3">
+            <SectionTitle className="text-3xl font-light tracking-tight sm:text-5xl">{title}</SectionTitle>
+          </div>
           {body && (
             <p className="mt-6 max-w-md whitespace-pre-line text-sm leading-relaxed opacity-80 sm:text-base">
               {body}
@@ -165,9 +168,9 @@ export default function FygrancesPage() {
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 flex items-end">
             <div className="p-4 pb-4 sm:p-10">
-              <h1 className="font-dior text-5xl font-bold leading-none tracking-tight text-white sm:text-7xl">
+              <SectionTitle as="h1" className="font-dior text-5xl font-bold leading-none tracking-tight text-white sm:text-7xl" lineClassName="text-white">
                 FY&apos;grances
-              </h1>
+              </SectionTitle>
             </div>
           </div>
         </div>
