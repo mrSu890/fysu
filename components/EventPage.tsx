@@ -138,12 +138,6 @@ function VennMenu({ menu }: { menu: MenuBlock }) {
         </svg>
 
         {/* textes */}
-        <div className="pointer-events-none absolute left-1/2 top-[13.2%] -translate-x-1/2 -translate-y-1/2" style={{ width: "22%" }}>
-          <Mask show={show} calm={calm} delay={0.5}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={menu.top.src} alt={menu.top.alt} width={menu.top.w} height={menu.top.h} className="block h-auto w-full" draggable={false} />
-          </Mask>
-        </div>
         <div className="pointer-events-none absolute left-1/2 top-[23.7%] -translate-x-1/2 -translate-y-1/2 font-bold tracking-tight" style={{ fontSize: "max(11px, 1.9cqw)" }}>
           <Mask show={show} calm={calm} delay={0.8}>{menu.heading}</Mask>
         </div>
@@ -175,12 +169,6 @@ function VennMenu({ menu }: { menu: MenuBlock }) {
           )
         })}
 
-        <div className="pointer-events-none absolute left-1/2 top-[87.5%] -translate-x-1/2 -translate-y-1/2" style={{ width: "9.8%" }}>
-          <Mask show={show} calm={calm} delay={3.1}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={menu.bottom.src} alt={menu.bottom.alt} width={menu.bottom.w} height={menu.bottom.h} className="block h-auto w-full" draggable={false} />
-          </Mask>
-        </div>
       </div>
     </div>
   )
@@ -321,7 +309,7 @@ export default function EventPage({ event }: { event: EventData }) {
           <Rise>
             <Label>{event.eyebrow[lang]}</Label>
           </Rise>
-          <SectionTitle as="h1" className="text-5xl font-bold leading-[1.02] tracking-tight sm:text-8xl">
+          <SectionTitle as="h1" className="text-5xl font-bold leading-[1.25] tracking-tight sm:text-8xl sm:leading-[1.2]">
             {event.title}
           </SectionTitle>
           <Rise className="mt-8" delay={0.2}>
