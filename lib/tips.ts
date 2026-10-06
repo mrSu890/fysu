@@ -71,21 +71,6 @@ export const TIPS: Tip[] = [
     ],
   },
   {
-    id: "a11y",
-    trigger: '[data-tip="a11y"]',
-    delay: 22000,
-    steps: [
-      {
-        target: "a11y",
-        round: true,
-        text: {
-          fr: "Ce bouton adapte le site à toi : taille du texte, contraste, moins d'animations. Tu peux aussi le déplacer.",
-          en: "This button adapts the site to you: text size, contrast, fewer animations. You can also move it.",
-        },
-      },
-    ],
-  },
-  {
     id: "theme",
     trigger: '[data-tip="theme"]',
     delay: 9000,
@@ -96,36 +81,6 @@ export const TIPS: Tip[] = [
         text: {
           fr: "Passe du mode clair au mode sombre ici.",
           en: "Switch between light and dark mode here.",
-        },
-      },
-    ],
-  },
-  {
-    id: "heart",
-    trigger: '[data-tip="heart"]',
-    delay: 12000,
-    steps: [
-      {
-        target: "heart",
-        round: true,
-        text: {
-          fr: "Touche le cœur pour garder cette pièce dans tes favoris. Tu les retrouves dans My FYSU.",
-          en: "Tap the heart to save this piece to your favourites. You will find them in My FYSU.",
-        },
-      },
-    ],
-  },
-  {
-    // quand le menu est ouvert
-    id: "myfysu",
-    trigger: '[data-tip="myfysu"]',
-    delay: 2500,
-    steps: [
-      {
-        target: "myfysu",
-        text: {
-          fr: "Ton espace My FYSU : ton profil, tes amis, ta garde-robe et tes badges.",
-          en: "Your My FYSU space: your profile, your friends, your wardrobe and your badges.",
         },
       },
     ],
