@@ -135,7 +135,7 @@ function Row({
       role="switch"
       aria-checked={on}
       onClick={onToggle}
-      className="flex w-full cursor-pointer items-center gap-4 rounded-2xl px-3 py-3 text-left transition active:scale-[0.99]"
+      className="flex w-full cursor-pointer items-center gap-4 rounded-[4px] px-3 py-3 text-left transition active:scale-[0.99]"
       style={{ border: "1px solid color-mix(in srgb, currentColor 18%, transparent)" }}
     >
       <span className="min-w-0 flex-1">
@@ -243,36 +243,39 @@ export default function AccessibilityMenu() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="fixed inset-0 z-[66]"
-            style={{ background: "rgba(0,0,0,0.45)" }}
+            style={{ background: "rgba(0,0,0,0.18)" }}
             onClick={() => setOpen(false)}
           >
             <motion.div
               role="dialog"
               aria-label={copy.title}
-              initial={{ y: 60, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 60, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ x: 48, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 48, opacity: 0 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute inset-x-0 bottom-0 mx-auto max-h-[88svh] w-full max-w-md overflow-y-auto rounded-t-[28px] px-5 pt-5 shadow-2xl"
-              style={{
-                background: "var(--background)",
-                color: "var(--foreground)",
-                paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
-              }}
+              className="liquid-glass absolute right-3 top-[88px] max-h-[calc(100dvh-88px-24px)] w-[min(88vw,360px)] overflow-y-auto rounded-[4px] p-5"
+              style={
+                {
+                  "--glass-color": "#c9ccd0",
+                  "--navbar-bg": "#c9ccd0",
+                  "--glass-tint": "80%",
+                  "--foreground": "#1d1d1d",
+                  "--background": "#f4f4f2",
+                  color: "#1d1d1d",
+                  paddingBottom: "calc(20px + env(safe-area-inset-bottom))",
+                } as React.CSSProperties
+              }
             >
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-lg font-medium">
-                  <UniversalAccessIcon size={20} /> {copy.title}
-                </h2>
+              <div className="mb-10 flex items-start justify-between">
+                <h2 className="text-[34px] font-bold leading-[1.05] tracking-tight">{copy.title}</h2>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label={copy.close}
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full active:scale-95"
-                  style={{ background: "color-mix(in srgb, currentColor 12%, transparent)" }}
+                  className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center bg-white text-[#1d1d1d] transition-transform active:scale-95"
                 >
-                  <X size={18} />
+                  <X size={16} strokeWidth={1.5} />
                 </button>
               </div>
 
@@ -288,7 +291,7 @@ export default function AccessibilityMenu() {
                       onClick={() => update({ size: i as Prefs["size"] })}
                       role="radio"
                       aria-checked={active}
-                      className="flex h-12 cursor-pointer items-center justify-center rounded-xl transition active:scale-95"
+                      className="flex h-12 cursor-pointer items-center justify-center rounded-[4px] transition active:scale-95"
                       style={{
                         fontSize: 13 + i * 3,
                         background: active ? "var(--foreground)" : "transparent",
@@ -338,7 +341,7 @@ export default function AccessibilityMenu() {
               <button
                 type="button"
                 onClick={() => update({ ...DEFAULTS })}
-                className="mt-5 w-full cursor-pointer rounded-full py-3 text-sm transition active:scale-[0.98]"
+                className="mt-5 w-full cursor-pointer rounded-[4px] py-3 text-sm transition active:scale-[0.98]"
                 style={{ border: "1px solid color-mix(in srgb, currentColor 25%, transparent)" }}
               >
                 {copy.reset}
@@ -350,7 +353,7 @@ export default function AccessibilityMenu() {
                   resetTips()
                   setOpen(false)
                 }}
-                className="mt-2 w-full cursor-pointer rounded-full py-3 text-sm opacity-80 transition active:scale-[0.98]"
+                className="mt-2 w-full cursor-pointer rounded-[4px] py-3 text-sm opacity-80 transition active:scale-[0.98]"
                 style={{ border: "1px solid color-mix(in srgb, currentColor 25%, transparent)" }}
               >
                 {locale === "fr" ? "Revoir les astuces" : "Replay the tips"}

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion, type PanInfo } from "framer-motion"
 import { useLocale, useMessages } from "next-intl"
-import { X } from "lucide-react"
+import { ArrowUpRight, X } from "lucide-react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { getConsent } from "@/lib/cookieConsent"
 
@@ -108,7 +108,7 @@ const WELCOME_VISIBLE = 6500 // durée d'affichage (ms)
 const SHIPPING_GAP = 14000 // silence avant la livraison offerte
 const SHIPPING_VISIBLE = 8000
 const SIGNUP_GAP = 18000 // silence avant la question d'inscription
-const SIGNUP_VISIBLE = 12000
+const SIGNUP_VISIBLE = 20000
 
 const EXCLUDED = ["/admin", "/checkout", "/success", "/auth", "/password"]
 
@@ -224,6 +224,74 @@ function ToastCard({
       </div>
 
       {children}
+    </motion.div>
+  )
+}
+
+
+/* ====== BLOC D'INSCRIPTION : grand bloc rouge vif en verre, beaucoup d'air ====== */
+
+const RED_GLASS = {
+  "--glass-color": "#d6001c",
+  "--navbar-bg": "#d6001c",
+  "--glass-tint": "86%",
+  color: "#ffffff",
+} as React.CSSProperties
+
+function SignupBlock({
+  label,
+  text,
+  yes,
+  no,
+  onClose,
+  closeLabel,
+}: {
+  label: string
+  text: string
+  yes: string
+  no: string
+  onClose: () => void
+  closeLabel: string
+}) {
+  const row =
+    "group flex items-center justify-between border-t border-white/35 py-4 text-left font-info text-[11px] uppercase tracking-[0.18em] transition-colors duration-300 hover:bg-white hover:text-[#d6001c] active:bg-white active:text-[#d6001c] px-0 hover:px-3"
+  return (
+    <motion.div
+      role="dialog"
+      aria-label={text}
+      initial={{ opacity: 0, x: 48 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 48 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      style={RED_GLASS}
+      className="pointer-events-auto fixed right-3 top-[88px] z-40 flex h-[min(60dvh,480px)] w-[min(80vw,330px)] flex-col justify-between overflow-hidden rounded-[4px] liquid-glass p-5"
+    >
+      <div className="flex items-start justify-between">
+        <p className="font-info text-[10px] uppercase tracking-[0.3em] opacity-90">{label}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={closeLabel}
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center bg-white text-[#d6001c] transition-transform active:scale-95"
+        >
+          <X size={16} strokeWidth={1.5} />
+        </button>
+      </div>
+
+      <p className="text-[30px] font-bold leading-[1.05] tracking-tight" style={{ color: "#ffffff" }}>
+        {text}
+      </p>
+
+      <div>
+        <Link href="/auth/signin" onClick={onClose} className={row} style={{ color: "inherit" }}>
+          <span>{yes}</span>
+          <ArrowUpRight size={16} strokeWidth={1.5} />
+        </Link>
+        <Link href="/auth/signup" onClick={onClose} className={row + " border-b"} style={{ color: "inherit" }}>
+          <span>{no}</span>
+          <ArrowUpRight size={16} strokeWidth={1.5} />
+        </Link>
+      </div>
     </motion.div>
   )
 }
@@ -391,37 +459,23 @@ export default function NotificationToasts() {
             />
           )}
 
-          {toast === "signup" && (
-            <ToastCard
-              key="signup"
-              position="top"
-              label={copy.signupLabel}
-              text={copy.signupText}
-              onClose={close}
-              closeLabel={copy.close}
-            >
-              <div className="mt-3 flex flex-wrap gap-2 pl-[22px]">
-                <Link
-                  href="/auth/signin"
-                  onClick={close}
-                  style={{ color: "#1e2b1b" }}
-                  className="rounded-full bg-black/10 px-3 py-1.5 text-xs"
-                >
-                  {copy.signupYes}
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  onClick={close}
-                  style={{ color: "#ffffff" }}
-                  className="rounded-full bg-[#2f4a2b] px-3 py-1.5 text-xs"
-                >
-                  {copy.signupNo}
-                </Link>
-              </div>
-            </ToastCard>
-          )}
         </AnimatePresence>
       </div>
+
+      {/* GRAND BLOC ROUGE : la question d'inscription */}
+      <AnimatePresence>
+        {toast === "signup" && (
+          <SignupBlock
+            key="signup"
+            label={copy.signupLabel}
+            text={copy.signupText}
+            yes={copy.signupYes}
+            no={copy.signupNo}
+            onClose={close}
+            closeLabel={copy.close}
+          />
+        )}
+      </AnimatePresence>
 
       {/* BAS : gris clair */}
       <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-40 flex justify-end px-4">

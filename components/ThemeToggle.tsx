@@ -13,6 +13,17 @@ export default function ThemeToggle() {
     document.documentElement.classList.toggle("dark", dark);
   }, []);
 
+  // le mode automatique (20h – 7h) change le thème : on suit
+  useEffect(() => {
+    const sync = () => {
+      try {
+        setIsOn(localStorage.getItem("theme") === "dark");
+      } catch {}
+    };
+    window.addEventListener("theme-change", sync);
+    return () => window.removeEventListener("theme-change", sync);
+  }, []);
+
   const toggle = () => {
     const next = !isOn;
     setIsOn(next);

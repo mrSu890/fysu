@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useMusicCopy } from "@/lib/musicCopy"
 import CountUp from "@/components/CountUp"
+import SectionTitle from "@/components/SectionTitle"
 
 /* ====================================================================
    PAGE D'ACCUEIL : « Explore The Universe »
@@ -48,7 +49,9 @@ export default function HomeTiles() {
       <p className="text-[10px] font-light uppercase tracking-[0.4em] sm:text-xs">
         <CountUp value={rows.length} prefix="( " suffix=" )" />
       </p>
-      <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-7xl">Explore The Universe</h2>
+      <div className="mt-3">
+        <SectionTitle className="text-4xl font-bold tracking-tight sm:text-7xl" lineClassName="!opacity-25">Explore The Universe</SectionTitle>
+      </div>
 
       <ul className="-mx-3 mt-12 min-h-[140px] border-t border-foreground/15 sm:-mx-5 sm:mt-20">
         {rows.map((row, i) => {
