@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ArrowLeft, ArrowRight } from "lucide-react";
 import { useSiteCopy } from "@/lib/siteCopy";
@@ -9,7 +9,7 @@ import { useSiteCopy } from "@/lib/siteCopy";
    CARROUSEL INFINI DE L'ACCUEIL (remplace les deux blocs image + texte)
    Une grande image au centre, les voisines qui dépassent, le nom au-dessus.
    On fait glisser avec le doigt (ou les flèches sur ordinateur) et ça tourne sans fin.
-   Pour ajouter une slide : ajoute une ligne dans SLIDES ci-dessous.
+   Les slides se gèrent dans l'admin : Accueil (hero) → Carrousel de l'accueil.
    ==================================================================== */
 
 const COPIES = 5; // la liste est répétée pour pouvoir tourner sans fin
@@ -25,7 +25,31 @@ const NewSelectionIntro = () => {
   const copy = useSiteCopy();
   const scroller = useRef<HTMLDivElement>(null);
 
-  const slides: Slide[] = [
+  // slides réglées dans l'admin (Accueil → Carrousel) ; sinon les deux slides d'origine
+  const [custom, setCustom] = useState<Slide[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/collectionPages?carousel=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive || !Array.isArray(d?.slides) || d.slides.length === 0) return;
+        setCustom(
+          d.slides.map((s: any, i: number) => ({
+            key: String(s.id || i),
+            label: String(s.label || ""),
+            href: String(s.href || "/"),
+            image: String(s.image || ""),
+            kind: String(s.kind || ""),
+          }))
+        );
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const slides: Slide[] = custom ?? [
     { key: "bloom", label: copy.bloomTitle, href: BLOOM_LINK, image: BLOOM_IMAGE, kind: "Collection" },
     { key: "fygrances", label: "FY'grances", href: FYGRANCES_LINK, image: FYGRANCES_IMAGE, kind: "Fragrance" },
   ];
