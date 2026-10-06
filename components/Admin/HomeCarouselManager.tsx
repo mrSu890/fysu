@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react"
 import { AdminButton, Panel, Skeleton } from "@/components/Admin/ui/kit"
 import { Field, inputClass } from "@/components/Admin/ui/controls"
 import { api, errorMessage, notify } from "@/lib/adminApi"
+import { EVENTS } from "@/lib/events"
 import { resizeImage } from "@/lib/imageTools"
 import { supabaseClient } from "@/lib/supabaseClient"
 
@@ -26,6 +27,7 @@ const FIXED_LINKS: { label: string; href: string }[] = [
   { label: "Music", href: "/music" },
   { label: "Games", href: "/games" },
   { label: "À propos", href: "/about" },
+  ...EVENTS.map((e) => ({ label: "Évent : " + e.title, href: "/" + e.slug })),
 ]
 
 const CUSTOM = "__custom__"
