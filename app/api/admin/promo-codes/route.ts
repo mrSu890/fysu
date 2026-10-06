@@ -21,6 +21,8 @@ type Row = {
   maxRedemptions: number | null
   expiresAt: number | null // secondes
   minAmount: number | null // en euros
+  freeShipping: boolean
+  shippingOnly: boolean
   createdAt: number
 }
 
@@ -50,6 +52,8 @@ export async function GET() {
         maxRedemptions: p.max_redemptions ?? null,
         expiresAt: p.expires_at ?? null,
         minAmount: p.restrictions?.minimum_amount != null ? p.restrictions.minimum_amount / 100 : null,
+        freeShipping: (p.metadata?.free_shipping ?? coupon?.metadata?.free_shipping) === "1",
+        shippingOnly: (p.metadata?.shipping_only ?? coupon?.metadata?.shipping_only) === "1",
         createdAt: p.created,
       })
     }
@@ -76,10 +80,14 @@ export async function POST(req: Request) {
   }
 
   // création
-  const kind = body.kind === "amount" ? "amount" : "percent"
-  const value = Number(String(body.value).replace(",", "."))
-  if (!Number.isFinite(value) || value <= 0) return NextResponse.json({ error: "La valeur de la réduction est invalide" }, { status: 400 })
-  if (kind === "percent" && value > 100) return NextResponse.json({ error: "Une réduction ne peut pas dépasser 100 %" }, { status: 400 })
+  // « shipping » = livraison offerte uniquement (sans réduction sur les articles)
+  const kind = body.kind === "amount" ? "amount" : body.kind === "shipping" ? "shipping" : "percent"
+  const freeShipping = kind === "shipping" || body.freeShipping === true
+  const value = kind === "shipping" ? 0 : Number(String(body.value).replace(",", "."))
+  if (kind !== "shipping") {
+    if (!Number.isFinite(value) || value <= 0) return NextResponse.json({ error: "La valeur de la réduction est invalide" }, { status: 400 })
+    if (kind === "percent" && value > 100) return NextResponse.json({ error: "Une réduction ne peut pas dépasser 100 %" }, { status: 400 })
+  }
 
   let code = String(body.code ?? "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "")
   if (code.length > 30) return NextResponse.json({ error: "Code trop long (30 caractères maximum)" }, { status: 400 })
@@ -100,9 +108,12 @@ export async function POST(req: Request) {
 
   try {
     const coupon = await stripe.coupons.create({
+      // un code « livraison offerte » seul garde un coupon de 1 centime (Stripe en demande un) qui n'est jamais appliqué
       ...(kind === "percent"
         ? { percent_off: value }
-        : { amount_off: Math.round(value * 100), currency: "eur" }),
+        : kind === "shipping"
+          ? { amount_off: 1, currency: "eur" }
+          : { amount_off: Math.round(value * 100), currency: "eur" }),
       duration: "once",
       name: code,
     })
@@ -111,6 +122,9 @@ export async function POST(req: Request) {
       code,
       ...(max !== null ? { max_redemptions: max } : {}),
       ...(expires ? { expires_at: expires } : {}),
+      ...(freeShipping
+        ? { metadata: { free_shipping: "1", ...(kind === "shipping" ? { shipping_only: "1" } : {}) } }
+        : {}),
       ...(minRaw ? { restrictions: { minimum_amount: Math.round(minRaw * 100), minimum_amount_currency: "eur" } } : {}),
     }
 
