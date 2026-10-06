@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Product from "../Product";
 import { ProductType } from "../../types/product"
+import SectionTitle from "../SectionTitle";
 
 export default function HomeSection({ slug }: { slug: string }) {
   const [products, setProducts] = useState<ProductType[]>([]);
@@ -22,7 +23,9 @@ export default function HomeSection({ slug }: { slug: string }) {
 
   return (
        <section className="relative top-10 w-11/12 mx-auto sm:mb-24">
-      <h2 className="mb-10 text-3xl font-bold tracking-tight sm:mb-14 sm:text-5xl">{title}</h2>
+      <div className="mb-10 sm:mb-14">
+        <SectionTitle className="text-3xl font-bold tracking-tight sm:text-5xl">{title}</SectionTitle>
+      </div>
 
       <div
         ref={scrollRef}
