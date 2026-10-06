@@ -7,6 +7,7 @@ import ClickFeedback from "@/components/ClickFeedback";
 import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
 import ScrollReveal from "@/components/ScrollReveal";
+import ClockWeather from "@/components/ClockWeather";
 import SiteLoader from "@/components/SiteLoader";
 import PixelTransition from "@/components/PixelTransition";
 import NotificationToasts from "@/components/NotificationToasts";
@@ -88,6 +89,16 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
+                // mode automatique : sombre de 20h00 à 7h00, clair le reste du temps.
+                // Le choix manuel (bouton clair/sombre) tient jusqu'au prochain changement d'horaire.
+                var hr = new Date().getHours();
+                var slot = (hr >= 20 || hr < 7) ? "night" : "day";
+                if (localStorage.getItem("fysu-theme-slot") !== slot) {
+                  localStorage.setItem("fysu-theme-slot", slot);
+                  localStorage.setItem("theme", slot === "night" ? "dark" : "light");
+                }
+              } catch (e) {}
+              try {
                 const theme = localStorage.getItem("theme");
                 if (theme === "dark") {
                   document.documentElement.classList.add("dark");
@@ -146,6 +157,8 @@ export default async function RootLayout({
         <Toaster />
         <DecorativeDots />
         <ScrollReveal />
+        {/* Heure + météo, très discrètes, en bas à droite ; gère aussi le mode sombre automatique */}
+        <ClockWeather />
         <ClickFeedback />
       </body>
     </html>
