@@ -70,21 +70,6 @@ export const TIPS: Tip[] = [
       },
     ],
   },
-  {
-    id: "theme",
-    trigger: '[data-tip="theme"]',
-    delay: 9000,
-    steps: [
-      {
-        target: "theme",
-        round: true,
-        text: {
-          fr: "Passe du mode clair au mode sombre ici.",
-          en: "Switch between light and dark mode here.",
-        },
-      },
-    ],
-  },
 ]
 
 export const TEXT = {
