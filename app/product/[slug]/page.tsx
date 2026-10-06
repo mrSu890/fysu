@@ -58,9 +58,46 @@ export async function generateMetadata({
   }
 }
 
-export default function ProductPage() {
+// Données structurées : Google comprend que c'est un produit, avec son prix et ses photos
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  let jsonLd: Record<string, unknown> | null = null;
+  try {
+    const { data } = await supabaseAdmin
+      .from("products")
+      .select("name, description, price, product_images(url)")
+      .eq("slug", slug)
+      .eq("is_hidden", false)
+      .maybeSingle();
+    if (data) {
+      const d = data as any;
+      const price = Number(d.price);
+      const images: string[] = (d.product_images ?? []).map((i: any) => i?.url).filter(Boolean);
+      jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: String(d.name ?? "FYSU"),
+        ...(d.description ? { description: String(d.description).replace(/\s+/g, " ").trim().slice(0, 500) } : {}),
+        ...(images.length ? { image: images } : {}),
+        brand: { "@type": "Brand", name: "FYSU" },
+        url: `${SITE}/product/${slug}`,
+        ...(Number.isFinite(price)
+          ? { offers: { "@type": "Offer", url: `${SITE}/product/${slug}`, priceCurrency: "EUR", price: price.toFixed(2), itemCondition: "https://schema.org/NewCondition" } }
+          : {}),
+      };
+    }
+  } catch {
+    /* sans données structurées, la page fonctionne quand même */
+  }
+
   return (
     <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        />
+      )}
       <Navbar />
       <ProductClient />
       <ThemeToggle />
