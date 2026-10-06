@@ -44,12 +44,13 @@ export default async function Home() {
       <LogoIntro>
         <HomeHero initialSlides={slides} />
       </LogoIntro>
-      <NewSelectionIntro />
       <div className="flex flex-col gap-28">
         <HomeSection slug="solos" />
         <HomeSection slug="duos" />
       </div>
-    
+
+      <NewSelectionIntro />
+
       <Footer />
     </>
   );

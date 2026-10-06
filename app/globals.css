@@ -17,9 +17,9 @@
 }
 
 .dark {
-  --background: #212121;
-  --foreground: #ffffff;
-  --menu: #171717;
+  --background: #22231f;
+  --foreground: #ece9e1;
+  --menu: #1b1c18;
 
   --toggle-button-bg: #070707;
   --toggle-button-btn: #1a1a1a;
@@ -201,15 +201,15 @@
 .navbar-root .liquid-glass img {
   opacity: 0.85;
 }
-/* Mode sombre : gris-taupe chaud, plus clair (#938A85) */
+/* Mode sombre : « sumi olive », noir chaud avec une pointe de vert (#22231F) */
 .dark {
-  --background: #938a85;
-  --toggle-button-bg: #3a3834;
-  --toggle-button-btn: #55524c;
+  --background: #22231f;
+  --toggle-button-bg: #34352f;
+  --toggle-button-btn: #4a4b44;
 }
 
 .dark .collection-bg {
-  background-color: #938a85;
+  background-color: #22231f;
 }
 
 /* Kiban Collector garde son ancien fond sombre (#4A4742) */
@@ -238,8 +238,8 @@
 }
 
 .dark .page-bar {
-  background: #877e79;
-  color: #ffffff;
+  background: #2c2d28;
+  color: #ece9e1;
 }
 
 .dark.kiban-dark .page-bar {
