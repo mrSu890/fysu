@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { validateCheckoutCart } from "@/lib/payments";
 import { shippingFeeCents } from "@/lib/shipping";
+import { findPromo } from "@/lib/promoCodes";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-01-28.clover",
@@ -130,8 +131,33 @@ async function expressCheckout(req: Request) {
   return NextResponse.json({ clientSecret: intent.client_secret, id: intent.id });
 }
 
+/* ---------- Vérification d'un code promo saisi dans le récapitulatif (POST /api/checkout?promo=1) ---------- */
+
+async function promoCheck(req: Request) {
+  const supabase = await supabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, reason: "auth" }, { status: 401 });
+
+  const body = await req.json().catch(() => ({}));
+  const promo = await findPromo(body?.code);
+  if (!promo) return NextResponse.json({ ok: false, reason: "invalid" }, { status: 404 });
+
+  return NextResponse.json({
+    ok: true,
+    code: promo.code,
+    freeShipping: promo.freeShipping,
+    shippingOnly: promo.shippingOnly,
+    discountLabel: promo.discountLabel,
+  });
+}
+
 export async function POST(req: Request) {
   try {
+    if (new URL(req.url).searchParams.get("promo")) {
+      return await promoCheck(req);
+    }
     if (new URL(req.url).searchParams.get("express")) {
       return await expressCheckout(req);
     }
@@ -146,7 +172,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { cart } = await req.json();
+    const { cart, promoCode } = await req.json();
     const validatedCart = await validateCheckoutCart(cart);
 
     if (!validatedCart.ok) {
@@ -167,9 +193,18 @@ export async function POST(req: Request) {
       quantity: item.quantity,
     }));
 
-    // livraison : gratuite dès 150 €, sinon 5 € (voir lib/shipping.ts)
+    // code promo saisi dans le récapitulatif : revérifié ici, jamais cru sur parole
+    let promo: Awaited<ReturnType<typeof findPromo>> = null;
+    if (typeof promoCode === "string" && promoCode.trim()) {
+      promo = await findPromo(promoCode);
+      if (!promo) {
+        return NextResponse.json({ error: "This promo code is not valid" }, { status: 400 });
+      }
+    }
+
+    // livraison : gratuite dès 150 € (ou avec un code « livraison offerte »), sinon 5 € (voir lib/shipping.ts)
     const subtotal = validatedCart.items.reduce((sum, i) => sum + i.unitAmount * i.quantity, 0);
-    const fee = shippingFeeCents(subtotal);
+    const fee = promo?.freeShipping ? 0 : shippingFeeCents(subtotal);
 
     const simplifiedCart = validatedCart.items.map((item) => ({
       productId: item.productId,
@@ -196,8 +231,10 @@ export async function POST(req: Request) {
         },
       ],
 
-      // codes promo (ex. réduction gagnée aux jeux d'arcade)
-      allow_promotion_codes: true,
+      // codes promo (ex. réduction gagnée aux jeux d'arcade) : saisis chez Stripe, sauf si un code est déjà appliqué
+      // (Stripe n'accepte pas les deux). Un code « livraison offerte » seul ne retire rien sur les articles.
+      ...(promo && !promo.shippingOnly ? { discounts: [{ promotion_code: promo.id }] } : {}),
+      allow_promotion_codes: !promo,
 
       shipping_address_collection: {
         allowed_countries: ALL_STRIPE_ALLOWED_COUNTRIES,
@@ -212,6 +249,7 @@ export async function POST(req: Request) {
       metadata: {
         userId: user.id,
         cart: JSON.stringify(simplifiedCart),
+        promo: promo?.code ?? "",
       },
 
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
