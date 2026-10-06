@@ -16,6 +16,7 @@ import MiniPlayer from "@/components/MusicMiniPlayer";
 import MusicPrompt from "@/components/MusicPrompt";
 import AccessibilityMenu from "@/components/AccessibilityMenu";
 import GamesFab from "@/components/GamesFab";
+import BackButton from "@/components/BackButton";
 import { MusicPlayerProvider } from "@/context/MusicPlayerContext";
 import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
@@ -106,6 +107,8 @@ export default async function RootLayout({
             <CartProvider>
               <MusicPlayerProvider>
                 {children}
+                {/* Flèche retour (pastille discrète sous la barre de navigation) */}
+                <BackButton />
                 {/* Choix de la zone : apparaît avant les cookies et les notifications */}
                 <RegionGate />
                 <CookieBanner />
