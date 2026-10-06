@@ -92,6 +92,21 @@ export async function GET(req: Request) {
     })
   }
 
+  // GET /api/collectionPages?carousel=1 : les slides du carrousel de l'accueil (réglées dans l'admin)
+  if (new URL(req.url).searchParams.get("carousel")) {
+    let slides: any = null
+    try {
+      const { data } = await supabaseAdmin.from("site_settings").select("value").eq("key", "home_carousel").maybeSingle()
+      if (Array.isArray(data?.value)) slides = data!.value
+    } catch {
+      slides = null
+    }
+    return new Response(JSON.stringify({ slides }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    })
+  }
+
   if (new URL(req.url).searchParams.get("visibility")) {
     return new Response(JSON.stringify(await homeVisibility()), {
       status: 200,
