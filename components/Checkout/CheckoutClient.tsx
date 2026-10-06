@@ -6,13 +6,41 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+
+type Applied = { code: string; freeShipping: boolean; discountLabel: string };
+
+// textes du champ « code promo » (les autres langues affichent l'anglais)
+const PROMO_COPY = {
+  en: {
+    label: "Promo code",
+    placeholder: "Enter a code",
+    apply: "Apply",
+    checking: "…",
+    invalid: "This code is not valid.",
+    signIn: "Sign in to use a promo code.",
+    freeDelivery: "Free delivery",
+    remove: "Remove",
+  },
+  fr: {
+    label: "Code promo",
+    placeholder: "Saisis un code",
+    apply: "Appliquer",
+    checking: "…",
+    invalid: "Ce code n'est pas valide.",
+    signIn: "Connecte-toi pour utiliser un code promo.",
+    freeDelivery: "Livraison offerte",
+    remove: "Retirer",
+  },
+};
 
 const LINE = "color-mix(in srgb, var(--foreground) 14%, transparent)";
 const CARD = "color-mix(in srgb, var(--foreground) 5%, var(--background))";
 
 export default function CheckoutClient() {
   const t = useTranslations("Checkout");
+  const locale = useLocale();
+  const pc = locale === "fr" ? PROMO_COPY.fr : PROMO_COPY.en;
   const { cart } = useCart();
   const { user: hookUser, loading: hookLoading } = useCurrentUser();
   const router = useRouter();
@@ -47,6 +75,42 @@ export default function CheckoutClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // code promo
+  const [promoInput, setPromoInput] = useState("");
+  const [applied, setApplied] = useState<Applied | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const applyPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = promoInput.trim();
+    if (!code) return;
+    if (!user) {
+      setPromoError(pc.signIn);
+      return;
+    }
+    setPromoLoading(true);
+    setPromoError("");
+    try {
+      const res = await fetch("/api/checkout?promo=1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        setPromoError(data?.reason === "auth" ? pc.signIn : pc.invalid);
+        return;
+      }
+      setApplied({ code: data.code, freeShipping: !!data.freeShipping, discountLabel: data.discountLabel || "" });
+      setPromoInput("");
+    } catch {
+      setPromoError(pc.invalid);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
   const total = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -67,6 +131,7 @@ export default function CheckoutClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cart,
+          promoCode: applied?.code,
         }),
       });
 
@@ -161,6 +226,57 @@ export default function CheckoutClient() {
           <div className="flex items-baseline justify-between">
             <span className="text-xs uppercase tracking-[0.25em] opacity-70">{t("total")}</span>
             <span className="text-2xl font-medium">€{total.toFixed(2)}</span>
+          </div>
+
+          {/* code promo */}
+          <div className="mt-5">
+            {applied ? (
+              <div
+                className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-xs"
+                style={{ border: `1px solid ${LINE}` }}
+              >
+                <span className="min-w-0">
+                  <span className="font-medium uppercase tracking-wide">{applied.code}</span>
+                  <span className="opacity-70">
+                    {[applied.discountLabel, applied.freeShipping ? pc.freeDelivery : ""]
+                      .filter(Boolean)
+                      .map((p) => ` · ${p}`)
+                      .join("")}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setApplied(null)}
+                  className="shrink-0 cursor-pointer underline underline-offset-4 opacity-70 hover:opacity-100"
+                >
+                  {pc.remove}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={applyPromo} className="flex gap-2">
+                <input
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  placeholder={pc.placeholder}
+                  aria-label={pc.label}
+                  maxLength={30}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="h-11 min-w-0 flex-1 rounded-full bg-transparent px-4 text-sm uppercase outline-none placeholder:normal-case placeholder:opacity-50"
+                  style={{ border: `1px solid ${LINE}` }}
+                />
+                <button
+                  type="submit"
+                  disabled={promoLoading || !promoInput.trim()}
+                  className="h-11 shrink-0 cursor-pointer rounded-full px-5 text-[11px] font-medium uppercase tracking-[0.18em] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ border: `1px solid ${LINE}` }}
+                >
+                  {promoLoading ? pc.checking : pc.apply}
+                </button>
+              </form>
+            )}
+            {promoError && <p className="mt-2 text-xs text-red-500">{promoError}</p>}
           </div>
 
           {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
