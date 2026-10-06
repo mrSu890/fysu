@@ -53,7 +53,45 @@ async function homeVisibility() {
   return { kibanCollector: !kiban, thewave: !wave, fygrances: !fy, music, arcade }
 }
 
+/* GET /api/collectionPages?weather=1
+   Météo actuelle à l'endroit approximatif du visiteur (ville, d'après son adresse IP, donnée par Vercel).
+   Rien n'est enregistré. Service : Open-Meteo (gratuit, sans clé). */
+async function weatherForVisitor(req: Request) {
+  const h = req.headers
+  const lat = parseFloat(h.get("x-vercel-ip-latitude") ?? "")
+  const lon = parseFloat(h.get("x-vercel-ip-longitude") ?? "")
+  // repli (test local, adresse inconnue) : Bruxelles
+  const la = Number.isFinite(lat) ? Math.round(lat * 10) / 10 : 50.8
+  const lo = Number.isFinite(lon) ? Math.round(lon * 10) / 10 : 4.4
+  let city = ""
+  try {
+    city = decodeURIComponent(h.get("x-vercel-ip-city") ?? "")
+  } catch {
+    city = ""
+  }
+  try {
+    const r = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,weather_code,is_day&timezone=auto`,
+      { next: { revalidate: 600 } }
+    )
+    if (!r.ok) throw new Error("meteo")
+    const d = await r.json()
+    const c = d?.current
+    if (!c) throw new Error("meteo")
+    return { ok: true, temp: Math.round(c.temperature_2m), code: Number(c.weather_code), isDay: c.is_day === 1, city }
+  } catch {
+    return { ok: false }
+  }
+}
+
 export async function GET(req: Request) {
+  if (new URL(req.url).searchParams.get("weather")) {
+    return new Response(JSON.stringify(await weatherForVisitor(req)), {
+      status: 200,
+      headers: { "Content-Type": "application/json", "Cache-Control": "private, no-store" },
+    })
+  }
+
   if (new URL(req.url).searchParams.get("visibility")) {
     return new Response(JSON.stringify(await homeVisibility()), {
       status: 200,
