@@ -4,6 +4,7 @@ import Footer from "@/components/Footer"
 import ThemeToggle from "@/components/ThemeToggle"
 import { getTranslations } from "next-intl/server"
 import { PAGES, pageMeta } from "@/lib/seo"
+import SectionTitle from "@/components/SectionTitle"
 
 export const metadata = pageMeta(PAGES.about)
 
@@ -61,9 +62,11 @@ export default async function AboutPage() {
                     isReverse ? "md:order-1" : "md:order-2"
                     }`}
                 >
-                    <h2 className="text-3xl md:text-4xl font-dior mb-6">
+                    <div className="mb-6">
+                    <SectionTitle className="text-3xl md:text-4xl font-dior">
                     {block.title}
-                    </h2>
+                    </SectionTitle>
+                    </div>
 
                     <div className="space-y-4 text-base md:text-lg leading-relaxed text-muted-foreground">
                     {block.about_block_paragraphs
