@@ -7,7 +7,6 @@ import { Field, inputClass } from "@/components/Admin/ui/controls"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { EVENTS } from "@/lib/events"
 import { resizeImage } from "@/lib/imageTools"
-import { supabaseClient } from "@/lib/supabaseClient"
 
 /* ====================================================================
    CARROUSEL DE L'ACCUEIL : ajouter, modifier, supprimer, ordonner les slides
@@ -116,31 +115,23 @@ export default function HomeCarouselManager() {
     const id = targetId.current
     if (!original || !id) return
     setUploadingId(id)
+    const ctrl = new AbortController()
+    const timer = window.setTimeout(() => ctrl.abort(), 60000)
     try {
-      if (original.type.startsWith("video")) {
-        // vidéo : envoi direct vers le stockage (pas de limite de taille du serveur), sinon par le serveur
-        const ext = (original.name.split(".").pop() || "mp4").toLowerCase()
-        const path = `hero/carousel-${Date.now()}.${ext}`
-        const up = await supabaseClient.storage.from("hero-images").upload(path, original, { contentType: original.type })
-        if (!up.error) {
-          const { data } = supabaseClient.storage.from("hero-images").getPublicUrl(path)
-          change(id, { image: data.publicUrl })
-        } else {
-          const form = new FormData()
-          form.append("file", original)
-          const res = await api.upload<{ url: string }>("/api/admin/uploadHero", form)
-          change(id, { image: res.url })
-        }
-      } else {
-        const file = await resizeImage(original)
-        const form = new FormData()
-        form.append("file", file)
-        const res = await api.upload<{ url: string }>("/api/admin/uploadHero", form)
-        change(id, { image: res.url })
-      }
+      const isVid = original.type.startsWith("video")
+      if (isVid && original.size > 4.4 * 1024 * 1024) throw new Error("Vidéo trop lourde (4 Mo maximum). Compresse-la un peu et réessaie.")
+      const file = isVid ? original : await resizeImage(original)
+      const form = new FormData()
+      form.append("file", file)
+      const res = await fetch("/api/admin/site-settings", { method: "POST", body: form, signal: ctrl.signal })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.url) throw new Error(data?.error || "Envoi impossible (erreur " + res.status + ")")
+      change(id, { image: data.url })
     } catch (err) {
-      notify.error(errorMessage(err, "Envoi impossible. Pour une vidéo, essaie un fichier plus léger (moins de 4 Mo)."))
+      const aborted = err instanceof Error && err.name === "AbortError"
+      notify.error(aborted ? "L'envoi prend trop de temps, réessaie avec un fichier plus léger." : errorMessage(err, "Envoi impossible"))
     } finally {
+      window.clearTimeout(timer)
       setUploadingId(null)
     }
   }
