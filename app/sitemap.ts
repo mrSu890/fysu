@@ -1,3 +1,4 @@
+import { EVENTS } from "@/lib/events"
 import type { MetadataRoute } from "next"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
@@ -39,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const urls = [
     ...fixed.map((p) => ({ url: `${SITE}${p}`, changeFrequency: "weekly" as const, priority: p === "" ? 1 : 0.7 })),
     ...brandPages.filter((s) => !reserved.has(s)).map((s) => ({ url: `${SITE}/${s}`, changeFrequency: "weekly" as const, priority: 0.7 })),
+    ...EVENTS.map((e) => ({ url: `${SITE}/${e.slug}`, changeFrequency: "monthly" as const, priority: 0.6 })),
     ...collections.map((s) => ({ url: `${SITE}/collections/${s}`, changeFrequency: "weekly" as const, priority: 0.7 })),
     ...products.map((s) => ({ url: `${SITE}/product/${s}`, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...albums.map((s) => ({ url: `${SITE}/music/${s}`, changeFrequency: "monthly" as const, priority: 0.5 })),
