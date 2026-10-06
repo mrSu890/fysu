@@ -9,8 +9,6 @@
 export type Lang = { fr: string; en: string }
 export type EventImage = { src: string; alt: Lang; w: number; h: number }
 
-export type EventLogo = { src: string; alt: string; w: number; h: number }
-
 export type EventBlock =
   | { type: "text"; label?: Lang; paragraphs: Lang[] }
   | { type: "image"; image: EventImage; narrow?: boolean }
@@ -23,9 +21,7 @@ export type EventBlock =
       label: Lang
       title: Lang
       intro: Lang
-      top: EventLogo
       heading: string
-      bottom: EventLogo
       items: { name: string; tag: string; ingredients: string[] }[]
     }
 
@@ -79,7 +75,6 @@ export const EVENTS: EventData[] = [
           },
         ],
       },
-      { type: "image", image: img("03", 1275, 1700, "Anthuriums sur le comptoir d'Ökēn", "Anthuriums on the Ökēn bar"), narrow: true },
       {
         type: "text",
         label: { fr: "La collection", en: "The collection" },
@@ -96,7 +91,6 @@ export const EVENTS: EventData[] = [
           img("02", 1202, 1700, "Un trench sous un kiban noir", "A trench coat under a black kiban"),
           img("06", 1202, 1700, "Veste en denim brodée de fleurs de cerisier", "Denim jacket embroidered with cherry blossoms"),
           img("07", 1202, 1700, "Veste rouge et chemise blanche", "Red jacket and white shirt"),
-          img("10", 1202, 1700, "Blazer beige et chemise bleue", "Beige blazer and blue shirt"),
           img("11", 1202, 1700, "Chemise bleue et pantalon noir", "Blue shirt and black trousers"),
         ],
       },
@@ -109,9 +103,7 @@ export const EVENTS: EventData[] = [
           fr: "Avec Labarik, deux cocktails, Aëro et Bira, ont été pensés comme des prolongements de l'atmosphère de la collection.",
           en: "With Labarik, two cocktails, Aëro and Bira, were developed as extensions of the collection's atmosphere.",
         },
-        top: { src: "/images/fysu-light.png", alt: "FYSU", w: 1195, h: 359 },
         heading: "[COCKTAILS]",
-        bottom: { src: "/images/labarik-logo.png", alt: "Labarik", w: 274, h: 269 },
         items: [
           { name: "Aëro", tag: "Alcoholic", ingredients: ["Gin roku sakura", "Choya", "Alizes winds tea", "Citrus fruits cordial", "Alizes winds tea foam"] },
           { name: "Bira", tag: "Non-alcoholic", ingredients: ["Hibiscus, Mint & Ginger", "Purple shiso leaves", "Yuzu", "CO²"] },
