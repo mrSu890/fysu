@@ -206,9 +206,6 @@ function MobileMenu({
     const image = link.image || FALLBACK_PREVIEW[link.href];
     setPreview(image ? { label: link.label, image } : null);
   };
-  useEffect(() => {
-    if (!open) setPreview(null);
-  }, [open]);
 
   const panel: "menu" | "cart" | null = isCartOpen
     ? "cart"
@@ -216,6 +213,10 @@ function MobileMenu({
     ? "menu"
     : null;
   const open = panel !== null;
+
+  useEffect(() => {
+    if (!open) setPreview(null);
+  }, [open]);
 
   const toggleCart = () => {
     if (isCartOpen) {
