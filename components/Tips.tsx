@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
+import { supabaseClient } from "@/lib/supabaseClient"
 import { useLocale } from "next-intl"
-import { TIPS, TEXT, markTipSeen, tipsOff, tipsSeen, turnTipsOff, type Tip } from "@/lib/tips"
+import { TIPS, TEXT, markTipSeen, syncTipsWithAccount, tipsOff, tipsSeen, turnTipsOff, type Tip } from "@/lib/tips"
 
 /* ====================================================================
    ASTUCES GUIDÉES : le moteur (la liste et les textes sont dans lib/tips.ts)
@@ -47,6 +48,26 @@ export default function Tips() {
   activeRef.current = active
   const [version, setVersion] = useState(0)
 
+  // on attend d'avoir comparé l'appareil et le compte avant d'afficher quoi que ce soit (3 s maximum)
+  const [synced, setSynced] = useState(false)
+  useEffect(() => {
+    let alive = true
+    const done = () => alive && setSynced(true)
+    const t = window.setTimeout(done, 3000)
+    syncTipsWithAccount().then(() => {
+      window.clearTimeout(t)
+      done()
+    })
+    const { data } = supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") void syncTipsWithAccount()
+    })
+    return () => {
+      alive = false
+      window.clearTimeout(t)
+      data.subscription.unsubscribe()
+    }
+  }, [])
+
   const blockedPage = /^\/(admin|password|auth)/.test(pathname)
 
   // « Revoir les astuces »
@@ -61,7 +82,7 @@ export default function Tips() {
 
   // on cherche une astuce à montrer
   useEffect(() => {
-    if (blockedPage) return
+    if (blockedPage || !synced) return
     const timer = window.setInterval(() => {
       if (activeRef.current || tipsOff()) return
       const html = document.documentElement
@@ -83,7 +104,7 @@ export default function Tips() {
       }
     }, 700)
     return () => window.clearInterval(timer)
-  }, [blockedPage, version])
+  }, [blockedPage, synced, version])
 
   // l'éclairage suit l'élément (même s'il bouge)
   useEffect(() => {
