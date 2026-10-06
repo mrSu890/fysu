@@ -98,7 +98,7 @@ export default function ClockWeather() {
           localStorage.setItem("theme", slot === "night" ? "dark" : "light")
           const html = document.documentElement
           // les pages à fond propre (TheWave, arcade) restent comme elles sont
-          if (!html.classList.contains("wave-page") && !html.classList.contains("arcade-page")) {
+          if (!html.classList.contains("wave-page") && !html.classList.contains("arcade-page") && !html.classList.contains("event-page")) {
             html.classList.toggle("dark", slot === "night")
           }
           window.dispatchEvent(new Event("theme-change"))

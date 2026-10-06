@@ -106,7 +106,11 @@ function Mask({ children, show, calm, delay = 0, className = "" }: { children: R
   )
 }
 
-function VennMenu({ menu, lang }: { menu: MenuBlock; lang: "fr" | "en" }) {
+// ovale tracé à partir du haut (pour que le trait se dessine depuis le sommet)
+const ovalPath = (cx: number, cy: number, rx: number, ry: number) =>
+  `M ${cx} ${cy - ry} A ${rx} ${ry} 0 1 1 ${cx} ${cy + ry} A ${rx} ${ry} 0 1 1 ${cx} ${cy - ry} Z`
+
+function VennMenu({ menu }: { menu: MenuBlock }) {
   const { ref, show, calm } = useShow("0px 0px -12% 0px")
   const [active, setActive] = useState<0 | 1 | null>(null)
   const [left, right] = menu.items
@@ -119,11 +123,11 @@ function VennMenu({ menu, lang }: { menu: MenuBlock; lang: "fr" | "en" }) {
   const stroke = (i: 0 | 1) => (active === i ? "#4EAC6C" : "currentColor")
 
   return (
-    <div ref={ref} data-no-reveal className="mx-auto w-full max-w-[640px] text-foreground" style={{ containerType: "inline-size" }} onMouseLeave={() => setActive(null)}>
+    <div ref={ref} data-no-reveal className="mx-auto w-full max-w-[720px] text-foreground" style={{ containerType: "inline-size" }} onMouseLeave={() => setActive(null)}>
       <div className="relative w-full" style={{ aspectRatio: "1414 / 2000" }}>
         <svg viewBox="0 0 1414 2000" className="absolute inset-0 h-full w-full" fill="none" strokeWidth={3} aria-hidden="true">
-          <motion.ellipse cx={707} cy={1000} rx={587} ry={893} transform="rotate(-90 707 1000)" stroke="currentColor" strokeOpacity={0.85} {...draw(0)} />
-          <motion.ellipse cx={707} cy={1000} rx={587} ry={612} transform="rotate(-90 707 1000)" stroke="currentColor" strokeOpacity={0.85} {...draw(0.35)} />
+          <motion.path d={ovalPath(707, 1000, 587, 893)} stroke="currentColor" strokeOpacity={0.9} {...draw(0)} />
+          <motion.path d={ovalPath(707, 1000, 587, 612)} stroke="currentColor" strokeOpacity={0.9} {...draw(0.35)} />
           <motion.g initial={calm ? false : { opacity: 0 }} animate={show ? { opacity: 1 } : undefined} transition={{ duration: 1.6, delay: 1.4 }}>
             <motion.ellipse cx={437} cy={1000} rx={318} ry={330} fill="currentColor" fillOpacity={0.05} stroke={stroke(0)} strokeWidth={active === 0 ? 4 : 2} style={{ transition: "stroke 0.4s" }} />
             <motion.ellipse cx={978} cy={1000} rx={318} ry={330} fill="currentColor" fillOpacity={0.05} stroke={stroke(1)} strokeWidth={active === 1 ? 4 : 2} style={{ transition: "stroke 0.4s" }} />
@@ -134,8 +138,11 @@ function VennMenu({ menu, lang }: { menu: MenuBlock; lang: "fr" | "en" }) {
         </svg>
 
         {/* textes */}
-        <div className="pointer-events-none absolute left-1/2 top-[13.2%] -translate-x-1/2 -translate-y-1/2 font-dior font-bold tracking-wide" style={{ fontSize: "max(22px, 5cqw)" }}>
-          <Mask show={show} calm={calm} delay={0.5}>{menu.top}</Mask>
+        <div className="pointer-events-none absolute left-1/2 top-[13.2%] -translate-x-1/2 -translate-y-1/2" style={{ width: "22%" }}>
+          <Mask show={show} calm={calm} delay={0.5}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={menu.top.src} alt={menu.top.alt} width={menu.top.w} height={menu.top.h} className="block h-auto w-full" draggable={false} />
+          </Mask>
         </div>
         <div className="pointer-events-none absolute left-1/2 top-[23.7%] -translate-x-1/2 -translate-y-1/2 font-bold tracking-tight" style={{ fontSize: "max(11px, 1.9cqw)" }}>
           <Mask show={show} calm={calm} delay={0.8}>{menu.heading}</Mask>
@@ -151,7 +158,7 @@ function VennMenu({ menu, lang }: { menu: MenuBlock; lang: "fr" | "en" }) {
                   <Letters text={it.name} show={show} calm={calm} delay={1.9 + i * 0.15} />
                 </div>
                 <div className="mt-[0.5em] font-info uppercase tracking-[0.2em]" style={{ fontSize: "max(8px, 1.1cqw)" }}>
-                  <Mask show={show} calm={calm} delay={2.3 + i * 0.15}>{it.tag[lang]}</Mask>
+                  <Mask show={show} calm={calm} delay={2.3 + i * 0.15}>{it.tag}</Mask>
                 </div>
               </div>
               <ul
@@ -168,11 +175,38 @@ function VennMenu({ menu, lang }: { menu: MenuBlock; lang: "fr" | "en" }) {
           )
         })}
 
-        <div className="pointer-events-none absolute left-1/2 top-[87.5%] -translate-x-1/2 -translate-y-1/2 font-info uppercase tracking-[0.35em]" style={{ fontSize: "max(9px, 1.4cqw)" }}>
-          <Mask show={show} calm={calm} delay={3.1}>{menu.bottom}</Mask>
+        <div className="pointer-events-none absolute left-1/2 top-[87.5%] -translate-x-1/2 -translate-y-1/2" style={{ width: "9.8%" }}>
+          <Mask show={show} calm={calm} delay={3.1}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={menu.bottom.src} alt={menu.bottom.alt} width={menu.bottom.w} height={menu.bottom.h} className="block h-auto w-full" draggable={false} />
+          </Mask>
         </div>
       </div>
     </div>
+  )
+}
+
+/* Petit carrousel : on fait glisser avec le doigt. Chaque look se lève du sol, l'un après l'autre. */
+function Looks({ images, lang }: { images: EventImage[]; lang: "fr" | "en" }) {
+  const { ref, show, calm } = useShow("0px 0px -8% 0px")
+  return (
+    <section ref={ref} data-no-reveal className="py-10 sm:py-16" aria-label="Looks">
+      <div className="flex snap-x snap-mandatory scroll-pl-[14px] gap-[14px] overflow-x-auto overscroll-x-contain px-[14px] pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:scroll-pl-6 sm:gap-5 sm:px-6">
+        {images.map((im, i) => (
+          <motion.div
+            key={im.src}
+            initial={calm ? false : { clipPath: "inset(100% 0% 0% 0%)" }}
+            animate={show ? { clipPath: "inset(0% 0% 0% 0%)" } : undefined}
+            transition={{ duration: 1.2, ease: EASE, delay: i * 0.12 }}
+            className="w-[62vw] max-w-[360px] shrink-0 snap-start overflow-hidden bg-neutral-800"
+            style={{ aspectRatio: "5 / 7" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={im.src} alt={im.alt[lang]} width={im.w} height={im.h} loading="lazy" draggable={false} className="h-full w-full object-cover" />
+          </motion.div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -217,6 +251,10 @@ function Block({ block, lang }: { block: EventBlock; lang: "fr" | "en" }) {
     )
   }
 
+  if (block.type === "carousel") {
+    return <Looks images={block.images} lang={lang} />
+  }
+
   if (block.type === "link") {
     return (
       <section className="mx-auto w-full max-w-2xl px-6 pb-16 pt-6 sm:pb-24">
@@ -231,23 +269,18 @@ function Block({ block, lang }: { block: EventBlock; lang: "fr" | "en" }) {
 
   // menu
   return (
-    <section className="mx-auto max-w-6xl px-[14px] py-20 sm:px-6 sm:py-32">
-      <div className="grid gap-10 sm:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] sm:gap-16">
-        <div className="sm:sticky sm:top-28 sm:self-start">
-          <Curtain image={block.image} lang={lang} />
-        </div>
-        <div className="px-1 sm:px-0">
-          <Rise>
-            <Label>{block.label[lang]}</Label>
-          </Rise>
-          <SectionTitle className="text-4xl font-bold tracking-tight sm:text-6xl">{block.title[lang]}</SectionTitle>
-          <Rise className="mt-6">
-            <p className="max-w-md text-base font-light leading-relaxed text-foreground/80 sm:text-lg">{block.intro[lang]}</p>
-          </Rise>
-          <div className="mt-12 sm:mt-16">
-            <VennMenu menu={block} lang={lang} />
-          </div>
-        </div>
+    <section className="mx-auto max-w-3xl px-[14px] py-20 sm:px-6 sm:py-32">
+      <div className="px-1 sm:px-0">
+        <Rise>
+          <Label>{block.label[lang]}</Label>
+        </Rise>
+        <SectionTitle className="text-4xl font-bold tracking-tight sm:text-6xl">{block.title[lang]}</SectionTitle>
+        <Rise className="mt-6">
+          <p className="max-w-md text-base font-light leading-relaxed text-foreground/80 sm:text-lg">{block.intro[lang]}</p>
+        </Rise>
+      </div>
+      <div className="mt-14 sm:mt-20">
+        <VennMenu menu={block} />
       </div>
     </section>
   )
@@ -256,6 +289,18 @@ function Block({ block, lang }: { block: EventBlock; lang: "fr" | "en" }) {
 export default function EventPage({ event }: { event: EventData }) {
   const locale = useLocale()
   const lang: "fr" | "en" = locale?.startsWith("fr") ? "fr" : "en"
+
+  // cette page est toujours en mode sombre (ça va mieux à l'ambiance) ; on rend le thème du visiteur en partant
+  useEffect(() => {
+    const html = document.documentElement
+    html.classList.add("dark", "event-page")
+    return () => {
+      html.classList.remove("event-page")
+      try {
+        html.classList.toggle("dark", localStorage.getItem("theme") === "dark")
+      } catch {}
+    }
+  }, [])
 
   useEffect(() => {
     const previous = document.title
@@ -267,6 +312,8 @@ export default function EventPage({ event }: { event: EventData }) {
 
   return (
     <>
+      {/* évite un éclair de mode clair avant que la page passe en sombre */}
+      <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('dark','event-page')" }} />
       <Navbar />
       <main className="bg-background pb-24 pt-28 text-foreground sm:pt-36">
         {/* En-tête */}
