@@ -74,7 +74,7 @@ export default function MusicIndexPage() {
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-[70svh] w-11/12 max-w-3xl pb-44 pt-28 sm:pt-36">
+      <main data-no-reveal className="mx-auto min-h-[70svh] w-11/12 max-w-3xl pb-44 pt-28 sm:pt-36">
         <h1 className="mb-10 text-3xl font-semibold tracking-tight">{copy.musicTitle}</h1>
 
         {loading && <p className="text-sm opacity-70">{copy.loading}…</p>}
