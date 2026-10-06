@@ -146,9 +146,8 @@ export default function ReceiptPrinter({
           <div className="px-5 pb-3 pt-9" style={{ background: PAPER }}>
             {/* en-tête */}
             <div className="text-center">
-              <div className="text-[26px] font-bold" style={{ letterSpacing: "0.5em", paddingLeft: "0.5em" }}>
-                FYSU
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/fysu-dark.png" alt="FYSU" className="mx-auto block h-[30px] w-auto" draggable={false} />
               <div
                 className="font-info mt-1 text-[9px] uppercase"
                 style={{ letterSpacing: "0.3em", paddingLeft: "0.3em", color: SOFT }}
