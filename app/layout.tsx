@@ -21,6 +21,7 @@ import { MusicPlayerProvider } from "@/context/MusicPlayerContext";
 import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE, SITE_NAME, organizationJsonLd } from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,20 +37,31 @@ const dmMono = DM_Mono({
 });
 //import AuthProvider from "@/components/AuthProvider";
 
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://f-y-s-u.com").replace(/\/$/, "")
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: "FYSU",
-  description: "FYSU",
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: ["FYSU", "fysu", "fysu clothing", "fysu fragrance", "fysu music", "independent fashion house", "slow fashion", "perfume", "piano ambient"],
+  alternates: { canonical: SITE },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
+  // Codes de vérification des moteurs de recherche (à ajouter dans Vercel, voir les étapes données par Claude)
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
+    other: {
+      ...(process.env.NEXT_PUBLIC_BING_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION } : {}),
+      ...(process.env.NEXT_PUBLIC_NAVER_VERIFICATION ? { "naver-site-verification": process.env.NEXT_PUBLIC_NAVER_VERIFICATION } : {}),
+    },
+  },
   openGraph: {
-    siteName: "FYSU",
+    siteName: SITE_NAME,
     type: "website",
-    title: "FYSU",
-    description: "FYSU",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     url: SITE,
   },
-  twitter: { card: "summary_large_image" },
+  twitter: { card: "summary_large_image", title: HOME_TITLE, description: HOME_DESCRIPTION },
   icons: {
     icon: [{ url: "/api/favicon", type: "image/png" }],
     shortcut: "/api/favicon",
@@ -99,6 +111,11 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-background text-foreground transition-colors duration-400">
+        {/* Données structurées pour Google : qui est FYSU */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()).replace(/</g, "\\u003c") }}
+        />
         {/* Écran de chargement d'arrivée sur le site */}
         <SiteLoader />
         {/* <AuthProvider> */}

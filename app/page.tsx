@@ -4,8 +4,16 @@ import HomeHero from "@/components/Home/Hero";
 import LogoIntro from "@/components/Home/LogoIntro";
 import NewSelectionIntro from "@/components/Home/NewSelectionIntro";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import type { Metadata } from "next";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE } from "@/lib/seo";
 
 import HomeSection from "@/components/Home/HomeSection";
+
+export const metadata: Metadata = {
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: SITE },
+};
 
 // Les images du hero sont lues côté serveur : elles sont déjà dans la page à l'arrivée
 export const dynamic = "force-dynamic";
