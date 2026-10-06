@@ -6,6 +6,7 @@ import { AdminButton, Panel, Skeleton } from "@/components/Admin/ui/kit"
 import { Field, inputClass } from "@/components/Admin/ui/controls"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
+import { supabaseClient } from "@/lib/supabaseClient"
 
 /* ====================================================================
    CARROUSEL DE L'ACCUEIL : ajouter, modifier, supprimer, ordonner les slides
@@ -28,6 +29,8 @@ const FIXED_LINKS: { label: string; href: string }[] = [
 ]
 
 const CUSTOM = "__custom__"
+
+const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)
 
 const newId = () => "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 
@@ -112,13 +115,29 @@ export default function HomeCarouselManager() {
     if (!original || !id) return
     setUploadingId(id)
     try {
-      const file = await resizeImage(original)
-      const form = new FormData()
-      form.append("file", file)
-      const res = await api.upload<{ url: string }>("/api/admin/uploadHero", form)
-      change(id, { image: res.url })
+      if (original.type.startsWith("video")) {
+        // vidéo : envoi direct vers le stockage (pas de limite de taille du serveur), sinon par le serveur
+        const ext = (original.name.split(".").pop() || "mp4").toLowerCase()
+        const path = `hero/carousel-${Date.now()}.${ext}`
+        const up = await supabaseClient.storage.from("hero-images").upload(path, original, { contentType: original.type })
+        if (!up.error) {
+          const { data } = supabaseClient.storage.from("hero-images").getPublicUrl(path)
+          change(id, { image: data.publicUrl })
+        } else {
+          const form = new FormData()
+          form.append("file", original)
+          const res = await api.upload<{ url: string }>("/api/admin/uploadHero", form)
+          change(id, { image: res.url })
+        }
+      } else {
+        const file = await resizeImage(original)
+        const form = new FormData()
+        form.append("file", file)
+        const res = await api.upload<{ url: string }>("/api/admin/uploadHero", form)
+        change(id, { image: res.url })
+      }
     } catch (err) {
-      notify.error(errorMessage(err, "Envoi de l'image impossible"))
+      notify.error(errorMessage(err, "Envoi impossible. Pour une vidéo, essaie un fichier plus léger (moins de 4 Mo)."))
     } finally {
       setUploadingId(null)
     }
@@ -126,7 +145,7 @@ export default function HomeCarouselManager() {
 
   async function save() {
     if (slides.some((s) => !s.image)) {
-      notify.error("Chaque slide a besoin d'une image")
+      notify.error("Chaque slide a besoin d'une photo ou d'une vidéo")
       return
     }
     setSaving(true)
@@ -145,9 +164,9 @@ export default function HomeCarouselManager() {
   return (
     <Panel
       title="Carrousel de l'accueil"
-      description="Les grandes images qui défilent sous le hero. Choisis l'image, le titre et la page vers laquelle chaque slide mène. Pense à enregistrer."
+      description="Les grandes images qui défilent sous le hero. Choisis la photo ou la vidéo, le titre et la page vers laquelle chaque slide mène. Pense à enregistrer."
     >
-      <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={onFile} />
+      <input ref={fileInput} type="file" accept="image/*,video/*" className="hidden" onChange={onFile} />
 
       {loading ? (
         <Skeleton className="h-40 w-full" />
@@ -168,24 +187,21 @@ export default function HomeCarouselManager() {
                   onClick={() => pickImage(s.id)}
                   className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[#f0ece5] sm:w-[140px]"
                 >
-                  {s.image ? (
+                  {s.image && isVideo(s.image) ? (
+                    <video src={s.image} className="absolute inset-0 h-full w-full object-cover" muted autoPlay loop playsInline />
+                  ) : s.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={s.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   ) : null}
                   <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/55 py-1.5 text-[11px] text-white">
-                    <ImagePlus size={12} /> {uploadingId === s.id ? "Envoi…" : s.image ? "Changer" : "Choisir l'image"}
+                    <ImagePlus size={12} /> {uploadingId === s.id ? "Envoi…" : s.image ? "Changer" : "Photo ou vidéo"}
                   </span>
                 </button>
 
                 <div className="space-y-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Titre">
-                      <input className={inputClass} value={s.label} onChange={(e) => change(s.id, { label: e.target.value })} placeholder="Ex : FY'grances" />
-                    </Field>
-                    <Field label="Petit mot à droite (facultatif)">
-                      <input className={inputClass} value={s.kind} onChange={(e) => change(s.id, { kind: e.target.value })} placeholder="Ex : Collection" />
-                    </Field>
-                  </div>
+                  <Field label="Titre (affiché au-dessus de l'image)">
+                    <input className={inputClass} value={s.label} onChange={(e) => change(s.id, { label: e.target.value })} placeholder="Ex : FY'grances" />
+                  </Field>
 
                   <Field label="Mène vers la page">
                     <select
