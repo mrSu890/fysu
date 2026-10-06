@@ -212,13 +212,7 @@
   background-color: #22231f;
 }
 
-/* Kiban Collector garde son ancien fond sombre (#4A4742) */
-.dark.kiban-dark {
-  --background: #4a4742;
-}
-.dark.kiban-dark .collection-bg {
-  background-color: #4a4742;
-}
+/* Kiban Collector utilise le même mode sombre que le reste du site (sumi olive) */
 /* Image d'anthurium : version claire / version sombre */
 .flower-dark {
   display: none;
@@ -242,9 +236,6 @@
   color: #ece9e1;
 }
 
-.dark.kiban-dark .page-bar {
-  background: #3f3c38;
-}
 /* Écran de chargement : logo noir en mode clair, blanc en mode sombre */
 .loader-logo-darkmode {
   display: none;
