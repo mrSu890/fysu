@@ -15,6 +15,8 @@ type Code = {
   maxRedemptions: number | null
   expiresAt: number | null
   minAmount: number | null
+  freeShipping: boolean
+  shippingOnly: boolean
   createdAt: number
 }
 
@@ -29,7 +31,8 @@ export default function AdminPromoCodes() {
   const [creating, setCreating] = useState(false)
 
   const [code, setCode] = useState("")
-  const [kind, setKind] = useState<"percent" | "amount">("percent")
+  const [kind, setKind] = useState<"percent" | "amount" | "shipping">("percent")
+  const [freeShipping, setFreeShipping] = useState(false)
   const [value, setValue] = useState("")
   const [maxUses, setMaxUses] = useState("")
   const [expires, setExpires] = useState("")
@@ -57,12 +60,14 @@ export default function AdminPromoCodes() {
         code,
         kind,
         value,
+        freeShipping,
         maxRedemptions: maxUses,
         expiresAt: expires,
         minAmount,
       })
       notify.success(`Code ${r.code} créé`)
       setCode("")
+      setFreeShipping(false)
       setValue("")
       setMaxUses("")
       setExpires("")
@@ -93,8 +98,11 @@ export default function AdminPromoCodes() {
     }
   }
 
-  const label = (c: Code) =>
-    c.percentOff != null ? `−${c.percentOff} %` : c.amountOff != null ? `−${c.amountOff.toFixed(2)} €` : "—"
+  const label = (c: Code) => {
+    if (c.shippingOnly) return "Livraison offerte"
+    const base = c.percentOff != null ? `−${c.percentOff} %` : c.amountOff != null ? `−${c.amountOff.toFixed(2)} €` : "—"
+    return c.freeShipping ? `${base} + livraison offerte` : base
+  }
 
   return (
     <>
@@ -113,11 +121,14 @@ export default function AdminPromoCodes() {
           <div>
             <label className="mb-1 block text-xs font-medium text-[#7a756d]">Réduction</label>
             <div className="flex gap-2">
-              <select className={FIELD + " w-32 shrink-0"} value={kind} onChange={(e) => setKind(e.target.value as "percent" | "amount")}>
+              <select className={FIELD + " shrink-0 " + (kind === "shipping" ? "" : "w-32")} value={kind} onChange={(e) => setKind(e.target.value as "percent" | "amount" | "shipping")}>
                 <option value="percent">en %</option>
                 <option value="amount">en €</option>
+                <option value="shipping">Livraison offerte seulement</option>
               </select>
-              <input className={FIELD} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder={kind === "percent" ? "10" : "20"} required />
+              {kind !== "shipping" && (
+                <input className={FIELD} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder={kind === "percent" ? "10" : "20"} required />
+              )}
             </div>
           </div>
           <div>
@@ -132,6 +143,12 @@ export default function AdminPromoCodes() {
             <label className="mb-1 block text-xs font-medium text-[#7a756d]">Commande minimum en € (facultatif)</label>
             <input className={FIELD} inputMode="decimal" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} placeholder="100" />
           </div>
+          {kind !== "shipping" && (
+            <label className="flex items-center gap-2 text-sm text-[#3d3a35] sm:col-span-2">
+              <input type="checkbox" checked={freeShipping} onChange={(e) => setFreeShipping(e.target.checked)} className="h-4 w-4 accent-[#171717]" />
+              Offrir aussi la livraison avec ce code
+            </label>
+          )}
           <div className="flex items-end">
             <AdminButton type="submit" variant="primary" icon={Plus} disabled={creating}>
               {creating ? "Création…" : "Créer le code"}
@@ -140,6 +157,7 @@ export default function AdminPromoCodes() {
         </form>
         <p className="mt-4 text-xs text-[#9a948a]">
           Un code ne s'applique pas avec le bouton Apple Pay de la fiche produit : le client doit passer par le panier pour l'utiliser.
+          Un code qui offre la livraison doit être saisi dans le récapitulatif de commande (page « Order summary », champ « Code promo »), pas chez Stripe.
         </p>
       </Panel>
 
