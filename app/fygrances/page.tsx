@@ -168,7 +168,7 @@ export default function FygrancesPage() {
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 flex items-end">
             <div className="p-4 pb-4 sm:p-10">
-              <SectionTitle as="h1" className="font-dior text-5xl font-bold leading-none tracking-tight text-white sm:text-7xl" lineClassName="text-white">
+              <SectionTitle as="h1" line={false} className="font-dior text-5xl font-bold leading-none tracking-tight text-white sm:text-7xl">
                 FY&apos;grances
               </SectionTitle>
             </div>
