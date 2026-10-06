@@ -113,7 +113,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
   return (
     <section
       data-no-reveal
-      className="relative w-full lg:grid lg:h-[100svh] lg:grid-cols-2"
+      className="relative w-full max-lg:contents lg:grid lg:h-[100svh] lg:grid-cols-2"
       onTouchStart={(e) => {
         const t = e.touches[0];
         touchStartRef.current = { x: t.clientX, y: t.clientY };
@@ -130,8 +130,10 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
         }
       }}
     >
+      {/* Téléphone et iPad : l'image reste fixe en haut ; pendant l'intro du logo la partie texte reste en place,
+          puis elle glisse par-dessus l'image comme un rideau (voir LogoIntro). Ordinateur : deux colonnes. */}
       {/* IMAGE : moitié haute (téléphone, iPad) ou moitié gauche (ordinateur) */}
-      <div data-hero-image className="relative z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:h-full">
+      <div data-hero-image className="relative z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 max-lg:sticky max-lg:top-0 lg:h-full">
         {slides.map((item, index) => (
           <div
             key={item.media_path + index}
@@ -145,7 +147,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       </div>
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
-      <div className="relative z-10 flex min-h-[50svh] flex-col items-center justify-center bg-background px-8 py-16 text-center lg:min-h-0 lg:px-20">
+      <div className="relative z-10 flex min-h-[50svh] flex-col items-center justify-center bg-background px-8 py-16 text-center max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
         <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
           {PRONUNCIATION}
         </p>

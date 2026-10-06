@@ -148,9 +148,10 @@ export default function LogoIntro({ children }: { children: ReactNode }) {
         }}
       />
 
-      {/* le contenu reste collé en haut pendant l'intro, puis défile normalement */}
+      {/* ordinateur : tout le contenu reste collé en haut pendant l'intro, puis défile normalement.
+          téléphone / iPad : la photo reste fixe et la partie texte reste en place pendant l'intro (voir Hero), puis glisse par-dessus */}
       <div className="relative">
-        <div className="sticky top-0">{children}</div>
+        <div className="max-lg:contents lg:sticky lg:top-0">{children}</div>
         <div ref={spacerRef} aria-hidden="true" style={{ height: `${SCROLL_FACTOR * 100}svh` }} />
       </div>
     </>
