@@ -332,7 +332,7 @@ export default function ProductClient() {
         </div>
   
         {/* ================= INFO ================= */}
-        <div className="space-y-10 sticky top-24 lg:top-[14vh] self-start w-11/12 mx-auto lg:pr-8">
+        <div className="space-y-12 sticky top-24 lg:top-[14vh] self-start w-11/12 mx-auto lg:pr-8">
   
           {brand.path && (
             <Link
@@ -346,7 +346,7 @@ export default function ProductClient() {
 
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
+              <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">
                 {product.name}
               </h1>
               <WishlistHeart productId={product.id} size={24} className="-mr-1.5 -mt-1 shrink-0" />
