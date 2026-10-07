@@ -23,8 +23,8 @@ export default function HomeSection({ slug }: { slug: string }) {
 
   return (
        <section className="relative top-10 w-11/12 mx-auto sm:mb-24">
-      <div className="mb-10 sm:mb-14">
-        <SectionTitle className="text-3xl font-bold tracking-tight sm:text-5xl">{title}</SectionTitle>
+      <div className="mb-12 sm:mb-16">
+        <SectionTitle className="text-2xl font-bold tracking-tight sm:text-4xl">{title}</SectionTitle>
       </div>
 
       <div

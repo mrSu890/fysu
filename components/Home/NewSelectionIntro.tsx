@@ -112,7 +112,7 @@ const NewSelectionIntro = () => {
   const items = Array.from({ length: COPIES * n }, (_, i) => ({ s: slides[i % n], i }));
 
   return (
-    <section data-no-reveal className="relative mb-20 mt-20 w-full sm:mb-28 sm:mt-28" aria-label="FYSU">
+    <section data-no-reveal className="relative mb-28 mt-32 w-full sm:mb-40 sm:mt-48" aria-label="FYSU">
       <div
         ref={scroller}
         className="flex snap-x snap-mandatory scroll-pl-[14px] gap-[14px] overflow-x-auto overscroll-x-contain px-[14px] pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
