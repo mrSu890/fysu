@@ -346,7 +346,7 @@ export default function ProductClient() {
 
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">
                 {product.name}
               </h1>
               <WishlistHeart productId={product.id} size={24} className="-mr-1.5 -mt-1 shrink-0" />
@@ -364,7 +364,7 @@ export default function ProductClient() {
             </p>
           </div>
 
-          <p className="max-w-md border-t border-foreground/15 pt-8 text-[13px] font-light leading-[1.9] whitespace-pre-line opacity-80">
+          <p className="max-w-md border-t border-foreground/80 pt-8 text-[15px] font-light leading-[1.65] tracking-[-0.01em] whitespace-pre-line opacity-75">
             {formatText(product.description)}
           </p>
 
