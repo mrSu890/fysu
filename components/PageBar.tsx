@@ -122,7 +122,7 @@ export default function PageBar({ trail, filters, setFilters, middle }: Props) {
 
         {/* MILIEU : interrupteur clair / sombre (ou bouton personnalisé) */}
         <div className="flex justify-center">
-          {middle ?? <BarThemeSwitch />}
+          {middle ?? null}
         </div>
 
         {/* DROITE : filtres */}
