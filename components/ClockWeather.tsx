@@ -201,6 +201,9 @@ export default function ClockWeather() {
   const lastMood = useRef<Mood | null>(null)
   const manualRef = useRef<number | null>(null)
   manualRef.current = manualV
+  const targetRef = useRef<number | null>(null)
+  const rafRef = useRef<number | null>(null)
+  useEffect(() => () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }, [])
 
   // au démarrage : un choix déjà fait par le visiteur ?
   useEffect(() => {
@@ -271,17 +274,44 @@ export default function ClockWeather() {
   const sunV = manualV ?? realV
   const minuteOfHour = now.getMinutes() + now.getSeconds() / 60
 
+  // le soleil suit le doigt avec un peu de retard et une vitesse maximale : le fond et les textes
+  // changent de couleur doucement, en dégradé, même si on bouge le doigt très vite
   const change = (v: number) => {
-    setManualV(v)
-    const m = moodAt(v)
-    if (m !== lastMood.current) {
-      lastMood.current = m
-      setMood(m)
-      applyMood(m)
+    targetRef.current = v
+    if (rafRef.current !== null) return
+    let last = performance.now()
+    const tick = (t: number) => {
+      const dt = Math.min(0.05, (t - last) / 1000)
+      last = t
+      const cur = manualRef.current ?? realMinutes()
+      let diff = ((((targetRef.current ?? cur) - cur + 720) % 1440) + 1440) % 1440 - 720
+      const maxStep = 130 * dt // environ 130 minutes (2 h) par seconde au maximum
+      const step = Math.abs(diff) < 0.3 ? diff : Math.sign(diff) * Math.min(Math.abs(diff) * 4 * dt + 0.2, maxStep)
+      const nv = (((cur + step) % 1440) + 1440) % 1440
+      manualRef.current = nv
+      setManualV(nv)
+      const m = moodAt(nv)
+      if (m !== lastMood.current) {
+        lastMood.current = m
+        setMood(m)
+        applyMood(m)
+      }
+      if (Math.abs(diff - step) < 0.3) {
+        rafRef.current = null
+        return
+      }
+      rafRef.current = requestAnimationFrame(tick)
     }
+    rafRef.current = requestAnimationFrame(tick)
+  }
+  const stopGlide = () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
+    targetRef.current = null
   }
   const endDrag = (v: number) => saveManual(v)
   const reset = () => {
+    stopGlide()
     clearManual()
     setManualV(null)
     const m = moodAt(realMinutes())
