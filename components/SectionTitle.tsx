@@ -20,6 +20,7 @@ export default function SectionTitle({
   children,
   className = "",
   line = true,
+  lineAbove = false,
   lineClassName = "",
   delay = 0,
 }: {
@@ -27,6 +28,7 @@ export default function SectionTitle({
   children: React.ReactNode
   className?: string // taille, graisse, couleur du texte
   line?: boolean
+  lineAbove?: boolean // le trait passe au-dessus du titre (le titre est « sous la barre »)
   lineClassName?: string // couleur / marge du trait
   delay?: number
 }) {
@@ -37,9 +39,21 @@ export default function SectionTitle({
   const visible = usePageVisible()
   const show = (inView && visible) || !!calm
 
+  const lineEl = (
+    <motion.div
+      aria-hidden="true"
+      initial={calm ? false : { scaleX: 0 }}
+      animate={show ? { scaleX: 1 } : undefined}
+      transition={{ duration: 1.1, ease: EASE, delay: delay + 0.25 }}
+      style={{ transformOrigin: "50% 50%" }}
+      className={`h-px w-full bg-current opacity-80 ${lineAbove ? "mb-5 sm:mb-7" : "mt-4 sm:mt-6"} ${lineClassName}`}
+    />
+  )
+
   return (
     // data-no-reveal : l'ancien fondu automatique ne s'applique pas ici
     <div ref={ref} data-no-reveal>
+      {line && lineAbove && lineEl}
       <div className="overflow-hidden pb-[0.14em] -mb-[0.14em]">
         <motion.div
           initial={calm ? false : { y: "115%" }}
@@ -49,16 +63,7 @@ export default function SectionTitle({
           <Tag className={className}>{children}</Tag>
         </motion.div>
       </div>
-      {line && (
-        <motion.div
-          aria-hidden="true"
-          initial={calm ? false : { scaleX: 0 }}
-          animate={show ? { scaleX: 1 } : undefined}
-          transition={{ duration: 1.1, ease: EASE, delay: delay + 0.25 }}
-          style={{ transformOrigin: "50% 50%" }}
-          className={`mt-4 h-px w-full bg-current opacity-80 sm:mt-6 ${lineClassName}`}
-        />
-      )}
+      {line && !lineAbove && lineEl}
     </div>
   )
 }
