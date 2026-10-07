@@ -530,11 +530,22 @@ html.mood-anim body *:not(video):not(canvas) {
   transition-delay: 0s !important;
 }
 
-/* Après-midi : les cases des photos produit prennent le crème de la page (le blanc des photos devient crème, les couleurs restent) */
+/* Après-midi : les cases des photos produit sont teintées d'un crème presque identique au fond, à peine plus clair (#f9f3e6).
+   Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
+   La pastille de disponibilité prend le même crème. */
 html.afternoon:not(.dark) .aspect-\[3\/4\] {
-  background-color: #f5eedf !important;
+  background-color: #f9f3e6 !important;
+  isolation: isolate;
 }
-html.afternoon:not(.dark) .aspect-\[3\/4\] img {
+html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-color: #f9f3e6;
   mix-blend-mode: multiply;
-  filter: sepia(0.14) saturate(1.04);
+}
+html.afternoon:not(.dark) .aspect-\[3\/4\] span.bg-white\/90 {
+  background-color: #f9f3e6 !important;
 }
