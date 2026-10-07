@@ -10,11 +10,11 @@ export type Lang = { fr: string; en: string }
 export type EventImage = { src: string; alt: Lang; w: number; h: number }
 
 export type EventBlock =
-  | { type: "text"; label?: Lang; paragraphs: Lang[] }
+  | { type: "text"; label?: Lang; paragraphs: Lang[]; link?: { label: Lang; href: string } }
   | { type: "image"; image: EventImage; narrow?: boolean }
   | { type: "pair"; a: EventImage; b: EventImage }
   | { type: "carousel"; images: EventImage[] } // petit carrousel (les looks)
-  | { type: "link"; label: Lang; href: string }
+  | { type: "link"; label: Lang; href: string; albumCollection?: string } // albumCollection : mène à l'album lié à cette collection
   | {
       // le menu des cocktails : schéma en deux cercles dans une ellipse (exactement 2 cocktails)
       type: "menu"
@@ -63,20 +63,6 @@ export const EVENTS: EventData[] = [
     blocks: [
       {
         type: "text",
-        label: { fr: "Le lieu", en: "The place" },
-        paragraphs: [
-          {
-            fr: "Ökēn s'est installé dans l'ancien parking sous l'hôtel particulier de TheMerode. Les architectes d'Erased Studio y ont dressé des monolithes de bar et des parois lumineuses.",
-            en: "Ökēn sits in the former car park beneath the TheMerode mansion. The architects of Erased Studio filled it with sculptural bar monoliths and glowing walls.",
-          },
-          {
-            fr: "Une pénombre chaude, où les pièces sortent de l'ombre une à une.",
-            en: "A warm half-light, where the pieces step out of the dark one by one.",
-          },
-        ],
-      },
-      {
-        type: "text",
         label: { fr: "La collection", en: "The collection" },
         paragraphs: [
           {
@@ -84,6 +70,7 @@ export const EVENTS: EventData[] = [
             en: "Each look had its plinth and its kiban. The light did the rest.",
           },
         ],
+        link: { label: { fr: "Voir la collection", en: "View the collection" }, href: "/collections/when-the-flowers-bloom" },
       },
       {
         type: "carousel",
@@ -120,7 +107,7 @@ export const EVENTS: EventData[] = [
         ],
       },
       { type: "image", image: img("08", 1900, 1266, "Un DJ en silhouette devant une paroi lumineuse", "A DJ in silhouette against a glowing wall") },
-      { type: "link", label: { fr: "Écouter la sélection", en: "Listen to the selection" }, href: "/music" },
+      { type: "link", label: { fr: "Écouter la sélection", en: "Listen to the selection" }, href: "/music", albumCollection: "when-the-flowers-bloom" },
     ],
   },
 ]
