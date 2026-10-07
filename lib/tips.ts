@@ -31,6 +31,21 @@ export type Tip = {
 
 export const TIPS: Tip[] = [
   {
+    // l'heure en bas à droite ouvre le petit cadran qui change l'ambiance du site
+    id: "clock",
+    trigger: '[data-tip="clock"]',
+    delay: 9000,
+    steps: [
+      {
+        target: "clock",
+        text: {
+          fr: "Touche l'heure : un petit cadran s'ouvre. Fais glisser le soleil pour changer l'ambiance du site (nuit, aube, jour, après-midi).",
+          en: "Tap the time: a small dial opens. Drag the sun to change the mood of the site (night, dawn, day, afternoon).",
+        },
+      },
+    ],
+  },
+  {
     // la première fois qu'on écoute de la musique
     id: "music",
     trigger: '[data-tip="music-vinyl"][data-playing="1"]',
