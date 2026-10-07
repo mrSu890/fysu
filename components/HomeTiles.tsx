@@ -46,14 +46,14 @@ export default function HomeTiles() {
 
   return (
     <section className="mx-auto w-11/12 max-w-5xl py-32 sm:py-48">
-      <p className="text-[10px] font-light uppercase tracking-[0.4em] sm:text-xs">
+      <p className="text-[11px] font-light uppercase tracking-[0.06em]">
         <CountUp value={rows.length} prefix="( " suffix=" )" />
       </p>
       <div className="mt-3">
-        <SectionTitle className="text-3xl font-bold tracking-tight sm:text-5xl" lineClassName="!opacity-25">Explore The Universe</SectionTitle>
+        <SectionTitle className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]" lineClassName="!opacity-25">Explore The Universe</SectionTitle>
       </div>
 
-      <ul className="-mx-3 mt-14 min-h-[140px] border-t border-foreground/15 sm:-mx-5 sm:mt-20">
+      <ul className="-mx-3 mt-14 min-h-[140px] border-t border-foreground/80 sm:-mx-5 sm:mt-20">
         {rows.map((row, i) => {
           const inner = (
             <>
