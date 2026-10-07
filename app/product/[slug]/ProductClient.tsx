@@ -259,7 +259,7 @@ export default function ProductClient() {
     {brandId === "thewave" && <WaveLoader />}
     {brandId === "thewave" && <AutoContrast bg={wc.bg} />}
 
-    <div className="max-w-6xl mx-auto py-12 relative top-0 sm:top-24">
+    <div className="max-w-6xl mx-auto py-12 relative top-0 sm:mt-24">
       <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-start">
   
         {/* ================= IMAGES ================= */}
