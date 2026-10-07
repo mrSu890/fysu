@@ -529,3 +529,12 @@ html.mood-anim body *:not(video):not(canvas) {
   transition-timing-function: ease-in-out !important;
   transition-delay: 0s !important;
 }
+
+/* Après-midi : les cases des photos produit prennent le crème de la page (le blanc des photos devient crème, les couleurs restent) */
+html.afternoon:not(.dark) .aspect-\[3\/4\] {
+  background-color: #f5eedf !important;
+}
+html.afternoon:not(.dark) .aspect-\[3\/4\] img {
+  mix-blend-mode: multiply;
+  filter: sepia(0.14) saturate(1.04);
+}
