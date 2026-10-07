@@ -44,7 +44,7 @@ export default async function Home() {
       <LogoIntro>
         <HomeHero initialSlides={slides} />
       </LogoIntro>
-      <div className="flex flex-col gap-28">
+      <div className="flex flex-col gap-36 sm:gap-48">
         <HomeSection slug="solos" />
         <HomeSection slug="duos" />
       </div>
