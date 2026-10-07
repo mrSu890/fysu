@@ -39,7 +39,7 @@ export default async function LegalPage({ params }: Props) {
         <div className="mt-[14vh]">
           {page.sections.map((section, i) => (
             <section key={section.h} className="pb-[10vh]">
-              <div className="mb-8 border-t border-foreground/80 pt-4">
+              <div className="mb-8 border-t border-foreground/50 pt-4">
                 <p className="font-info text-[11px] font-light uppercase tracking-[0.06em] text-foreground/55">
                   ( {String(i + 1).padStart(2, "0")} )
                 </p>
