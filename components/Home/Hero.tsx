@@ -157,7 +157,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
         </IntroReveal>
 
         <IntroReveal className="mt-10 sm:mt-12" delay={0.6}>
-          <p className="max-w-[24em] text-[clamp(17px,2.3vw,21px)] font-light leading-[1.6] tracking-[-0.01em] text-foreground">
+          <p className="max-w-[24em] text-[clamp(15px,2vw,18px)] font-light leading-[1.6] tracking-[-0.01em] text-foreground">
             {intro}
           </p>
         </IntroReveal>
