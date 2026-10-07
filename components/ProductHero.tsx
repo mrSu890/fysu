@@ -18,8 +18,6 @@ import { motion } from "framer-motion"
 type Box = { top: number; left: number; width: number; height: number }
 type Job = { src: string; from: Box; path: string; radius: number }
 
-const EASE = [0.22, 1, 0.36, 1] as const
-
 const isCalm = () => {
   const html = document.documentElement
   return (
@@ -33,7 +31,8 @@ export default function ProductHero() {
   const router = useRouter()
   const pathname = usePathname()
   const [job, setJob] = useState<Job | null>(null)
-  const [to, setTo] = useState<Box | null>(null)
+  const [flying, setFlying] = useState(false)
+  const imgRef = useRef<HTMLImageElement | null>(null)
   const [bg, setBg] = useState(false)
   const jobRef = useRef<Job | null>(null)
   jobRef.current = job
@@ -42,7 +41,7 @@ export default function ProductHero() {
     document.documentElement.classList.remove("hero-running")
     ;(window as any).__heroActive = false
     setJob(null)
-    setTo(null)
+    setFlying(false)
     setBg(false)
   }, [])
 
@@ -57,7 +56,7 @@ export default function ProductHero() {
         const radius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
         ;(window as any).__heroActive = true
         document.documentElement.classList.add("hero-running")
-        setTo(null)
+        setFlying(false)
         setJob({ src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius })
         requestAnimationFrame(() => setBg(true))
         router.push(path)
@@ -72,29 +71,67 @@ export default function ProductHero() {
     }
   }, [router, finish])
 
-  // la fiche produit est affichée : on attend sa grande image, on mesure sa place
+  // la fiche produit est affichée : on attend sa grande image, puis l'image « vole » vers elle.
+  // Pendant le vol, on suit la vraie place de l'image de la fiche à chaque image affichée (pas une mesure
+  // prise une fois pour toutes) : si la page bouge encore un peu, l'arrivée tombe pile, sans recadrage.
   useEffect(() => {
     if (!job || pathname !== job.path) return
     let raf = 0
     let stable = 0
     let last = ""
+    let t0 = 0
+    let flyingNow = false
+    let doneAt = 0
     const started = Date.now()
+    const DURATION = 900
+    const ease = (t: number) => 1 - Math.pow(1 - t, 4)
+    const live = (): { r: DOMRect; el: HTMLElement } | null => {
+      const el = document.querySelector("[data-hero-target]") as HTMLElement | null
+      if (!el) return null
+      return { r: el.getBoundingClientRect(), el }
+    }
     const tick = () => {
-      if (Date.now() - started > 4000) {
+      const now = performance.now()
+      if (Date.now() - started > 8000) {
         finish()
         return
       }
-      const el = document.querySelector("[data-hero-target]") as HTMLElement | null
-      const img = el?.querySelector("img") as HTMLImageElement | null
-      if (el && img && img.complete && window.scrollY < 2) {
-        const r = el.getBoundingClientRect()
-        const key = `${Math.round(r.top)}|${Math.round(r.left)}|${Math.round(r.width)}|${Math.round(r.height)}`
-        if (r.width > 0 && key === last) stable++
-        else stable = 0
-        last = key
-        if (stable >= 3) {
-          setTo({ top: r.top, left: r.left, width: r.width, height: r.height })
+      const l = live()
+      if (!flyingNow) {
+        const img = l?.el.querySelector("img") as HTMLImageElement | null
+        if (l && img && img.complete && window.scrollY < 2) {
+          const r = l.r
+          const key = `${Math.round(r.top)}|${Math.round(r.left)}|${Math.round(r.width)}|${Math.round(r.height)}`
+          if (r.width > 0 && key === last) stable++
+          else stable = 0
+          last = key
+          if (stable >= 2) {
+            flyingNow = true
+            t0 = now
+            setFlying(true)
+          }
+        }
+        if (Date.now() - started > 4500 && !flyingNow) {
+          finish()
           return
+        }
+      } else if (imgRef.current && l) {
+        const p = Math.min(1, (now - t0) / DURATION)
+        const e = ease(p)
+        const f = job.from
+        const t = l.r
+        const el = imgRef.current
+        el.style.top = `${f.top + (t.top - f.top) * e}px`
+        el.style.left = `${f.left + (t.left - f.left) * e}px`
+        el.style.width = `${f.width + (t.width - f.width) * e}px`
+        el.style.height = `${f.height + (t.height - f.height) * e}px`
+        el.style.borderRadius = `${job.radius * (1 - e)}px`
+        if (p >= 1) {
+          if (!doneAt) doneAt = now
+          if (now - doneAt > 600) {
+            finish()
+            return
+          }
         }
       }
       raf = requestAnimationFrame(tick)
@@ -119,19 +156,22 @@ export default function ProductHero() {
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-[44] bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: bg && !to ? 1 : 0 }}
-        transition={{ duration: to ? 0.6 : 0.35, ease: "easeOut", delay: to ? 0.35 : 0 }}
+        animate={{ opacity: bg && !flying ? 1 : 0 }}
+        transition={{ duration: flying ? 0.6 : 0.35, ease: "easeOut", delay: flying ? 0.45 : 0 }}
       />
-      <motion.img
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
         src={job.src}
         alt=""
         draggable={false}
         className="pointer-events-none fixed z-[45] object-cover"
-        initial={{ ...job.from, borderRadius: job.radius }}
-        animate={to ? { ...to, borderRadius: 0 } : { ...job.from, borderRadius: job.radius }}
-        transition={{ duration: 0.85, ease: EASE }}
-        onAnimationComplete={() => {
-          if (to) window.setTimeout(finish, 650)
+        style={{
+          top: job.from.top,
+          left: job.from.left,
+          width: job.from.width,
+          height: job.from.height,
+          borderRadius: job.radius,
         }}
       />
     </>
