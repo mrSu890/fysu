@@ -277,6 +277,7 @@ export default function ProductClient() {
           {/* Grande image principale */}
           {mainImage && (
             <div
+              data-hero-target
               className="
                 relative w-full aspect-[3/4] overflow-hidden
               "
