@@ -53,7 +53,7 @@ export default function HomeTiles() {
         <SectionTitle className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]" lineClassName="!opacity-25">Explore The Universe</SectionTitle>
       </div>
 
-      <ul className="-mx-3 mt-14 min-h-[140px] border-t border-foreground/80 sm:-mx-5 sm:mt-20">
+      <ul className="-mx-3 mt-14 min-h-[140px] border-t border-foreground/50 sm:-mx-5 sm:mt-20">
         {rows.map((row, i) => {
           const inner = (
             <>
