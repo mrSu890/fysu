@@ -38,7 +38,7 @@ function ExpandableText({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false)
   const [needsToggle, setNeedsToggle] = useState(false)
   const ref = useRef<HTMLParagraphElement>(null)
-  const COLLAPSED = 120 // px, environ 5 lignes
+  const COLLAPSED = 88 // px, environ 4 lignes
 
   useEffect(() => {
     const el = ref.current
@@ -106,7 +106,10 @@ export default function ProductInfoBlocks({ blocks }: { blocks: InfoBlock[] }) {
 
             <div className="flex flex-col justify-center px-8 py-14 sm:px-14 lg:px-20 lg:py-0">
               <div className="w-full max-w-md lg:mx-auto">
-                {block.title && <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">{block.title}</h3>}
+                <p className="font-info mb-6 text-[10px] font-light tracking-[0.06em] text-foreground/45">
+                  ( {String(i + 1).padStart(2, "0")} )
+                </p>
+                {block.title && <h3 className="text-[26px] font-extrabold leading-none tracking-[-0.045em] sm:text-[36px]">{block.title}</h3>}
 
                 {block.subtitle && (
                   <p className="font-info mt-3 text-[11px] font-light uppercase tracking-[0.25em] text-foreground/45">
@@ -115,7 +118,7 @@ export default function ProductInfoBlocks({ blocks }: { blocks: InfoBlock[] }) {
                 )}
 
                 {block.content && (
-                  <div className="mt-8 border-t border-foreground/15 pt-8">
+                  <div className="mt-8 border-t border-foreground/50 pt-8 lg:ml-[12%]">
                     <ExpandableText text={block.content} />
                   </div>
                 )}
