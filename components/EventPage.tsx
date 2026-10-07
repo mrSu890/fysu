@@ -138,7 +138,7 @@ function VennMenu({ menu }: { menu: MenuBlock }) {
         </svg>
 
         {/* textes */}
-        <div className="pointer-events-none absolute left-1/2 top-[23.7%] -translate-x-1/2 -translate-y-1/2 font-bold tracking-tight" style={{ fontSize: "max(11px, 1.9cqw)" }}>
+        <div className="pointer-events-none absolute left-1/2 top-[23.7%] -translate-x-1/2 -translate-y-1/2 font-bold tracking-tight" style={{ fontSize: "max(9px, 1.9cqw)" }}>
           <Mask show={show} calm={calm} delay={0.8}>{menu.heading}</Mask>
         </div>
 
@@ -148,16 +148,16 @@ function VennMenu({ menu }: { menu: MenuBlock }) {
           return (
             <div key={it.name} className="group pointer-events-none">
               <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center transition-opacity duration-500" style={{ left: isLeft ? "28.6%" : "69.7%", top: isLeft ? "39.4%" : "38.6%", opacity: dim(idx) }}>
-                <div className="font-dior leading-none" style={{ fontSize: "max(32px, 6.4cqw)" }}>
+                <div className="font-dior leading-none" style={{ fontSize: "max(24px, 6.4cqw)" }}>
                   <Letters text={it.name} show={show} calm={calm} delay={1.9 + i * 0.15} />
                 </div>
-                <div className="mt-[0.5em] font-info uppercase tracking-[0.2em]" style={{ fontSize: "max(8px, 1.1cqw)" }}>
+                <div className="mt-[0.5em] font-info uppercase tracking-[0.2em]" style={{ fontSize: "max(6.5px, 1.1cqw)" }}>
                   <Mask show={show} calm={calm} delay={2.3 + i * 0.15}>{it.tag}</Mask>
                 </div>
               </div>
               <ul
                 className={`absolute space-y-[0.35em] font-light leading-snug transition-opacity duration-500 ${isLeft ? "text-left" : "text-right"}`}
-                style={{ fontSize: "max(12px, 2.1cqw)", top: isLeft ? "45.7%" : "45%", opacity: dim(idx), ...(isLeft ? { left: "14.2%" } : { right: "13.2%" }) }}
+                style={{ fontSize: "max(7.5px, 2.4cqw)", top: isLeft ? "45.7%" : "45%", opacity: dim(idx), ...(isLeft ? { left: "14.2%" } : { right: "13.2%" }) }}
               >
                 {it.ingredients.map((g, k) => (
                   <li key={g}>
@@ -202,6 +202,33 @@ function Label({ children }: { children: React.ReactNode }) {
   return <p className="mb-5 font-info text-[10px] uppercase tracking-[0.3em] text-foreground/60 sm:text-xs">{children}</p>
 }
 
+/* Lien vers l'album lié à une collection (retombe sur /music si introuvable) */
+function AlbumLink({ block, lang }: { block: Extract<EventBlock, { type: "link" }>; lang: "fr" | "en" }) {
+  const [href, setHref] = useState(block.href)
+  useEffect(() => {
+    if (!block.albumCollection) return
+    let alive = true
+    fetch(`/api/music?collection=${encodeURIComponent(block.albumCollection)}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => {
+        if (alive && Array.isArray(list) && list[0]?.slug) setHref(`/music/${list[0].slug}`)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [block.albumCollection])
+  return (
+    <section className="mx-auto w-full max-w-2xl px-6 pb-16 pt-6 sm:pb-24">
+      <Rise>
+        <Link href={href} className="inline-block border-b border-foreground/40 pb-1 font-info text-xs uppercase tracking-[0.3em] transition-opacity hover:opacity-60">
+          {block.label[lang]} →
+        </Link>
+      </Rise>
+    </section>
+  )
+}
+
 function Block({ block, lang }: { block: EventBlock; lang: "fr" | "en" }) {
   if (block.type === "text") {
     return (
@@ -218,6 +245,13 @@ function Block({ block, lang }: { block: EventBlock; lang: "fr" | "en" }) {
             </Rise>
           ))}
         </div>
+        {block.link && (
+          <Rise className="mt-8" delay={0.2}>
+            <Link href={block.link.href} className="inline-block border-b border-foreground/40 pb-1 font-info text-xs uppercase tracking-[0.3em] transition-opacity hover:opacity-60">
+              {block.link.label[lang]} →
+            </Link>
+          </Rise>
+        )}
       </section>
     )
   }
@@ -244,15 +278,7 @@ function Block({ block, lang }: { block: EventBlock; lang: "fr" | "en" }) {
   }
 
   if (block.type === "link") {
-    return (
-      <section className="mx-auto w-full max-w-2xl px-6 pb-16 pt-6 sm:pb-24">
-        <Rise>
-          <Link href={block.href} className="inline-block border-b border-foreground/40 pb-1 font-info text-xs uppercase tracking-[0.3em] transition-opacity hover:opacity-60">
-            {block.label[lang]} →
-          </Link>
-        </Rise>
-      </section>
-    )
+    return <AlbumLink block={block} lang={lang} />
   }
 
   // menu
