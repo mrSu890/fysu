@@ -9,6 +9,7 @@ export type ProductTypeId =
   | "shoes"
   | "accessory"
   | "collector"
+  | "kiban"
   | "fragrance"
   | "skincare"
   | "home"
@@ -70,8 +71,20 @@ export const PRODUCT_TYPES: Record<ProductTypeId, ProductTypeConfig> = {
   },
   collector: {
     id: "collector",
-    label: "Objet collector",
+    label: "Objet de design",
     emoji: "🏆",
+    presets: ["One size"],
+    sizeNoun: null,
+    sizeNounAdmin: "Variantes",
+    sizeGuide: false,
+    showGender: false,
+    size_fit: { en: "Dimensions", fr: "Dimensions", nl: "Afmetingen", ja: "サイズ詳細" },
+    care: { en: "Care", fr: "Entretien", nl: "Onderhoud", ja: "お手入れ" },
+  },
+  kiban: {
+    id: "kiban",
+    label: "Kiban",
+    emoji: "☂️",
     presets: ["One size"],
     sizeNoun: null,
     sizeNounAdmin: "Variantes",

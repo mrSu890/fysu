@@ -4,7 +4,7 @@
    Pour changer l'ordre, les titres ou les textes : modifie ce fichier.
    ==================================================================== */
 
-export type KibanCategoryId = "collector" | "clothing" | "accessories" | "more"
+export type KibanCategoryId = "kiban" | "collector" | "clothing" | "accessories" | "more"
 
 export type KibanCategory = {
   id: KibanCategoryId
@@ -17,13 +17,13 @@ type L4 = { title: string; body: string }
 
 const CATEGORIES: { id: KibanCategoryId; types: string[]; copy: Record<string, L4> }[] = [
   {
-    id: "collector",
-    types: ["collector"],
+    id: "kiban",
+    types: ["kiban"],
     copy: {
-      en: { title: "Collector objects", body: "Pieces to keep, to display, to pass on." },
-      fr: { title: "Objets collector", body: "Des pièces à garder, à exposer, à transmettre." },
-      nl: { title: "Collectorsobjecten", body: "Stukken om te bewaren, tentoon te stellen en door te geven." },
-      ja: { title: "コレクターズアイテム", body: "大切に持ち、飾り、受け継ぐためのピース。" },
+      en: { title: "Kibans", body: "The heart of the collection." },
+      fr: { title: "Kibans", body: "Le cœur de la collection." },
+      nl: { title: "Kibans", body: "Het hart van de collectie." },
+      ja: { title: "Kiban", body: "コレクションの中心。" },
     },
   },
   {
@@ -34,6 +34,16 @@ const CATEGORIES: { id: KibanCategoryId; types: string[]; copy: Record<string, L
       fr: { title: "Vêtements", body: "Des pièces à porter, avec le même soin que les objets." },
       nl: { title: "Kleding", body: "Stukken om te dragen, met dezelfde zorg als de objecten." },
       ja: { title: "ウェア", body: "オブジェと同じ想いで作られた、身にまとうピース。" },
+    },
+  },
+  {
+    id: "collector",
+    types: ["collector"],
+    copy: {
+      en: { title: "Design objects", body: "Pieces to keep, to display, to pass on." },
+      fr: { title: "Objets de design", body: "Des pièces à garder, à exposer, à transmettre." },
+      nl: { title: "Designobjecten", body: "Stukken om te bewaren, tentoon te stellen en door te geven." },
+      ja: { title: "デザインオブジェ", body: "大切に持ち、飾り、受け継ぐためのピース。" },
     },
   },
   {
