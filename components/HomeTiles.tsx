@@ -45,22 +45,22 @@ export default function HomeTiles() {
   if (visible) rows.push({ href: INSTAGRAM_URL, label: "Instagram", external: true })
 
   return (
-    <section className="mx-auto w-11/12 max-w-5xl py-24 sm:py-40">
+    <section className="mx-auto w-11/12 max-w-5xl py-32 sm:py-48">
       <p className="text-[10px] font-light uppercase tracking-[0.4em] sm:text-xs">
         <CountUp value={rows.length} prefix="( " suffix=" )" />
       </p>
       <div className="mt-3">
-        <SectionTitle className="text-4xl font-bold tracking-tight sm:text-7xl" lineClassName="!opacity-25">Explore The Universe</SectionTitle>
+        <SectionTitle className="text-3xl font-bold tracking-tight sm:text-5xl" lineClassName="!opacity-25">Explore The Universe</SectionTitle>
       </div>
 
-      <ul className="-mx-3 mt-12 min-h-[140px] border-t border-foreground/15 sm:-mx-5 sm:mt-20">
+      <ul className="-mx-3 mt-14 min-h-[140px] border-t border-foreground/15 sm:-mx-5 sm:mt-20">
         {rows.map((row, i) => {
           const inner = (
             <>
               <span className="w-8 shrink-0 text-[9px] font-light tracking-[0.3em] sm:w-14 sm:text-[11px]">
                 <CountUp value={i + 1} />
               </span>
-              <span className="font-info flex-1 text-base font-light transition-transform duration-500 group-hover:translate-x-1.5 sm:text-2xl">
+              <span className="font-info flex-1 text-base font-light transition-transform duration-500 group-hover:translate-x-1.5 sm:text-xl">
                 {row.label}
               </span>
               <svg
@@ -79,7 +79,7 @@ export default function HomeTiles() {
           )
           // au survol (ou au toucher) la ligne devient verte d'un coup, puis reprend sa couleur doucement quand on la quitte
           const cls =
-            "group flex items-center gap-2 border-b border-foreground/15 px-3 py-4 transition-[background-color,color] duration-[900ms] ease-out hover:bg-[#154733] hover:text-white hover:duration-150 active:bg-[#154733] active:text-white active:duration-100 sm:px-5 sm:py-6"
+            "group flex items-center gap-2 border-b border-foreground/15 px-3 py-5 transition-[background-color,color] duration-[900ms] ease-out hover:bg-[#154733] hover:text-white hover:duration-150 active:bg-[#154733] active:text-white active:duration-100 sm:px-5 sm:py-7"
           return (
             <li key={row.href}>
               {row.external ? (
