@@ -140,6 +140,10 @@ export default function KibanCollectorPage() {
               }}
             />
           )}
+          {/* crédit photo, discret, en bas à droite (se lit sur fond clair comme sombre) */}
+          <p className="pointer-events-none absolute bottom-3 right-4 font-info text-[9px] uppercase tracking-[0.25em] text-white mix-blend-difference sm:text-[10px]">
+            Courtesy of Lancelot Mol
+          </p>
         </div>
 
         <div className="mx-auto mt-12 sm:mt-16 max-w-3xl text-center">
