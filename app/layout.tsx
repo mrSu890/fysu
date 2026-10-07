@@ -89,19 +89,21 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                // mode automatique : sombre de 20h00 à 7h00, clair le reste du temps.
-                // Le choix manuel (bouton clair/sombre) tient jusqu'au prochain changement d'horaire.
-                var hr = new Date().getHours();
-                var slot = (hr >= 20 || hr < 7) ? "night" : "day";
-                if (localStorage.getItem("fysu-theme-slot") !== slot) {
-                  localStorage.setItem("fysu-theme-slot", slot);
-                  localStorage.setItem("theme", slot === "night" ? "dark" : "light");
-                }
-              } catch (e) {}
-              try {
-                const theme = localStorage.getItem("theme");
-                if (theme === "dark") {
-                  document.documentElement.classList.add("dark");
+                // ambiances : nuit, aube, jour, après-midi (voir lib/mood.ts)
+                // Par défaut le site suit l'heure réelle ; le choix fait avec le soleil du cadran (en bas à droite) est gardé.
+                var d = new Date();
+                var v = d.getHours() * 60 + d.getMinutes();
+                var man = localStorage.getItem("fysu-mood-manual");
+                if (man) { var sv = parseFloat(localStorage.getItem("fysu-mood-v")); if (!isNaN(sv)) v = sv; }
+                var hh = (((v % 1440) + 1440) % 1440) / 60;
+                var mood = (hh >= 21 || hh < 5) ? "night" : hh < 8 ? "dawn" : hh < 14 ? "day" : hh < 18 ? "afternoon" : "dawn";
+                var dark = mood === "night" || mood === "dawn";
+                localStorage.setItem("theme", dark ? "dark" : "light");
+                var root = document.documentElement;
+                if (dark) root.classList.add("dark");
+                if (location.pathname.indexOf("/admin") !== 0) {
+                  if (mood === "dawn") root.classList.add("dawn");
+                  if (mood === "afternoon") root.classList.add("afternoon");
                 }
               } catch (e) {}
               try {

@@ -491,3 +491,31 @@ html.theme-fade *::after {
   }
 }
 /* FIN ÉPURE */
+
+/* ====================================================================
+   AMBIANCES (voir lib/mood.ts) : aube et après-midi
+   - aube : un sombre plus chaud, taupe (s'ajoute au mode sombre)
+   - après-midi : le même clair en crème plus chaud (le blanc cassé d'origine #FAF9F7 reste intact)
+   Les pages qui gardent leur propre fond (TheWave, arcade, Ökēn) ne changent pas.
+   ==================================================================== */
+html.dawn.dark:not(.event-page):not(.wave-page):not(.arcade-page) {
+  --background: #6a6455;
+  --foreground: #f4f0e4;
+  --menu: #2a261e;
+  --toggle-button-bg: #5a5548;
+  --toggle-button-btn: #766f60;
+}
+html.dawn.dark:not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
+  background-color: #6a6455;
+}
+html.dawn.dark:not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
+  background: #5f5a4d;
+  color: #f4f0e4;
+}
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
+  --background: #f5eedf;
+  --menu: #f5eedf;
+}
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
+  background: #faf4e7;
+}
