@@ -37,7 +37,7 @@ export default async function AboutPage() {
             const offset = index % 2 === 1
             return (
               <section key={block.id} className="pb-[16vh]">
-                <div className="mb-10 border-t border-foreground/80 pt-4 sm:mb-14">
+                <div className="mb-10 border-t border-foreground/50 pt-4 sm:mb-14">
                   <p className="font-info text-[11px] font-light uppercase tracking-[0.06em] text-foreground/55">
                     ( {pad(index + 1)} )
                   </p>
