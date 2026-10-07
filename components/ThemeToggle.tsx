@@ -33,7 +33,7 @@ export default function ThemeToggle() {
   };
 
   return (
-      <div className="relative top-5 w-full flex items-center justify-center py-6">
+      <div className="relative -top-2 w-full flex items-center justify-center py-6">
       <button
         type="button"
         onClick={toggle}
