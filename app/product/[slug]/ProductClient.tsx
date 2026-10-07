@@ -285,7 +285,7 @@ export default function ProductClient() {
                 src={mainImage}
                 alt={product.name}
                 fill
-                className="object-contain origin-bottom scale-[1.1]"
+                className="object-cover"
                 priority
               />
             </div>
@@ -305,7 +305,7 @@ export default function ProductClient() {
                       src={img.url}
                       alt={product.name}
                       fill
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 ))}
@@ -322,7 +322,7 @@ export default function ProductClient() {
                       src={img.url}
                       alt={product.name}
                       fill
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 ))}
