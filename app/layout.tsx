@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "@/context/CartContext";
-import { Inter, DM_Mono } from "next/font/google";
+import { Inter_Tight, DM_Mono } from "next/font/google";
 import ClickFeedback from "@/components/ClickFeedback";
 import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
@@ -24,7 +24,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { HOME_DESCRIPTION, HOME_TITLE, SITE, SITE_NAME, organizationJsonLd } from "@/lib/seo";
 
-const inter = Inter({
+const inter = Inter_Tight({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
