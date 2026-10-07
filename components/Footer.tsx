@@ -76,7 +76,7 @@ const Footer: React.FC = () => {
         {/* Email Signup */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
-            <h2 className="font-bold uppercase mb-2">{t("signInNow")}</h2>
+            <h2 className="font-info mb-4 text-[11px] font-light uppercase tracking-[0.3em]">{t("signInNow")}</h2>
             <input
               type="email"
               placeholder={t("emailPlaceholder")}
@@ -91,8 +91,8 @@ const Footer: React.FC = () => {
 
           {/* Client Services */}
           <div>
-            <h2 className="font-bold uppercase mb-2">{t("clientServices")}</h2>
-            <ul className="space-y-2">
+            <h2 className="font-info mb-4 text-[11px] font-light uppercase tracking-[0.3em]">{t("clientServices")}</h2>
+            <ul className="space-y-3 text-sm font-light">
               <li><Link href="/legal/shipping" className="hover:underline" style={ink}>{t("shipping")}</Link></li>
               <li><Link href="/legal/payment" className="hover:underline" style={ink}>{t("payment")}</Link></li>
               <li><Link href="/legal/returns" className="hover:underline" style={ink}>{t("returns")}</Link></li>
@@ -122,8 +122,8 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom links */}
-        <div className={isWave ? "border-t border-current mt-10 pt-6" : "border-t border-white mt-10 pt-6"}>
-          <div className="max-w-6xl mx-auto flex flex-wrap justify-center md:justify-between text-xs md:text-sm gap-4 md:gap-8 text-center">
+        <div className={isWave ? "border-t border-current mt-16 pt-6" : "border-t border-white mt-16 pt-6"}>
+          <div className="max-w-6xl mx-auto flex flex-wrap justify-center md:justify-between font-info text-[10px] font-light uppercase tracking-[0.25em] md:text-[11px] gap-4 md:gap-8 text-center">
             <Link href="/legal/terms" className="hover:underline" style={ink}>{t("legalTerms").toUpperCase()}</Link>
             <Link href="/legal/contact" className="hover:underline" style={ink}>{t("contact").toUpperCase()}</Link>
             <Link href="/privacy" className="hover:underline" style={ink}>{t("privacyPolicy").toUpperCase()}</Link>
