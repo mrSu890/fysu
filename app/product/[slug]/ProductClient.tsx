@@ -364,7 +364,7 @@ export default function ProductClient() {
             </p>
           </div>
 
-          <p className="max-w-md border-t border-foreground/80 pt-8 text-[15px] font-light leading-[1.65] tracking-[-0.01em] whitespace-pre-line opacity-75">
+          <p className="max-w-md border-t border-foreground/50 pt-8 text-[15px] font-light leading-[1.65] tracking-[-0.01em] whitespace-pre-line opacity-75">
             {formatText(product.description)}
           </p>
 
