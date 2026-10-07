@@ -148,10 +148,10 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       </div>
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
-      <div className="relative z-10 flex min-h-[50svh] flex-col items-start justify-center bg-background px-6 py-16 text-left sm:px-10 max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
+      <div className="relative z-10 flex min-h-[50svh] flex-col items-start justify-center bg-background px-7 py-16 text-left sm:px-14 max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
         {/* après l'intro, chaque élément monte du « sol » l'un après l'autre */}
         <IntroReveal delay={0.45}>
-          <p className="font-info text-[10px] font-light uppercase tracking-[0.3em] text-foreground/45 sm:text-[11px]">
+          <p className="font-info text-[10px] font-light uppercase tracking-[0.06em] text-foreground/55 sm:text-[11px]">
             {PRONUNCIATION}
           </p>
         </IntroReveal>
@@ -168,9 +168,9 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
           </IntroReveal>
         </div>
 
-        <div className="absolute inset-x-0 bottom-6 flex justify-start px-6 sm:bottom-8 sm:px-10">
+        <div className="absolute inset-x-0 bottom-6 flex justify-start px-7 sm:bottom-8 sm:px-14">
           <IntroReveal delay={0.9}>
-            <div className="font-info flex gap-8 text-[10px] font-light uppercase tracking-[0.3em] text-foreground/55">
+            <div className="font-info flex gap-8 text-[11px] font-light uppercase tracking-[0.06em] text-foreground/60">
               <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
                 For him
               </Link>
