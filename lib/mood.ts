@@ -75,8 +75,14 @@ const isForced = (html: HTMLElement) =>
   html.classList.contains("event-page") ||
   window.location.pathname.startsWith("/kiban-collector")
 
+let animTimer: number | undefined
+
 export function applyMood(mood: Mood) {
   const html = document.documentElement
+  // transition douce : fond, textes et bordures changent de couleur en fondu (voir « mood-anim » dans globals.css)
+  html.classList.add("mood-anim")
+  window.clearTimeout(animTimer)
+  animTimer = window.setTimeout(() => html.classList.remove("mood-anim"), 2200)
   const admin = window.location.pathname.startsWith("/admin")
   html.classList.toggle("dawn", mood === "dawn" && !admin)
   html.classList.toggle("afternoon", mood === "afternoon" && !admin)
