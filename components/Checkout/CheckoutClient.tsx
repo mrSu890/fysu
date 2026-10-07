@@ -153,21 +153,6 @@ export default function CheckoutClient() {
     }
   };
 
-  if (userLoading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <video
-          src="/videos/fysu_loader.mov"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-[70vw] max-w-[520px] h-auto object-contain"
-        />
-      </div>
-    );
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -283,13 +268,13 @@ export default function CheckoutClient() {
 
           <button
             onClick={handleCheckout}
-            disabled={loading || cart.length === 0}
+            disabled={loading || userLoading || cart.length === 0}
             className="mt-6 w-full cursor-pointer touch-manipulation rounded-full py-4 text-xs font-medium uppercase tracking-[0.2em] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             style={{ background: "var(--foreground)", color: "var(--background)" }}
           >
             {loading
               ? t("redirecting")
-              : user
+              : user || userLoading
               ? t("pay")
               : t("signInToPay")}
           </button>
