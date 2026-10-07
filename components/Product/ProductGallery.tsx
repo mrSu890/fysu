@@ -30,7 +30,7 @@ export default function ProductGallery({ product, selectedColor }: Props) {
             src={mainImage}
             alt={product.name}
             fill
-            className="object-contain"
+            className="object-cover"
             priority
           />
         </div>
@@ -44,7 +44,7 @@ export default function ProductGallery({ product, selectedColor }: Props) {
                 src={img.url}
                 alt={product.name}
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
           ))}
