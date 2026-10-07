@@ -5,7 +5,7 @@ import Product from "../Product";
 import { ProductType } from "../../types/product"
 import SectionTitle from "../SectionTitle";
 
-export default function HomeSection({ slug, index }: { slug: string; index?: number }) {
+export default function HomeSection({ slug }: { slug: string; index?: number }) {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [title, setTitle] = useState("");
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -22,14 +22,9 @@ export default function HomeSection({ slug, index }: { slug: string; index?: num
   if (!products.length) return null;
 
   return (
-       <section className="relative top-10 w-11/12 mx-auto sm:mb-24">
+       <section className="relative top-6 w-11/12 mx-auto sm:mb-24">
       <div className="mb-12 sm:mb-16">
-        <div className="mb-6 border-t border-foreground/50 pt-4 sm:mb-8">
-          <p className="font-info text-[11px] font-light uppercase tracking-[0.06em] text-foreground/55">
-            {index ? `( ${String(index).padStart(2, "0")} )` : ""}
-          </p>
-        </div>
-        <SectionTitle className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">{title}</SectionTitle>
+        <SectionTitle lineAbove className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">{title}</SectionTitle>
       </div>
 
       <div
