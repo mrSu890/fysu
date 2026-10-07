@@ -285,7 +285,7 @@ export default function ProductClient() {
                 src={mainImage}
                 alt={product.name}
                 fill
-                className="object-contain"
+                className="object-contain origin-bottom scale-[1.1]"
                 priority
               />
             </div>
