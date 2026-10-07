@@ -148,29 +148,29 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       </div>
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
-      <div className="relative z-10 flex min-h-[50svh] flex-col items-center justify-center bg-background px-8 py-16 text-center max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
+      <div className="relative z-10 flex min-h-[50svh] flex-col items-start justify-center bg-background px-6 py-16 text-left sm:px-10 max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
         {/* après l'intro, chaque élément monte du « sol » l'un après l'autre */}
         <IntroReveal delay={0.45}>
-          <p className="text-[11px] font-light uppercase tracking-[0.4em] text-foreground/35 sm:text-xs">
+          <p className="font-info text-[10px] font-light uppercase tracking-[0.3em] text-foreground/45 sm:text-[11px]">
             {PRONUNCIATION}
           </p>
         </IntroReveal>
 
-        <IntroReveal className="mt-8 sm:mt-10" delay={0.6}>
-          <p className="max-w-[22rem] text-[13px] font-light leading-[1.9] text-foreground/80 sm:max-w-md sm:text-sm">
+        <IntroReveal className="mt-10 sm:mt-12" delay={0.6}>
+          <p className="max-w-[20rem] text-lg font-light leading-[1.55] tracking-[-0.01em] text-foreground sm:max-w-md sm:text-2xl">
             {intro}
           </p>
         </IntroReveal>
 
-        <div className="mt-5 -mb-4 sm:mt-7">
+        <div className="mt-8 -mb-4 w-full sm:mt-10 [&_div.relative]:!top-0 [&_div.relative]:!justify-start [&_div.relative]:!py-2">
           <IntroReveal delay={0.75} mask={false}>
             <ThemeToggle />
           </IntroReveal>
         </div>
 
-        <div className="absolute inset-x-0 bottom-6 flex justify-center sm:bottom-8">
+        <div className="absolute inset-x-0 bottom-6 flex justify-start px-6 sm:bottom-8 sm:px-10">
           <IntroReveal delay={0.9}>
-            <div className="flex gap-8 text-[10px] font-light uppercase tracking-[0.3em] text-foreground/45">
+            <div className="font-info flex gap-8 text-[10px] font-light uppercase tracking-[0.3em] text-foreground/55">
               <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
                 For him
               </Link>
