@@ -203,6 +203,8 @@ export default function PixelTransition() {
     if (prevPath.current === pathname) return
     const from = prevPath.current
     prevPath.current = pathname
+    // l'image « transportée » de la carte à la fiche produit gère seule ce changement de page (ProductHero)
+    if ((window as any).__heroActive) return
 
     if (isPixelExcluded(pathname) || isPixelExcluded(from) || isCalm()) {
       setPhase("idle")

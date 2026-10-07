@@ -43,6 +43,7 @@ const Product = ({
   const [currentIndex, setCurrentIndex] = useState(0)
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const swipedRef = useRef(false)
+  const boxRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     return () => {
@@ -67,6 +68,16 @@ const Product = ({
 
   const goToProduct = () => {
     const path = `/product/${product.slug}`
+    // l'image de la carte est « transportée » jusqu'à la fiche (voir components/ProductHero.tsx) ;
+    // pas pour The Wave (qui a son eau) ni quand la carte montre une autre image que la première
+    try {
+      const hero = (window as unknown as { __fysuHero?: (el: HTMLElement | null, p: string, src: string | null) => boolean }).__fysuHero
+      const imgs = boxRef.current?.querySelectorAll("img")
+      const shown = imgs?.[currentIndex] as HTMLImageElement | undefined
+      if (hero && currentIndex === 0 && product.brand !== "thewave" && shown?.currentSrc) {
+        if (hero(boxRef.current, path, shown.currentSrc)) return
+      }
+    } catch {}
     // la transition (eau / pixels) prend la main si elle est prête ; sinon navigation normale
     const handled = (window as unknown as { __fysuNavigate?: (p: string) => boolean }).__fysuNavigate?.(path)
     if (!handled) router.push(path)
@@ -122,6 +133,7 @@ const Product = ({
 
       {/* Image */}
       <div
+        ref={boxRef}
         className="relative mb-4 aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-2xl bg-neutral-100"
         style={showArrows ? undefined : { touchAction: "pan-y" }}
         onClick={() => {
