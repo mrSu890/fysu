@@ -10,6 +10,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import ClockWeather from "@/components/ClockWeather";
 import SiteLoader from "@/components/SiteLoader";
 import PixelTransition from "@/components/PixelTransition";
+import ProductHero from "@/components/ProductHero";
 import NotificationToasts from "@/components/NotificationToasts";
 import RegionGate from "@/components/RegionGate";
 import ExtraCopyBridge from "@/components/ExtraCopyBridge";
@@ -150,6 +151,8 @@ export default async function RootLayout({
                 <MiniPlayer />
                 {/* Transition en pixels entre les pages */}
                 <PixelTransition />
+                {/* Image de la carte produit transportée jusqu'à la fiche */}
+                <ProductHero />
                 {/* Accessibilité : pastille en bas à gauche */}
                 <AccessibilityMenu />
               </MusicPlayerProvider>

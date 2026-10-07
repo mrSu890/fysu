@@ -549,3 +549,8 @@ html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
 html.afternoon:not(.dark) .aspect-\[3\/4\] span.bg-white\/90 {
   background-color: #f9f3e6 !important;
 }
+
+/* Transport de l'image (carte -> fiche produit) : la vraie image reste cachée pendant que la copie arrive (components/ProductHero.tsx) */
+html.hero-running [data-hero-target] {
+  visibility: hidden;
+}
