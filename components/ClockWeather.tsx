@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import { useLocale } from "next-intl"
 import { AnimatePresence, motion } from "framer-motion"
 import { MOOD_LABEL, applyMood, clearManual, currentMood, moodAt, readManual, realMinutes, saveManual, type Mood } from "@/lib/mood"
 
@@ -186,7 +185,11 @@ function Dial({ v, minute, onDrag, onEnd, label }: { v: number; minute: number; 
 
 export default function ClockWeather() {
   const pathname = usePathname() ?? "/"
-  const locale = useLocale()
+  // ClockWeather est placé hors du fournisseur next-intl dans layout.tsx : on lit la langue de la page (<html lang>)
+  const [locale, setLocale] = useState("fr")
+  useEffect(() => {
+    setLocale(document.documentElement.lang || "fr")
+  }, [pathname])
   const lang: "fr" | "en" = locale?.startsWith("fr") ? "fr" : "en"
   const tx = POPUP_TEXT[lang]
   const [now, setNow] = useState<Date | null>(null)
