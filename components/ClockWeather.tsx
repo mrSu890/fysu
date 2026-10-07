@@ -121,6 +121,14 @@ function Dial({ v, minute, onDrag, onEnd, label }: { v: number; minute: number; 
   }
   const sun = at(sunDeg)
   const moon = at(moonDeg)
+  // les deux traits qui dessinent le cercle : du soleil vers la lune, et de la lune vers le soleil (sens horaire)
+  const span1 = (((moonDeg - sunDeg) % 360) + 360) % 360
+  const span2 = 360 - span1
+  const [drawn, setDrawn] = useState(false)
+  useEffect(() => {
+    const id = window.setTimeout(() => setDrawn(true), 1700)
+    return () => window.clearTimeout(id)
+  }, [])
 
   return (
     <svg
@@ -162,14 +170,39 @@ function Dial({ v, minute, onDrag, onEnd, label }: { v: number; minute: number; 
       }}
       style={{ cursor: "grab" }}
     >
-      <circle cx={C} cy={C} r={R} fill="none" stroke="currentColor" strokeWidth="1" opacity="0.75" />
+      {/* à l'ouverture : seuls le soleil et la lune apparaissent, puis un trait sort de chacun et dessine le cercle */}
+      {drawn ? (
+        <circle cx={C} cy={C} r={R} fill="none" stroke="currentColor" strokeWidth="1" opacity="0.75" />
+      ) : (
+        <g fill="none" stroke="currentColor" strokeWidth="1" opacity="0.75">
+          {span1 > 0.5 && (
+            <motion.path
+              d={`M ${sun.x} ${sun.y} A ${R} ${R} 0 ${span1 > 180 ? 1 : 0} 1 ${moon.x} ${moon.y}`}
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1.1, delay: 0.5, ease: "easeInOut" }}
+            />
+          )}
+          {span2 > 0.5 && (
+            <motion.path
+              d={`M ${moon.x} ${moon.y} A ${R} ${R} 0 ${span2 > 180 ? 1 : 0} 1 ${sun.x} ${sun.y}`}
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1.1, delay: 0.5, ease: "easeInOut" }}
+            />
+          )}
+        </g>
+      )}
       {/* lune : la minute */}
       <g transform={`translate(${moon.x} ${moon.y})`} opacity="0.9">
+        <motion.g initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" }}>
         <circle r="6.5" fill="var(--menu)" stroke="currentColor" strokeWidth="1" />
         <path d="M2.2 -3.6A4.2 4.2 0 1 0 2.2 3.6 3.4 3.4 0 1 1 2.2 -3.6z" fill="currentColor" />
+        </motion.g>
       </g>
       {/* soleil : l'heure */}
       <g transform={`translate(${sun.x} ${sun.y})`}>
+        <motion.g initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45, ease: "easeOut" }}>
         <circle r="16" fill="transparent" />
         <circle r="7" fill="currentColor" />
         <g stroke="currentColor" strokeWidth="1" strokeLinecap="round">
@@ -178,6 +211,7 @@ function Dial({ v, minute, onDrag, onEnd, label }: { v: number; minute: number; 
             return <line key={i} x1={Math.sin(a) * 10.5} y1={-Math.cos(a) * 10.5} x2={Math.sin(a) * 14} y2={-Math.cos(a) * 14} />
           })}
         </g>
+        </motion.g>
       </g>
     </svg>
   )
