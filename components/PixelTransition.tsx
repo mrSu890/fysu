@@ -177,6 +177,8 @@ export default function PixelTransition() {
       if (target.closest("button, [role='button'], input, select, textarea, label")) return
 
       const a = target.closest("a[href]") as HTMLAnchorElement | null
+      // les liens marqués data-hero-link (carte album…) lancent leur propre transition d'image (ProductHero)
+      if (a?.hasAttribute("data-hero-link")) return
       if (!a || a.target === "_blank" || a.hasAttribute("download")) return
 
       let url: URL

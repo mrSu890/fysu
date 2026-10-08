@@ -82,9 +82,21 @@ export default function ProductHero() {
     let t0 = 0
     let flyingNow = false
     let doneAt = 0
+    let clipEl: HTMLElement | null | undefined
     const started = Date.now()
     const DURATION = 900
     const ease = (t: number) => 1 - Math.pow(1 - t, 4)
+    // le plus proche parent qui découpe son contenu (zone de défilement de la fiche sur téléphone, par exemple) :
+    // la vraie image y est coupée, donc la copie doit l'être aussi, sinon elle « se recadre » d'un coup à l'arrivée
+    const findClip = (target: HTMLElement): HTMLElement | null => {
+      let a = target.parentElement
+      while (a && a !== document.body && a !== document.documentElement) {
+        const cs = getComputedStyle(a)
+        if (/(auto|scroll|hidden|clip)/.test(cs.overflowY) || /(auto|scroll|hidden|clip)/.test(cs.overflowX)) return a
+        a = a.parentElement
+      }
+      return null
+    }
     const live = (): { r: DOMRect; el: HTMLElement } | null => {
       const el = document.querySelector("[data-hero-target]") as HTMLElement | null
       if (!el) return null
@@ -121,11 +133,26 @@ export default function ProductHero() {
         const f = job.from
         const t = l.r
         const el = imgRef.current
-        el.style.top = `${f.top + (t.top - f.top) * e}px`
-        el.style.left = `${f.left + (t.left - f.left) * e}px`
-        el.style.width = `${f.width + (t.width - f.width) * e}px`
-        el.style.height = `${f.height + (t.height - f.height) * e}px`
-        el.style.borderRadius = `${job.radius * (1 - e)}px`
+        if (clipEl === undefined) clipEl = findClip(l.el)
+        const top = f.top + (t.top - f.top) * e
+        const left = f.left + (t.left - f.left) * e
+        const width = f.width + (t.width - f.width) * e
+        const height = f.height + (t.height - f.height) * e
+        // arrondi : celui de la carte au départ, celui de l'image de la fiche à l'arrivée
+        const endRadius = parseFloat(getComputedStyle(l.el).borderTopLeftRadius) || 0
+        el.style.top = `${top}px`
+        el.style.left = `${left}px`
+        el.style.width = `${width}px`
+        el.style.height = `${height}px`
+        el.style.borderRadius = `${job.radius + (endRadius - job.radius) * e}px`
+        if (clipEl) {
+          const c = clipEl.getBoundingClientRect()
+          const it = Math.max(0, c.top - top) * e
+          const ib = Math.max(0, top + height - c.bottom) * e
+          const il = Math.max(0, c.left - left) * e
+          const ir = Math.max(0, left + width - c.right) * e
+          el.style.clipPath = `inset(${it}px ${ir}px ${ib}px ${il}px)`
+        }
         if (p >= 1) {
           if (!doneAt) doneAt = now
           if (now - doneAt > 600) {
