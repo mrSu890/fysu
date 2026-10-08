@@ -94,7 +94,7 @@ export default function CollectionPage() {
     return (
       <>
         <Navbar />
-        <div className="p-20 text-center text-neutral-500">
+        <div className="p-20 text-center text-foreground/50">
           {t("collectionNotFound")}
         </div>
         <Footer />
@@ -180,7 +180,7 @@ export default function CollectionPage() {
         {/* CONTENT */}
         <div className={`relative px-6 pb-44 ${hasHero ? "pt-8" : "pt-12"}`}>
           {products.length === 0 ? (
-            <p className="text-neutral-500 font-dior">
+            <p className="text-foreground/50 font-dior">
               {t("noProducts")}
             </p>
           ) : (
