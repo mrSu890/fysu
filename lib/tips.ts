@@ -47,6 +47,20 @@ export const TIPS: Tip[] = [
     ],
   },
   {
+    // quand le petit cadran est ouvert : comment tourner le soleil
+    id: "clock-dial",
+    trigger: '[data-tip="clock-dial"][data-ready="1"]',
+    steps: [
+      {
+        target: "clock-dial",
+        text: {
+          fr: "Pose le doigt sur le soleil et fais-le glisser tout autour du cercle, sans lever le doigt : vers la droite pour avancer dans la journée, vers la gauche pour reculer. Les couleurs du site changent doucement avec lui.",
+          en: "Put your finger on the sun and slide it all around the circle without lifting: to the right to move forward through the day, to the left to go back. The site's colours change gently with it.",
+        },
+      },
+    ],
+  },
+  {
     // la première fois qu'on écoute de la musique
     id: "music",
     trigger: '[data-tip="music-vinyl"][data-playing="1"]',
