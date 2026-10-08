@@ -17,15 +17,19 @@ export type Kind = "top" | "bottom"
 export type Answers = {
   usual: string // XS … XXL ou ""
   brand: string
+  brandSize: string // la taille qui lui va parfaitement dans cette marque (XS … XXL) ou ""
   height: string // cm
   weight: string // kg
   measure: string // tour de poitrine (haut) ou de taille (bas), en cm
   fit: Fit
 }
 
-export const EMPTY_ANSWERS: Answers = { usual: "", brand: "", height: "", weight: "", measure: "", fit: "regular" }
+export const EMPTY_ANSWERS: Answers = { usual: "", brand: "", brandSize: "", height: "", weight: "", measure: "", fit: "regular" }
 
 export const LETTER_SIZES = ["XS", "S", "M", "L", "XL", "XXL"]
+
+// marques proposées au client (pour ajouter ou retirer une marque : modifie cette liste)
+export const BRANDS = ["Zara", "H&M", "Uniqlo", "COS", "Acne Studios", "Maison Kitsuné", "A.P.C.", "Nike"]
 
 // taille habituelle -> tour de poitrine / tour de taille du corps (cm)
 const CHEST_OF: Record<string, number> = { XS: 86, S: 92, M: 98, L: 104, XL: 110, XXL: 116 }
@@ -74,12 +78,14 @@ export function advise(guide: SizeGuide | null, a: Answers): Advice {
   const w = num(a.weight)
   const own = num(a.measure)
   const usual = a.usual && (kind === "top" ? CHEST_OF[a.usual] : WAIST_OF[a.usual])
+  const brandRef = a.brand && a.brandSize ? (kind === "top" ? CHEST_OF[a.brandSize] : WAIST_OF[a.brandSize]) : 0
   const hw = h && w ? (kind === "top" ? chestFromHW(h, w) : waistFromHW(h, w)) : null
 
   // on mélange ce qu'on sait (une mesure que le client connaît pèse le plus)
   const parts: [number, number][] = []
   if (own) parts.push([own, 3])
   if (usual) parts.push([usual, 2])
+  if (brandRef) parts.push([brandRef, 1.5]) // une taille qui « va parfaitement » dans une marque : bon repère, mais chaque marque taille à sa façon
   if (hw) parts.push([hw, 1.5])
   if (!parts.length) return { ok: false, reason: "no-answers" }
   const total = parts.reduce((s, p) => s + p[1], 0)
