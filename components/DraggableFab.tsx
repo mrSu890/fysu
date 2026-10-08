@@ -8,8 +8,9 @@ import { motion, useMotionValue } from "framer-motion"
    - on le glisse avec le doigt (ou la souris) n'importe où sur l'écran
    - sa place est retenue sur cet appareil
    - un simple toucher (sans glisser) déclenche l'action
-   - option « tuckable » : une petite croix range la pastille hors de l'écran ; il reste une languette
-     avec une flèche au bord, qu'on touche pour la faire revenir
+   - un toucher est reconnu même si le doigt bouge un tout petit peu (moins de 10 px) : la pastille ne glisse pas
+   - option « tuckable » : une petite croix range la pastille hors de l'écran (même glissement doux que la barre
+     du haut) ; il reste une languette avec une flèche au bord, qu'on touche pour la faire revenir
    ==================================================================== */
 
 const MARGIN = 16
@@ -52,32 +53,15 @@ export default function DraggableFab({
   const boundsRef = useRef<HTMLDivElement | null>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
-  const moved = useRef(false)
+  const down = useRef<{ cx: number; cy: number; ox: number; oy: number } | null>(null)
+  const tapped = useRef(false)
 
   // pastille rangée sur le bord (retenu sur cet appareil)
   const tuckKey = `${storageKey}-tucked`
   const [tucked, setTucked] = useState(false)
+  const [shift, setShift] = useState(0) // de combien elle glisse pour sortir de l'écran
+  const [instant, setInstant] = useState(false) // pas d'animation au chargement de la page
   const [fr, setFr] = useState(true)
-  useEffect(() => {
-    setFr(!document.documentElement.lang.startsWith("en"))
-    if (!tuckable) return
-    try {
-      setTucked(localStorage.getItem(tuckKey) === "1")
-    } catch {
-      /* ignore */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  const setTuck = (v: boolean) => {
-    setTucked(v)
-    try {
-      if (v) localStorage.setItem(tuckKey, "1")
-      else localStorage.removeItem(tuckKey)
-    } catch {
-      /* ignore */
-    }
-  }
-  const baseBottom = `${MARGIN + bottomOffset}px + env(safe-area-inset-bottom) + ${lift ? "var(--fab-lift, 0px)" : "0px"}`
 
   // limites (écran visible) pour un décalage donné depuis la place d'origine
   const clamp = (ox: number, oy: number) => {
@@ -94,20 +78,44 @@ export default function DraggableFab({
     }
   }
 
+  const outShift = () => {
+    const dist = side === "right" ? MARGIN - x.get() : MARGIN + x.get()
+    return (dist + size + 14) * (side === "right" ? 1 : -1)
+  }
+
   // place retenue
   useEffect(() => {
+    setFr(!document.documentElement.lang.startsWith("en"))
     try {
       const raw = localStorage.getItem(storageKey)
-      if (!raw) return
-      const saved = JSON.parse(raw) as { x: number; y: number }
-      const c = clamp(Number(saved.x) || 0, Number(saved.y) || 0)
-      x.set(c.x)
-      y.set(c.y)
+      if (raw) {
+        const saved = JSON.parse(raw) as { x: number; y: number }
+        const c = clamp(Number(saved.x) || 0, Number(saved.y) || 0)
+        x.set(c.x)
+        y.set(c.y)
+      }
+      if (tuckable && localStorage.getItem(tuckKey) === "1") {
+        setInstant(true)
+        setShift(outShift())
+        setTucked(true)
+        window.setTimeout(() => setInstant(false), 80)
+      }
     } catch {
       /* ignore */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const setTuck = (v: boolean) => {
+    if (v) setShift(outShift())
+    setTucked(v)
+    try {
+      if (v) localStorage.setItem(tuckKey, "1")
+      else localStorage.removeItem(tuckKey)
+    } catch {
+      /* ignore */
+    }
+  }
 
   // si l'écran change de taille (rotation de l'iPad), le bouton reste visible
   useEffect(() => {
@@ -115,11 +123,17 @@ export default function DraggableFab({
       const c = clamp(x.get(), y.get())
       x.set(c.x)
       y.set(c.y)
+      if (tucked) setShift(outShift())
     }
     window.addEventListener("resize", onResize)
     return () => window.removeEventListener("resize", onResize)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [tucked])
+
+  const baseBottom = `${MARGIN + bottomOffset}px + env(safe-area-inset-bottom) + ${lift ? "var(--fab-lift, 0px)" : "0px"}`
+  // même glissement que la barre du haut (0,5 s, démarrage vif, arrivée douce)
+  const glide = { duration: instant ? 0 : 0.5, ease: "easeOut" as const }
+  const off = tuckable && tucked
 
   return (
     <motion.div
@@ -131,22 +145,25 @@ export default function DraggableFab({
       className="pointer-events-none fixed inset-0"
       style={{ zIndex }}
     >
-      {tuckable && tucked ? (
+      {/* languette au bord : elle apparaît quand la pastille est rangée */}
+      {tuckable && (
         <motion.button
           type="button"
           aria-label={fr ? "Faire revenir" : "Bring back"}
           title={fr ? "Faire revenir" : "Bring back"}
-          initial={{ x: side === "right" ? 24 : -24, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          tabIndex={off ? 0 : -1}
+          initial={false}
+          animate={{ x: off ? 0 : side === "right" ? 30 : -30, opacity: off ? 1 : 0 }}
+          transition={{ ...glide, delay: off && !instant ? 0.12 : 0 }}
           onClick={() => setTuck(false)}
-          className={`liquid-glass pointer-events-auto absolute flex h-[52px] w-[22px] cursor-pointer items-center justify-center ${
+          className={`liquid-glass absolute flex h-[56px] w-[26px] cursor-pointer items-center justify-center ${
             side === "right" ? "rounded-l-full" : "rounded-r-full"
           }`}
           style={{
             ...style,
+            pointerEvents: off ? "auto" : "none",
             ...(side === "right" ? { right: 0 } : { left: 0 }),
-            bottom: `calc(${baseBottom} + ${(size - 52) / 2 - y.get()}px)`,
+            bottom: `calc(${baseBottom} + ${(size - 56) / 2 - y.get()}px)`,
             transition: lift ? "bottom 0.3s ease" : undefined,
           }}
         >
@@ -154,73 +171,96 @@ export default function DraggableFab({
             <path d={side === "right" ? "M8 2L4 6l4 4" : "M4 2l4 4-4 4"} />
           </svg>
         </motion.button>
-      ) : (
-      <>
-      <motion.button
-        type="button"
-        aria-label={label}
-        title={label}
-        data-tip={tip}
-        drag
-        dragConstraints={boundsRef}
-        dragElastic={0}
-        dragMomentum={false}
-        onDragStart={() => {
-          moved.current = true
-        }}
-        onDragEnd={() => {
-          try {
-            localStorage.setItem(storageKey, JSON.stringify({ x: x.get(), y: y.get() }))
-          } catch {
-            /* ignore */
-          }
-          window.setTimeout(() => {
-            moved.current = false
-          }, 60)
-        }}
-        onClick={() => {
-          if (!moved.current) onTap()
-        }}
-        whileTap={{ scale: 0.94 }}
-        className={`pointer-events-auto absolute flex cursor-pointer items-center justify-center rounded-full ${className}`}
-        style={{
-          ...style,
-          x,
-          y,
-          width: size,
-          height: size,
-          ...(side === "right" ? { right: MARGIN } : { left: MARGIN }),
-          bottom: `calc(${MARGIN + bottomOffset}px + env(safe-area-inset-bottom) + ${lift ? "var(--fab-lift, 0px)" : "0px"})`,
-          transition: lift ? "bottom 0.3s ease" : undefined,
-          touchAction: "none",
-        }}
-      >
-        {children}
-      </motion.button>
+      )}
 
-      {tuckable && (
+      {/* pastille + petite croix : elles glissent ensemble hors de l'écran */}
+      <motion.div
+        initial={false}
+        animate={{ x: off ? shift : 0, opacity: off ? 0 : 1 }}
+        transition={glide}
+        className="pointer-events-none absolute inset-0"
+      >
         <motion.button
           type="button"
-          aria-label={fr ? "Ranger sur le côté" : "Tuck away"}
-          title={fr ? "Ranger sur le côté" : "Tuck away"}
-          onClick={() => setTuck(true)}
-          className="liquid-glass pointer-events-auto absolute flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full"
+          aria-label={label}
+          title={label}
+          data-tip={tip}
+          tabIndex={off ? -1 : 0}
+          drag
+          dragConstraints={boundsRef}
+          dragElastic={0}
+          dragMomentum={false}
+          onPointerDown={(e) => {
+            down.current = { cx: e.clientX, cy: e.clientY, ox: x.get(), oy: y.get() }
+            tapped.current = false
+          }}
+          onDragEnd={() => {
+            try {
+              localStorage.setItem(storageKey, JSON.stringify({ x: x.get(), y: y.get() }))
+            } catch {
+              /* ignore */
+            }
+          }}
+          onPointerUp={(e) => {
+            const d = down.current
+            down.current = null
+            if (!d) return
+            // le doigt a à peine bougé : c'est un toucher, pas un glissement
+            if (Math.hypot(e.clientX - d.cx, e.clientY - d.cy) < 10) {
+              tapped.current = true
+              x.set(d.ox)
+              y.set(d.oy)
+              onTap()
+            }
+          }}
+          onClick={(e) => {
+            // clavier (Entrée / Espace) : pas de pointeur, donc on déclenche ici
+            if (e.detail === 0 && !tapped.current) onTap()
+          }}
+          whileTap={{ scale: 0.94 }}
+          className={`absolute flex cursor-pointer items-center justify-center rounded-full ${className}`}
           style={{
             ...style,
+            pointerEvents: off ? "none" : "auto",
             x,
             y,
-            ...(side === "right" ? { right: MARGIN + size - 12 } : { left: MARGIN + size - 12 }),
-            bottom: `calc(${baseBottom} + ${size - 12}px)`,
+            width: size,
+            height: size,
+            ...(side === "right" ? { right: MARGIN } : { left: MARGIN }),
+            bottom: `calc(${baseBottom})`,
             transition: lift ? "bottom 0.3s ease" : undefined,
+            touchAction: "none",
           }}
         >
-          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-            <path d="M2 2l8 8M10 2l-8 8" />
-          </svg>
+          {children}
         </motion.button>
-      )}
-      </>
-      )}
+
+        {tuckable && (
+          <motion.button
+            type="button"
+            aria-label={fr ? "Ranger sur le côté" : "Tuck away"}
+            title={fr ? "Ranger sur le côté" : "Tuck away"}
+            tabIndex={off ? -1 : 0}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setTuck(true)}
+            className="liquid-glass absolute flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-full"
+            style={{
+              ...style,
+              pointerEvents: off ? "none" : "auto",
+              x,
+              y,
+              ...(side === "right" ? { right: MARGIN + size - 16 } : { left: MARGIN + size - 16 }),
+              bottom: `calc(${baseBottom} + ${size - 16}px)`,
+              transition: lift ? "bottom 0.3s ease" : undefined,
+              touchAction: "manipulation",
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+              <path d="M2 2l8 8M10 2l-8 8" />
+            </svg>
+          </motion.button>
+        )}
+      </motion.div>
     </motion.div>
   )
 }
