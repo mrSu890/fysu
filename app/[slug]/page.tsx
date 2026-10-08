@@ -115,7 +115,7 @@ function CollectionPage() {
     return (
       <>
         <Navbar />
-        <div className="p-20 text-center text-neutral-500">
+        <div className="p-20 text-center text-foreground/50">
           {t("pageNotFound")}
         </div>
         <Footer />
@@ -220,7 +220,7 @@ function CollectionPage() {
         }`}
       >
         {sections.length === 0 ? (
-          <p className="text-neutral-500">
+          <p className="text-foreground/50">
             {t("noProducts")}
           </p>
         ) : (
