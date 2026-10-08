@@ -71,11 +71,28 @@ function ExpandableText({ text }: { text: string }) {
   )
 }
 
-export function BlockMedia({ url, alt, className = "" }: { url: string; alt: string; className?: string }) {
+export function BlockMedia({
+  url,
+  alt,
+  className = "",
+  cropTop = 0,
+}: {
+  url: string
+  alt: string
+  className?: string
+  cropTop?: number // px de l'image coupés en haut (recadrage vers le bas)
+}) {
   return isVideoUrl(url) ? (
     <video src={url} className={`absolute inset-0 h-full w-full object-cover ${className}`} muted autoPlay loop playsInline />
   ) : (
-    <Image src={url} alt={alt} fill className={`object-cover object-top ${className}`} sizes="(min-width: 1024px) 50vw, 100vw" />
+    <Image
+      src={url}
+      alt={alt}
+      fill
+      className={`object-cover object-top ${className}`}
+      style={cropTop ? { top: -cropTop, height: `calc(100% + ${cropTop}px)` } : undefined}
+      sizes="(min-width: 1024px) 50vw, 100vw"
+    />
   )
 }
 
@@ -101,7 +118,7 @@ export default function ProductInfoBlocks({ blocks }: { blocks: InfoBlock[] }) {
                 flip ? "lg:order-2" : ""
               }`}
             >
-              <BlockMedia url={block.image_url!} alt={block.title ?? "FYSU"} />
+              <BlockMedia url={block.image_url!} alt={block.title ?? "FYSU"} cropTop={26} />
             </div>
 
             <div className="flex flex-col justify-center px-8 py-14 sm:px-14 lg:px-20 lg:py-0">
