@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import HelpLink from "@/components/HelpLink";
 
 type Applied = { code: string; freeShipping: boolean; discountLabel: string };
 
@@ -278,6 +279,9 @@ export default function CheckoutClient() {
               ? t("pay")
               : t("signInToPay")}
           </button>
+          <div className="mt-5 text-center">
+            <HelpLink />
+          </div>
         </div>
       </div>
     </motion.div>
