@@ -9,6 +9,7 @@ import { usePageVisible } from "@/lib/usePageVisible"
    - Quand on défile : rien d'autre ne bouge. Seul le logo rétrécit et glisse jusqu'à la place
      du logo de la barre de navigation, en passant du rose au blanc (mode clair) ou au noir (mode sombre).
    - Une fois arrivé, la barre de navigation apparaît.
+   - Cette intro ne se joue qu'une seule fois par visite : en remontant tout en haut, le grand logo ne revient pas.
    ==================================================================== */
 
 const PINK = "#e8b5b2" // ← la couleur du grand logo (modifiable ici)
@@ -67,7 +68,12 @@ export default function LogoIntro({ children }: { children: ReactNode }) {
       const vw = window.innerWidth
       const y = window.scrollY
       const end = D * 0.9 // le logo est arrivé à 90 % de l'intro, la barre apparaît alors
-      const p = clamp(y / end)
+      let p = clamp(y / end)
+      // l'intro ne se joue qu'une fois par visite : une fois le logo arrivé dans la barre, quand on remonte
+      // tout en haut (ou qu'on revient sur l'accueil) le grand logo ne revient pas, la barre reste en place
+      const flag = window as unknown as { __logoIntroDone?: boolean }
+      if (flag.__logoIntroDone) p = 1
+      else if (p >= 1) flag.__logoIntroDone = true
       const e = smooth(p)
 
       const w0 = vw * (1 - SIDE_MARGIN * 2)
