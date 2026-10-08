@@ -375,6 +375,28 @@ export default function NotificationToasts() {
         dismissRef.current = finish
       })
 
+    // On demande l'astuce de l'horloge et on attend qu'elle soit fermée (ou qu'il n'y ait rien à montrer)
+    const clockTip = () =>
+      new Promise<void>((resolve) => {
+        let acked = false
+        const end = () => {
+          window.removeEventListener("fysu-tip-done", onDone)
+          window.removeEventListener("fysu-tip-ack", onAck)
+          resolve()
+        }
+        const onDone = (e: Event) => {
+          if ((e as CustomEvent).detail === "clock") end()
+        }
+        const onAck = (e: Event) => {
+          if ((e as CustomEvent).detail === "clock") acked = true
+        }
+        window.addEventListener("fysu-tip-done", onDone)
+        window.addEventListener("fysu-tip-ack", onAck)
+        window.dispatchEvent(new CustomEvent("fysu-tip-request", { detail: "clock" }))
+        timers.push(window.setTimeout(() => !acked && end(), 1500)) // personne n'a répondu
+        timers.push(window.setTimeout(end, 180000)) // sécurité
+      })
+
     // Le message de bienvenue : une seule fois par visite
     const welcomeOk = () => readSession("fysu:toast:welcome") !== "1"
 
@@ -413,13 +435,19 @@ export default function NotificationToasts() {
         }
       }
 
-      // 3. Inscription (si pas connecté, pas plus d'une fois par semaine)
-      if (!cancelled && signupOk()) {
-        await sleep(SIGNUP_GAP)
+      // 3. Astuce de l'horloge, puis inscription (si pas connecté, pas plus d'une fois par semaine)
+      if (!cancelled) {
+        await sleep(signupOk() ? SIGNUP_GAP : 3000)
         await waitCookies()
         await sleep(3000)
         if (cancelled) return
-        if (!isExcluded() && signupOk()) {
+        if (!isExcluded()) {
+          // la petite astuce sur l'heure passe juste AVANT la question, jamais en même temps
+          await clockTip()
+          if (cancelled) return
+          await sleep(1500)
+        }
+        if (!cancelled && !isExcluded() && signupOk()) {
           writeStore("fysu:toast:signup", String(Date.now()))
           await show("signup", SIGNUP_VISIBLE)
         }

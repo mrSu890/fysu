@@ -80,6 +80,49 @@ export default function Tips() {
     return () => window.removeEventListener("fysu-tips-reset", onReset)
   }, [])
 
+  // astuce « sur demande » : un autre composant la réclame, on répond toujours « fini » (même si on ne l'a pas montrée)
+  useEffect(() => {
+    const onRequest = (e: Event) => {
+      const id = (e as CustomEvent).detail as string
+      const tip = TIPS.find((t) => t.id === id)
+      const finish = () => window.dispatchEvent(new CustomEvent("fysu-tip-done", { detail: id }))
+      window.dispatchEvent(new CustomEvent("fysu-tip-ack", { detail: id }))
+      if (!tip || blockedPage || tipsOff() || tipsSeen().includes(id)) return finish()
+      let tries = 0
+      const poll = window.setInterval(() => {
+        tries++
+        const html = document.documentElement
+        if (html.classList.contains("a11y-focus")) {
+          window.clearInterval(poll)
+          return finish()
+        }
+        const target = document.querySelector(tip.trigger) && findTarget(tip.steps[0].target)
+        const busy = activeRef.current != null
+        if (target && !busy) {
+          window.clearInterval(poll)
+          markTipSeen(tip.id)
+          setActive({ tip, step: 0 })
+        } else if (tries > 20) {
+          window.clearInterval(poll)
+          finish()
+        }
+      }, 500)
+    }
+    window.addEventListener("fysu-tip-request", onRequest)
+    return () => window.removeEventListener("fysu-tip-request", onRequest)
+  }, [blockedPage])
+
+  // quand une astuce sur demande se ferme, on prévient
+  const lastManual = useRef<string | null>(null)
+  useEffect(() => {
+    if (active?.tip.manual) lastManual.current = active.tip.id
+    else if (!active && lastManual.current) {
+      const id = lastManual.current
+      lastManual.current = null
+      window.dispatchEvent(new CustomEvent("fysu-tip-done", { detail: id }))
+    }
+  }, [active])
+
   // on cherche une astuce à montrer
   useEffect(() => {
     if (blockedPage || !synced) return
@@ -90,6 +133,7 @@ export default function Tips() {
       const seen = tipsSeen()
       const age = performance.now() - started
       for (const tip of TIPS) {
+        if (tip.manual) continue
         if (seen.includes(tip.id)) continue
         if (age < (tip.delay ?? 0)) continue
         if (!document.querySelector(tip.trigger)) continue
