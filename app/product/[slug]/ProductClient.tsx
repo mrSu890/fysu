@@ -21,6 +21,10 @@ import { BRANDS, WAVE, getBrandId } from "@/lib/brands"
 import { waveColors } from "@/lib/waveColor"
 import WaveLoader from "@/components/WaveLoader"
 import SizeGuideView from "@/components/SizeGuideView"
+import SizeAdvisor, { sizeAdvisorLabel } from "@/components/Product/SizeAdvisor"
+import HelpLink from "@/components/HelpLink"
+import { cleanSizeGuide } from "@/lib/sizeGuide"
+import { kindOf } from "@/lib/sizeAdvisor"
 import AutoContrast from "@/components/AutoContrast"
 import { getColorCopy } from "@/lib/colorCopy"
 import { getFamilyCopy, isFamilyId } from "@/lib/olfactive"
@@ -52,6 +56,7 @@ export default function ProductClient() {
   const [loading, setLoading] = useState(true)
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
   const [packagingOpen, setPackagingOpen] = useState(false)
+  const [advisorOpen, setAdvisorOpen] = useState(false)
   const packagingBlock = (product?.product_info_blocks ?? []).find(isPackagingBlock) ?? null
 
   const colorParam: string | null = searchParams?.get("color") ?? null
@@ -189,6 +194,9 @@ export default function ProductClient() {
   }
 
   const copy = getTypeCopy(product.product_type, locale)
+  // conseiller de taille : seulement si le produit a un guide avec des mesures (haut ou bas)
+  const advisorGuide = cleanSizeGuide(product.size_guide)
+  const canAdvise = !!copy.sizeGuide && kindOf(advisorGuide) !== null
 
   // Mode de disponibilité réellement appliqué (achat, précommande, me prévenir, devis, à venir, épuisé)
   const mode = getEffectiveAvailability(product)
@@ -472,8 +480,17 @@ export default function ProductClient() {
                 })}
               </div>
 
-              {(copy.sizeGuide || packagingBlock) && (
+              {(
                 <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                  {canAdvise && (
+                    <button
+                      type="button"
+                      onClick={() => setAdvisorOpen(true)}
+                      className="font-info cursor-pointer text-xs font-light text-foreground underline underline-offset-4"
+                    >
+                      {sizeAdvisorLabel(locale)}
+                    </button>
+                  )}
                   {copy.sizeGuide && (
                     <button
                       type="button"
@@ -492,6 +509,7 @@ export default function ProductClient() {
                       {packagingLabel(locale)}
                     </button>
                   )}
+                  <HelpLink />
                 </div>
               )}
 
@@ -596,6 +614,19 @@ export default function ProductClient() {
       )}
     </div>
     <PackagingDrawer open={packagingOpen} onClose={() => setPackagingOpen(false)} block={packagingBlock} />
+    <SizeAdvisor
+      open={advisorOpen}
+      onClose={() => setAdvisorOpen(false)}
+      guide={advisorGuide}
+      sizes={sizesForColor.map((s) => ({ size: s.size, stock: s.stock }))}
+      onPick={(label) => {
+        const hit = sizesForColor.find((s) => s.size.trim().toLowerCase() === label.trim().toLowerCase() && s.stock > 0)
+        if (hit) {
+          setSelectedSizeId(hit.id)
+          setSelectedSizeLabel(hit.size)
+        }
+      }}
+    />
     <SizeGuideView
       open={sizeGuideOpen}
       onClose={() => setSizeGuideOpen(false)}
