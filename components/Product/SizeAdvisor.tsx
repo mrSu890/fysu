@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useLocale } from "next-intl"
-import { advise, kindOf, BRANDS, EMPTY_ANSWERS, LETTER_SIZES, type Answers, type Fit } from "@/lib/sizeAdvisor"
+import { advise, kindOf, BRANDS, EMPTY_ANSWERS, LETTER_SIZES, type Answers, type Fit, type Gender } from "@/lib/sizeAdvisor"
 import type { SizeGuide } from "@/lib/sizeGuide"
 import { HelpPanel } from "@/components/HelpLink"
 
@@ -22,6 +22,8 @@ type Copy = {
   title: string
   online: string
   hello: string[]
+  askGender: string
+  genders: Record<Gender, string>
   askUsual: string
   dontKnow: string
   askBrand: string
@@ -61,6 +63,8 @@ const COPY: Record<string, Copy> = {
     title: "Assistant FYSU",
     online: "Je t'aide à trouver ta taille",
     hello: ["Salut ! Je vais t'aider à trouver ta taille.", "Quelques questions, ça prend 30 secondes. Tu peux passer celles que tu veux."],
+    askGender: "D'abord, c'est pour qui ?",
+    genders: { m: "Un homme", f: "Une femme", u: "Peu importe" },
     askUsual: "Quelle taille tu portes d'habitude ?",
     dontKnow: "Je ne sais pas",
     askBrand: "Il y a une marque où une taille te va parfaitement ?",
@@ -76,11 +80,11 @@ const COPY: Record<string, Copy> = {
     askMeasureTop: "Tu connais ton tour de poitrine ? Si oui, donne-le-moi en cm.",
     askMeasureBottom: "Tu connais ton tour de taille ? Si oui, donne-le-moi en cm.",
     measurePh: "cm",
-    askFit: "Dernière question : tu aimes porter ce vêtement comment ?",
-    fits: { slim: "Ajusté", regular: "Normal", loose: "Ample" },
+    askFit: "Dernière question : tu veux le porter comment, par rapport à la coupe prévue ?",
+    fits: { slim: "Plus ajusté", regular: "Comme prévu", loose: "Plus ample" },
     thinking: "",
     best: "Je te conseille la taille {s}.",
-    between: "Tu es entre deux tailles : prends {a} si tu aimes ajusté, {b} si tu préfères plus ample.",
+    between: "Tu es entre deux tailles : prends {a} pour plus ajusté, {b} pour plus ample.",
     low: "Avec ta taille et ton poids, ou une mesure, je serais plus précis.",
     good: "C'est une estimation à partir des mesures du vêtement. Un doute ? On est là.",
     pick: "Choisir la taille {s}",
@@ -98,6 +102,8 @@ const COPY: Record<string, Copy> = {
     title: "FYSU assistant",
     online: "I help you find your size",
     hello: ["Hi! I'll help you find your size.", "A few questions, about 30 seconds. Skip any you like."],
+    askGender: "First, who is it for?",
+    genders: { m: "A man", f: "A woman", u: "Doesn't matter" },
     askUsual: "What size do you usually wear?",
     dontKnow: "I don't know",
     askBrand: "Is there a brand where one size fits you perfectly?",
@@ -113,11 +119,11 @@ const COPY: Record<string, Copy> = {
     askMeasureTop: "Do you know your chest measurement? If so, tell me in cm.",
     askMeasureBottom: "Do you know your waist measurement? If so, tell me in cm.",
     measurePh: "cm",
-    askFit: "Last question: how do you like to wear it?",
-    fits: { slim: "Fitted", regular: "Regular", loose: "Loose" },
+    askFit: "Last question: how do you want to wear it, compared to the intended cut?",
+    fits: { slim: "More fitted", regular: "As designed", loose: "Looser" },
     thinking: "",
     best: "I'd go for size {s}.",
-    between: "You're between two sizes: take {a} if you like it fitted, {b} if you prefer it looser.",
+    between: "You're between two sizes: take {a} for more fitted, {b} for looser.",
     low: "With your height and weight, or a measurement, I'd be more precise.",
     good: "It's an estimate based on the garment's measurements. In doubt? We're here.",
     pick: "Choose size {s}",
@@ -135,7 +141,7 @@ const COPY: Record<string, Copy> = {
 export const sizeAdvisorLabel = (locale: string) => (COPY[locale] ?? COPY.en).open
 
 type Msg = { id: number; from: "bot" | "me"; text: string; big?: boolean }
-type Step = "wait" | "usual" | "brand" | "brandText" | "brandSize" | "body" | "measure" | "fit" | "result"
+type Step = "wait" | "gender" | "usual" | "brand" | "brandText" | "brandSize" | "body" | "measure" | "fit" | "result"
 
 export default function SizeAdvisor({
   open,
@@ -213,8 +219,8 @@ export default function SizeAdvisor({
       return
     }
     if (!(await bot(copy.hello))) return
-    if (!(await bot(copy.askUsual))) return
-    if (mine === run.current) setStep("usual")
+    if (!(await bot(copy.askGender))) return
+    if (mine === run.current) setStep("gender")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, locale])
 
@@ -249,6 +255,12 @@ export default function SizeAdvisor({
 
   const askBody = () => go("body", copy.askBody)
   const askMeasure = () => go("measure", kind === "bottom" ? copy.askMeasureBottom : copy.askMeasureTop)
+
+  const onGender = (g: Gender) => {
+    me(copy.genders[g])
+    ans.current.gender = g
+    void go("usual", copy.askUsual)
+  }
 
   const onUsual = (v: string | null) => {
     me(v ?? copy.dontKnow)
@@ -446,6 +458,16 @@ export default function SizeAdvisor({
 
               {/* la zone de réponse change à chaque question */}
               <div className="border-t px-5 pb-4 pt-4" style={line}>
+                {step === "gender" && (
+                  <div className="flex flex-wrap gap-2">
+                    {(["m", "f", "u"] as Gender[]).map((g) => (
+                      <button key={g} type="button" data-no-tap onClick={() => onGender(g)} className={chip} style={chipStyle}>
+                        {copy.genders[g]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {step === "usual" && (
                   <div className="flex flex-wrap gap-2">
                     {LETTER_SIZES.map((s) => (
