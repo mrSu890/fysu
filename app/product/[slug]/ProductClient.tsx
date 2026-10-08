@@ -32,6 +32,11 @@ import {
   isBuyable,
 } from "@/lib/availability"
 
+// recadrage des photos : on coupe le haut (le blanc au-dessus de la barre métallique) pour que l'image commence à la barre
+// 1,8 % de la hauteur ; augmente le chiffre pour couper plus, diminue-le pour couper moins
+const CROP = "1.8%"
+const CROP_TOP = { top: `-${CROP}`, height: `calc(100% + ${CROP})` }
+
 export default function ProductClient() {
   const t = useTranslations("Product")
   const format = useFormatter()
@@ -286,7 +291,8 @@ export default function ProductClient() {
                 src={mainImage}
                 alt={product.name}
                 fill
-                className="object-cover"
+                className="object-cover object-top"
+                style={CROP_TOP}
                 priority
               />
             </div>
@@ -306,7 +312,8 @@ export default function ProductClient() {
                       src={img.url}
                       alt={product.name}
                       fill
-                      className="object-cover"
+                      className="object-cover object-top"
+                      style={CROP_TOP}
                     />
                   </div>
                 ))}
@@ -323,7 +330,8 @@ export default function ProductClient() {
                       src={img.url}
                       alt={product.name}
                       fill
-                      className="object-cover"
+                      className="object-cover object-top"
+                      style={CROP_TOP}
                     />
                   </div>
                 ))}
