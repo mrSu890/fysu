@@ -105,8 +105,24 @@ export default function MusicIndexPage() {
               <ul className="grid grid-cols-2 gap-5 sm:grid-cols-3">
                 {group.albums.map((a) => (
                   <li key={`${group.key}-${a.id}`}>
-                    <Link href={`/music/${a.slug}`} className="block">
-                      <span className="relative block aspect-square w-full overflow-hidden rounded-2xl bg-current/10">
+                    <Link
+                      href={`/music/${a.slug}`}
+                      className="block"
+                      // les albums The Wave gardent leur rideau d'eau : pas de transport d'image pour eux
+                      data-hero-link={a.collections?.some((c) => c.slug === "thewave") ? undefined : ""}
+                      onClick={(e) => {
+                        // la pochette est « transportée » jusqu'à la page de l'album (voir components/ProductHero.tsx)
+                        try {
+                          if (!e.currentTarget.hasAttribute("data-hero-link")) return
+                          if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+                          const box = e.currentTarget.querySelector("[data-hero-box]") as HTMLElement | null
+                          const img = box?.querySelector("img") as HTMLImageElement | null
+                          const hero = (window as unknown as { __fysuHero?: (el: HTMLElement | null, p: string, src: string | null) => boolean }).__fysuHero
+                          if (hero && box && img?.currentSrc && hero(box, `/music/${a.slug}`, img.currentSrc)) e.preventDefault()
+                        } catch {}
+                      }}
+                    >
+                      <span data-hero-box className="relative block aspect-square w-full overflow-hidden rounded-2xl bg-current/10">
                         {a.cover_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={a.cover_url} alt={a.title} className="h-full w-full object-cover" />
