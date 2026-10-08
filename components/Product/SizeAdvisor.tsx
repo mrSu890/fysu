@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
@@ -10,120 +10,132 @@ import type { SizeGuide } from "@/lib/sizeGuide"
 import { HelpPanel } from "@/components/HelpLink"
 
 /* ====================================================================
-   CONSEILLER DE TAILLE (fiche produit)
-   Panneau en verre : quelques questions (taille habituelle, taille, poids, marque, coupe voulue),
-   puis une taille conseillée avec un mot humain. Le calcul est dans lib/sizeAdvisor.ts.
-   Les réponses restent sur l'appareil du client (pour ne pas les retaper).
+   CONSEILLER DE TAILLE : une conversation avec l'assistant FYSU
+   Une petite fenêtre de discussion : l'assistant pose une question à la fois, le client répond en touchant
+   un bouton ou en écrivant, puis l'assistant donne la taille conseillée. Ce n'est pas une IA : les questions
+   sont écrites d'avance (les textes sont juste en dessous). Le calcul est dans lib/sizeAdvisor.ts et se fait
+   sur l'appareil du client : rien n'est envoyé ni enregistré.
    ==================================================================== */
 
-const COPY: Record<string, {
+type Copy = {
   open: string
   title: string
-  intro: string
-  usual: string
-  usualSub: string
-  body: string
+  online: string
+  hello: string[]
+  askUsual: string
+  dontKnow: string
+  askBrand: string
+  skip: string
+  other: string
+  askBrandName: string
+  brandNamePh: string
+  askBrandSize: string
+  askBody: string
   height: string
   weight: string
-  brand: string
-  brandPh: string
-  brandNote: string
-  brandSize: string
-  brandOther: string
-  measureTop: string
-  measureBottom: string
-  optional: string
-  fit: string
+  send: string
+  askMeasureTop: string
+  askMeasureBottom: string
+  measurePh: string
+  askFit: string
   fits: Record<Fit, string>
-  go: string
-  need: string
-  yours: string
+  thinking: string
+  best: string
   between: string
   low: string
   good: string
   pick: string
   soldOut: string
-  edit: string
+  restart: string
+  help: string
+  noInfo: string
   noGuide: string
   privacy: string
-  help: string
   close: string
-  cm: string
-  kg: string
-}> = {
+  picked: string
+}
+
+const COPY: Record<string, Copy> = {
   fr: {
     open: "Trouver ma taille",
-    title: "Trouver ma taille",
-    intro: "Réponds à deux ou trois questions, on te dit quelle taille choisir. Moins il y a de réponses, moins c'est précis : ce n'est pas grave.",
-    usual: "Ta taille habituelle",
-    usualSub: "Celle que tu prends le plus souvent dans les magasins",
-    body: "Ton corps",
-    height: "Taille",
-    weight: "Poids",
-    brand: "Une marque où une taille te va parfaitement ?",
-    brandPh: "Le nom de la marque",
-    brandNote: "Les marques taillent différemment : on s'en sert comme un repère, pas comme une règle.",
-    brandSize: "Ta taille chez {b}",
-    brandOther: "Autre",
-    measureTop: "Ton tour de poitrine, si tu le connais",
-    measureBottom: "Ton tour de taille, si tu le connais",
-    optional: "facultatif",
-    fit: "Comment tu aimes porter ce vêtement ?",
+    title: "Assistant FYSU",
+    online: "Je t'aide à trouver ta taille",
+    hello: ["Salut ! Je vais t'aider à trouver ta taille.", "Quelques questions, ça prend 30 secondes. Tu peux passer celles que tu veux."],
+    askUsual: "Quelle taille tu portes d'habitude ?",
+    dontKnow: "Je ne sais pas",
+    askBrand: "Il y a une marque où une taille te va parfaitement ?",
+    skip: "Passer",
+    other: "Autre",
+    askBrandName: "Laquelle ?",
+    brandNamePh: "Le nom de la marque",
+    askBrandSize: "Et ta taille chez {b} ?",
+    askBody: "Ta taille et ton poids ?",
+    height: "cm",
+    weight: "kg",
+    send: "Envoyer",
+    askMeasureTop: "Tu connais ton tour de poitrine ? Si oui, donne-le-moi en cm.",
+    askMeasureBottom: "Tu connais ton tour de taille ? Si oui, donne-le-moi en cm.",
+    measurePh: "cm",
+    askFit: "Dernière question : tu aimes porter ce vêtement comment ?",
     fits: { slim: "Ajusté", regular: "Normal", loose: "Ample" },
-    go: "Trouver ma taille",
-    need: "Choisis au moins ta taille habituelle, ou ta taille et ton poids.",
-    yours: "On te conseille",
-    between: "Tu es entre deux tailles. Prends {a} si tu aimes ajusté, {b} si tu préfères plus ample.",
-    low: "Avec plus d'infos (taille et poids, ou une mesure), on serait plus précis.",
+    thinking: "",
+    best: "Je te conseille la taille {s}.",
+    between: "Tu es entre deux tailles : prends {a} si tu aimes ajusté, {b} si tu préfères plus ample.",
+    low: "Avec ta taille et ton poids, ou une mesure, je serais plus précis.",
     good: "C'est une estimation à partir des mesures du vêtement. Un doute ? On est là.",
     pick: "Choisir la taille {s}",
-    soldOut: "La taille {s} est épuisée pour le moment. Tu peux être prévenu quand elle revient.",
-    edit: "Modifier mes réponses",
-    noGuide: "On n'a pas encore assez de mesures pour ce produit. Écris-nous, on te conseille à la main.",
-    privacy: "Le calcul se fait sur ton appareil. Rien n'est envoyé.",
+    soldOut: "Petit souci : la taille {s} est épuisée pour le moment. Tu peux être prévenu quand elle revient.",
+    restart: "Recommencer",
     help: "Besoin d'aide ?",
+    noInfo: "Je n'ai pas assez d'informations pour te conseiller. On recommence ?",
+    noGuide: "Je n'ai pas encore assez de mesures pour ce produit. Écris-nous, on te conseille à la main.",
+    privacy: "Rien n'est envoyé ni enregistré : tout se passe sur ton appareil.",
     close: "Fermer",
-    cm: "cm",
-    kg: "kg",
+    picked: "Parfait, c'est choisi.",
   },
   en: {
     open: "Find my size",
-    title: "Find my size",
-    intro: "Answer two or three questions and we'll tell you which size to pick. The fewer answers, the less precise: that's fine.",
-    usual: "Your usual size",
-    usualSub: "The one you most often take in shops",
-    body: "Your body",
-    height: "Height",
-    weight: "Weight",
-    brand: "A brand where one size fits you perfectly?",
-    brandPh: "The brand name",
-    brandNote: "Brands size differently: we use this as a reference, not a rule.",
-    brandSize: "Your size at {b}",
-    brandOther: "Other",
-    measureTop: "Your chest measurement, if you know it",
-    measureBottom: "Your waist measurement, if you know it",
-    optional: "optional",
-    fit: "How do you like to wear it?",
+    title: "FYSU assistant",
+    online: "I help you find your size",
+    hello: ["Hi! I'll help you find your size.", "A few questions, about 30 seconds. Skip any you like."],
+    askUsual: "What size do you usually wear?",
+    dontKnow: "I don't know",
+    askBrand: "Is there a brand where one size fits you perfectly?",
+    skip: "Skip",
+    other: "Other",
+    askBrandName: "Which one?",
+    brandNamePh: "The brand name",
+    askBrandSize: "And your size at {b}?",
+    askBody: "Your height and weight?",
+    height: "cm",
+    weight: "kg",
+    send: "Send",
+    askMeasureTop: "Do you know your chest measurement? If so, tell me in cm.",
+    askMeasureBottom: "Do you know your waist measurement? If so, tell me in cm.",
+    measurePh: "cm",
+    askFit: "Last question: how do you like to wear it?",
     fits: { slim: "Fitted", regular: "Regular", loose: "Loose" },
-    go: "Find my size",
-    need: "Pick at least your usual size, or your height and weight.",
-    yours: "We suggest",
-    between: "You're between two sizes. Take {a} if you like it fitted, {b} if you prefer it looser.",
-    low: "With more info (height and weight, or a measurement) we'd be more precise.",
+    thinking: "",
+    best: "I'd go for size {s}.",
+    between: "You're between two sizes: take {a} if you like it fitted, {b} if you prefer it looser.",
+    low: "With your height and weight, or a measurement, I'd be more precise.",
     good: "It's an estimate based on the garment's measurements. In doubt? We're here.",
     pick: "Choose size {s}",
-    soldOut: "Size {s} is sold out for now. You can be notified when it's back.",
-    edit: "Edit my answers",
-    noGuide: "We don't have enough measurements for this product yet. Write to us and we'll advise you by hand.",
-    privacy: "The calculation happens on your device. Nothing is sent.",
+    soldOut: "Small catch: size {s} is sold out for now. You can be notified when it's back.",
+    restart: "Start over",
     help: "Need help?",
+    noInfo: "I don't have enough information to advise you. Shall we start over?",
+    noGuide: "I don't have enough measurements for this product yet. Write to us and we'll advise you by hand.",
+    privacy: "Nothing is sent or saved: everything happens on your device.",
     close: "Close",
-    cm: "cm",
-    kg: "kg",
+    picked: "Perfect, it's selected.",
   },
 }
 
-const KEY = "fysu:sizeadvisor"
+export const sizeAdvisorLabel = (locale: string) => (COPY[locale] ?? COPY.en).open
+
+type Msg = { id: number; from: "bot" | "me"; text: string; big?: boolean }
+type Step = "wait" | "usual" | "brand" | "brandText" | "brandSize" | "body" | "measure" | "fit" | "result"
 
 export default function SizeAdvisor({
   open,
@@ -140,66 +152,205 @@ export default function SizeAdvisor({
 }) {
   const locale = useLocale()
   const copy = COPY[locale] ?? COPY.en
-  const [mounted, setMounted] = useState(false)
-  const [a, setA] = useState<Answers>(EMPTY_ANSWERS)
-  const [shown, setShown] = useState(false)
-  const [warn, setWarn] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
-  const [other, setOther] = useState(false) // « Autre » : le client écrit lui-même la marque
+  const kind = kindOf(guide)
 
-  useEffect(() => {
-    setMounted(true)
-    try {
-      const raw = localStorage.getItem(KEY)
-      if (raw) {
-        const saved = { ...EMPTY_ANSWERS, ...JSON.parse(raw) }
-        setA(saved)
-        if (saved.brand && !BRANDS.includes(saved.brand)) setOther(true)
-      }
-    } catch {
-      /* ignore */
+  const [mounted, setMounted] = useState(false)
+  const [msgs, setMsgs] = useState<Msg[]>([])
+  const [typing, setTyping] = useState(false)
+  const [step, setStep] = useState<Step>("wait")
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [text, setText] = useState("")
+  const [h, setH] = useState("")
+  const [w, setW] = useState("")
+  const [best, setBest] = useState<string | null>(null)
+
+  const ans = useRef<Answers>({ ...EMPTY_ANSWERS })
+  const run = useRef(0) // change à chaque nouvelle conversation : les anciennes réponses de l'assistant s'arrêtent
+  const idRef = useRef(0)
+  const timers = useRef<number[]>([])
+  const scroller = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => setMounted(true), [])
+
+  const wait = (ms: number) =>
+    new Promise<void>((resolve) => {
+      timers.current.push(window.setTimeout(resolve, ms))
+    })
+
+  const push = (m: Omit<Msg, "id">) => setMsgs((cur) => [...cur, { ...m, id: ++idRef.current }])
+
+  // l'assistant « écrit » (trois petits points) puis envoie son message
+  const bot = useCallback(async (lines: string[] | string, big = false) => {
+    const mine = run.current
+    for (const line of Array.isArray(lines) ? lines : [lines]) {
+      setTyping(true)
+      await wait(450 + Math.min(line.length * 12, 700))
+      if (mine !== run.current) return false
+      setTyping(false)
+      push({ from: "bot", text: line, big })
+      await wait(180)
+      if (mine !== run.current) return false
     }
+    return true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const start = useCallback(async () => {
+    run.current += 1
+    const mine = run.current
+    timers.current.forEach((t) => window.clearTimeout(t))
+    timers.current = []
+    ans.current = { ...EMPTY_ANSWERS }
+    setMsgs([])
+    setTyping(false)
+    setStep("wait")
+    setText("")
+    setH("")
+    setW("")
+    setBest(null)
+    if (!kind) {
+      if (await bot(copy.noGuide)) setStep("result")
+      return
+    }
+    if (!(await bot(copy.hello))) return
+    if (!(await bot(copy.askUsual))) return
+    if (mine === run.current) setStep("usual")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, locale])
+
   useEffect(() => {
-    if (!open) return
-    setShown(false)
-    setWarn(false)
+    if (!open) {
+      run.current += 1
+      timers.current.forEach((t) => window.clearTimeout(t))
+      timers.current = []
+      return
+    }
+    void start()
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [open, onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
-  if (!mounted) return null
+  // la conversation reste calée en bas
+  useEffect(() => {
+    const el = scroller.current
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+  }, [msgs, typing, step])
 
-  const kind = kindOf(guide)
-  const set = (patch: Partial<Answers>) => setA((cur) => ({ ...cur, ...patch }))
+  /* ---------- les réponses du client ---------- */
 
-  const run = () => {
-    const r = advise(guide, a)
-    if (!r.ok && r.reason === "no-answers") return setWarn(true)
-    setWarn(false)
-    setShown(true)
-    try {
-      localStorage.setItem(KEY, JSON.stringify(a))
-    } catch {
-      /* ignore */
+  const me = (t: string) => push({ from: "me", text: t })
+  const go = async (next: Step, lines: string[] | string) => {
+    setStep("wait")
+    const mine = run.current
+    if (await bot(lines)) if (mine === run.current) setStep(next)
+  }
+
+  const askBody = () => go("body", copy.askBody)
+  const askMeasure = () => go("measure", kind === "bottom" ? copy.askMeasureBottom : copy.askMeasureTop)
+
+  const onUsual = (v: string | null) => {
+    me(v ?? copy.dontKnow)
+    ans.current.usual = v ?? ""
+    void go("brand", copy.askBrand)
+  }
+
+  const onBrand = (b: string | "other" | null) => {
+    if (b === null) {
+      me(copy.skip)
+      void askBody()
+    } else if (b === "other") {
+      me(copy.other)
+      void go("brandText", copy.askBrandName)
+    } else {
+      me(b)
+      ans.current.brand = b
+      void go("brandSize", copy.askBrandSize.replace("{b}", b))
     }
   }
 
-  const result = shown ? advise(guide, a) : null
-  const line = { borderColor: "color-mix(in srgb, currentColor 18%, transparent)" }
-  const field =
-    "w-full border-b bg-transparent py-2 text-[16px] outline-none placeholder:opacity-40"
-  const chip = (on: boolean) =>
-    "cursor-pointer rounded-full border px-4 py-2 text-[13px] transition " + (on ? "" : "hover:opacity-70")
-  const chipStyle = (on: boolean): React.CSSProperties =>
-    on
-      ? { background: "var(--menu)", color: "var(--navbar-bg)", borderColor: "var(--menu)" }
-      : { borderColor: "color-mix(in srgb, currentColor 30%, transparent)" }
-  const label = "font-info mb-3 block text-[10px] font-light uppercase tracking-[0.3em] opacity-70"
+  const onBrandText = () => {
+    const t = text.trim()
+    if (!t) return
+    me(t)
+    ans.current.brand = t.slice(0, 40)
+    setText("")
+    void go("brandSize", copy.askBrandSize.replace("{b}", t.slice(0, 40)))
+  }
+
+  const onBrandSize = (v: string | null) => {
+    me(v ?? copy.dontKnow)
+    ans.current.brandSize = v ?? ""
+    void askBody()
+  }
+
+  const onBody = (skip: boolean) => {
+    if (skip || (!h.trim() && !w.trim())) {
+      me(copy.skip)
+    } else {
+      me([h.trim() && `${h.trim()} cm`, w.trim() && `${w.trim()} kg`].filter(Boolean).join(" · "))
+      ans.current.height = h
+      ans.current.weight = w
+    }
+    void askMeasure()
+  }
+
+  const onMeasure = (skip: boolean) => {
+    if (skip || !text.trim()) {
+      me(copy.dontKnow)
+    } else {
+      me(`${text.trim()} cm`)
+      ans.current.measure = text
+    }
+    setText("")
+    void go("fit", copy.askFit)
+  }
 
   const pickable = (s: string) => sizes.find((x) => x.size.trim().toLowerCase() === s.trim().toLowerCase())
+
+  const onFit = async (f: Fit) => {
+    me(copy.fits[f])
+    ans.current.fit = f
+    setStep("wait")
+    const mine = run.current
+    const r = advise(guide, ans.current)
+    if (!r.ok) {
+      if (await bot(r.reason === "no-guide" ? copy.noGuide : copy.noInfo)) if (mine === run.current) setStep("result")
+      return
+    }
+    if (!(await bot(copy.best.replace("{s}", r.best)))) return
+    // gros affichage de la taille
+    push({ from: "bot", text: r.best, big: true })
+    if (r.alt) {
+      const idx = (x: string) => (guide?.rows ?? []).findIndex((row) => row.size === x)
+      const [small, large] = idx(r.best) <= idx(r.alt) ? [r.best, r.alt] : [r.alt, r.best]
+      if (!(await bot(copy.between.replace("{a}", small).replace("{b}", large)))) return
+    }
+    if (!(await bot(r.precision === "low" ? copy.low : copy.good))) return
+    const hit = pickable(r.best)
+    if (!hit || hit.stock <= 0) {
+      if (!(await bot(copy.soldOut.replace("{s}", r.best)))) return
+      setBest(null)
+    } else {
+      setBest(hit.size)
+    }
+    if (mine === run.current) setStep("result")
+  }
+
+  /* ---------- l'affichage ---------- */
+
+  if (!mounted) return null
+
+  const line = { borderColor: "color-mix(in srgb, currentColor 22%, transparent)" }
+  const chip =
+    "cursor-pointer rounded-full border px-4 py-2 text-[13px] transition hover:opacity-70 active:scale-95"
+  const chipStyle: React.CSSProperties = { borderColor: "color-mix(in srgb, currentColor 35%, transparent)" }
+  const solid: React.CSSProperties = { background: "var(--menu)", color: "var(--navbar-bg)", borderColor: "var(--menu)" }
+  const field = "min-w-0 flex-1 border-b bg-transparent py-2 text-[16px] outline-none placeholder:opacity-40"
+  const sendBtn =
+    "shrink-0 cursor-pointer rounded-full px-5 py-2 text-[12px] font-medium transition active:scale-95 disabled:opacity-40"
+  const numeric = (v: string) => v.replace(/[^\d.,]/g, "").slice(0, 5)
 
   return createPortal(
     <>
@@ -211,266 +362,263 @@ export default function SizeAdvisor({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 z-[300] bg-black/30 backdrop-blur-sm"
+              className="fixed inset-0 z-[300] bg-black/25 backdrop-blur-[2px]"
             />
             <motion.div
-              initial={{ x: "110%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "110%" }}
-              transition={{ type: "spring", stiffness: 260, damping: 30 }}
+              initial={{ opacity: 0, y: 40, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
               role="dialog"
               aria-label={copy.title}
-              className="liquid-glass fixed bottom-3 right-3 top-3 z-[310] flex w-[calc(100%-24px)] flex-col rounded-[30px] p-7 sm:w-[420px] sm:p-9"
-              style={{ color: "var(--menu)", background: "color-mix(in srgb, var(--navbar-bg) 82%, transparent)" }}
+              className="liquid-glass fixed inset-x-3 bottom-3 z-[310] flex h-[min(82dvh,640px)] flex-col overflow-hidden rounded-[30px] sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[400px]"
+              style={{ color: "var(--menu)", background: "color-mix(in srgb, var(--navbar-bg) 86%, transparent)", transformOrigin: "100% 100%" }}
             >
-              <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-sm uppercase tracking-[0.3em]">{copy.title}</h3>
+              {/* en-tête */}
+              <div className="flex items-center gap-3 border-b px-5 py-4" style={line}>
+                <span
+                  aria-hidden="true"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold tracking-[-0.04em]"
+                  style={solid}
+                >
+                  F
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-medium leading-tight">{copy.title}</p>
+                  <p className="font-info mt-0.5 text-[11px] font-light opacity-60">{copy.online}</p>
+                </div>
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label={copy.close}
                   data-no-tap
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full"
+                  className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full"
                   style={{ background: "color-mix(in srgb, currentColor 12%, transparent)" }}
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto pr-1">
-                {!kind ? (
-                  <div>
-                    <p className="text-[20px] font-extrabold leading-[1.15] tracking-[-0.03em]">{copy.noGuide}</p>
-                    <button
-                      type="button"
-                      onClick={() => setHelpOpen(true)}
-                      className="font-info mt-6 cursor-pointer text-xs underline underline-offset-4"
+              {/* la conversation */}
+              <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-5 py-5">
+                {msgs.map((m) => (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className={`flex ${m.from === "me" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[84%] px-4 py-2.5 leading-[1.45] ${
+                        m.from === "me" ? "rounded-[20px] rounded-br-md" : "rounded-[20px] rounded-bl-md"
+                      } ${m.big ? "text-[44px] font-extrabold leading-none tracking-[-0.05em] py-3" : "text-[15px]"}`}
+                      style={
+                        m.from === "me"
+                          ? { background: "var(--menu)", color: "var(--navbar-bg)" }
+                          : { background: "color-mix(in srgb, currentColor 11%, transparent)" }
+                      }
                     >
-                      {copy.help}
+                      {m.text}
+                    </div>
+                  </motion.div>
+                ))}
+
+                {typing && (
+                  <div className="flex justify-start">
+                    <div
+                      className="flex items-center gap-1.5 rounded-[20px] rounded-bl-md px-4 py-3.5"
+                      style={{ background: "color-mix(in srgb, currentColor 11%, transparent)" }}
+                      aria-label="…"
+                    >
+                      {[0, 1, 2].map((i) => (
+                        <motion.span
+                          key={i}
+                          className="block h-1.5 w-1.5 rounded-full bg-current"
+                          animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
+                          transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* la zone de réponse change à chaque question */}
+              <div className="border-t px-5 pb-4 pt-4" style={line}>
+                {step === "usual" && (
+                  <div className="flex flex-wrap gap-2">
+                    {LETTER_SIZES.map((s) => (
+                      <button key={s} type="button" data-no-tap onClick={() => onUsual(s)} className={chip} style={chipStyle}>
+                        {s}
+                      </button>
+                    ))}
+                    <button type="button" data-no-tap onClick={() => onUsual(null)} className={chip} style={chipStyle}>
+                      {copy.dontKnow}
                     </button>
                   </div>
-                ) : result && result.ok ? (
-                  <div>
-                    <p className="font-info text-[10px] font-light uppercase tracking-[0.3em] opacity-70">{copy.yours}</p>
-                    <p className="mt-2 text-[72px] font-extrabold leading-none tracking-[-0.05em]">{result.best}</p>
+                )}
 
-                    {result.alt && (
-                      <p className="mt-5 text-[15px] leading-[1.5]">
-                        {(() => {
-                          // la plus petite des deux = pour celui qui aime ajusté
-                          const idx = (x: string) => (guide?.rows ?? []).findIndex((r) => r.size === x)
-                          const [small, big] = idx(result.best) <= idx(result.alt!) ? [result.best, result.alt!] : [result.alt!, result.best]
-                          return copy.between.replace("{a}", small).replace("{b}", big)
-                        })()}
-                      </p>
-                    )}
-                    <p className="font-info mt-5 text-[12px] font-light leading-[1.8] opacity-70">
-                      {result.precision === "low" ? copy.low : copy.good}
-                    </p>
+                {step === "brand" && (
+                  <div className="flex max-h-[132px] flex-wrap gap-2 overflow-y-auto">
+                    {BRANDS.map((b) => (
+                      <button key={b} type="button" data-no-tap onClick={() => onBrand(b)} className={chip} style={chipStyle}>
+                        {b}
+                      </button>
+                    ))}
+                    <button type="button" data-no-tap onClick={() => onBrand("other")} className={chip} style={chipStyle}>
+                      {copy.other}
+                    </button>
+                    <button type="button" data-no-tap onClick={() => onBrand(null)} className={chip} style={chipStyle}>
+                      {copy.skip}
+                    </button>
+                  </div>
+                )}
 
-                    {pickable(result.best) && pickable(result.best)!.stock > 0 ? (
+                {step === "brandText" && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      onBrandText()
+                    }}
+                    className="flex items-end gap-3"
+                  >
+                    <input
+                      autoFocus
+                      value={text}
+                      onChange={(e) => setText(e.target.value.slice(0, 40))}
+                      placeholder={copy.brandNamePh}
+                      className={field}
+                      style={line}
+                    />
+                    <button type="submit" disabled={!text.trim()} className={sendBtn} style={solid}>
+                      {copy.send}
+                    </button>
+                  </form>
+                )}
+
+                {step === "brandSize" && (
+                  <div className="flex flex-wrap gap-2">
+                    {LETTER_SIZES.map((s) => (
+                      <button key={s} type="button" data-no-tap onClick={() => onBrandSize(s)} className={chip} style={chipStyle}>
+                        {s}
+                      </button>
+                    ))}
+                    <button type="button" data-no-tap onClick={() => onBrandSize(null)} className={chip} style={chipStyle}>
+                      {copy.dontKnow}
+                    </button>
+                  </div>
+                )}
+
+                {step === "body" && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      onBody(false)
+                    }}
+                    className="flex items-end gap-3"
+                  >
+                    <input
+                      inputMode="numeric"
+                      value={h}
+                      onChange={(e) => setH(numeric(e.target.value))}
+                      placeholder={`175 ${copy.height}`}
+                      aria-label={copy.height}
+                      className={field}
+                      style={line}
+                    />
+                    <input
+                      inputMode="numeric"
+                      value={w}
+                      onChange={(e) => setW(numeric(e.target.value))}
+                      placeholder={`70 ${copy.weight}`}
+                      aria-label={copy.weight}
+                      className={field}
+                      style={line}
+                    />
+                    <button type="submit" className={sendBtn} style={solid}>
+                      {copy.send}
+                    </button>
+                    <button
+                      type="button"
+                      data-no-tap
+                      onClick={() => onBody(true)}
+                      className="font-info shrink-0 cursor-pointer py-2 text-[12px] underline underline-offset-4 opacity-70"
+                    >
+                      {copy.skip}
+                    </button>
+                  </form>
+                )}
+
+                {step === "measure" && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      onMeasure(false)
+                    }}
+                    className="flex items-end gap-3"
+                  >
+                    <input
+                      inputMode="numeric"
+                      value={text}
+                      onChange={(e) => setText(numeric(e.target.value))}
+                      placeholder={kind === "bottom" ? "82 cm" : "96 cm"}
+                      aria-label={copy.measurePh}
+                      className={field}
+                      style={line}
+                    />
+                    <button type="submit" disabled={!text.trim()} className={sendBtn} style={solid}>
+                      {copy.send}
+                    </button>
+                    <button
+                      type="button"
+                      data-no-tap
+                      onClick={() => onMeasure(true)}
+                      className="font-info shrink-0 cursor-pointer py-2 text-[12px] underline underline-offset-4 opacity-70"
+                    >
+                      {copy.dontKnow}
+                    </button>
+                  </form>
+                )}
+
+                {step === "fit" && (
+                  <div className="flex flex-wrap gap-2">
+                    {(["slim", "regular", "loose"] as Fit[]).map((f) => (
+                      <button key={f} type="button" data-no-tap onClick={() => void onFit(f)} className={chip} style={chipStyle}>
+                        {copy.fits[f]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {step === "result" && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {best && (
                       <button
                         type="button"
                         data-no-tap
                         onClick={() => {
-                          onPick(pickable(result.best)!.size)
+                          onPick(best)
                           onClose()
                         }}
-                        className="mt-8 w-full cursor-pointer py-3 text-sm font-medium tracking-wide transition active:scale-[0.98]"
-                        style={{ background: "var(--menu)", color: "var(--navbar-bg)" }}
+                        className="cursor-pointer rounded-full px-5 py-2.5 text-[13px] font-medium transition active:scale-95"
+                        style={solid}
                       >
-                        {copy.pick.replace("{s}", result.best)}
+                        {copy.pick.replace("{s}", best)}
                       </button>
-                    ) : (
-                      <p className="mt-8 text-[14px] leading-[1.6]">{copy.soldOut.replace("{s}", result.best)}</p>
                     )}
-
-                    <div className="mt-6 flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => setShown(false)}
-                        className="font-info cursor-pointer text-xs underline underline-offset-4"
-                      >
-                        {copy.edit}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setHelpOpen(true)}
-                        className="font-info cursor-pointer text-xs underline underline-offset-4"
-                      >
-                        {copy.help}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-[18px] font-extrabold leading-[1.2] tracking-[-0.02em]">{copy.intro}</p>
-
-                    <div className="mt-8">
-                      <span className={label}>{copy.usual}</span>
-                      <div className="flex flex-wrap gap-2">
-                        {LETTER_SIZES.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            data-no-tap
-                            onClick={() => set({ usual: a.usual === s ? "" : s })}
-                            className={chip(a.usual === s)}
-                            style={chipStyle(a.usual === s)}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="font-info mt-2 text-[11px] font-light opacity-60">{copy.usualSub}</p>
-                    </div>
-
-                    <div className="mt-8">
-                      <span className={label}>{copy.body}</span>
-                      <div className="grid grid-cols-2 gap-6">
-                        <label className="block">
-                          <span className="font-info text-[11px] font-light opacity-60">{copy.height} ({copy.cm})</span>
-                          <input
-                            inputMode="numeric"
-                            value={a.height}
-                            onChange={(e) => set({ height: e.target.value.replace(/[^\d.,]/g, "").slice(0, 5) })}
-                            placeholder="175"
-                            className={field}
-                            style={line}
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="font-info text-[11px] font-light opacity-60">{copy.weight} ({copy.kg})</span>
-                          <input
-                            inputMode="numeric"
-                            value={a.weight}
-                            onChange={(e) => set({ weight: e.target.value.replace(/[^\d.,]/g, "").slice(0, 5) })}
-                            placeholder="70"
-                            className={field}
-                            style={line}
-                          />
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="mt-8">
-                      <span className={label}>
-                        {copy.brand} <span className="normal-case tracking-normal opacity-70">({copy.optional})</span>
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {BRANDS.map((b) => (
-                          <button
-                            key={b}
-                            type="button"
-                            data-no-tap
-                            onClick={() => {
-                              setOther(false)
-                              set(a.brand === b ? { brand: "", brandSize: "" } : { brand: b })
-                            }}
-                            className={chip(a.brand === b)}
-                            style={chipStyle(a.brand === b)}
-                          >
-                            {b}
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          data-no-tap
-                          onClick={() => {
-                            setOther(!other)
-                            if (!other) set({ brand: "" })
-                            else set({ brand: "", brandSize: "" })
-                          }}
-                          className={chip(other)}
-                          style={chipStyle(other)}
-                        >
-                          {copy.brandOther}
-                        </button>
-                      </div>
-
-                      {other && (
-                        <input
-                          value={a.brand}
-                          onChange={(e) => set({ brand: e.target.value.slice(0, 40) })}
-                          placeholder={copy.brandPh}
-                          className={field + " mt-4"}
-                          style={line}
-                        />
-                      )}
-
-                      {a.brand.trim() && (
-                        <div className="mt-5">
-                          <span className="font-info text-[11px] font-light opacity-60">
-                            {copy.brandSize.replace("{b}", a.brand.trim())}
-                          </span>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {LETTER_SIZES.map((sz) => (
-                              <button
-                                key={sz}
-                                type="button"
-                                data-no-tap
-                                onClick={() => set({ brandSize: a.brandSize === sz ? "" : sz })}
-                                className={chip(a.brandSize === sz)}
-                                style={chipStyle(a.brandSize === sz)}
-                              >
-                                {sz}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <p className="font-info mt-3 text-[11px] font-light opacity-60">{copy.brandNote}</p>
-                    </div>
-
-                    <div className="mt-8">
-                      <label className="block">
-                        <span className={label}>
-                          {kind === "top" ? copy.measureTop : copy.measureBottom}{" "}
-                          <span className="normal-case tracking-normal opacity-70">({copy.optional})</span>
-                        </span>
-                        <input
-                          inputMode="numeric"
-                          value={a.measure}
-                          onChange={(e) => set({ measure: e.target.value.replace(/[^\d.,]/g, "").slice(0, 5) })}
-                          placeholder={kind === "top" ? "96" : "82"}
-                          className={field}
-                          style={line}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="mt-8">
-                      <span className={label}>{copy.fit}</span>
-                      <div className="flex flex-wrap gap-2">
-                        {(["slim", "regular", "loose"] as Fit[]).map((f) => (
-                          <button
-                            key={f}
-                            type="button"
-                            data-no-tap
-                            onClick={() => set({ fit: f })}
-                            className={chip(a.fit === f)}
-                            style={chipStyle(a.fit === f)}
-                          >
-                            {copy.fits[f]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {warn && <p className="mt-6 text-[14px] leading-[1.5]">{copy.need}</p>}
-
-                    <button
-                      type="button"
-                      data-no-tap
-                      onClick={run}
-                      className="mt-8 w-full cursor-pointer py-3 text-sm font-medium tracking-wide transition active:scale-[0.98]"
-                      style={{ background: "var(--menu)", color: "var(--navbar-bg)" }}
-                    >
-                      {copy.go}
+                    <button type="button" data-no-tap onClick={() => void start()} className={chip} style={chipStyle}>
+                      {copy.restart}
                     </button>
-                    <p className="font-info mt-4 text-center text-[11px] font-light opacity-60">{copy.privacy}</p>
+                    <button type="button" data-no-tap onClick={() => setHelpOpen(true)} className={chip} style={chipStyle}>
+                      {copy.help}
+                    </button>
                   </div>
                 )}
+
+                {step === "wait" && <div className="h-[38px]" aria-hidden="true" />}
+
+                <p className="font-info mt-3 text-center text-[10px] font-light opacity-50">{copy.privacy}</p>
               </div>
             </motion.div>
           </>
@@ -481,5 +629,3 @@ export default function SizeAdvisor({
     document.body
   )
 }
-
-export const sizeAdvisorLabel = (locale: string) => (COPY[locale] ?? COPY.en).open
