@@ -81,7 +81,6 @@ export const EVENTS: EventData[] = [
           img("11", 1202, 1700, "Chemise bleue et pantalon noir", "Blue shirt and black trousers"),
         ],
       },
-      { type: "image", image: img("05", 847, 1500, "Aëro et Bira devant une paroi lumineuse", "Aëro and Bira in front of a glowing wall"), narrow: true },
       {
         type: "menu",
         label: { fr: "Le menu", en: "The menu" },
