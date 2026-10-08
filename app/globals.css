@@ -188,7 +188,10 @@
     transition: none;
   }
 }
-/* Pop-up cookies : les boutons blancs gardent un texte sombre */
+/* Pop-up cookies : fond clair, donc texte sombre quel que soit le mode (nuit, aube, après-midi…) */
+.cookie-glass {
+  color: #171717;
+}
 .cookie-glass .bg-white {
   color: #171717;
 }
