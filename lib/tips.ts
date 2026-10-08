@@ -26,6 +26,7 @@ export type Tip = {
   // l'astuce se déclenche quand cet élément est là
   trigger: string // sélecteur CSS
   delay?: number // attente minimale après l'arrivée sur le site (ms)
+  manual?: boolean // jamais déclenchée toute seule : un autre composant la demande (événement « fysu-tip-request »)
   steps: TipStep[]
 }
 
@@ -34,7 +35,7 @@ export const TIPS: Tip[] = [
     // l'heure en bas à droite ouvre le petit cadran qui change l'ambiance du site
     id: "clock",
     trigger: '[data-tip="clock"]',
-    delay: 9000,
+    manual: true, // montrée juste avant la question d'inscription (voir NotificationToasts)
     steps: [
       {
         target: "clock",
