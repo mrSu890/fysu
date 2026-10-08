@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useLocale } from "next-intl"
-import { advise, kindOf, EMPTY_ANSWERS, LETTER_SIZES, type Answers, type Fit } from "@/lib/sizeAdvisor"
+import { advise, kindOf, BRANDS, EMPTY_ANSWERS, LETTER_SIZES, type Answers, type Fit } from "@/lib/sizeAdvisor"
 import type { SizeGuide } from "@/lib/sizeGuide"
 import { HelpPanel } from "@/components/HelpLink"
 
@@ -28,6 +28,8 @@ const COPY: Record<string, {
   brand: string
   brandPh: string
   brandNote: string
+  brandSize: string
+  brandOther: string
   measureTop: string
   measureBottom: string
   optional: string
@@ -59,8 +61,10 @@ const COPY: Record<string, {
     height: "Taille",
     weight: "Poids",
     brand: "Une marque où une taille te va parfaitement ?",
-    brandPh: "Ex. : Acne Studios, Zara…",
+    brandPh: "Le nom de la marque",
     brandNote: "Les marques taillent différemment : on s'en sert comme un repère, pas comme une règle.",
+    brandSize: "Ta taille chez {b}",
+    brandOther: "Autre",
     measureTop: "Ton tour de poitrine, si tu le connais",
     measureBottom: "Ton tour de taille, si tu le connais",
     optional: "facultatif",
@@ -92,8 +96,10 @@ const COPY: Record<string, {
     height: "Height",
     weight: "Weight",
     brand: "A brand where one size fits you perfectly?",
-    brandPh: "E.g. Acne Studios, Zara…",
+    brandPh: "The brand name",
     brandNote: "Brands size differently: we use this as a reference, not a rule.",
+    brandSize: "Your size at {b}",
+    brandOther: "Other",
     measureTop: "Your chest measurement, if you know it",
     measureBottom: "Your waist measurement, if you know it",
     optional: "optional",
@@ -139,12 +145,17 @@ export default function SizeAdvisor({
   const [shown, setShown] = useState(false)
   const [warn, setWarn] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [other, setOther] = useState(false) // « Autre » : le client écrit lui-même la marque
 
   useEffect(() => {
     setMounted(true)
     try {
       const raw = localStorage.getItem(KEY)
-      if (raw) setA({ ...EMPTY_ANSWERS, ...JSON.parse(raw) })
+      if (raw) {
+        const saved = { ...EMPTY_ANSWERS, ...JSON.parse(raw) }
+        setA(saved)
+        if (saved.brand && !BRANDS.includes(saved.brand)) setOther(true)
+      }
     } catch {
       /* ignore */
     }
@@ -343,19 +354,72 @@ export default function SizeAdvisor({
                     </div>
 
                     <div className="mt-8">
-                      <label className="block">
-                        <span className={label}>
-                          {copy.brand} <span className="normal-case tracking-normal opacity-70">({copy.optional})</span>
-                        </span>
+                      <span className={label}>
+                        {copy.brand} <span className="normal-case tracking-normal opacity-70">({copy.optional})</span>
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {BRANDS.map((b) => (
+                          <button
+                            key={b}
+                            type="button"
+                            data-no-tap
+                            onClick={() => {
+                              setOther(false)
+                              set(a.brand === b ? { brand: "", brandSize: "" } : { brand: b })
+                            }}
+                            className={chip(a.brand === b)}
+                            style={chipStyle(a.brand === b)}
+                          >
+                            {b}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          data-no-tap
+                          onClick={() => {
+                            setOther(!other)
+                            if (!other) set({ brand: "" })
+                            else set({ brand: "", brandSize: "" })
+                          }}
+                          className={chip(other)}
+                          style={chipStyle(other)}
+                        >
+                          {copy.brandOther}
+                        </button>
+                      </div>
+
+                      {other && (
                         <input
                           value={a.brand}
                           onChange={(e) => set({ brand: e.target.value.slice(0, 40) })}
                           placeholder={copy.brandPh}
-                          className={field}
+                          className={field + " mt-4"}
                           style={line}
                         />
-                      </label>
-                      <p className="font-info mt-2 text-[11px] font-light opacity-60">{copy.brandNote}</p>
+                      )}
+
+                      {a.brand.trim() && (
+                        <div className="mt-5">
+                          <span className="font-info text-[11px] font-light opacity-60">
+                            {copy.brandSize.replace("{b}", a.brand.trim())}
+                          </span>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {LETTER_SIZES.map((sz) => (
+                              <button
+                                key={sz}
+                                type="button"
+                                data-no-tap
+                                onClick={() => set({ brandSize: a.brandSize === sz ? "" : sz })}
+                                className={chip(a.brandSize === sz)}
+                                style={chipStyle(a.brandSize === sz)}
+                              >
+                                {sz}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <p className="font-info mt-3 text-[11px] font-light opacity-60">{copy.brandNote}</p>
                     </div>
 
                     <div className="mt-8">
