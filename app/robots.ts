@@ -9,7 +9,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        // /api/favicon reste autorisé : c'est l'icône du site, Google doit pouvoir la lire pour l'afficher dans ses résultats
+        allow: ["/", "/api/favicon"],
         disallow: ["/admin", "/api/", "/checkout", "/success", "/profile", "/auth", "/password", "/u/"],
       },
     ],
