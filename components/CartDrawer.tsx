@@ -124,7 +124,8 @@ export default function CartDrawer() {
 
           <Link href="/checkout" onClick={() => setIsCartOpen(false)}>
             <button
-              className="w-full rounded-md bg-black/60 py-2 text-white duration-300 hover:bg-black/80"
+              className="w-full rounded-md bg-[#262626] py-2 duration-300 hover:bg-black"
+              style={{ color: "#ffffff" }}
               type="button"
             >
               {t("checkout")}
