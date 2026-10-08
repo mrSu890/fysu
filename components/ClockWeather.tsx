@@ -136,6 +136,8 @@ function Dial({ v, minute, onDrag, onEnd, label }: { v: number; minute: number; 
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       role="img"
       aria-label={label}
+      data-tip="clock-dial"
+      data-ready={drawn ? "1" : "0"}
       className="mx-auto block h-auto w-[78%] max-w-[240px] touch-none select-none"
       onPointerDown={(e) => {
         // on attrape le soleil (ou on le fait sauter sous le doigt si on touche le cercle)
