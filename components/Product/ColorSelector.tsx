@@ -13,7 +13,7 @@ type Props = {
             onClick={() => onSelect(color)}
             className={`w-7 h-7 rounded-full border transition ${
               selectedColor === color
-                ? "ring-2 ring-black scale-110"
+                ? "ring-2 ring-foreground scale-110"
                 : "hover:scale-105"
             }`}
             style={{ backgroundColor: color }}

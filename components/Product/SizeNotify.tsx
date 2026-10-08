@@ -12,7 +12,7 @@ import { getAvailabilityCopy } from "@/lib/availability"
    ==================================================================== */
 
 const FIELD =
-  "w-full rounded-md border border-neutral-300 bg-transparent px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground/40 focus:border-black"
+  "w-full rounded-md border border-foreground/25 bg-transparent px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground/40 focus:border-foreground"
 
 export default function SizeNotify({
   product,
@@ -85,7 +85,7 @@ export default function SizeNotify({
   }
 
   if (done) {
-    return <p className="rounded-md border border-neutral-300 px-4 py-3 text-sm">{copy.thanksNotify}</p>
+    return <p className="rounded-md border border-foreground/25 px-4 py-3 text-sm">{copy.thanksNotify}</p>
   }
 
   if (!open) {
@@ -141,7 +141,7 @@ export default function SizeNotify({
         <button
           type="submit"
           disabled={sending}
-          className="w-full cursor-pointer bg-black py-3 text-sm font-medium tracking-wide text-white transition-colors duration-300 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full cursor-pointer bg-foreground py-3 text-sm font-medium tracking-wide text-background transition duration-300 hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {sending ? copy.sending : copy.send}
         </button>
@@ -151,7 +151,7 @@ export default function SizeNotify({
             setOpen(false)
             setError(null)
           }}
-          className="cursor-pointer whitespace-nowrap border border-neutral-300 px-4 text-sm hover:border-black"
+          className="cursor-pointer whitespace-nowrap border border-foreground/25 px-4 text-sm hover:border-foreground"
         >
           {copy.cancel}
         </button>

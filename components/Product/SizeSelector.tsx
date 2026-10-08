@@ -16,8 +16,8 @@ type Props = {
               onClick={() => onSelect(s.id, s.size)}
               className={`min-w-[48px] px-4 py-2 text-sm border rounded-md transition ${
                 isSelected
-                  ? "border-black bg-black text-white"
-                  : "border-neutral-300 hover:border-black"
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-foreground/25 hover:border-foreground"
               }`}
             >
               {s.size}

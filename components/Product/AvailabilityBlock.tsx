@@ -16,10 +16,10 @@ import {
    ==================================================================== */
 
 const FIELD =
-  "w-full rounded-md border border-neutral-300 bg-transparent px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground/40 focus:border-black"
+  "w-full rounded-md border border-foreground/25 bg-transparent px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground/40 focus:border-foreground"
 
 const BUTTON_DARK =
-  "w-full bg-black py-3 text-sm font-medium tracking-wide text-white transition-colors duration-300 hover:bg-neutral-800 cursor-pointer"
+  "w-full bg-foreground py-3 text-sm font-medium tracking-wide text-background transition duration-300 hover:opacity-85 cursor-pointer"
 
 export default function AvailabilityBlock({
   product,
@@ -100,7 +100,7 @@ export default function AvailabilityBlock({
         <>
           <div
             aria-disabled="true"
-            className="w-full cursor-not-allowed border border-neutral-300 py-3 text-center text-sm font-medium tracking-wide text-foreground/50"
+            className="w-full cursor-not-allowed border border-foreground/25 py-3 text-center text-sm font-medium tracking-wide text-foreground/50"
           >
             {mode === "sold_out" ? copy.soldOut : copy.comingSoon}
           </div>
@@ -110,7 +110,7 @@ export default function AvailabilityBlock({
 
       {/* Message de remerciement */}
       {done && (
-        <p className="rounded-md border border-neutral-300 px-4 py-3 text-sm">
+        <p className="rounded-md border border-foreground/25 px-4 py-3 text-sm">
           {isQuote ? copy.thanksQuote : copy.thanksNotify}
         </p>
       )}
@@ -197,7 +197,7 @@ export default function AvailabilityBlock({
                 setOpen(false)
                 setError(null)
               }}
-              className="cursor-pointer whitespace-nowrap border border-neutral-300 px-4 text-sm hover:border-black"
+              className="cursor-pointer whitespace-nowrap border border-foreground/25 px-4 text-sm hover:border-foreground"
             >
               {copy.cancel}
             </button>
