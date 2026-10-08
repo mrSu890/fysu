@@ -72,6 +72,7 @@ export default function MiniPlayer() {
           size={56}
           label={copy.expand}
           onTap={() => setCollapsed(false)}
+          tuckable
           className="liquid-glass"
           style={{ color: "var(--menu)" }}
         >

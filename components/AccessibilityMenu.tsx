@@ -373,6 +373,7 @@ export default function AccessibilityMenu() {
         zIndex={55}
         lift
         tip="a11y"
+        tuckable
         className="liquid-glass"
         style={{ color: "var(--menu)" }}
       >
