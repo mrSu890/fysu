@@ -28,11 +28,11 @@ const KEY_V = "fysu-mood-v" // la position du soleil choisie (minutes depuis min
 // minutes depuis minuit (0 à 1440) -> ambiance
 export function moodAt(minutes: number): Mood {
   const h = (((minutes % 1440) + 1440) % 1440) / 60
-  if (h >= 21 || h < 5) return "night"
+  if (h >= 20 || h < 5) return "night"
   if (h < 8) return "dawn"
-  if (h < 14) return "day"
+  if (h < 15) return "day"
   if (h < 18) return "afternoon"
-  return "dawn"
+  return "dawn" // 18 h à 20 h : le coucher de soleil
 }
 
 export function realMinutes(d: Date = new Date()): number {
