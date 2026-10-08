@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Image from "next/image";
-import Link from "next/link";
+import Link from "next/link"
+import HelpLink from "@/components/HelpLink";
 import { usePathname } from "next/navigation";
 import { useBrandPage } from "@/lib/useBrandPage";
 import { useTranslations } from "next-intl";
@@ -96,6 +97,7 @@ const Footer: React.FC = () => {
               <li><Link href="/legal/shipping" className="hover:underline" style={ink}>{t("shipping")}</Link></li>
               <li><Link href="/legal/payment" className="hover:underline" style={ink}>{t("payment")}</Link></li>
               <li><Link href="/legal/returns" className="hover:underline" style={ink}>{t("returns")}</Link></li>
+              <li><HelpLink className="cursor-pointer text-left hover:underline" style={ink} /></li>
             </ul>
           </div>
 

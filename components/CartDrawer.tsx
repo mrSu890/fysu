@@ -3,6 +3,7 @@ import { X, Trash2, Plus, Minus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
+import HelpLink from "./HelpLink"
 
 // Contenu du panier. L'enveloppe (la pastille qui s'agrandit) est gérée par la Navbar.
 export default function CartDrawer() {
@@ -131,6 +132,9 @@ export default function CartDrawer() {
               {t("checkout")}
             </button>
           </Link>
+          <div className="text-center">
+            <HelpLink className="font-info cursor-pointer text-xs font-light underline underline-offset-4 opacity-70 hover:opacity-100" />
+          </div>
         </div>
       )}
     </div>
