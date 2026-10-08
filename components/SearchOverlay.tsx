@@ -207,6 +207,16 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
 
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<Results>(EMPTY)
+  // pages de marque masquées dans l'admin : on ne les propose plus dans la recherche
+  const [brandHidden, setBrandHidden] = useState<{ kiban: boolean; wave: boolean }>({ kiban: false, wave: false })
+  useEffect(() => {
+    fetch("/api/collectionPages?visibility=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d === "object") setBrandHidden({ kiban: d.kibanCollector === false, wave: d.thewave === false })
+      })
+      .catch(() => {})
+  }, [])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -275,7 +285,9 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
     const brandPages: Entry[] = [
       { title: "Kiban Collector", slug: "kiban-collector" },
       { title: "The Wave", slug: "thewave" },
-    ].filter((b) => !has || norm(b.title).includes(q))
+    ]
+      .filter((b) => !(b.slug === "kiban-collector" && brandHidden.kiban) && !(b.slug === "thewave" && brandHidden.wave))
+      .filter((b) => !has || norm(b.title).includes(q))
     const pageEntries: Entry[] = [...results.pages, ...brandPages].filter(
       (p, i, all) => all.findIndex((x) => x.slug === p.slug) === i
     )
@@ -315,7 +327,7 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
       { id: "features", title: copy.features, items: features },
     ].filter((g) => g.items.length > 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results, query, locale])
+  }, [results, query, locale, brandHidden])
 
   const flat = groups.flatMap((g) => g.items)
 

@@ -673,6 +673,13 @@ export default function Navbar() {
       const res = await fetch("/api/pages");
       const data = await res.json();
 
+      // pages masquées dans l'admin : elles ne doivent plus apparaître dans le menu
+      let vis: { kibanCollector?: boolean; thewave?: boolean } = {};
+      try {
+        const v = await fetch("/api/collectionPages?visibility=1", { cache: "no-store" });
+        if (v.ok) vis = await v.json();
+      } catch {}
+
       const pageLinks = data.map((p: any) => ({
         label: p.title.toUpperCase(),
         href: `/${p.slug}`,
@@ -685,8 +692,11 @@ export default function Navbar() {
       const fyIndex = pageLinks.findIndex((l: MenuLink) =>
         /fy.?grances/i.test(l.href + l.label)
       );
-      if (fyIndex === -1) pageLinks.push(kibanLink, waveLink);
-      else pageLinks.splice(fyIndex, 0, kibanLink, waveLink);
+      const brandLinks: MenuLink[] = [];
+      if (vis.kibanCollector !== false) brandLinks.push(kibanLink);
+      if (vis.thewave !== false) brandLinks.push(waveLink);
+      if (fyIndex === -1) pageLinks.push(...brandLinks);
+      else pageLinks.splice(fyIndex, 0, ...brandLinks);
 
       setLinks([
         ...pageLinks,
