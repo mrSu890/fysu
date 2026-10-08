@@ -530,7 +530,7 @@ function MobileMenu({
                           <button
                             onPointerEnter={(e) => hoverLink(e, link)}
                             onClick={toggle}
-                            className="flex items-center justify-between w-full py-2 border-b border-white/20"
+                            className="flex items-center justify-between w-full py-2 border-b border-current/20"
                             type="button"
                           >
                             {link.label}
@@ -557,7 +557,7 @@ function MobileMenu({
                                     href={col.href}
                                     onPointerEnter={(e) => hoverLink(e, col)}
                                     onClick={handleMobileLinkClick}
-                                    className="block py-1 border-b border-white/10"
+                                    className="block py-1 border-b border-current/10"
                                   >
                                     {col.label}
                                   </Link>
@@ -573,7 +573,7 @@ function MobileMenu({
                           href={link.href}
                           onPointerEnter={(e) => hoverLink(e, link)}
                           onClick={handleMobileLinkClick}
-                          className="block py-2 border-b border-white/20"
+                          className="block py-2 border-b border-current/20"
                         >
                           {link.label}
                         </Link>
@@ -586,7 +586,7 @@ function MobileMenu({
                       href="/about"
                       onPointerEnter={() => setPreview(null)}
                       onClick={handleMobileLinkClick}
-                      className="block py-2 border-b border-white/20"
+                      className="block py-2 border-b border-current/20"
                     >
                       {t("about")}
                     </Link>

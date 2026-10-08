@@ -35,7 +35,7 @@ export default function CartDrawer() {
           cart.map((item) => (
             <div
               key={`${item.id}-${item.selectedSizeId}`}
-              className="flex items-center justify-between gap-4 border-b border-white/20 pb-4"
+              className="flex items-center justify-between gap-4 border-b border-current/20 pb-4"
             >
               {/* IMAGE + INFOS */}
               <div className="flex items-center gap-4">
@@ -53,14 +53,14 @@ export default function CartDrawer() {
                   <p className="font-medium text-sm font-sans">{item.name}</p>
 
                   <p className="text-xs mt-1">
-                    <span className="inline-block px-2 py-0.5 bg-white/10 rounded text-[10px] tracking-wide">
+                    <span className="inline-block px-2 py-0.5 bg-current/10 rounded text-[10px] tracking-wide">
                       {item.selectedSizeLabel}
                     </span>
                     {item.selectedColorName && (
-                      <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded text-[10px] tracking-wide">
+                      <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 bg-current/10 rounded text-[10px] tracking-wide">
                         {item.selectedColorHex && (
                           <span
-                            className="inline-block h-2 w-2 rounded-full border border-white/40"
+                            className="inline-block h-2 w-2 rounded-full border border-current/40"
                             style={{ backgroundColor: item.selectedColorHex }}
                           />
                         )}
@@ -82,7 +82,7 @@ export default function CartDrawer() {
                     onClick={() =>
                       decreaseQuantity(item.id, item.selectedSizeId)
                     }
-                    className="p-[3px] rounded-full bg-white/10 hover:bg-white/20 duration-300"
+                    className="p-[3px] rounded-full bg-current/10 hover:bg-current/20 duration-300"
                     type="button"
                   >
                     <Minus size={14} />
@@ -94,7 +94,7 @@ export default function CartDrawer() {
                     onClick={() =>
                       increaseQuantity(item.id, item.selectedSizeId)
                     }
-                    className="p-[3px] rounded-full bg-white/10 hover:bg-white/20 duration-300"
+                    className="p-[3px] rounded-full bg-current/10 hover:bg-current/20 duration-300"
                     type="button"
                   >
                     <Plus size={14} />

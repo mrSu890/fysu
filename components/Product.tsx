@@ -234,7 +234,7 @@ const Product = ({
                 ))}
 
                 {extraCount > 0 && (
-                  <span className="text-xs text-neutral-500">+{extraCount}</span>
+                  <span className="text-xs text-foreground/50">+{extraCount}</span>
                 )}
               </div>
             )}
