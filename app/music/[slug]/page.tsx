@@ -179,7 +179,7 @@ export default function MusicAlbumPage() {
 
             {/* ================= EN-TÊTE ================= */}
             <header className="flex flex-col items-center text-center sm:flex-row sm:items-end sm:gap-7 sm:text-left">
-              <div className="h-44 w-44 shrink-0 overflow-hidden rounded-2xl bg-current/10 shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:h-52 sm:w-52">
+              <div data-hero-target className="h-44 w-44 shrink-0 overflow-hidden rounded-2xl bg-current/10 shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:h-52 sm:w-52">
                 {album.cover_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={album.cover_url} alt={album.title} className="h-full w-full object-cover" />
