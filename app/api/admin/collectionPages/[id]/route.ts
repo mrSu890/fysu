@@ -30,7 +30,7 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { title, hero_image, visible } = body;
+    const { title, hero_image, visible, intro } = body;
 
     // Seuls les champs envoyés sont modifiés
     const updatePayload: Record<string, unknown> = {
@@ -40,6 +40,7 @@ export async function PATCH(
     if (title !== undefined) updatePayload.title = title;
     if (hero_image !== undefined) updatePayload.hero_image = hero_image;
     if (visible !== undefined) updatePayload.visible = visible;
+    if (intro !== undefined) updatePayload.intro = typeof intro === "string" ? intro : null;
 
     const { data, error } = await supabase
       .from("collectionPages")
