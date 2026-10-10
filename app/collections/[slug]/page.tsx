@@ -177,6 +177,24 @@ export default function CollectionPage() {
     
         </div>
     
+        {/* TEXTE D'INTRODUCTION : phrases courtes, une par ligne */}
+        {typeof page.intro === "string" && page.intro.trim() !== "" && (
+          <div className="mx-auto max-w-xl px-6 pt-16 pb-6 text-center font-light">
+            {page.intro
+              .replace(/\\n/g, "\n")
+              .split("\n")
+              .map((line: string, i: number) =>
+                line.trim() === "" ? (
+                  <div key={i} className="h-8" aria-hidden />
+                ) : (
+                  <p key={i} className="text-[15px] leading-[2.2] opacity-80">
+                    {line}
+                  </p>
+                )
+              )}
+          </div>
+        )}
+
         {/* CONTENT */}
         <div className={`relative px-6 pb-44 ${hasHero ? "pt-8" : "pt-12"}`}>
           {products.length === 0 ? (
