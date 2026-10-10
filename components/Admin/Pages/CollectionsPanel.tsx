@@ -14,6 +14,7 @@ type CollectionItem = {
   hero_image: string | null
   visible: boolean
   products: number[]
+  intro?: string | null
 }
 
 // Collections qui ont leur propre page dans le site (ne pas les supprimer)
@@ -31,6 +32,8 @@ export default function CollectionsPanel() {
   const [title, setTitle] = useState("")
   const [productEditor, setProductEditor] = useState<CollectionItem | null>(null)
   const [selected, setSelected] = useState<number[]>([])
+  const [introEditor, setIntroEditor] = useState<CollectionItem | null>(null)
+  const [intro, setIntro] = useState("")
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -80,6 +83,29 @@ export default function CollectionsPanel() {
       load()
     } catch (e) {
       notify.error(errorMessage(e, "Impossible d'enregistrer"))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function openIntro(item: CollectionItem) {
+    setIntro(item.intro ?? "")
+    setIntroEditor(item)
+  }
+
+  async function saveIntro() {
+    if (!introEditor) return
+    setSaving(true)
+    try {
+      await adminFetch(`/api/admin/collectionPages/${introEditor.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ intro }),
+      })
+      notify.success("Texte enregistré")
+      setIntroEditor(null)
+      load()
+    } catch (e) {
+      notify.error(errorMessage(e, "Impossible d'enregistrer le texte"))
     } finally {
       setSaving(false)
     }
@@ -187,6 +213,11 @@ export default function CollectionsPanel() {
                     <AdminButton variant="ghost" icon={Pencil} onClick={() => openTitle(c)}>
                       Titre
                     </AdminButton>
+                    {!special && (
+                      <AdminButton variant="ghost" icon={Pencil} onClick={() => openIntro(c)}>
+                        Texte
+                      </AdminButton>
+                    )}
                     <a
                       href={publicPath(c.slug)}
                       target="_blank"
@@ -244,6 +275,33 @@ export default function CollectionsPanel() {
             placeholder="Ex. Summer drop"
             className={inputClass}
             autoFocus
+          />
+        </Field>
+      </Modal>
+
+      <Modal
+        open={introEditor !== null}
+        title={introEditor ? `Texte de « ${introEditor.title} »` : ""}
+        onClose={() => setIntroEditor(null)}
+        footer={
+          <>
+            <AdminButton onClick={() => setIntroEditor(null)}>Annuler</AdminButton>
+            <AdminButton variant="primary" disabled={saving} onClick={saveIntro}>
+              {saving ? "Enregistrement…" : "Enregistrer"}
+            </AdminButton>
+          </>
+        }
+      >
+        <Field
+          label="Texte d'introduction"
+          hint="Une phrase courte par ligne. Une ligne vide laisse un temps de pause. Laisse vide pour ne rien afficher."
+        >
+          <textarea
+            value={intro}
+            onChange={(e) => setIntro(e.target.value)}
+            rows={8}
+            placeholder={"Silhouettes en mouvement.\nLignes qui se croisent.\n\nUne présence légère."}
+            className={inputClass}
           />
         </Field>
       </Modal>
