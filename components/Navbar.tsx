@@ -593,6 +593,20 @@ function MobileMenu({
                   </li>
 
                   <li>
+                    <button
+                      type="button"
+                      onPointerEnter={() => setPreview(null)}
+                      onClick={() => {
+                        handleMobileLinkClick();
+                        window.setTimeout(() => window.dispatchEvent(new Event("open-accessibility")), 250);
+                      }}
+                      className="block w-full py-2 text-left border-b border-current/20"
+                    >
+                      {a11yLabel(locale)}
+                    </button>
+                  </li>
+
+                  <li>
                     <LocaleSwitcher />
                   </li>
 
@@ -649,6 +663,13 @@ function MobileMenu({
     </div>
     </>
   );
+}
+
+function a11yLabel(locale: string) {
+  if (locale === "fr") return "Accessibilité";
+  if (locale === "nl") return "Toegankelijkheid";
+  if (locale === "ja") return "アクセシビリティ";
+  return "Accessibility";
 }
 
 export default function Navbar() {

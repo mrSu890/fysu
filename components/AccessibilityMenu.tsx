@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
@@ -12,7 +12,9 @@ import { resetTips } from "@/lib/tips"
    ACCESSIBILITÉ
    Une pastille ronde en bas à gauche (on peut la déplacer avec le doigt).
    Elle ouvre un petit panneau : texte plus grand, texte plus lisible, contraste,
-   moins d'animations, sans points décoratifs, mode concentration (TDAH).
+   moins d'animations, points décoratifs (cachés par défaut), mode concentration (TDAH).
+   La pastille n'est visible qu'à l'arrivée sur le site : dès qu'on change de page elle disparaît
+   (on la retrouve dans le menu de la barre de navigation).
    Les choix sont retenus sur l'appareil. Les styles sont dans app/globals.css
    (classes a11y-…) et sont appliqués dès le chargement (voir app/layout.tsx).
    ==================================================================== */
@@ -22,12 +24,13 @@ type Prefs = {
   readable: boolean
   contrast: boolean
   calm: boolean
-  nodots: boolean
+  dots: boolean
   focus: boolean
 }
 
-const DEFAULTS: Prefs = { size: 0, readable: false, contrast: false, calm: false, nodots: false, focus: false }
+const DEFAULTS: Prefs = { size: 0, readable: false, contrast: false, calm: false, dots: false, focus: false }
 const KEY = "fysu-a11y"
+const GONE_KEY = "fysu-a11y-fab-gone" // sessionStorage : la pastille a déjà disparu pendant cette visite
 const SIZES = ["", "112.5%", "125%", "140%"]
 
 function apply(p: Prefs) {
@@ -36,7 +39,8 @@ function apply(p: Prefs) {
   h.classList.toggle("a11y-readable", p.readable)
   h.classList.toggle("a11y-contrast", p.contrast)
   h.classList.toggle("a11y-calm", p.calm)
-  h.classList.toggle("a11y-nodots", p.nodots)
+  // les points décoratifs sont cachés par défaut ; la personne peut les activer
+  h.classList.toggle("a11y-nodots", !p.dots)
   h.classList.toggle("a11y-focus", p.focus)
 }
 
@@ -60,7 +64,7 @@ type Copy = {
   readable: [string, string]
   contrast: [string, string]
   calm: [string, string]
-  nodots: [string, string]
+  dots: [string, string]
   focus: [string, string]
   reset: string
 }
@@ -74,7 +78,7 @@ const COPY: Record<string, Copy> = {
     readable: ["Easier-to-read text", "Clearer font, more space between letters and lines"],
     contrast: ["Stronger contrast", "Darker text, underlined links"],
     calm: ["Fewer animations", "Nothing fades, slides or moves"],
-    nodots: ["No decorative dots", "Hides the dots on the sides of the screen"],
+    dots: ["Decorative dots", "Shows the dots on the sides of the screen"],
     focus: ["Focus mode", "Calm page: no pop-ups, no animations, no dots, clearer reading"],
     reset: "Reset everything",
   },
@@ -86,7 +90,7 @@ const COPY: Record<string, Copy> = {
     readable: ["Texte plus lisible", "Police plus claire, lettres et lignes plus espacées"],
     contrast: ["Contraste renforcé", "Texte plus foncé, liens soulignés"],
     calm: ["Moins d'animations", "Rien ne s'efface, ne glisse ni ne bouge"],
-    nodots: ["Sans points décoratifs", "Cache les points sur les côtés de l'écran"],
+    dots: ["Points décoratifs", "Affiche les points sur les côtés de l'écran"],
     focus: ["Mode concentration", "Page calme : pas de pop-ups, d'animations ni de points, lecture plus claire"],
     reset: "Tout réinitialiser",
   },
@@ -98,7 +102,7 @@ const COPY: Record<string, Copy> = {
     readable: ["Beter leesbare tekst", "Duidelijker lettertype, meer ruimte tussen letters en regels"],
     contrast: ["Sterker contrast", "Donkerdere tekst, onderstreepte links"],
     calm: ["Minder animaties", "Niets vervaagt, schuift of beweegt"],
-    nodots: ["Geen decoratieve stippen", "Verbergt de stippen aan de zijkanten van het scherm"],
+    dots: ["Decoratieve stippen", "Toont de stippen aan de zijkanten van het scherm"],
     focus: ["Focusmodus", "Rustige pagina: geen pop-ups, animaties of stippen, duidelijker lezen"],
     reset: "Alles terugzetten",
   },
@@ -110,7 +114,7 @@ const COPY: Record<string, Copy> = {
     readable: ["読みやすい文字", "見やすい書体、文字と行の間隔を広く"],
     contrast: ["コントラストを強く", "濃い文字、リンクに下線"],
     calm: ["アニメーションを減らす", "フェードやスライド、動きをなくします"],
-    nodots: ["飾りの点を消す", "画面の両端の点を隠します"],
+    dots: ["飾りの点を表示", "画面の両端に点を表示します"],
     focus: ["集中モード", "ポップアップ・アニメーション・点なしの落ち着いたページ"],
     reset: "すべてリセット",
   },
@@ -192,6 +196,37 @@ export default function AccessibilityMenu() {
 
   const [open, setOpen] = useState(false)
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS)
+  // pastille : visible sur la page d'arrivée seulement. null = pas encore lu.
+  const [gone, setGone] = useState<boolean | null>(null)
+  const landingRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    let flag = false
+    try {
+      flag = sessionStorage.getItem(GONE_KEY) === "1"
+    } catch {
+      /* ignore */
+    }
+    if (flag) {
+      setGone(true)
+      return
+    }
+    landingRef.current = pathname
+    setGone(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (gone !== false || landingRef.current === null) return
+    if (pathname !== landingRef.current) {
+      setGone(true)
+      try {
+        sessionStorage.setItem(GONE_KEY, "1")
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [pathname, gone])
 
   useEffect(() => {
     setPrefs(load())
@@ -326,10 +361,10 @@ export default function AccessibilityMenu() {
                   onToggle={() => update({ calm: !prefs.calm })}
                 />
                 <Row
-                  label={copy.nodots[0]}
-                  hint={copy.nodots[1]}
-                  on={prefs.nodots}
-                  onToggle={() => update({ nodots: !prefs.nodots })}
+                  label={copy.dots[0]}
+                  hint={copy.dots[1]}
+                  on={prefs.dots}
+                  onToggle={() => update({ dots: !prefs.dots })}
                 />
                 <Row
                   label={copy.focus[0]}
@@ -364,7 +399,10 @@ export default function AccessibilityMenu() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+      {gone === false && (
       <DraggableFab
+        key="a11y-fab"
         storageKey="fysu-a11y-fab"
         side="left"
         size={52}
@@ -379,6 +417,8 @@ export default function AccessibilityMenu() {
       >
         <UniversalAccessIcon size={26} />
       </DraggableFab>
+      )}
+      </AnimatePresence>
     </>
   )
 }

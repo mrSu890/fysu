@@ -5,8 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Music, X } from "lucide-react"
-import { useMusicPlayer, type PlayerAlbum } from "@/context/MusicPlayerContext"
-import type { MusicTrack } from "@/lib/music"
+import { useMusicPlayer } from "@/context/MusicPlayerContext"
 import { useMusicCopy } from "@/lib/musicCopy"
 import { getStoredCountry } from "@/lib/regions"
 
@@ -17,8 +16,7 @@ import { getStoredCountry } from "@/lib/regions"
    - il n'apparaît qu'UNE fois par visite, quelle que soit la collection : une fois la question posée
      (ou si de la musique est déjà chargée), il ne revient plus tant que la visite continue
    - si on refuse, il reste caché 24 h
-   - il n'apparaît jamais en même temps que la pastille de musique : la pastille attend
-     la réponse, puis apparaît
+   - la pastille de musique n'apparaît jamais d'elle-même : seulement quand la personne lance la musique
    ==================================================================== */
 
 type PromptAlbum = {
@@ -57,14 +55,13 @@ function alreadyHandled(): boolean {
 export default function MusicPrompt() {
   const pathname = usePathname()
   const copy = useMusicCopy()
-  const { album: playingAlbum, prime, unprime } = useMusicPlayer()
+  const { album: playingAlbum, unprime } = useMusicPlayer()
   const [albums, setAlbums] = useState<PromptAlbum[]>([])
   const [slug, setSlug] = useState<string | null>(null)
   const [regionReady, setRegionReady] = useState(false)
   const [closed, setClosed] = useState(false)
   // true = la question a déjà été posée (ou refusée) : on ne la repose pas. null = pas encore lu.
   const [handled, setHandled] = useState<boolean | null>(null)
-  const [primeData, setPrimeData] = useState<{ album: PlayerAlbum; tracks: MusicTrack[] } | null>(null)
 
   useEffect(() => {
     setHandled(alreadyHandled())
@@ -90,7 +87,6 @@ export default function MusicPrompt() {
     const s = slugFromPath(pathname)
     setClosed(false)
     setAlbums([])
-    setPrimeData(null)
     if (!s || (parts1(pathname) && RESERVED.has(s))) {
       setSlug(null)
       unprime()
@@ -109,27 +105,8 @@ export default function MusicPrompt() {
           unprime()
           return
         }
-        // la pastille de musique apparaît (en pause) sur chaque page qui a de la musique
-        try {
-          const res = await fetch(`/api/music?slug=${encodeURIComponent(list[0].slug)}`)
-          if (!res.ok || cancelled) return
-          const full = await res.json()
-          if (cancelled) return
-          // la pastille est préparée ici, mais affichée seulement quand la question a été réglée
-          setPrimeData({
-            album: {
-              id: full.id,
-              slug: full.slug,
-              title: full.title,
-              artist: full.artist,
-              cover_url: full.cover_url,
-              brand: full.brand,
-            },
-            tracks: full.tracks ?? [],
-          })
-        } catch {
-          /* pas de pastille */
-        }
+        // la pastille de musique n'est plus préparée ici : elle n'apparaît que si la personne lance
+        // elle-même la musique (page de l'album, bouton lecture)
       })
       .catch(() => {})
     return () => {
@@ -167,13 +144,6 @@ export default function MusicPrompt() {
       /* ignore */
     }
   }, [visible])
-
-  // La pastille de musique n'apparaît que lorsqu'il n'y a plus de question à poser
-  useEffect(() => {
-    if (!primeData || handled === null) return
-    if (handled === false && !focusMode) return
-    prime(primeData.album, primeData.tracks)
-  }, [primeData, handled, focusMode, prime])
 
   return (
     <AnimatePresence>
