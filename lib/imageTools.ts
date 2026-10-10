@@ -34,7 +34,10 @@ export async function resizeImage(file: File): Promise<File> {
     const img = await loadFromUrl(objectUrl, false)
     const longSide = Math.max(img.naturalWidth, img.naturalHeight)
 
-    if (longSide <= MAX_SIDE && file.size <= MAX_BYTES) return file
+    // HEIC/HEIF (photos iPhone) : lisibles dans l'admin sous Safari mais pas par le site -> on convertit en JPEG
+    const heic = /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name)
+    const webFriendly = /^image\/(jpeg|png|webp|avif)$/i.test(file.type) && !heic
+    if (webFriendly && longSide <= MAX_SIDE && file.size <= MAX_BYTES) return file
 
     const ratio = Math.min(1, MAX_SIDE / longSide)
     const w = Math.round(img.naturalWidth * ratio)
@@ -46,7 +49,7 @@ export async function resizeImage(file: File): Promise<File> {
     const ctx = canvas.getContext("2d")
     if (!ctx) return file
 
-    const isPng = file.type === "image/png"
+    const isPng = file.type === "image/png" && !heic
     if (!isPng) {
       ctx.fillStyle = "#ffffff"
       ctx.fillRect(0, 0, w, h)
