@@ -55,6 +55,36 @@ export default function DraggableFab({
   const y = useMotionValue(0)
   const down = useRef<{ cx: number; cy: number; ox: number; oy: number } | null>(null)
   const tapped = useRef(false)
+  const pressRef = useRef<{ x: number; y: number } | null>(null)
+  const firedRef = useRef(false)
+
+  // toucher fiable pour les petits boutons (croix, languette) : sur iPad le doigt bouge souvent de quelques pixels,
+  // ce qui annule un « click » normal. On déclenche donc au relâchement si le doigt a bougé de moins de 14 px.
+  const tapProps = (action: () => void) => {
+    return {
+      onPointerDown: (e: React.PointerEvent) => {
+        e.stopPropagation()
+        pressRef.current = { x: e.clientX, y: e.clientY }
+      },
+      onPointerUp: (e: React.PointerEvent) => {
+        const d = pressRef.current
+        pressRef.current = null
+        if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 14) {
+          e.preventDefault()
+          firedRef.current = true
+          action()
+        }
+      },
+      onPointerCancel: () => {
+        pressRef.current = null
+      },
+      onClick: (e: React.MouseEvent) => {
+        // clavier (pas de pointeur) : on déclenche ici ; au toucher l'action est déjà partie
+        if (e.detail === 0) action()
+        firedRef.current = false
+      },
+    }
+  }
 
   // pastille rangée sur le bord (retenu sur cet appareil)
   const tuckKey = `${storageKey}-tucked`
@@ -153,17 +183,19 @@ export default function DraggableFab({
           title={fr ? "Faire revenir" : "Bring back"}
           tabIndex={off ? 0 : -1}
           initial={false}
-          animate={{ x: off ? 0 : side === "right" ? 30 : -30, opacity: off ? 1 : 0 }}
+          animate={{ x: off ? 0 : side === "right" ? 38 : -38, opacity: off ? 1 : 0 }}
           transition={{ ...glide, delay: off && !instant ? 0.12 : 0 }}
-          onClick={() => setTuck(false)}
-          className={`liquid-glass absolute flex h-[56px] w-[26px] cursor-pointer items-center justify-center ${
+          {...tapProps(() => setTuck(false))}
+          onContextMenu={(e) => e.preventDefault()}
+          className={`liquid-glass absolute flex h-[64px] w-[34px] cursor-pointer items-center justify-center ${
             side === "right" ? "rounded-l-full" : "rounded-r-full"
           }`}
           style={{
             ...style,
             pointerEvents: off ? "auto" : "none",
             ...(side === "right" ? { right: 0 } : { left: 0 }),
-            bottom: `calc(${baseBottom} + ${(size - 56) / 2 - y.get()}px)`,
+            bottom: `calc(${baseBottom} + ${(size - 64) / 2 - y.get()}px)`,
+            touchAction: "none",
             transition: lift ? "bottom 0.3s ease" : undefined,
           }}
         >
@@ -241,18 +273,17 @@ export default function DraggableFab({
             aria-label={fr ? "Ranger sur le côté" : "Tuck away"}
             title={fr ? "Ranger sur le côté" : "Tuck away"}
             tabIndex={off ? -1 : 0}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => setTuck(true)}
-            className="liquid-glass absolute flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-full"
+            {...tapProps(() => setTuck(true))}
+            className="liquid-glass absolute flex h-[40px] w-[40px] cursor-pointer items-center justify-center rounded-full"
             style={{
               ...style,
               pointerEvents: off ? "none" : "auto",
               x,
               y,
-              ...(side === "right" ? { right: MARGIN + size - 16 } : { left: MARGIN + size - 16 }),
-              bottom: `calc(${baseBottom} + ${size - 16}px)`,
+              ...(side === "right" ? { right: MARGIN + size - 21 } : { left: MARGIN + size - 21 }),
+              bottom: `calc(${baseBottom} + ${size - 21}px)`,
               transition: lift ? "bottom 0.3s ease" : undefined,
-              touchAction: "manipulation",
+              touchAction: "none",
             }}
           >
             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
