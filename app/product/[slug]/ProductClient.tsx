@@ -381,9 +381,20 @@ export default function ProductClient() {
             </p>
           </div>
 
-          <p className="max-w-md border-t border-foreground/50 pt-8 text-[15px] font-light leading-[1.65] tracking-[-0.01em] whitespace-pre-line opacity-75">
-            {formatText(product.description)}
-          </p>
+          {/* Description : une phrase par ligne, une ligne vide = un temps de pause */}
+          <div className="max-w-md border-t border-foreground/50 pt-8 text-[15px] font-light tracking-[-0.01em] opacity-75">
+            {formatText(product.description)
+              .split("\n")
+              .map((line, i) =>
+                line.trim() === "" ? (
+                  <div key={i} className="h-6" aria-hidden />
+                ) : (
+                  <p key={i} className="leading-[2]">
+                    {line}
+                  </p>
+                )
+              )}
+          </div>
 
           {family && (
             <Link
