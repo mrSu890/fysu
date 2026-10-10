@@ -16,7 +16,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const fileExt = file.name.split(".").pop();
+    const fileExt = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const MIME: Record<string, string> = {
+      jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+      gif: "image/gif", avif: "image/avif", svg: "image/svg+xml",
+      heic: "image/heic", heif: "image/heif",
+    };
+    // type vide ou générique (fréquent avec les photos iPad/iPhone) -> on le déduit de l'extension
+    const contentType = file.type && file.type.startsWith("image/") ? file.type : MIME[fileExt] ?? "image/jpeg";
+    if (/heic|heif/.test(contentType)) {
+      return NextResponse.json(
+        { error: "Format HEIC non supporté par le site : enregistre la photo en JPG ou PNG." },
+        { status: 400 }
+      );
+    }
     const fileName = `${productId}-${Date.now()}.${fileExt}`;
     const filePath = `products/${fileName}`;
 
@@ -26,7 +39,7 @@ export async function POST(req: Request) {
     const { error: uploadError } = await supabaseAdmin.storage
       .from("products")
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType,
         upsert: false,
       });
 
