@@ -110,14 +110,15 @@ export default async function RootLayout({
               } catch (e) {}
               try {
                 const a = JSON.parse(localStorage.getItem("fysu-a11y") || "null");
+                const h = document.documentElement;
+                // points décoratifs : cachés par défaut, visibles seulement si la personne les a activés
+                if (!(a && a.dots)) h.classList.add("a11y-nodots");
                 if (a) {
-                  const h = document.documentElement;
                   const sizes = ["", "112.5%", "125%", "140%"];
                   if (a.size) h.style.fontSize = sizes[a.size] || "";
                   if (a.readable) h.classList.add("a11y-readable");
                   if (a.contrast) h.classList.add("a11y-contrast");
                   if (a.calm) h.classList.add("a11y-calm");
-                  if (a.nodots) h.classList.add("a11y-nodots");
                   if (a.focus) h.classList.add("a11y-focus");
                 }
               } catch (e) {}
