@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { usePathname } from "next/navigation"
+import { RAIN_EVENT } from "@/lib/rain"
 import { applyMood, moodAt, readManual, realMinutes, type Mood } from "@/lib/mood"
 
 /* Petite icône d'ambiance dans la barre de navigation (à la place de la loupe).
@@ -16,7 +17,7 @@ const DEMO_KEY = "fysu-mood-demo"
 // pages où le cadran n'existe pas (voir HIDDEN dans ClockWeather)
 const NO_CLOCK = ["/admin", "/games", "/thewave", "/checkout", "/success", "/password", "/auth"]
 
-type Kind = "sun" | "sunset" | "moon" | "sunrise"
+type Kind = "sun" | "sunset" | "moon" | "sunrise" | "rain"
 
 function kindAt(v: number): Kind {
   const h = (((v % 1440) + 1440) % 1440) / 60
@@ -28,6 +29,13 @@ function kindAt(v: number): Kind {
 
 function Glyph({ kind }: { kind: Kind }) {
   const p = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.25, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true }
+  if (kind === "rain")
+    return (
+      <svg {...p}>
+        <path d="M7 15h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 6.2 4.4 4.4 0 0 0 7 15z" />
+        <path d="M8.5 18.5l-.8 2M12.5 18.5l-.8 2M16.5 18.5l-.8 2" />
+      </svg>
+    )
   if (kind === "moon") return <svg {...p}><path d="M20 14.2A8 8 0 0 1 9.8 4a8 8 0 1 0 10.2 10.2z" /></svg>
   if (kind === "sun")
     return (
@@ -51,6 +59,13 @@ export default function MoodIcon({ label }: { label: string }) {
   const pathname = usePathname() ?? "/"
   const [v, setV] = useState<number | null>(null)
   const [pulse, setPulse] = useState(0)
+  const [rain, setRain] = useState(false)
+  useEffect(() => {
+    const read = () => setRain(document.documentElement.classList.contains("rain"))
+    read()
+    window.addEventListener(RAIN_EVENT, read)
+    return () => window.removeEventListener(RAIN_EVENT, read)
+  }, [])
 
   useEffect(() => {
     const read = () => setV(readManual()?.v ?? realMinutes())
@@ -120,7 +135,7 @@ export default function MoodIcon({ label }: { label: string }) {
         transition={{ duration: 1.1, ease: "easeInOut" }}
         className="flex"
       >
-        <Glyph kind={kindAt(v)} />
+        <Glyph kind={rain ? "rain" : kindAt(v)} />
       </motion.span>
     </motion.button>
   )

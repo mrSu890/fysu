@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
+import { applyRain, isRainCode, readRainManual, saveRainManual } from "@/lib/rain"
 import { MOOD_LABEL, applyMood, clearManual, currentMood, moodAt, readManual, realMinutes, saveManual, type Mood } from "@/lib/mood"
 
 /* ====================================================================
@@ -92,8 +93,8 @@ const KIND_LABEL: Record<Kind, { fr: string; en: string }> = {
 }
 
 const POPUP_TEXT = {
-  fr: { title: "Ambiance", hint: "Fais glisser le soleil", real: "Heure réelle", close: "Fermer", dial: "Cadran : fais glisser le soleil pour changer l'ambiance" },
-  en: { title: "Mood", hint: "Drag the sun", real: "Real time", close: "Close", dial: "Dial: drag the sun to change the mood" },
+  fr: { title: "Ambiance", hint: "Fais glisser le soleil", rain: "Pluie", real: "Heure réelle", close: "Fermer", dial: "Cadran : fais glisser le soleil pour changer l'ambiance" },
+  en: { title: "Mood", hint: "Drag the sun", rain: "Rain", real: "Real time", close: "Close", dial: "Dial: drag the sun to change the mood" },
 }
 
 /* Le cadran : un cercle fin, sans chiffre ni trait. Le soleil = l'heure (un tour = 12 h), la lune = la minute.
@@ -241,6 +242,26 @@ export default function ClockWeather() {
   const rafRef = useRef<number | null>(null)
   useEffect(() => () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }, [])
 
+  // mode pluie : choix du visiteur (null = automatique, selon la météo)
+  const [rainManual, setRainManual] = useState<boolean | null>(null)
+  const [rainOn, setRainOn] = useState(false)
+  useEffect(() => {
+    setRainManual(readRainManual())
+  }, [])
+  const autoRain = weather ? isRainCode(weather.code) : false
+  const rainNow = rainManual ?? autoRain
+  useEffect(() => {
+    setRainOn(rainNow)
+    applyRain(rainNow)
+  }, [rainNow])
+  const toggleRain = () => {
+    const next = !rainNow
+    // si le choix rejoint l'automatique, on revient en automatique
+    const val = next === autoRain ? null : next
+    saveRainManual(val)
+    setRainManual(val)
+  }
+
   // au démarrage : un choix déjà fait par le visiteur ?
   useEffect(() => {
     const m = readManual()
@@ -362,6 +383,8 @@ export default function ClockWeather() {
     stopGlide()
     clearManual()
     setManualV(null)
+    saveRainManual(null)
+    setRainManual(null)
     const m = moodAt(realMinutes())
     lastMood.current = m
     setMood(m)
@@ -444,9 +467,23 @@ export default function ClockWeather() {
                 <span>{MOOD_LABEL[mood as Mood][lang]}</span>
               </div>
 
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={toggleRain}
+                  aria-pressed={rainOn}
+                  className={`font-info flex cursor-pointer items-center gap-1.5 rounded-full border border-current/25 px-3 py-1 text-[10px] font-light uppercase tracking-[0.06em] transition-opacity ${rainOn ? "opacity-100 bg-white/15" : "opacity-60"}`}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3.5s5.5 6 5.5 10a5.5 5.5 0 0 1-11 0c0-4 5.5-10 5.5-10z" />
+                  </svg>
+                  {tx.rain}
+                </button>
+              </div>
+
               <div className="font-info mt-4 flex items-center justify-between text-[10px] font-light uppercase tracking-[0.06em]">
                 <span className="opacity-55">{tx.hint}</span>
-                {manualV !== null && (
+                {(manualV !== null || rainManual !== null) && (
                   <button type="button" onClick={reset} className="cursor-pointer border-b border-current pb-px opacity-90">
                     {tx.real}
                   </button>
