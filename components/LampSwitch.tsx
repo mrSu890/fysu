@@ -37,9 +37,10 @@ export default function LampSwitch({
   const [lit, setLit] = useLamp()
   const label = labels(locale, lit)
 
-  const trackW = big ? 64 : 48
-  const trackH = big ? 36 : 28
-  const knob = trackH - 8
+  // petit et discret : l'œil doit aller à la lampe qui change, pas à l'interrupteur
+  const trackW = big ? 44 : 34
+  const trackH = big ? 26 : 20
+  const knob = trackH - 6
 
   return (
     <button
@@ -53,18 +54,18 @@ export default function LampSwitch({
         setLit(!lit)
       }}
       onPointerDown={(e) => e.stopPropagation()}
-      className={`${glass ? "liquid-glass" : ""} inline-flex cursor-pointer touch-manipulation items-center gap-3 rounded-full transition active:scale-95 ${
-        glass ? (big ? "px-4 py-3" : "px-3 py-2") : "py-1"
+      className={`${glass ? "liquid-glass" : ""} inline-flex cursor-pointer touch-manipulation items-center gap-2 rounded-full transition active:scale-95 ${
+        glass ? (big ? "px-3 py-2" : "px-2.5 py-1.5") : "py-1"
       } ${className}`}
       style={glass ? { color: "var(--menu)" } : undefined}
     >
       <Lightbulb
-        size={big ? 24 : 20}
+        size={big ? 17 : 15}
         strokeWidth={1.6}
         style={{
           color: lit ? "#f5c542" : "currentColor",
           fill: lit ? "#f5c542" : "transparent",
-          filter: lit ? "drop-shadow(0 0 6px rgba(245,197,66,0.8))" : "none",
+          filter: "none",
           transition: "all 0.5s ease",
         }}
       />
@@ -74,17 +75,17 @@ export default function LampSwitch({
         style={{
           width: trackW,
           height: trackH,
-          background: lit ? "#f5c542" : "color-mix(in srgb, currentColor 28%, transparent)",
+          background: lit ? "#e8c25a" : "color-mix(in srgb, currentColor 28%, transparent)",
           transition: "background 0.5s ease",
         }}
       >
         <span
           className="absolute rounded-full bg-white shadow"
           style={{
-            top: 4,
+            top: 3,
             width: knob,
             height: knob,
-            left: lit ? trackW - knob - 4 : 4,
+            left: lit ? trackW - knob - 3 : 3,
             transition: "left 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
