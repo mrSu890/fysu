@@ -516,11 +516,11 @@ html.dawn.dark:not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
   color: #f4f0e4;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
-  --background: #f5eedf;
-  --menu: #f5eedf;
+  --background: #f4f1ea;
+  --menu: #f4f1ea;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #faf4e7;
+  background: #f8f6f1;
 }
 
 /* Changement d'ambiance en fondu doux (nuit, aube, jour, après-midi) : la classe est posée 2 s par lib/mood.ts */
@@ -533,11 +533,11 @@ html.mood-anim body *:not(video):not(canvas) {
   transition-delay: 0s !important;
 }
 
-/* Après-midi : les cases des photos produit sont teintées d'un crème presque identique au fond, à peine plus clair (#f9f3e6).
+/* Après-midi : les cases des photos produit sont teintées d'un crème presque identique au fond, à peine plus clair (#f7f4ee), beaucoup moins jaune qu'avant.
    Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
    La pastille de disponibilité prend le même crème. */
 html.afternoon:not(.dark) .aspect-\[3\/4\] {
-  background-color: #f9f3e6 !important;
+  background-color: #f7f4ee !important;
   isolation: isolate;
 }
 html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
@@ -546,11 +546,11 @@ html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-color: #f9f3e6;
+  background-color: #f7f4ee;
   mix-blend-mode: multiply;
 }
 html.afternoon:not(.dark) .aspect-\[3\/4\] span.bg-white\/90 {
-  background-color: #f9f3e6 !important;
+  background-color: #f7f4ee !important;
 }
 
 /* Transport de l'image (carte -> fiche produit) : la vraie image reste cachée pendant que la copie arrive (components/ProductHero.tsx) */
