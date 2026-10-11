@@ -19,6 +19,7 @@ import CroppedLogo from "./CroppedLogo";
 import { useMusicCopy } from "@/lib/musicCopy";
 import { gamesCopyFor } from "@/lib/games";
 import SearchOverlay, { searchLabel } from "./SearchOverlay";
+import MoodIcon from "./MoodIcon";
 
 // Un lien du menu ; « image » = l'aperçu qui s'ouvre quand la souris passe dessus
 type MenuLink = { label: string; href: string; image?: string | null };
@@ -368,7 +369,7 @@ function MobileMenu({
               className={
                 isKiban || isWave
                   ? "relative"
-                  : "relative h-[16px] w-[105px] my-[13px] sm:h-[24px] sm:w-[160px] sm:my-[.52rem]"
+                  : "relative h-[16px] w-[105px] my-[13px] sm:h-[20px] sm:w-[132px] sm:my-[.65rem]"
               }
               data-nav-logo={!isKiban && !isWave ? "" : undefined}
             >
@@ -403,26 +404,15 @@ function MobileMenu({
                   alt="FYSU Logo"
                   fill
                   priority
-                  sizes="160px"
+                  sizes="132px"
                   className="object-contain"
                 />
               )}
             </div>
           </Link>
 
-          {/* Loupe : ouvre la recherche */}
-          <motion.button
-            type="button"
-            onClick={openSearch}
-            aria-label={searchLabel(locale)}
-            title={searchLabel(locale)}
-            whileHover={{ scale: 1.1, rotate: -8 }}
-            whileTap={{ scale: 0.88 }}
-            transition={{ type: "spring", stiffness: 400, damping: 18 }}
-            className="absolute right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full"
-          >
-            <Search size={20} strokeWidth={1.25} />
-          </motion.button>
+          {/* Icône d'ambiance : ouvre le cadran de l'horloge */}
+          <MoodIcon label={locale.startsWith("fr") ? "Ambiance et heure" : "Mood and time"} />
         </motion.div>
 
         {/* Pastille panier / menu : elle descend et s'agrandit en panneau */}
@@ -450,7 +440,7 @@ function MobileMenu({
                 whileTap={{ scale: 0.88 }}
                 transition={{ type: "spring", stiffness: 400, damping: 18 }}
               >
-                <ShoppingBag size={20} strokeWidth={1.25} />
+                <ShoppingBag size={17} strokeWidth={1.1} />
 
                 {totalItems > 0 && (
                   <motion.span
@@ -458,7 +448,7 @@ function MobileMenu({
                     initial={{ scale: 1.6 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 16 }}
-                    className="absolute -top-2 -right-2 bg-[#4eac6c] text-black text-[10px] font-normal leading-none px-1.5 py-1 rounded-full"
+                    className="absolute -top-1.5 -right-1.5 bg-[#4eac6c] text-black text-[8px] font-normal leading-none px-1 py-0.5 rounded-full"
                   >
                     {totalItems}
                   </motion.span>
@@ -510,9 +500,24 @@ function MobileMenu({
                 className="relative max-h-[calc(100dvh-7rem)] overflow-y-auto"
                 onPointerLeave={() => setPreview(null)}
               >
-                <p className="text-5xl font-bold tracking-tighter px-6 pb-4">
-                  {t("menu")}
-                </p>
+                <div className="flex items-start justify-between px-6 pb-4">
+                  <p className="text-5xl font-bold tracking-tighter">{t("menu")}</p>
+                  <motion.button
+                    type="button"
+                    onClick={() => {
+                      setActivePanel(null);
+                      openSearch();
+                    }}
+                    aria-label={searchLabel(locale)}
+                    title={searchLabel(locale)}
+                    whileHover={{ scale: 1.1, rotate: -8 }}
+                    whileTap={{ scale: 0.88 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                    className="mt-1 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full"
+                  >
+                    <Search size={20} strokeWidth={1.25} />
+                  </motion.button>
+                </div>
 
                 <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6 md:pr-[44%]">
                   {links.map((link) => {
