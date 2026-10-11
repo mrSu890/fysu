@@ -7,6 +7,7 @@ import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import ProductFilters from "@/components/ProductFilters"
 import KibanLogo from "@/components/KibanLogo"
+import LampSwitch from "@/components/LampSwitch"
 import { useSiteCopy } from "@/lib/siteCopy"
 import { getKibanCategories } from "@/lib/kibanCategories"
 
@@ -192,7 +193,11 @@ export default function KibanCollectorPage() {
                 <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">
                   {String(index + 1).padStart(2, "0")}
                 </p>
-                <h2 className="mt-3 text-3xl font-light tracking-tight sm:text-5xl">{cat.title}</h2>
+                <div className="mt-3 flex items-center justify-between gap-4">
+                  <h2 className="text-3xl font-light tracking-tight sm:text-5xl">{cat.title}</h2>
+                  {/* rangée des lampes : un interrupteur pour toutes les allumer / éteindre */}
+                  {cat.id === "lamps" && <LampSwitch big showLabel />}
+                </div>
                 <p className="mb-10 mt-4 max-w-md text-sm leading-relaxed opacity-75 sm:text-base">
                   {cat.body}
                 </p>
