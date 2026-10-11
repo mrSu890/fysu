@@ -557,3 +557,33 @@ html.afternoon:not(.dark) .aspect-\[3\/4\] span.bg-white\/90 {
 html.hero-running [data-hero-target] {
   visibility: hidden;
 }
+
+/* ---------- Mode pluie : gouttes sur le liquid glass (voir lib/rain.ts) ---------- */
+html.rain .liquid-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.75) 0 0.8px, rgba(255,255,255,0.18) 1.6px, transparent 3.6px),
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7) 0 0.6px, rgba(255,255,255,0.16) 1.3px, transparent 3px),
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.8) 0 1px, rgba(255,255,255,0.2) 2px, transparent 4.6px),
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7) 0 0.7px, rgba(255,255,255,0.15) 1.5px, transparent 3.3px),
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65) 0 0.5px, rgba(255,255,255,0.14) 1.1px, transparent 2.6px),
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.75) 0 0.9px, rgba(255,255,255,0.18) 1.8px, transparent 4px);
+  background-repeat: no-repeat;
+  background-size: 9px 9px, 7px 7px, 11px 11px, 8px 8px, 6px 6px, 10px 10px;
+  background-position: 12% 24%, 31% 68%, 58% 18%, 74% 62%, 89% 30%, 46% 84%;
+  opacity: 0;
+  animation: rain-drops-in 2.4s ease forwards, rain-drops-slide 14s ease-in-out 2.4s infinite alternate;
+}
+@keyframes rain-drops-in { to { opacity: 0.9; } }
+@keyframes rain-drops-slide {
+  from { background-position: 12% 24%, 31% 68%, 58% 18%, 74% 62%, 89% 30%, 46% 84%; }
+  to { background-position: 12% 29%, 31% 71%, 58% 26%, 74% 66%, 89% 36%, 46% 88%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.rain .liquid-glass::after { animation: rain-drops-in 0.01s forwards; }
+}

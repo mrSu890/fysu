@@ -8,6 +8,7 @@ import CookieBanner from "@/components/CookieBanner";
 import DecorativeDots from "@/components/DecorativeDots";
 import ScrollReveal from "@/components/ScrollReveal";
 import ClockWeather from "@/components/ClockWeather";
+import RainLayer from "@/components/RainLayer";
 import SiteLoader from "@/components/SiteLoader";
 import PixelTransition from "@/components/PixelTransition";
 import ProductHero from "@/components/ProductHero";
@@ -168,6 +169,7 @@ export default async function RootLayout({
         <ScrollReveal />
         {/* Heure + météo, très discrètes, en bas à droite ; gère aussi le mode sombre automatique */}
         <ClockWeather />
+        <RainLayer />
         <ClickFeedback />
       </body>
     </html>
