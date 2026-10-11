@@ -21,11 +21,7 @@ export async function GET(
     .from("products")
     .select(`
       *,
-      product_images (
-        id,
-        url,
-        color
-      ),
+      product_images (*),
       product_sizes (
         id,
         size,
