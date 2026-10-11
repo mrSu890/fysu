@@ -13,8 +13,8 @@ import { getKibanCategories } from "@/lib/kibanCategories"
 
 /* ====== À MODIFIER FACILEMENT ====== */
 
-// Image par défaut (si aucune image n'est choisie dans l'admin > Images de garde)
-const HERO_IMAGE = "/images/kiban-collector.jpg"
+// Image d'accueil de la page (petit portrait). Fichier : public/images/kiban-collector-portrait.jpg
+const HERO_IMAGE = "/images/kiban-collector-portrait.jpg"
 
 const TITLE = "KIBAN COLLECTOR"
 
@@ -47,8 +47,6 @@ export default function KibanCollectorPage() {
   const copy = useSiteCopy()
   const locale = useLocale()
   const [products, setProducts] = useState<any[]>([])
-  const [heroImage, setHeroImage] = useState<string | null>(null)
-  const [heroFailed, setHeroFailed] = useState(false)
   const [filters, setFilters] = useState({
     gender: "all",
     sort: "default",
@@ -79,8 +77,6 @@ export default function KibanCollectorPage() {
         if (!res.ok) return
         const data = await res.json()
         setProducts(data.products ?? [])
-        // image de garde choisie dans l'admin (sinon l'image par défaut)
-        if (data.page?.hero_image) setHeroImage(data.page.hero_image)
       } catch (err) {
         console.error(err)
       }
@@ -126,28 +122,20 @@ export default function KibanCollectorPage() {
       <Navbar />
 
       {/* ================= IMAGE ARRONDIE + LOGO + TEXTE ================= */}
-      <section className="w-11/12 max-w-6xl mx-auto pt-28 sm:pt-32">
-        <div className="relative w-full aspect-[3/2] overflow-hidden rounded-2xl bg-neutral-200">
-          {!heroFailed && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={heroImage ?? HERO_IMAGE}
-              alt={TITLE}
-              className="absolute inset-0 h-full w-full object-cover"
-              onError={() => {
-                // si l'image de l'admin ne charge pas, on retombe sur l'image par défaut
-                if (heroImage) setHeroImage(null)
-                else setHeroFailed(true)
-              }}
-            />
-          )}
-          {/* crédit photo, discret, en bas à droite (se lit sur fond clair comme sombre) */}
-          <p className="pointer-events-none absolute bottom-3 right-4 font-info text-[9px] uppercase tracking-[0.25em] text-white mix-blend-difference sm:text-[10px]">
-            Courtesy of Lancelot Mol
-          </p>
+      <section className="w-11/12 max-w-6xl mx-auto pt-36 sm:pt-44">
+        {/* petite image en portrait, entourée de beaucoup d'espace vide */}
+        <div className="mx-auto w-[52%] max-w-[240px] sm:max-w-[300px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={HERO_IMAGE}
+            alt={TITLE}
+            width={1000}
+            height={1415}
+            className="block h-auto w-full"
+          />
         </div>
 
-        <div className="mx-auto mt-12 sm:mt-16 max-w-3xl text-center">
+        <div className="mx-auto mt-20 sm:mt-28 max-w-3xl text-center">
           <h1 className="sr-only">{TITLE}</h1>
 
           {/* Le logo remplace le titre écrit */}
