@@ -10,6 +10,7 @@ export type ProductTypeId =
   | "accessory"
   | "collector"
   | "kiban"
+  | "lamp"
   | "fragrance"
   | "skincare"
   | "home"
@@ -92,6 +93,19 @@ export const PRODUCT_TYPES: Record<ProductTypeId, ProductTypeConfig> = {
     showGender: false,
     size_fit: { en: "Dimensions", fr: "Dimensions", nl: "Afmetingen", ja: "サイズ詳細" },
     care: { en: "Care", fr: "Entretien", nl: "Onderhoud", ja: "お手入れ" },
+  },
+  // Lampe : la fiche propose un bouton pour allumer / éteindre (deux photos : éteinte et allumée)
+  lamp: {
+    id: "lamp",
+    label: "Lampe (éteinte / allumée)",
+    emoji: "💡",
+    presets: ["One size"],
+    sizeNoun: null,
+    sizeNounAdmin: "Variantes",
+    sizeGuide: false,
+    showGender: false,
+    size_fit: { en: "Dimensions", fr: "Dimensions", nl: "Afmetingen", ja: "サイズ詳細" },
+    care: { en: "Usage", fr: "Conseils d'utilisation", nl: "Gebruik", ja: "使用方法" },
   },
   fragrance: {
     id: "fragrance",
