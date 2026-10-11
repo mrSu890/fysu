@@ -6,6 +6,7 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   images: {
+        unoptimized: true,
     domains: ['mugpnlsqeqbojnzrfnjf.supabase.co', 'lh3.googleusercontent.com'],
   },
 };
