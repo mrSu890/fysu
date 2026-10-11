@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
   const t = useTranslations("Footer");
   const isWave = useBrandPage() === "thewave";
   const pathname = usePathname();
-  const showGame = pathname === "/collections/when-the-flowers-bloom";
+  const showGame = pathname === "/collections/when-the-flowers-bloom"; // jamais sur les pages musique
   const ink = isWave ? { color: WAVE_INK } : undefined;
 
   return (
@@ -49,7 +49,7 @@ const Footer: React.FC = () => {
 
       {/* Pastille du jeu FYSU Bird (page When the flowers bloom) */}
       {showGame && (
-        <div className="mt-16 flex flex-col items-center gap-2">
+        <div className="mt-16 mb-20 flex flex-col items-center gap-2">
           <Link href="/games/fysu-bird" aria-label="FYSU Bird" className="block active:scale-95 transition">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

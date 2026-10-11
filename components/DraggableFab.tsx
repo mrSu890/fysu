@@ -32,6 +32,8 @@ type Props = {
   tip?: string
   // petite croix qui range la pastille sur le bord de l'écran (languette avec flèche pour la rappeler)
   tuckable?: boolean
+  // petite croix qui ferme la pastille (elle disparaît, sans languette) : l'action est faite par l'appelant
+  onDismiss?: () => void
   children: ReactNode
 }
 
@@ -48,6 +50,7 @@ export default function DraggableFab({
   style,
   tip,
   tuckable = false,
+  onDismiss,
   children,
 }: Props) {
   const boundsRef = useRef<HTMLDivElement | null>(null)
@@ -267,13 +270,13 @@ export default function DraggableFab({
           {children}
         </motion.button>
 
-        {tuckable && (
+        {(tuckable || onDismiss) && (
           <motion.button
             type="button"
-            aria-label={fr ? "Ranger sur le côté" : "Tuck away"}
-            title={fr ? "Ranger sur le côté" : "Tuck away"}
+            aria-label={onDismiss ? (fr ? "Fermer" : "Close") : fr ? "Ranger sur le côté" : "Tuck away"}
+            title={onDismiss ? (fr ? "Fermer" : "Close") : fr ? "Ranger sur le côté" : "Tuck away"}
             tabIndex={off ? -1 : 0}
-            {...tapProps(() => setTuck(true))}
+            {...tapProps(() => (onDismiss ? onDismiss() : setTuck(true)))}
             className="liquid-glass absolute flex h-[40px] w-[40px] cursor-pointer items-center justify-center rounded-full"
             style={{
               ...style,

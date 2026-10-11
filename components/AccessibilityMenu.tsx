@@ -254,6 +254,16 @@ export default function AccessibilityMenu() {
     }
   }, [open])
 
+  // la croix de la pastille : elle disparaît pour la visite (on la retrouve dans le menu de la barre de navigation)
+  function dismissFab() {
+    setGone(true)
+    try {
+      sessionStorage.setItem(GONE_KEY, "1")
+    } catch {
+      /* ignore */
+    }
+  }
+
   function update(change: Partial<Prefs>) {
     const next = { ...prefs, ...change }
     setPrefs(next)
@@ -411,7 +421,7 @@ export default function AccessibilityMenu() {
         zIndex={55}
         lift
         tip="a11y"
-        tuckable
+        onDismiss={dismissFab}
         className="liquid-glass"
         style={{ color: "var(--menu)" }}
       >
