@@ -4,7 +4,7 @@
    Pour changer l'ordre, les titres ou les textes : modifie ce fichier.
    ==================================================================== */
 
-export type KibanCategoryId = "kiban" | "collector" | "clothing" | "accessories" | "more"
+export type KibanCategoryId = "kiban" | "collector" | "lamps" | "clothing" | "accessories" | "more"
 
 export type KibanCategory = {
   id: KibanCategoryId
@@ -44,6 +44,16 @@ const CATEGORIES: { id: KibanCategoryId; types: string[]; copy: Record<string, L
       fr: { title: "Objets de design", body: "Des pièces à garder, à exposer, à transmettre." },
       nl: { title: "Designobjecten", body: "Stukken om te bewaren, tentoon te stellen en door te geven." },
       ja: { title: "デザインオブジェ", body: "大切に持ち、飾り、受け継ぐためのピース。" },
+    },
+  },
+  {
+    id: "lamps",
+    types: ["lamp"],
+    copy: {
+      en: { title: "Lamps", body: "Light, switched on or off." },
+      fr: { title: "Lampes", body: "La lumière, allumée ou éteinte." },
+      nl: { title: "Lampen", body: "Licht, aan of uit." },
+      ja: { title: "ランプ", body: "灯りをつけて、消して。" },
     },
   },
   {
