@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ProductType } from "@/types/product"
 import { useLocale, useTranslations } from "next-intl"
+import { useLamp } from "@/lib/lamp"
 import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/lib/availability"
 
 /* ====================================================================
@@ -32,6 +33,7 @@ const Product = ({
   isFirst?: boolean
 }) => {
   const t = useTranslations("Product")
+  const [lit] = useLamp() // lampes : allumées / éteintes
   const locale = useLocale()
   const badgeText = getBadgeText(
     getEffectiveAvailability(product),
@@ -66,15 +68,21 @@ const Product = ({
     ? product.product_images.map((i) => i.url)
     : ["/placeholder.png"]
 
+  // photos « allumées » (lampes) : une par image, si elle existe
+  const litImages = product.product_images?.length
+    ? product.product_images.map((i) => i.lit_url ?? null)
+    : [null]
+  const hasLit = litImages.some(Boolean)
+
   const goToProduct = () => {
     const path = `/product/${product.slug}`
     // l'image de la carte est « transportée » jusqu'à la fiche (voir components/ProductHero.tsx) ;
     // pas pour The Wave (qui a son eau) ni quand la carte montre une autre image que la première
     try {
       const hero = (window as unknown as { __fysuHero?: (el: HTMLElement | null, p: string, src: string | null) => boolean }).__fysuHero
-      const imgs = boxRef.current?.querySelectorAll("img")
+      const imgs = boxRef.current?.querySelectorAll("img[data-base]")
       const shown = imgs?.[currentIndex] as HTMLImageElement | undefined
-      if (hero && currentIndex === 0 && product.brand !== "thewave" && shown?.currentSrc) {
+      if (hero && currentIndex === 0 && product.brand !== "thewave" && !(lit && hasLit) && shown?.currentSrc) {
         if (hero(boxRef.current, path, shown.currentSrc)) return
       }
     } catch {}
@@ -167,9 +175,21 @@ const Product = ({
                 alt={`${product.name}-${index}`}
                 fill
                 draggable={false}
+                data-base
                 className="object-cover"
                 sizes="(max-width: 768px) 90vw, 350px"
               />
+              {litImages[index] && (
+                <Image
+                  src={litImages[index] as string}
+                  alt=""
+                  fill
+                  draggable={false}
+                  className="object-cover transition-opacity duration-[900ms] ease-in-out"
+                  style={{ opacity: lit ? 1 : 0 }}
+                  sizes="(max-width: 768px) 90vw, 350px"
+                />
+              )}
             </div>
           ))}
         </div>
