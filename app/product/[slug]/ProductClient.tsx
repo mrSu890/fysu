@@ -329,8 +329,8 @@ export default function ProductClient() {
             >
               {renderPhoto(filteredImages[0], { priority: true })}
               {hasLit && (
-                <div className="absolute bottom-4 right-4 z-10">
-                  <LampSwitch glass big showLabel />
+                <div className="absolute bottom-3 right-3 z-10">
+                  <LampSwitch glass />
                 </div>
               )}
             </div>
