@@ -42,12 +42,7 @@ export async function GET(
         name,
         slug
       ),
-      product_images (
-        id,
-        url,
-        color,
-        productId
-      ),
+      product_images (*),
       product_sizes (
         stock,
         is_active
