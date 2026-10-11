@@ -47,11 +47,19 @@ export default function ProductPicker({
       .filter((p) => !q || p.name.toLowerCase().includes(q))
   }, [products, value, query])
 
-  const move = (index: number, delta: number) => {
+  // Déplace un produit d'un cran parmi les produits AFFICHÉS.
+  // La liste enregistrée peut contenir des produits qui n'apparaissent pas ici (masqués ou supprimés) :
+  // on échange donc par numéro de produit, jamais par position dans la liste affichée.
+  const move = (id: number, delta: number) => {
+    const shown = selected.map((p) => p.id)
+    const at = shown.indexOf(id)
+    const neighbour = shown[at + delta]
+    if (at === -1 || neighbour === undefined) return
     const next = [...value]
-    const target = index + delta
-    if (target < 0 || target >= next.length) return
-    ;[next[index], next[target]] = [next[target], next[index]]
+    const a = next.indexOf(id)
+    const b = next.indexOf(neighbour)
+    if (a === -1 || b === -1) return
+    ;[next[a], next[b]] = [next[b], next[a]]
     onChange(next)
   }
 
@@ -78,7 +86,7 @@ export default function ProductPicker({
                   <button
                     type="button"
                     disabled={i === 0}
-                    onClick={() => move(i, -1)}
+                    onClick={() => move(p.id, -1)}
                     aria-label="Monter"
                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#171717]/[0.05] disabled:opacity-30"
                   >
@@ -87,7 +95,7 @@ export default function ProductPicker({
                   <button
                     type="button"
                     disabled={i === selected.length - 1}
-                    onClick={() => move(i, 1)}
+                    onClick={() => move(p.id, 1)}
                     aria-label="Descendre"
                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#171717]/[0.05] disabled:opacity-30"
                   >
