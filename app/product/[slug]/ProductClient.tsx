@@ -7,7 +7,8 @@ import type { ProductType, ProductSize, ProductColor } from "@/types/product"
 import Product from "@/components/Product"
 import WishlistHeart from "@/components/WishlistHeart"
 import Image from "next/image"
-import { Lightbulb, LightbulbOff } from "lucide-react"
+import LampSwitch from "@/components/LampSwitch"
+import { useLamp } from "@/lib/lamp"
 import { Collapse } from "antd"
 import type { CollapseProps } from "antd"
 import AddToCartButton from "@/components/ui/AddToCartButton"
@@ -58,7 +59,7 @@ export default function ProductClient() {
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
   const [packagingOpen, setPackagingOpen] = useState(false)
   // lampes : allumée ou éteinte
-  const [lit, setLit] = useState(false)
+  const [lit] = useLamp()
   const [advisorOpen, setAdvisorOpen] = useState(false)
   const packagingBlock = (product?.product_info_blocks ?? []).find(isPackagingBlock) ?? null
 
@@ -192,9 +193,6 @@ export default function ProductClient() {
   // lampes : chaque image peut avoir sa photo « allumée » ; un seul bouton les fait toutes passer de l'une à l'autre
   // (pas de recadrage : les deux photos gardent le même cadre)
   const hasLit = filteredImages.some((img) => Boolean((img as { lit_url?: string | null }).lit_url))
-  const litLabel = lit
-    ? ({ fr: "Éteindre", nl: "Uitzetten", ja: "消す" } as Record<string, string>)[locale] ?? "Turn off"
-    : ({ fr: "Allumer", nl: "Aanzetten", ja: "つける" } as Record<string, string>)[locale] ?? "Turn on"
   const imageCrop = hasLit ? undefined : CROP_TOP
 
   // une image + (si elle existe) sa version allumée en fondu par-dessus
@@ -331,17 +329,9 @@ export default function ProductClient() {
             >
               {renderPhoto(filteredImages[0], { priority: true })}
               {hasLit && (
-                <button
-                  type="button"
-                  onClick={() => setLit((v) => !v)}
-                  aria-pressed={lit}
-                  aria-label={litLabel}
-                  className="liquid-glass absolute bottom-4 right-4 z-10 flex cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-sm transition active:scale-95"
-                  style={{ color: "var(--menu)" }}
-                >
-                  {lit ? <LightbulbOff size={18} strokeWidth={1.6} /> : <Lightbulb size={18} strokeWidth={1.6} />}
-                  {litLabel}
-                </button>
+                <div className="absolute bottom-4 right-4 z-10">
+                  <LampSwitch glass big showLabel />
+                </div>
               )}
             </div>
           )}
