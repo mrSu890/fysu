@@ -166,7 +166,8 @@ export default function ProductEditor({ id }: { id: string }) {
   const [infoBlocks, setInfoBlocks] = useState<InfoBlockState[]>([])
   const [sizeGuide, setSizeGuide] = useState<string | null>(null)
   const [sizeChart, setSizeChart] = useState<SizeGuide | null>(null)
-  const [litImage, setLitImage] = useState<string | null>(null)
+  // lampes : photo « allumée » de chaque image (clé = adresse de l'image éteinte)
+  const [litMap, setLitMap] = useState<Record<string, string>>({})
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
   // image en cours de recadrage
@@ -175,8 +176,8 @@ export default function ProductEditor({ id }: { id: string }) {
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
   const snapshot = useMemo(
-    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litImage, related }),
-    [form, colors, infoBlocks, sizeGuide, sizeChart, litImage, related]
+    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litMap, related }),
+    [form, colors, infoBlocks, sizeGuide, sizeChart, litMap, related]
   )
   const dirty = !loading && saved !== "" && snapshot !== saved
 
@@ -219,6 +220,11 @@ export default function ProductEditor({ id }: { id: string }) {
         stock: Number(s.stock ?? 0),
         is_active: !!s.is_active,
       })
+
+      const nextLit: Record<string, string> = {}
+      for (const img of imageRows as any[]) {
+        if (img.lit_url) nextLit[img.url] = img.lit_url
+      }
 
       let nextColors: ColorState[]
 
@@ -272,7 +278,7 @@ export default function ProductEditor({ id }: { id: string }) {
       setInfoBlocks(nextInfo)
       setSizeGuide(p.size_guide_image_url ?? null)
       setSizeChart(cleanSizeGuide(p.size_guide))
-      setLitImage(p.lit_image_url ?? null)
+      setLitMap(nextLit)
       setRelated(nextRelated)
       setCategories(cats)
       setAllProducts(list.products)
@@ -283,7 +289,7 @@ export default function ProductEditor({ id }: { id: string }) {
           infoBlocks: nextInfo,
           sizeGuide: p.size_guide_image_url ?? null,
           sizeChart: cleanSizeGuide(p.size_guide),
-          litImage: p.lit_image_url ?? null,
+          litMap: nextLit,
           related: nextRelated,
         })
       )
@@ -420,16 +426,16 @@ export default function ProductEditor({ id }: { id: string }) {
     }
   }
 
-  // Photo de la lampe allumée
-  async function uploadLitImage(files: File[]) {
+  // Photo « allumée » d'une image de lampe
+  async function uploadLitImage(url: string, file: File) {
     setUploading(true)
     try {
       const fd = new FormData()
-      fd.append("file", await resizeImage(files[0]))
+      fd.append("file", await resizeImage(file))
       fd.append("productId", String(productId))
       fd.append("color", "lit")
       const data = await api.upload<{ url: string }>("/api/admin/products/upload-product-image", fd)
-      setLitImage(data.url)
+      setLitMap((cur) => ({ ...cur, [url]: data.url }))
     } catch (e) {
       notify.error(errorMessage(e, "Erreur d'envoi de l'image"))
     } finally {
@@ -628,8 +634,8 @@ export default function ProductEditor({ id }: { id: string }) {
         evocation: form.evocation,
         size_guide_image_url: sizeGuide,
         size_guide: sizeChart,
-        // lampes seulement (la colonne lit_image_url doit exister dans Supabase)
-        ...(form.product_type === "lamp" ? { lit_image_url: litImage } : {}),
+        // lampes seulement (la colonne lit_url de product_images doit exister dans Supabase)
+        ...(form.product_type === "lamp" ? { lit_images: litMap } : {}),
         colors: colors.map((c) => ({
           id: c.id,
           name: c.name.trim(),
@@ -1049,30 +1055,6 @@ export default function ProductEditor({ id }: { id: string }) {
           </Panel>
           )}
 
-          {form.product_type === "lamp" && (
-          <Panel
-            title="Lampe allumée"
-            description="La photo principale (onglet Couleurs & stock) montre la lampe éteinte. Ajoute ici la même photo avec l'ampoule allumée : sur la fiche, un bouton ampoule permet de passer de l'une à l'autre en fondu. Garde le même cadrage pour que la transition soit belle."
-          >
-            <div className="flex flex-wrap items-end gap-4">
-              {litImage && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={litImage} alt="Lampe allumée" className="w-40 rounded-xl border border-[#e9e5df]" />
-              )}
-              <div className="flex gap-2">
-                <FileButton disabled={uploading} onFiles={uploadLitImage}>
-                  {litImage ? "Remplacer l'image" : "Ajouter l'image allumée"}
-                </FileButton>
-                {litImage && (
-                  <AdminButton variant="danger" icon={Trash2} onClick={() => setLitImage(null)}>
-                    Retirer
-                  </AdminButton>
-                )}
-              </div>
-            </div>
-          </Panel>
-          )}
-
           <Panel title="Zone dangereuse">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-[#7a756d]">
@@ -1197,6 +1179,47 @@ export default function ProductEditor({ id }: { id: string }) {
                             <Trash2 size={14} />
                           </button>
                         </div>
+                        {form.product_type === "lamp" && (
+                          <div className="mt-2 flex items-center gap-2 rounded-xl bg-white p-1.5 ring-1 ring-[#e0dbd3]">
+                            {litMap[url] ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={litMap[url]} alt="Allumée" className="h-10 w-8 shrink-0 rounded-md object-cover" />
+                            ) : (
+                              <span className="flex h-10 w-8 shrink-0 items-center justify-center rounded-md bg-[#f0ece5] text-sm">💡</span>
+                            )}
+                            <label
+                              className={`flex-1 cursor-pointer text-xs text-[#3d3a35] ${uploading ? "pointer-events-none opacity-50" : ""}`}
+                            >
+                              {litMap[url] ? "Remplacer l'image allumée" : "Ajouter l'image allumée"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  e.target.value = ""
+                                  if (file) uploadLitImage(url, file)
+                                }}
+                              />
+                            </label>
+                            {litMap[url] && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setLitMap((cur) => {
+                                    const next = { ...cur }
+                                    delete next[url]
+                                    return next
+                                  })
+                                }
+                                aria-label="Retirer l'image allumée"
+                                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <div className="mt-1.5 flex items-center gap-1.5">
                           {colors.length > 1 && (
                             <select
