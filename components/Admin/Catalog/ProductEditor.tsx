@@ -166,6 +166,7 @@ export default function ProductEditor({ id }: { id: string }) {
   const [infoBlocks, setInfoBlocks] = useState<InfoBlockState[]>([])
   const [sizeGuide, setSizeGuide] = useState<string | null>(null)
   const [sizeChart, setSizeChart] = useState<SizeGuide | null>(null)
+  const [litImage, setLitImage] = useState<string | null>(null)
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
   // image en cours de recadrage
@@ -174,8 +175,8 @@ export default function ProductEditor({ id }: { id: string }) {
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
   const snapshot = useMemo(
-    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, related }),
-    [form, colors, infoBlocks, sizeGuide, sizeChart, related]
+    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litImage, related }),
+    [form, colors, infoBlocks, sizeGuide, sizeChart, litImage, related]
   )
   const dirty = !loading && saved !== "" && snapshot !== saved
 
@@ -271,6 +272,7 @@ export default function ProductEditor({ id }: { id: string }) {
       setInfoBlocks(nextInfo)
       setSizeGuide(p.size_guide_image_url ?? null)
       setSizeChart(cleanSizeGuide(p.size_guide))
+      setLitImage(p.lit_image_url ?? null)
       setRelated(nextRelated)
       setCategories(cats)
       setAllProducts(list.products)
@@ -281,6 +283,7 @@ export default function ProductEditor({ id }: { id: string }) {
           infoBlocks: nextInfo,
           sizeGuide: p.size_guide_image_url ?? null,
           sizeChart: cleanSizeGuide(p.size_guide),
+          litImage: p.lit_image_url ?? null,
           related: nextRelated,
         })
       )
@@ -410,6 +413,23 @@ export default function ProductEditor({ id }: { id: string }) {
       fd.append("productId", String(productId))
       const data = await api.upload<{ url: string }>("/api/admin/products/upload-size-guide", fd)
       setSizeGuide(data.url)
+    } catch (e) {
+      notify.error(errorMessage(e, "Erreur d'envoi de l'image"))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // Photo de la lampe allumée
+  async function uploadLitImage(files: File[]) {
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", await resizeImage(files[0]))
+      fd.append("productId", String(productId))
+      fd.append("color", "lit")
+      const data = await api.upload<{ url: string }>("/api/admin/products/upload-product-image", fd)
+      setLitImage(data.url)
     } catch (e) {
       notify.error(errorMessage(e, "Erreur d'envoi de l'image"))
     } finally {
@@ -608,6 +628,8 @@ export default function ProductEditor({ id }: { id: string }) {
         evocation: form.evocation,
         size_guide_image_url: sizeGuide,
         size_guide: sizeChart,
+        // lampes seulement (la colonne lit_image_url doit exister dans Supabase)
+        ...(form.product_type === "lamp" ? { lit_image_url: litImage } : {}),
         colors: colors.map((c) => ({
           id: c.id,
           name: c.name.trim(),
@@ -1023,6 +1045,30 @@ export default function ProductEditor({ id }: { id: string }) {
             </div>
             <div className="mt-6 border-t border-[#eee9e1] pt-5">
               <SizeGuideEditor value={sizeChart} onChange={setSizeChart} />
+            </div>
+          </Panel>
+          )}
+
+          {form.product_type === "lamp" && (
+          <Panel
+            title="Lampe allumée"
+            description="La photo principale (onglet Couleurs & stock) montre la lampe éteinte. Ajoute ici la même photo avec l'ampoule allumée : sur la fiche, un bouton ampoule permet de passer de l'une à l'autre en fondu. Garde le même cadrage pour que la transition soit belle."
+          >
+            <div className="flex flex-wrap items-end gap-4">
+              {litImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={litImage} alt="Lampe allumée" className="w-40 rounded-xl border border-[#e9e5df]" />
+              )}
+              <div className="flex gap-2">
+                <FileButton disabled={uploading} onFiles={uploadLitImage}>
+                  {litImage ? "Remplacer l'image" : "Ajouter l'image allumée"}
+                </FileButton>
+                {litImage && (
+                  <AdminButton variant="danger" icon={Trash2} onClick={() => setLitImage(null)}>
+                    Retirer
+                  </AdminButton>
+                )}
+              </div>
             </div>
           </Panel>
           )}
