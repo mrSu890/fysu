@@ -45,7 +45,7 @@ type ProductUpdatePayload = {
   care_instructions?: string;
   shipping?: string;
   size_guide_image_url?: string | null;
-  lit_image_url?: string | null;
+  lit_images?: Record<string, string> | null;
   size_guide?: unknown;
   colors?: ColorInput[];
   info_blocks?: ProductInfoBlockInput[];
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       care_instructions,
       shipping,
       size_guide_image_url,
-      lit_image_url,
+      lit_images,
       size_guide,
       colors,
       info_blocks,
@@ -147,7 +147,6 @@ export async function POST(req: Request) {
         care_instructions,
         shipping,
         size_guide_image_url,
-        lit_image_url,
         size_guide: size_guide === undefined ? undefined : cleanSizeGuide(size_guide),
       })
       .eq("id", id);
@@ -314,6 +313,8 @@ export async function POST(req: Request) {
           productId: id,
           url,
           color: c.hex.trim().toLowerCase(),
+          // lampes : photo « allumée » de cette image (colonne lit_url de product_images)
+          ...(lit_images?.[url] ? { lit_url: lit_images[url] } : {}),
         }))
     );
 
