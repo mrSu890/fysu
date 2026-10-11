@@ -45,6 +45,7 @@ type ProductUpdatePayload = {
   care_instructions?: string;
   shipping?: string;
   size_guide_image_url?: string | null;
+  lit_image_url?: string | null;
   size_guide?: unknown;
   colors?: ColorInput[];
   info_blocks?: ProductInfoBlockInput[];
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
       care_instructions,
       shipping,
       size_guide_image_url,
+      lit_image_url,
       size_guide,
       colors,
       info_blocks,
@@ -145,6 +147,7 @@ export async function POST(req: Request) {
         care_instructions,
         shipping,
         size_guide_image_url,
+        lit_image_url,
         size_guide: size_guide === undefined ? undefined : cleanSizeGuide(size_guide),
       })
       .eq("id", id);
