@@ -189,12 +189,37 @@ export default function ProductClient() {
   if (!product) return notFound()
 
   const mainImage = filteredImages[0]?.url
-  // lampes : photo « allumée » + bouton pour passer de l'une à l'autre (pas de recadrage : les deux photos gardent le même cadre)
-  const litImage = product.lit_image_url || null
+  // lampes : chaque image peut avoir sa photo « allumée » ; un seul bouton les fait toutes passer de l'une à l'autre
+  // (pas de recadrage : les deux photos gardent le même cadre)
+  const hasLit = filteredImages.some((img) => Boolean((img as { lit_url?: string | null }).lit_url))
   const litLabel = lit
     ? ({ fr: "Éteindre", nl: "Uitzetten", ja: "消す" } as Record<string, string>)[locale] ?? "Turn off"
     : ({ fr: "Allumer", nl: "Aanzetten", ja: "つける" } as Record<string, string>)[locale] ?? "Turn on"
-  const imageCrop = litImage ? undefined : CROP_TOP
+  const imageCrop = hasLit ? undefined : CROP_TOP
+
+  // une image + (si elle existe) sa version allumée en fondu par-dessus
+  const renderPhoto = (img: { url: string; lit_url?: string | null }, extra: { priority?: boolean }) => (
+    <>
+      <Image
+        src={img.url}
+        alt={product.name}
+        fill
+        className="object-cover object-top"
+        style={imageCrop}
+        priority={extra.priority}
+      />
+      {img.lit_url && (
+        <Image
+          src={img.lit_url}
+          alt={`${product.name} — ${locale === "fr" ? "allumée" : "on"}`}
+          fill
+          priority={extra.priority}
+          className="object-cover object-top transition-opacity duration-[900ms] ease-in-out"
+          style={{ opacity: lit ? 1 : 0 }}
+        />
+      )}
+    </>
+  )
   const otherImages = filteredImages.slice(1)
 
   function formatText(text?: string | null) {
@@ -304,36 +329,19 @@ export default function ProductClient() {
                 relative w-full aspect-[3/4] overflow-hidden
               "
             >
-              <Image
-                src={mainImage}
-                alt={product.name}
-                fill
-                className="object-cover object-top"
-                style={imageCrop}
-                priority
-              />
-              {litImage && (
-                <>
-                  <Image
-                    src={litImage}
-                    alt={`${product.name} — ${locale === "fr" ? "allumée" : "on"}`}
-                    fill
-                    priority
-                    className="object-cover object-top transition-opacity duration-[900ms] ease-in-out"
-                    style={{ opacity: lit ? 1 : 0 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setLit((v) => !v)}
-                    aria-pressed={lit}
-                    aria-label={litLabel}
-                    className="liquid-glass absolute bottom-4 right-4 z-10 flex cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-sm transition active:scale-95"
-                    style={{ color: "var(--menu)" }}
-                  >
-                    {lit ? <LightbulbOff size={18} strokeWidth={1.6} /> : <Lightbulb size={18} strokeWidth={1.6} />}
-                    {litLabel}
-                  </button>
-                </>
+              {renderPhoto(filteredImages[0], { priority: true })}
+              {hasLit && (
+                <button
+                  type="button"
+                  onClick={() => setLit((v) => !v)}
+                  aria-pressed={lit}
+                  aria-label={litLabel}
+                  className="liquid-glass absolute bottom-4 right-4 z-10 flex cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-sm transition active:scale-95"
+                  style={{ color: "var(--menu)" }}
+                >
+                  {lit ? <LightbulbOff size={18} strokeWidth={1.6} /> : <Lightbulb size={18} strokeWidth={1.6} />}
+                  {litLabel}
+                </button>
               )}
             </div>
           )}
@@ -348,13 +356,7 @@ export default function ProductClient() {
                     key={img.id}
                     className="relative aspect-[3/4] overflow-hidden"
                   >
-                    <Image
-                      src={img.url}
-                      alt={product.name}
-                      fill
-                      className="object-cover object-top"
-                      style={CROP_TOP}
-                    />
+                    {renderPhoto(img, {})}
                   </div>
                 ))}
               </div>
@@ -366,13 +368,7 @@ export default function ProductClient() {
                     key={img.id}
                     className="relative aspect-[3/4] overflow-hidden"
                   >
-                    <Image
-                      src={img.url}
-                      alt={product.name}
-                      fill
-                      className="object-cover object-top"
-                      style={CROP_TOP}
-                    />
+                    {renderPhoto(img, {})}
                   </div>
                 ))}
               </div>
