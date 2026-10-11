@@ -196,7 +196,7 @@ export default function KibanCollectorPage() {
                 <div className="mt-3 flex items-center justify-between gap-4">
                   <h2 className="text-3xl font-light tracking-tight sm:text-5xl">{cat.title}</h2>
                   {/* rangée des lampes : un interrupteur pour toutes les allumer / éteindre */}
-                  {cat.id === "lamps" && <LampSwitch big showLabel />}
+                  {cat.id === "lamps" && <LampSwitch />}
                 </div>
                 <p className="mb-10 mt-4 max-w-md text-sm leading-relaxed opacity-75 sm:text-base">
                   {cat.body}
