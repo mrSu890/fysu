@@ -53,6 +53,7 @@ type DuplicableProduct = {
   shipping: string | null;
   size_guide_image_url: string | null;
   size_guide?: unknown;
+  lit_image_url?: string | null;
   product_images?: ProductImageRow[];
   product_sizes?: ProductSizeRow[];
   product_info_blocks?: ProductInfoBlockRow[];
@@ -142,6 +143,7 @@ export async function POST(
         shipping: sourceProduct.shipping,
         size_guide_image_url: sourceProduct.size_guide_image_url,
         size_guide: sourceProduct.size_guide ?? null,
+        ...(sourceProduct.lit_image_url ? { lit_image_url: sourceProduct.lit_image_url } : {}),
       })
       .select()
       .single();
