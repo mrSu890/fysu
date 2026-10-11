@@ -294,6 +294,13 @@ export default function ClockWeather() {
     }
   }, [])
 
+  // l'icône d'ambiance de la barre de navigation ouvre / ferme le cadran
+  useEffect(() => {
+    const onOpen = () => setOpen((o) => !o)
+    window.addEventListener("fysu-open-clock", onOpen)
+    return () => window.removeEventListener("fysu-open-clock", onOpen)
+  }, [])
+
   // Échap ferme le popup
   useEffect(() => {
     if (!open) return
@@ -301,6 +308,11 @@ export default function ClockWeather() {
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [open])
+
+  const sunRounded = now ? Math.round(manualV ?? realMinutes(now)) : null
+  useEffect(() => {
+    if (sunRounded !== null) window.dispatchEvent(new CustomEvent("fysu-sun", { detail: sunRounded }))
+  }, [sunRounded])
 
   if (!now || HIDDEN.some((p) => pathname.startsWith(p))) return null
 
