@@ -8,6 +8,7 @@ import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import PageBar from "@/components/PageBar"
 import { expandByColor, variantKey } from "@/lib/expandColors"
+import { usePersistedFilters, useScrollRestore } from "@/lib/useScrollRestore"
 import ProductFilters from "@/components/ProductFilters"
 import StoryBar from "@/components/Stories/StoryBar"
 import { ProductType } from "@/types/product"
@@ -47,10 +48,11 @@ function CollectionPage() {
   const [sections, setSections] = useState<SectionType[]>([])
   const [loading, setLoading] = useState(true)
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = usePersistedFilters({
     gender: "all",
     sort: "default",
   })
+  useScrollRestore(!loading)
 
   /* FETCH DATA */
 
