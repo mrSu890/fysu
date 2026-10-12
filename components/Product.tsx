@@ -4,7 +4,9 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import WishlistHeart from "@/components/WishlistHeart"
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import CroppedLogo from "@/components/CroppedLogo"
+import { useBrandOf } from "@/lib/useBrandOf"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ProductType } from "@/types/product"
 import { useLocale, useTranslations } from "next-intl"
@@ -40,6 +42,10 @@ const Product = ({
     getAvailabilityCopy(locale)
   )
   const router = useRouter()
+  const pathname = usePathname() ?? ""
+  // petit logo Kiban Collector / The Wave sur les cartes affichées hors de leur propre page
+  const subBrand = useBrandOf(product.id, product.brand)
+  const showBrandLogo = !!subBrand && !pathname.startsWith("/kiban-collector") && !pathname.startsWith("/thewave")
   const [infoRevealed, setInfoRevealed] = useState(false)
   const hideInfoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -155,6 +161,21 @@ const Product = ({
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
+        {showBrandLogo && (
+          <div
+            aria-label={subBrand === "kiban" ? "Kiban Collector" : "The Wave"}
+            className="pointer-events-none absolute left-3 top-3 z-10 text-[8px] font-medium tracking-[0.2em]"
+            style={{ filter: "brightness(0) invert(1) drop-shadow(0 0 3px rgba(0,0,0,0.45))" }}
+          >
+            <CroppedLogo
+              key={subBrand}
+              bases={subBrand === "kiban" ? ["/images/kiban-logo-light"] : ["/images/the-wave-logo"]}
+              alt={subBrand === "kiban" ? "KIBAN" : "THE WAVE"}
+              className="block h-[13px] w-auto max-w-[72px] sm:h-[15px]"
+            />
+          </div>
+        )}
+
         {badgeText && (
           <span className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-black">
             {badgeText}
