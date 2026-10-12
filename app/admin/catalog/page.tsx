@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Copy, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
+import { Copy, MoreHorizontal, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
 import {
   AdminButton,
   Badge,
@@ -37,6 +37,47 @@ const GENDERS: Record<string, string> = { him: "Homme", her: "Femme", unisex: "U
 const SELECT_CLASS =
   "h-10 rounded-full border border-[#e0dbd3] bg-white px-4 text-sm text-[#171717] outline-none focus:ring-2 focus:ring-[#171717]/10"
 
+function Pills({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: { id: string; label: string; count?: number }[]
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-16 shrink-0 text-[11px] font-medium uppercase tracking-wide text-[#9a948a]">{label}</span>
+      <div className="-mx-1 flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {options.map((o) => {
+          const active = value === o.id
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => onChange(o.id)}
+              aria-pressed={active}
+              className={`h-9 shrink-0 cursor-pointer whitespace-nowrap rounded-full px-4 text-sm transition-colors ${
+                active
+                  ? "bg-[#171717] text-white"
+                  : "bg-white text-[#3d3a35] ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
+              }`}
+            >
+              {o.label}
+              {o.count !== undefined && (
+                <span className={`ml-1.5 text-xs ${active ? "text-white/60" : "text-[#9a948a]"}`}>{o.count}</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function StockBadge({ p }: { p: Product }) {
   if (p.stockState === "none") return <Badge tone="orange">Aucune taille</Badge>
   if (p.stockState === "out") return <Badge tone="red">Épuisé</Badge>
@@ -60,6 +101,7 @@ export default function AdminCatalog() {
   const [showCategories, setShowCategories] = useState(false)
   const [newCategory, setNewCategory] = useState("")
   const [busy, setBusy] = useState<number | null>(null)
+  const [menuId, setMenuId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -303,73 +345,60 @@ export default function AdminCatalog() {
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <select
+        <div className="flex flex-col gap-2">
+          <Pills
+            label="Catégorie"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">Toutes les catégories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-            <option value="none">Sans catégorie</option>
-          </select>
-
-          <select
+            onChange={setCategoryFilter}
+            options={[
+              { id: "all", label: "Toutes", count: products.length },
+              ...categories.map((c) => ({ id: String(c.id), label: c.name, count: countByCategory[c.id] ?? 0 })),
+              { id: "none", label: "Sans catégorie", count: products.filter((p) => p.category_id == null).length },
+            ]}
+          />
+          <Pills
+            label="Type"
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">Tous les types</option>
-            {PRODUCT_TYPE_LIST.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-
-          <select
+            onChange={setTypeFilter}
+            options={[{ id: "all", label: "Tous" }, ...PRODUCT_TYPE_LIST.map((t) => ({ id: t.id, label: t.label }))]}
+          />
+          <Pills
+            label="Genre"
             value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">Tous les genres</option>
-            <option value="him">Homme</option>
-            <option value="her">Femme</option>
-            <option value="unisex">Unisexe</option>
-          </select>
-
-          <select
+            onChange={setGenderFilter}
+            options={[
+              { id: "all", label: "Tous" },
+              { id: "him", label: "Homme" },
+              { id: "her", label: "Femme" },
+              { id: "unisex", label: "Unisexe" },
+            ]}
+          />
+          <Pills
+            label="Stock"
             value={stockFilter}
-            onChange={(e) => setStockFilter(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">Tout le stock</option>
-            <option value="low">Stock bas / sans taille</option>
-            <option value="out">Épuisés</option>
-          </select>
+            onChange={setStockFilter}
+            options={[
+              { id: "all", label: "Tout" },
+              { id: "low", label: "Stock bas / sans taille" },
+              { id: "out", label: "Épuisés" },
+            ]}
+          />
 
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className={`${SELECT_CLASS} sm:ml-auto`}
-          >
-            <option value="newest">Plus récents</option>
-            <option value="oldest">Plus anciens</option>
-            <option value="name">Nom (A → Z)</option>
-            <option value="price-asc">Prix croissant</option>
-            <option value="price-desc">Prix décroissant</option>
-            <option value="stock-asc">Stock le plus bas</option>
-          </select>
-
-          {hasFilters && (
-            <AdminButton variant="ghost" icon={X} onClick={resetFilters}>
-              Effacer
-            </AdminButton>
-          )}
+          <div className="mt-1 flex items-center gap-2">
+            <select value={sort} onChange={(e) => setSort(e.target.value)} className={SELECT_CLASS}>
+              <option value="newest">Plus récents</option>
+              <option value="oldest">Plus anciens</option>
+              <option value="name">Nom (A → Z)</option>
+              <option value="price-asc">Prix croissant</option>
+              <option value="price-desc">Prix décroissant</option>
+              <option value="stock-asc">Stock le plus bas</option>
+            </select>
+            {hasFilters && (
+              <AdminButton variant="ghost" icon={X} onClick={resetFilters}>
+                Effacer
+              </AdminButton>
+            )}
+          </div>
         </div>
       </div>
 
@@ -402,101 +431,121 @@ export default function AdminCatalog() {
             />
           </div>
         ) : (
-          <ul className="divide-y divide-[#f0ece5]">
+          <ul className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4 lg:grid-cols-4 xl:grid-cols-5">
             {filtered.map((p) => (
               <li
                 key={p.id}
-                className={`flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 ${
+                className={`relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#ebe6de] ${
                   busy === p.id ? "opacity-50" : ""
                 }`}
               >
-                <Link href={`/admin/catalog/${p.id}`} className="shrink-0">
+                <Link href={`/admin/catalog/${p.id}`} className="relative block aspect-[3/4] w-full bg-[#f0ece5]">
                   {p.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={p.thumbnail}
                       alt={p.name}
-                      className={`h-16 w-12 rounded-lg bg-[#f0ece5] object-cover ${p.is_hidden ? "opacity-40" : ""}`}
+                      className={`h-full w-full object-cover ${p.is_hidden ? "opacity-40" : ""}`}
                     />
-                  ) : (
-                    <div className="h-16 w-12 rounded-lg bg-[#f0ece5]" />
+                  ) : null}
+                  {p.is_hidden && (
+                    <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#6b665d]">
+                      Masqué
+                    </span>
                   )}
                 </Link>
 
-                <div className="min-w-0 flex-1">
+                <div className="flex flex-1 flex-col gap-1 px-3 pt-3">
                   <Link
                     href={`/admin/catalog/${p.id}`}
                     style={{ color: "#171717" }}
                     className="block truncate text-sm font-medium"
                   >
                     {p.name}
-                    {p.is_hidden && (
-                      <span className="ml-2 rounded-full bg-[#171717]/[0.08] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#6b665d]">
-                        Masqué
-                      </span>
-                    )}
                   </Link>
-                  <p className="mt-0.5 truncate text-xs text-[#9a948a]">
+                  <p className="truncate text-xs text-[#9a948a]">
                     {getProductType(p.product_type).label}
                     {" · "}
                     {p.category_id != null ? categoryName[p.category_id] ?? "—" : "Sans catégorie"}
                     {p.gender && ` · ${GENDERS[p.gender] ?? p.gender}`}
-                    <span className="hidden sm:inline"> · {formatDate(p.createdAt)}</span>
                   </p>
-                  <div className="mt-1.5 sm:hidden">
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{p.price.toFixed(2)} €</p>
                     <StockBadge p={p} />
                   </div>
                 </div>
 
-                <div className="hidden sm:block">
-                  <StockBadge p={p} />
-                </div>
-
-                <p className="w-20 text-right text-sm font-medium">{p.price.toFixed(2)} €</p>
-
-                <div className="flex shrink-0 items-center gap-1">
+                {/* Pied de carte : visibilité à gauche, autres actions dans « … » à droite (loin l'un de l'autre) */}
+                <div className="mt-3 flex items-center justify-between border-t border-[#f0ece5] px-3 py-2">
                   <button
                     type="button"
                     role="switch"
                     aria-checked={!p.is_hidden}
                     aria-label={p.is_hidden ? "Afficher ce produit sur le site" : "Masquer ce produit du site"}
-                    title={p.is_hidden ? "Masqué : touche pour afficher" : "Visible : touche pour masquer"}
                     onClick={() => toggleHidden(p)}
-                    className={`relative mr-1 h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
-                      p.is_hidden ? "bg-[#d4cfc6]" : "bg-[#171717]"
-                    }`}
+                    className="flex h-10 cursor-pointer items-center gap-2 pr-3 text-xs text-[#6b665d]"
                   >
                     <span
-                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
-                        p.is_hidden ? "left-0.5" : "left-[22px]"
+                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                        p.is_hidden ? "bg-[#d4cfc6]" : "bg-[#171717]"
                       }`}
-                    />
-                  </button>
-                  <Link
-                    href={`/admin/catalog/${p.id}`}
-                    title="Modifier"
-                    style={{ color: "#3d3a35" }}
-                    className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[#171717]/[0.06]"
-                  >
-                    <Pencil size={16} />
-                  </Link>
-                  <button
-                    type="button"
-                    title="Dupliquer"
-                    onClick={() => handleDuplicate(p)}
-                    className="hidden h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#3d3a35] hover:bg-[#171717]/[0.06] sm:flex"
-                  >
-                    <Copy size={16} />
+                    >
+                      <span
+                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                          p.is_hidden ? "left-0.5" : "left-[22px]"
+                        }`}
+                      />
+                    </span>
+                    {p.is_hidden ? "Masqué" : "Visible"}
                   </button>
                   <button
                     type="button"
-                    title="Supprimer"
-                    onClick={() => handleDelete(p)}
-                    className="hidden h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee] sm:flex"
+                    aria-label="Plus d'actions"
+                    onClick={() => setMenuId(menuId === p.id ? null : p.id)}
+                    className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#3d3a35] hover:bg-[#171717]/[0.06]"
                   >
-                    <Trash2 size={16} />
+                    <MoreHorizontal size={18} />
                   </button>
                 </div>
+
+                {menuId === p.id && (
+                  <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 rounded-t-2xl bg-white p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#ebe6de]">
+                    <Link
+                      href={`/admin/catalog/${p.id}`}
+                      style={{ color: "#171717" }}
+                      className="flex h-11 items-center gap-2 rounded-xl bg-[#faf8f5] px-3 text-sm"
+                    >
+                      <Pencil size={15} /> Modifier
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuId(null)
+                        handleDuplicate(p)
+                      }}
+                      className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#faf8f5] px-3 text-sm text-[#171717]"
+                    >
+                      <Copy size={15} /> Dupliquer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuId(null)
+                        handleDelete(p)
+                      }}
+                      className="mt-1 flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#fdeeee] px-3 text-sm text-[#9b1c1c]"
+                    >
+                      <Trash2 size={15} /> Supprimer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMenuId(null)}
+                      className="h-9 cursor-pointer text-xs text-[#9a948a]"
+                    >
+                      Fermer
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -506,8 +555,7 @@ export default function AdminCatalog() {
       {!loading && filtered.length > 0 && (
         <p className="mt-3 text-center text-xs text-[#9a948a]">
           {filtered.length} produit(s) affiché(s)
-          {hasFilters ? ` sur ${products.length}` : ""} · L'interrupteur à droite affiche ou masque le produit sur le site.
-          Dupliquer et supprimer sont dans la fiche produit sur téléphone.
+          {hasFilters ? ` sur ${products.length}` : ""} · L'interrupteur affiche ou masque le produit sur le site. Dupliquer et supprimer : bouton « … ».
         </p>
       )}
     </>
