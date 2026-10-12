@@ -15,6 +15,7 @@ type ColorInput = {
   id?: string;
   name: string;
   hex: string;
+  image_url?: string | null;
   images: string[];
   sizes: SizeInput[];
 };
@@ -194,28 +195,54 @@ export async function POST(req: Request) {
     const colorIds: string[] = [];
     for (let i = 0; i < colors.length; i++) {
       const c = colors[i];
-      const values = {
+      const baseValues = {
         name: c.name.trim(),
         hex: c.hex.trim().toLowerCase(),
         display_order: i,
       };
+      // tissu à motif : la colonne image_url de product_colors doit exister dans Supabase
+      const values: Record<string, unknown> = { ...baseValues, image_url: c.image_url || null };
+      const missingColumn = (m?: string) => !!m && /image_url/.test(m);
 
       if (c.id && existingColorIds.has(c.id)) {
-        const { error } = await supabaseAdmin
+        let { error } = await supabaseAdmin
           .from("product_colors")
           .update(values)
           .eq("id", c.id);
 
+        if (error && missingColumn(error.message)) {
+          if (c.image_url) {
+            return NextResponse.json(
+              { error: "La colonne « image_url » manque dans la table product_colors (voir la ligne SQL à lancer dans Supabase)." },
+              { status: 500 }
+            );
+          }
+          ({ error } = await supabaseAdmin.from("product_colors").update(baseValues).eq("id", c.id));
+        }
         if (error) {
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
         colorIds.push(c.id);
       } else {
-        const { data, error } = await supabaseAdmin
+        let { data, error } = await supabaseAdmin
           .from("product_colors")
           .insert({ product_id: id, ...values })
           .select("id")
           .single();
+
+        if (error && missingColumn(error.message)) {
+          if (c.image_url) {
+            return NextResponse.json(
+              { error: "La colonne « image_url » manque dans la table product_colors (voir la ligne SQL à lancer dans Supabase)." },
+              { status: 500 }
+            );
+          }
+          ({ data, error } = await supabaseAdmin
+            .from("product_colors")
+            .insert({ product_id: id, ...baseValues })
+            .select("id")
+            .single());
+        }
 
         if (error || !data) {
           return NextResponse.json(
