@@ -75,7 +75,7 @@ const Product = ({
   const hasLit = litImages.some(Boolean)
 
   const goToProduct = () => {
-    const path = `/product/${product.slug}`
+    const path = `/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`
     // l'image de la carte est « transportée » jusqu'à la fiche (voir components/ProductHero.tsx) ;
     // pas pour The Wave (qui a son eau) ni quand la carte montre une autre image que la première
     try {
@@ -132,7 +132,7 @@ const Product = ({
     "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white/90 backdrop-blur-sm transition hover:bg-black/40 active:scale-90"
 
   return (
-    <div className="relative w-full group" data-href={`/product/${product.slug}`}>
+    <div className="relative w-full group" data-href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`}>
       {/* Bouton like */}
       <WishlistHeart
         productId={product.id}
@@ -220,7 +220,7 @@ const Product = ({
       </div>
 
       {/* Infos produit */}
-      <Link href={`/product/${product.slug}`} className="block w-full">
+      <Link href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`} className="block w-full">
         <div
           className={`mx-2 flex items-start justify-between gap-3 transition-all duration-300 ease-out group-focus-within:translate-y-0 group-focus-within:opacity-100 ${
             infoRevealed
@@ -240,7 +240,7 @@ const Product = ({
             )}
 
             {/* Couleurs */}
-            {uniqueColors.length > 0 && (
+            {uniqueColors.length > 0 && !product.variant_color && (
               <div className="flex items-center gap-2">
                 <p className="text-xs text-foreground/60">{t("colors")}</p>
 
