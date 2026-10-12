@@ -30,6 +30,7 @@ type ColorState = {
   id?: string
   name: string
   hex: string
+  image_url?: string | null // tissu à motif
   images: string[]
   sizes: SizeState[]
 }
@@ -72,6 +73,34 @@ const INPUT =
 
 const HEX_RE = /^#[0-9a-f]{6}$/i
 const PALETTE = ["#000000", "#ffffff", "#8a8a8a", "#1f3f73", "#7a1f1f", "#2c4a26", "#c9b79c", "#e10813"]
+
+// couleur moyenne d'une image (petit canevas 16x16)
+async function averageHex(file: File): Promise<string> {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new window.Image()
+      i.onload = () => res(i)
+      i.onerror = rej
+      i.src = url
+    })
+    const c = document.createElement("canvas")
+    c.width = 16
+    c.height = 16
+    const ctx = c.getContext("2d")
+    if (!ctx) throw new Error("canvas")
+    ctx.drawImage(img, 0, 0, 16, 16)
+    const d = ctx.getImageData(0, 0, 16, 16).data
+    let r = 0, g = 0, b = 0, n = 0
+    for (let k = 0; k < d.length; k += 4) {
+      r += d[k]; g += d[k + 1]; b += d[k + 2]; n++
+    }
+    const h = (v: number) => Math.round(v / n).toString(16).padStart(2, "0")
+    return "#" + h(r) + h(g) + h(b)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
 
 const normalizeColor = (c: string) => c.trim().toLowerCase() || "#000000"
 const pickerValue = (c: string) => (HEX_RE.test(c.trim()) ? c.trim() : "#000000")
@@ -212,7 +241,7 @@ export default function ProductEditor({ id }: { id: string }) {
       const sizeRows = ((p.product_sizes ?? []) as any[])
         .slice()
         .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-      const colorRows = (p.product_colors ?? []) as { id: string; name: string; hex: string }[]
+      const colorRows = (p.product_colors ?? []) as { id: string; name: string; hex: string; image_url?: string | null }[]
 
       const toSize = (s: any): SizeState => ({
         id: s.id,
@@ -235,6 +264,7 @@ export default function ProductEditor({ id }: { id: string }) {
             id: c.id,
             name: c.name,
             hex,
+            image_url: c.image_url ?? null,
             // les images sans couleur reconnue vont sur la première couleur
             images: imageRows
               .filter((img) => {
@@ -384,6 +414,38 @@ export default function ProductEditor({ id }: { id: string }) {
       }
     } catch (e) {
       notify.error(errorMessage(e, "Erreur d'envoi de l'image"))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // Tissu à motif : on importe une photo du tissu, elle devient la pastille de cette couleur
+  async function uploadSwatch(ci: number, file: File) {
+    setUploading(true)
+    try {
+      const small = await resizeImage(file)
+      const fd = new FormData()
+      fd.append("file", small)
+      fd.append("productId", String(productId))
+      fd.append("color", "swatch")
+      const data = await api.upload<{ url: string }>("/api/admin/products/upload-product-image", fd)
+      // couleur moyenne du tissu : elle sert de code couleur (doit rester unique dans le produit)
+      let hex: string | null = null
+      try {
+        hex = await averageHex(small)
+      } catch {}
+      setColors((cur) => {
+        const used = new Set(cur.filter((_, i) => i !== ci).map((c) => c.hex.toLowerCase()))
+        let nextHex = hex
+        if (nextHex) {
+          let n = parseInt(nextHex.slice(1), 16)
+          while (used.has("#" + n.toString(16).padStart(6, "0"))) n = (n + 1) % 0x1000000
+          nextHex = "#" + n.toString(16).padStart(6, "0")
+        }
+        return cur.map((c, i) => (i === ci ? { ...c, image_url: data.url, ...(nextHex ? { hex: nextHex } : {}) } : c))
+      })
+    } catch (e) {
+      notify.error(errorMessage(e, "Erreur d'envoi du motif"))
     } finally {
       setUploading(false)
     }
@@ -640,6 +702,7 @@ export default function ProductEditor({ id }: { id: string }) {
           id: c.id,
           name: c.name.trim(),
           hex: normalizeColor(c.hex),
+          image_url: c.image_url || null,
           images: c.images,
           sizes: c.sizes.map((s) => ({
             id: s.id,
@@ -1105,6 +1168,38 @@ export default function ProductEditor({ id }: { id: string }) {
                     onChange={(e) => updateColor(ci, { name: e.target.value })}
                     aria-label="Nom de la couleur"
                   />
+                  {/* Tissu à motif : rayures, imprimé, texture… */}
+                  <label
+                    title="Importer une photo du tissu (rayures, imprimé, texture…)"
+                    className="flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#c9c3b8] bg-white px-3 text-xs text-[#3d3a35] hover:bg-[#faf8f5]"
+                  >
+                    {c.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.image_url} alt="" className="h-6 w-6 rounded-full object-cover ring-1 ring-black/10" />
+                    ) : (
+                      <ImagePlus size={14} />
+                    )}
+                    {c.image_url ? "Changer le motif" : "Motif / tissu"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        e.target.value = ""
+                        if (f) uploadSwatch(ci, f)
+                      }}
+                    />
+                  </label>
+                  {c.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => updateColor(ci, { image_url: null })}
+                      className="cursor-pointer text-xs text-[#9b1c1c] underline"
+                    >
+                      Retirer le motif
+                    </button>
+                  )}
                   <span className="text-xs text-[#9a948a]">
                     Stock : {totalStock}
                   </span>
