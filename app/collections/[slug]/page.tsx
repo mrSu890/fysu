@@ -8,6 +8,8 @@ import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import PageBar from "@/components/PageBar"
 import { expandByColor, variantKey } from "@/lib/expandColors"
+import GridToggle, { useGridCols } from "@/components/GridToggle"
+import { usePersistedFilters, useScrollRestore } from "@/lib/useScrollRestore"
 import ProductFilters from "@/components/ProductFilters"
 import ThemeToggle from "@/components/ThemeToggle"
 import StoryBar from "@/components/Stories/StoryBar"
@@ -23,10 +25,12 @@ export default function CollectionPage() {
   const [page, setPage] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = usePersistedFilters({
     gender: "all",
     sort: "default",
   })
+  const [gridCols, setGridCols] = useGridCols()
+  useScrollRestore(!loading)
   
   useEffect(() => {
     if (!slug) return
@@ -208,14 +212,15 @@ export default function CollectionPage() {
                 <ProductFilters filters={filters} setFilters={setFilters} />
               )}
               <div className={`relative ${hasHero ? "top-4" : "top-12"}`}>
+                <GridToggle cols={gridCols} setCols={setGridCols} />
                 <div
-                  className="
+                  className={`
                     grid
-                    grid-cols-2
+                    ${gridCols === 1 ? "grid-cols-1" : "grid-cols-2"}
                     gap-x-4 gap-y-8
                     md:grid-cols-3
                     lg:grid-cols-4
-                  "
+                  `}
                 >
                   {expandByColor(filteredProducts).map((product) => (
                     <Product key={variantKey(product)} product={product} />
