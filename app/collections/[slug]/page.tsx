@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import PageBar from "@/components/PageBar"
+import { expandByColor, variantKey } from "@/lib/expandColors"
 import ProductFilters from "@/components/ProductFilters"
 import ThemeToggle from "@/components/ThemeToggle"
 import StoryBar from "@/components/Stories/StoryBar"
@@ -216,8 +217,8 @@ export default function CollectionPage() {
                     lg:grid-cols-4
                   "
                 >
-                  {filteredProducts.map((product) => (
-                    <Product key={product.id} product={product} />
+                  {expandByColor(filteredProducts).map((product) => (
+                    <Product key={variantKey(product)} product={product} />
                   ))}
                 </div>
               </div>
