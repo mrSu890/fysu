@@ -174,7 +174,7 @@ export async function POST(
     // Couleurs : on copie chacune et on garde la correspondance ancien -> nouvel identifiant
     const { data: sourceColors, error: colorsError } = await supabaseAdmin
       .from("product_colors")
-      .select("id, name, hex, display_order")
+      .select("*")
       .eq("product_id", id);
 
     if (colorsError) throw colorsError;
@@ -187,6 +187,7 @@ export async function POST(
           product_id: newProductId,
           name: color.name,
           hex: color.hex,
+          ...((color as unknown as { image_url?: string | null }).image_url ? { image_url: (color as unknown as { image_url?: string | null }).image_url } : {}),
           display_order: color.display_order ?? 0,
         })
         .select("id")
