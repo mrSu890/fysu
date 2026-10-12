@@ -30,13 +30,7 @@ export async function GET(
         display_order,
         color_id
       ),
-      product_colors!product_colors_product_id_fkey (
-        id,
-        product_id,
-        name,
-        hex,
-        display_order
-      ),
+      product_colors!product_colors_product_id_fkey (*),
       product_info_blocks (
         id,
         image_url,
