@@ -450,7 +450,11 @@ export default function ProductClient() {
                       >
                         <span
                           className="relative block h-7 w-7 overflow-hidden border border-foreground/15"
-                          style={{ backgroundColor: c.hex }}
+                          style={
+                            c.image_url
+                              ? { backgroundColor: c.hex, backgroundImage: `url(${c.image_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+                              : { backgroundColor: c.hex }
+                          }
                         >
                           {isOut && (
                             <span className="absolute inset-0 flex items-center justify-center">
