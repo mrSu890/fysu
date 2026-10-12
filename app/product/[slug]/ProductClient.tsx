@@ -10,6 +10,11 @@ import Image from "next/image"
 import LampSwitch from "@/components/LampSwitch"
 import { useLamp } from "@/lib/lamp"
 import { Collapse } from "antd"
+import { useCart } from "@/context/CartContext"
+import { fetchProductCached } from "@/lib/productCache"
+import { BLUR } from "@/lib/blur"
+import DeliveryNote from "@/components/Product/DeliveryNote"
+import "@/lib/useScrollRestore"
 import type { CollapseProps } from "antd"
 import AddToCartButton from "@/components/ui/AddToCartButton"
 import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
@@ -61,6 +66,12 @@ export default function ProductClient() {
   // lampes : allumée ou éteinte
   const [lit] = useLamp()
   const [advisorOpen, setAdvisorOpen] = useState(false)
+  // barre d'achat collée en bas (téléphone) quand le vrai bouton n'est plus à l'écran
+  const { addToCartWithFeedback, setIsCartOpen } = useCart()
+  const buyRef = useRef<HTMLDivElement | null>(null)
+  const sizesRef = useRef<HTMLDivElement | null>(null)
+  const [buyVisible, setBuyVisible] = useState(true)
+  const [barAdded, setBarAdded] = useState(false)
   const packagingBlock = (product?.product_info_blocks ?? []).find(isPackagingBlock) ?? null
 
   const colorParam: string | null = searchParams?.get("color") ?? null
@@ -70,9 +81,7 @@ export default function ProductClient() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${slug}`)
-        if (!res.ok) throw new Error("Product not found")
-        const data: ProductType = await res.json()
+        const data: ProductType = await fetchProductCached(slug)
         setProduct(data)
       } catch {
         setProduct(null)
@@ -175,6 +184,14 @@ export default function ProductClient() {
     }
   }, [availableSizes, selectedSizeId])
 
+  useEffect(() => {
+    const el = buyRef.current
+    if (!el || typeof IntersectionObserver === "undefined") return
+    const io = new IntersectionObserver(([entry]) => setBuyVisible(entry.isIntersecting), { threshold: 0 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [product])
+
   /* ================= HANDLERS ================= */
 
   const handleColorClick = (color: ProductColor) => {
@@ -205,6 +222,8 @@ export default function ProductClient() {
         className="object-cover object-top"
         style={imageCrop}
         priority={extra.priority}
+        placeholder="blur"
+        blurDataURL={BLUR}
       />
       {img.lit_url && (
         <Image
@@ -474,7 +493,7 @@ export default function ProductClient() {
   
           {/* SIZES */}
           {canBuy && sizesForColor.length > 0 && (
-            <div className="grid grid-cols-[6rem_1fr] items-start gap-x-4 border-t border-foreground/15 py-5 sm:grid-cols-[7rem_1fr]">
+            <div ref={sizesRef} className="grid scroll-mt-28 grid-cols-[6rem_1fr] items-start gap-x-4 border-t border-foreground/15 py-5 sm:grid-cols-[7rem_1fr]">
               <p className="font-info pt-2 text-[11px] font-light uppercase tracking-[0.12em] text-foreground/55">{copy.sizeTitle ?? t("size")}</p>
 
               <div>
@@ -559,7 +578,7 @@ export default function ProductClient() {
             </div>
           )}
   
-                    <div className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
+                    <div ref={buyRef} className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
             {canBuy && colorSoldOut ? (
               <div className="w-full space-y-3">
                 <div
@@ -593,6 +612,8 @@ export default function ProductClient() {
             ) : (
               <AvailabilityBlock product={product} mode={mode} />
             )}
+
+            {canBuy && !colorSoldOut && <DeliveryNote preorder={mode !== "available"} />}
 
             {mode === "preorder" && product.release_date && (
               <p className="-mt-1 text-center text-xs text-foreground/60">
@@ -646,6 +667,51 @@ export default function ProductClient() {
         </section>
       )}
     </div>
+    {canBuy && !colorSoldOut && !buyVisible && (
+      <div
+        className="liquid-glass fixed inset-x-3 bottom-[calc(34px+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 rounded-full py-1.5 pl-5 pr-1.5 sm:hidden"
+        style={{ color: "var(--menu)" }}
+      >
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-xs font-medium">{product.name}</p>
+          <p className="font-info text-[11px] font-light opacity-70">
+            {format.number(product.price, { style: "currency", currency: "EUR" })}
+            {selectedSizeLabel ? ` · ${selectedSizeLabel}` : ""}
+          </p>
+        </div>
+        <button
+          type="button"
+          data-no-green
+          onClick={() => {
+            if (!selectedSizeId || !selectedSizeLabel) {
+              sizesRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+              return
+            }
+            addToCartWithFeedback(
+              product,
+              selectedSizeId,
+              selectedSizeLabel,
+              1500,
+              hasColors && selectedColor
+                ? { name: selectedColor.name, hex: selectedColor.hex, imageUrl: filteredImages[0]?.url ?? null }
+                : null
+            )
+            setBarAdded(true)
+            window.setTimeout(() => setBarAdded(false), 1400)
+            setIsCartOpen(true)
+          }}
+          className="font-info h-10 shrink-0 cursor-pointer rounded-full bg-[#4eac6c] px-5 text-[11px] uppercase tracking-[0.14em] text-black transition active:scale-95"
+        >
+          {barAdded
+            ? locale.startsWith("fr") ? "Ajouté" : "Added"
+            : selectedSizeId
+              ? mode === "available"
+                ? locale.startsWith("fr") ? "Ajouter" : "Add"
+                : locale.startsWith("fr") ? "Précommander" : "Pre-order"
+              : locale.startsWith("fr") ? "Choisir la taille" : "Select size"}
+        </button>
+      </div>
+    )}
     <PackagingDrawer open={packagingOpen} onClose={() => setPackagingOpen(false)} block={packagingBlock} />
     <SizeAdvisor
       open={advisorOpen}
