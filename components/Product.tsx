@@ -7,6 +7,10 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import CroppedLogo from "@/components/CroppedLogo"
 import { useBrandOf } from "@/lib/useBrandOf"
+import QuickAdd from "@/components/QuickAdd"
+import { prefetchProduct } from "@/lib/productCache"
+import { BLUR } from "@/lib/blur"
+import "@/lib/useScrollRestore"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ProductType } from "@/types/product"
 import { useLocale, useTranslations } from "next-intl"
@@ -99,6 +103,7 @@ const Product = ({
 
   // Tactile : les infos apparaissent quand le doigt se pose, puis se recachent un peu après
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    prefetchProduct(product.slug)
     swipeStart.current = { x: e.clientX, y: e.clientY }
     if (e.pointerType === "touch" || e.pointerType === "pen") {
       if (hideInfoTimeoutRef.current) {
@@ -138,7 +143,7 @@ const Product = ({
     "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white/90 backdrop-blur-sm transition hover:bg-black/40 active:scale-90"
 
   return (
-    <div className="relative w-full group" data-href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`}>
+    <div className="relative w-full group" onPointerEnter={() => prefetchProduct(product.slug)} data-href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`}>
       {/* Bouton like */}
       <WishlistHeart
         productId={product.id}
@@ -161,6 +166,8 @@ const Product = ({
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
+        {getEffectiveAvailability(product) === "available" && <QuickAdd product={product} />}
+
         {showBrandLogo && (
           <div
             aria-label={subBrand === "kiban" ? "Kiban Collector" : "The Wave"}
@@ -197,6 +204,8 @@ const Product = ({
                 fill
                 draggable={false}
                 data-base
+                placeholder="blur"
+                blurDataURL={BLUR}
                 className="object-cover"
                 sizes="(max-width: 768px) 90vw, 350px"
               />

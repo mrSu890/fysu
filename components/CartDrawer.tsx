@@ -2,12 +2,14 @@ import { useCart } from "../context/CartContext"
 import { X, Trash2, Plus, Minus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
+import { FREE_SHIPPING_FROM_CENTS } from "@/lib/shipping"
 import HelpLink from "./HelpLink"
 
 // Contenu du panier. L'enveloppe (la pastille qui s'agrandit) est gérée par la Navbar.
 export default function CartDrawer() {
   const t = useTranslations("Cart")
+  const fr = useLocale().startsWith("fr")
   const {
     cart,
     removeFromCart,
@@ -17,6 +19,8 @@ export default function CartDrawer() {
   } = useCart()
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const freeFrom = FREE_SHIPPING_FROM_CENTS / 100
+  const missing = Math.max(0, Math.ceil(freeFrom - total))
 
   return (
     <div className="px-6 pb-6 pt-2 flex flex-col max-h-[70vh]">
@@ -118,6 +122,20 @@ export default function CartDrawer() {
       {/* FOOTER */}
       {cart.length > 0 && (
         <div className="pt-4 mt-4 space-y-3">
+          <div>
+            <p className="font-info text-[11px] font-light tracking-[0.02em] opacity-70">
+              {missing > 0
+                ? fr ? `Plus que ${missing} € pour la livraison offerte` : `${missing} € away from free delivery`
+                : fr ? "Livraison offerte" : "Free delivery"}
+            </p>
+            <div className="mt-1.5 h-px w-full bg-current/15">
+              <div
+                className="h-px bg-current/70 transition-[width] duration-500"
+                style={{ width: `${Math.min(100, (total / freeFrom) * 100)}%` }}
+              />
+            </div>
+          </div>
+
           <div className="flex justify-between text-sm font-medium">
             <span>{t("total")}</span>
             <span>€{total.toFixed(2)}</span>
