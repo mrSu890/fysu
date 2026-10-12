@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import Product from "@/components/Product"
 import PageBar from "@/components/PageBar"
+import { expandByColor, variantKey } from "@/lib/expandColors"
 import ProductFilters from "@/components/ProductFilters"
 import StoryBar from "@/components/Stories/StoryBar"
 import { ProductType } from "@/types/product"
@@ -260,9 +261,9 @@ function CollectionPage() {
                         "
                       >
 
-                        {section.filteredProducts.map((product, index) => (
+                        {expandByColor(section.filteredProducts).map((product, index) => (
                           <div
-                            key={product.id}
+                            key={variantKey(product)}
                             className="
                               min-w-[220px] 
                               sm:min-w-[260px] 
