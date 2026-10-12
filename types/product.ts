@@ -12,6 +12,8 @@ export type ProductColor = {
   name: string;
   hex: string;
   display_order: number;
+  // tissu à motif (rayures, imprimé, texture…) : photo affichée dans la pastille à la place de la couleur
+  image_url?: string | null;
 };
 
 export type ProductSize = {
@@ -72,4 +74,7 @@ export type ProductType = {
   product_suggestions: ProductType[];
 
   product_info_blocks: InfoBloc[];
+
+  // carte « une couleur » dans les rangées (voir lib/expandColors.ts)
+  variant_color?: string;
 };
