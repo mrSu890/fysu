@@ -16,7 +16,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ProductType } from "@/types/product"
 import { useLocale, useTranslations } from "next-intl"
 import { useLamp } from "@/lib/lamp"
-import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability, isBuyable } from "@/lib/availability"
+import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/lib/availability"
 
 /* ====================================================================
    CARTE PRODUIT
@@ -171,7 +171,7 @@ const Product = ({
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
-        {isBuyable(getEffectiveAvailability(product)) && <QuickAdd product={product} />}
+        {getEffectiveAvailability(product) === "available" && <QuickAdd product={product} />}
 
         {showBrandLogo && (
           <div
@@ -191,7 +191,7 @@ const Product = ({
         {/* lampes : interrupteur sur la carte, sauf sur la page Kiban Collector (qui a le sien en tête de rangée) */}
         {hasLit && !pathname.startsWith("/kiban-collector") && (
           <div
-            className={`absolute bottom-3 z-10 ${isBuyable(getEffectiveAvailability(product)) ? "right-14" : "right-3"}`}
+            className={`absolute bottom-3 z-10 ${getEffectiveAvailability(product) === "available" ? "right-14" : "right-3"}`}
           >
             <LampSwitch glass />
           </div>
