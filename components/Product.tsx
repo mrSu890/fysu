@@ -10,7 +10,6 @@ import { useBrandOf } from "@/lib/useBrandOf"
 import QuickAdd from "@/components/QuickAdd"
 import LampSwitch from "@/components/LampSwitch"
 import { prefetchProduct } from "@/lib/productCache"
-import { BLUR } from "@/lib/blur"
 import "@/lib/useScrollRestore"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ProductType } from "@/types/product"
@@ -218,8 +217,6 @@ const Product = ({
                 fill
                 draggable={false}
                 data-base
-                placeholder="blur"
-                blurDataURL={BLUR}
                 className="object-cover"
                 sizes="(max-width: 768px) 90vw, 350px"
               />
