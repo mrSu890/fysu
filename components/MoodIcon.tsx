@@ -96,7 +96,7 @@ export default function MoodIcon({ label }: { label: string }) {
         localStorage.setItem(DEMO_KEY, "1")
       } catch {}
       const cur: Mood = moodAt(realMinutes())
-      const other: Mood = cur === "night" || cur === "dawn" ? "day" : "night"
+      const other: Mood = cur === "night" || cur === "sunset" ? "day" : "night"
       setPulse((n) => n + 1)
       applyMood(other)
       setV(other === "day" ? 12 * 60 : 23 * 60)
