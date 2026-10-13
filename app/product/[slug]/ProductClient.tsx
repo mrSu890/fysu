@@ -13,6 +13,8 @@ import { Collapse } from "antd"
 import { useCart } from "@/context/CartContext"
 import { fetchProductCached } from "@/lib/productCache"
 import { BLUR } from "@/lib/blur"
+import RecentlyViewed from "@/components/RecentlyViewed"
+import { rememberProduct } from "@/lib/recentlyViewed"
 import DeliveryNote from "@/components/Product/DeliveryNote"
 import "@/lib/useScrollRestore"
 import type { CollapseProps } from "antd"
@@ -183,6 +185,11 @@ export default function ProductClient() {
       setSelectedSizeLabel(null)
     }
   }, [availableSizes, selectedSizeId])
+
+  // on retient ce produit pour la rangée « Récemment consulté »
+  useEffect(() => {
+    if (product) rememberProduct(product)
+  }, [product])
 
   useEffect(() => {
     const el = buyRef.current
@@ -665,6 +672,11 @@ export default function ProductClient() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* sans suggestions : les produits déjà consultés prennent la place */}
+      {!(product.product_suggestions?.length > 0) && (
+        <RecentlyViewed excludeSlug={product.slug} className="mt-32 sm:mt-48" />
       )}
     </div>
     {canBuy && !colorSoldOut && !buyVisible && (
