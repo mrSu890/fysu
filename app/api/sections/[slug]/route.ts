@@ -56,10 +56,7 @@ export async function GET(
       categories (
         name
       ),
-      product_images (
-        url,
-        color
-      )
+      product_images (*)
     `)
     .in("id", productIds)
     .eq("is_hidden", false);
