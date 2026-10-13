@@ -1,114 +1,94 @@
 /* ====================================================================
-   PLANTES FLOUES DERRIÈRE LA VITRE (page d'attente)
-   Dessinées en SVG, floutées, et qui bougent à peine, comme portées par une brise légère.
-   Pour changer la composition : modifie la liste PLANTS (position, taille, flou, couleur).
+   TRINGLE DE VÊTEMENTS DERRIÈRE LA VITRE (page d'attente)
+   Chemises, vestes, manteaux et pantalons en silhouette, floutés, suspendus à une tringle.
+   Ils se balancent à peine, comme sous un courant d'air léger.
+   Pour changer la composition : modifie les listes FRONT et BACK (position, hauteur, flou, couleur).
    ==================================================================== */
 
-// Petit générateur pseudo-aléatoire : le dessin est toujours le même (pas de décalage serveur / navigateur)
-function rng(seed: number) {
-  let s = seed
-  return () => {
-    s = (s * 16807) % 2147483647
-    return (s - 1) / 2147483646
-  }
+type Kind = "coat" | "shirt" | "blazer" | "trousers"
+
+// Silhouettes dessinées dans une boîte de 120 de large (cintre en haut)
+const SHAPES: Record<Kind, { h: number; body: string }> = {
+  coat: {
+    h: 270,
+    body: "M60 24 L42 32 L14 46 L6 62 L10 156 L22 156 L25 76 L27 268 L93 268 L95 76 L98 156 L110 156 L114 62 L106 46 L78 32Z",
+  },
+  shirt: {
+    h: 190,
+    body: "M60 24 L40 30 L12 42 L4 58 L8 124 L20 124 L24 70 L26 186 L94 186 L96 70 L100 124 L112 124 L116 58 L108 42 L80 30Z",
+  },
+  blazer: {
+    h: 222,
+    body: "M60 24 L40 31 L13 44 L5 60 L9 140 L21 140 L24 74 L22 218 L98 218 L96 74 L99 140 L111 140 L115 60 L107 44 L80 31Z",
+  },
+  trousers: {
+    h: 250,
+    body: "M34 22 L86 22 L90 44 L88 246 L64 246 L60 74 L56 246 L32 246 L30 44Z",
+  },
 }
 
-const f = (n: number) => Math.round(n * 10) / 10
-
-// Feuille allongée (palmier / bambou) partant de (0,0) vers le haut
-function leaf(length: number, width: number, bend: number) {
-  return (
-    `M0 0 C${f(width)} ${f(-length * 0.3)} ${f(width * 0.7 + bend)} ${f(-length * 0.72)} ${f(bend * 1.6)} ${f(-length)} ` +
-    `C${f(-width * 0.7 + bend)} ${f(-length * 0.7)} ${f(-width)} ${f(-length * 0.3)} 0 0Z`
-  )
+function garment(kind: Kind, color: string) {
+  const s = SHAPES[kind]
+  const hanger =
+    kind === "trousers"
+      ? `<path d="M60 0 L60 9 M60 9 C54 9 54 3 60 3" stroke="${color}" stroke-width="2.4" fill="none" stroke-linecap="round"/><rect x="26" y="14" width="68" height="6" rx="3" fill="${color}"/>`
+      : `<path d="M60 0 L60 12 M60 12 L10 31 M60 12 L110 31 M60 0 C55 0 54 -5 59 -6" stroke="${color}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
+  return `<svg viewBox="0 -8 120 ${s.h + 8}" width="100%" height="100%" aria-hidden="true">${hanger}<path d="${s.body}" fill="${color}"/></svg>`
 }
 
-function palm(seed: number, color: string, leaves: number) {
-  const r = rng(seed)
-  let out = `<path d="M100 400 L100 322" stroke="${color}" stroke-width="3" fill="none"/>`
-  for (let i = 0; i < leaves; i++) {
-    const t = leaves === 1 ? 0.5 : i / (leaves - 1)
-    const angle = -78 + t * 156 + (r() - 0.5) * 14
-    const len = 150 + r() * 110 - Math.abs(angle) * 0.4
-    const w = 7 + r() * 8
-    const bend = (r() - 0.5) * 26
-    out += `<path transform="translate(100 322) rotate(${f(angle)})" d="${leaf(len, w, bend)}" fill="${color}" opacity="${f(0.8 + r() * 0.2)}"/>`
-  }
-  return out
-}
-
-function grass(seed: number, color: string, blades: number) {
-  const r = rng(seed)
-  let out = ""
-  for (let i = 0; i < blades; i++) {
-    const x = 40 + r() * 120
-    const len = 150 + r() * 220
-    const lean = (r() - 0.5) * 90
-    const w = 3 + r() * 3.5
-    out +=
-      `<path d="M${f(x - w)} 400 Q${f(x + lean * 0.15)} ${f(400 - len * 0.55)} ${f(x + lean)} ${f(400 - len)} ` +
-      `Q${f(x + lean * 0.15 + 7)} ${f(400 - len * 0.5)} ${f(x + w)} 400Z" fill="${color}" opacity="${f(0.7 + r() * 0.3)}"/>`
-  }
-  return out
-}
-
-function bloom(seed: number, color: string) {
-  const r = rng(seed)
-  let out = `<path d="M100 400 Q${f(96 + r() * 8)} 250 100 120" stroke="${color}" stroke-width="3" fill="none"/>`
-  out += `<circle cx="100" cy="104" r="26" fill="${color}"/>`
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2
-    const len = 34 + r() * 10
-    out += `<path d="M100 104 L${f(100 + Math.cos(a) * len)} ${f(104 + Math.sin(a) * len)}" stroke="${color}" stroke-width="2.2" stroke-linecap="round"/>`
-  }
-  out += `<path transform="translate(100 330) rotate(-38)" d="${leaf(120, 7, 8)}" fill="${color}"/>`
-  out += `<path transform="translate(100 300) rotate(34)" d="${leaf(110, 6, -8)}" fill="${color}"/>`
-  return out
-}
-
-export type Plant = {
+export type Item = {
   svg: string
-  // position et taille (en % / vh de l'écran), flou en px, durée du balancement en secondes
+  ratio: number // largeur / hauteur
   left: string
-  bottom: string
-  height: string
+  height: string // hauteur à l'écran
   blur: number
   opacity: number
-  sway: number
+  sway: number // durée du balancement (secondes)
   delay: number
-  flip?: boolean
+  swing: number // amplitude (degrés)
 }
 
-const wrap = (inner: string) => `<svg viewBox="0 0 200 400" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${inner}</svg>`
+function item(kind: Kind, color: string, left: string, height: string, blur: number, opacity: number, sway: number, delay: number, swing = 1.4): Item {
+  return { svg: garment(kind, color), ratio: 120 / (SHAPES[kind].h + 8), left, height, blur, opacity, sway, delay, swing }
+}
 
-export const PLANTS: Plant[] = [
-  // loin, très flou, vert clair (donne de la brume et de la profondeur)
-  { svg: wrap(palm(11, "#7a9370", 11)), left: "40%", bottom: "-8%", height: "86vh", blur: 20, opacity: 0.8, sway: 11, delay: -3 },
-  { svg: wrap(grass(23, "#86a07a", 11)), left: "62%", bottom: "-6%", height: "78vh", blur: 16, opacity: 0.75, sway: 9, delay: -6 },
-  { svg: wrap(bloom(5, "#44604b")), left: "-2%", bottom: "-4%", height: "100vh", blur: 13, opacity: 0.8, sway: 10, delay: -2 },
-  // plan moyen
-  { svg: wrap(grass(47, "#3a553f", 12)), left: "22%", bottom: "-6%", height: "74vh", blur: 10, opacity: 0.85, sway: 8, delay: -5 },
-  { svg: wrap(palm(31, "#2c4733", 13)), left: "-12%", bottom: "-12%", height: "104vh", blur: 8, opacity: 0.9, sway: 12, delay: -8 },
-  { svg: wrap(bloom(9, "#35503c")), left: "76%", bottom: "-5%", height: "88vh", blur: 11, opacity: 0.75, sway: 9.5, delay: -4, flip: true },
-  // près de la vitre, le plus net
-  { svg: wrap(palm(77, "#1f3626", 12)), left: "66%", bottom: "-16%", height: "118vh", blur: 5, opacity: 0.95, sway: 13, delay: -1, flip: true },
+// Tringle du fond : plus floue, plus claire
+export const BACK: Item[] = [
+  item("coat", "#8d9286", "-3%", "min(46vh, 74vw)", 12, 0.6, 10, -2, 1),
+  item("shirt", "#969b8c", "15%", "min(30vh, 48vw)", 11, 0.55, 9, -5, 1.2),
+  item("trousers", "#8b9084", "30%", "min(42vh, 66vw)", 12, 0.6, 11, -7, 0.9),
+  item("blazer", "#939888", "47%", "min(38vh, 60vw)", 11, 0.55, 8.5, -3, 1.1),
+  item("coat", "#8a8f83", "63%", "min(48vh, 76vw)", 12, 0.6, 10.5, -6, 1),
+  item("shirt", "#969b8c", "80%", "min(30vh, 48vw)", 11, 0.55, 9.5, -1, 1.2),
+  item("blazer", "#8d9286", "92%", "min(40vh, 62vw)", 12, 0.6, 11.5, -8, 0.9),
+]
+
+// Tringle de devant : plus sombre, plus nette (près de la vitre). Les teintes alternent pour qu'on distingue chaque pièce.
+export const FRONT: Item[] = [
+  item("coat", "#3b3e37", "1%", "min(58vh, 90vw)", 5, 0.9, 7.5, -1, 1.5),
+  item("shirt", "#555950", "21%", "min(36vh, 56vw)", 5.5, 0.85, 6.5, -4, 1.7),
+  item("blazer", "#42453e", "36%", "min(46vh, 72vw)", 5, 0.88, 8, -2, 1.4),
+  item("trousers", "#5c6056", "55%", "min(48vh, 76vw)", 5.5, 0.85, 7, -6, 1.2),
+  item("coat", "#373a34", "69%", "min(60vh, 94vw)", 5, 0.92, 8.5, -3, 1.4),
+  item("shirt", "#555950", "87%", "min(34vh, 54vw)", 5.5, 0.85, 6.8, -7, 1.7),
 ]
 
 export const GATE_CSS = `
-  .gate-root { background: linear-gradient(180deg, #cdd6c3 0%, #aebd9f 46%, #6f8465 100%); }
-  .gate-plant { position: absolute; aspect-ratio: 1 / 2; transform-origin: 50% 100%; will-change: transform; }
-  @keyframes gate-sway {
-    0%, 100% { transform: rotate(-1deg) translateX(-0.4%); }
-    50% { transform: rotate(1.2deg) translateX(0.5%); }
+  .gate-root { background: linear-gradient(180deg, #dcdfd4 0%, #b9bfae 46%, #6d7569 100%); }
+  .gate-item { position: absolute; top: 0; transform-origin: 50% 0; will-change: transform; }
+  .gate-rail { position: absolute; left: -5%; width: 110%; background: #31342f; }
+  @keyframes gate-swing {
+    0%, 100% { transform: rotate(calc(var(--swing) * -1deg)); }
+    50% { transform: rotate(calc(var(--swing) * 1deg)); }
   }
   @keyframes gate-in { from { opacity: 0; } to { opacity: 1; } }
   .gate-root { animation: gate-in 900ms ease-out both; }
   .gate-leaving { opacity: 0 !important; transition: opacity 600ms ease; }
   .gate-glass {
     background:
-      linear-gradient(180deg, rgba(222,232,214,0.46) 0%, rgba(176,196,160,0.34) 52%, rgba(52,72,52,0.34) 100%);
-    -webkit-backdrop-filter: blur(9px) saturate(1.05);
-    backdrop-filter: blur(9px) saturate(1.05);
+      linear-gradient(180deg, rgba(230,233,224,0.44) 0%, rgba(190,197,176,0.32) 52%, rgba(58,66,56,0.36) 100%);
+    -webkit-backdrop-filter: blur(5px) saturate(0.95);
+    backdrop-filter: blur(5px) saturate(0.95);
   }
   .gate-grain {
     opacity: 0.22; mix-blend-mode: soft-light;
@@ -121,15 +101,15 @@ export const GATE_CSS = `
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     transition: background 200ms ease, border-color 200ms ease;
   }
-  .gate-field::placeholder { color: rgba(255,255,255,0.78); }
+  .gate-field::placeholder { color: rgba(255,255,255,0.8); }
   .gate-field:focus { background: rgba(255,255,255,0.24); border-color: rgba(255,255,255,0.7); }
   .gate-go {
     position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
     width: 36px; height: 36px; border-radius: 999px; border: 0; cursor: pointer;
-    background: rgba(255,255,255,0.9); color: #25392b; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.9); color: #2b302a; display: flex; align-items: center; justify-content: center;
     transition: transform 150ms ease, opacity 150ms ease;
   }
   .gate-go:active { transform: translateY(-50%) scale(0.92); }
   .gate-go:disabled { opacity: 0.5; cursor: default; }
-  @media (prefers-reduced-motion: reduce) { .gate-plant { animation: none !important; } .gate-root { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .gate-swinger { animation: none !important; } .gate-root { animation: none; } }
 `

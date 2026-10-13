@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useLocale } from "next-intl"
-import { GATE_CSS, PLANTS } from "./PreLaunchPlants"
+import { BACK, FRONT, GATE_CSS, type Item } from "./PreLaunchPlants"
 
 /* ====================================================================
    PAGE D'ATTENTE : vitre semi-transparente, plantes floues derrière, mot de passe + e-mail.
@@ -18,7 +18,6 @@ type Copy = {
   thanks: string
   error: string
   opening: string
-  tz: string
   enter: string
 }
 
@@ -32,7 +31,6 @@ const COPY: Record<string, Copy> = {
     thanks: "Thank you. We will write to you on opening day.",
     error: "Something went wrong, please try again",
     opening: "Opening",
-    tz: "Brussels time",
     enter: "Enter",
   },
   fr: {
@@ -44,7 +42,6 @@ const COPY: Record<string, Copy> = {
     thanks: "Merci. Nous vous écrirons le jour de l'ouverture.",
     error: "Une erreur est survenue, réessayez",
     opening: "Ouverture le",
-    tz: "heure de Bruxelles",
     enter: "Entrer",
   },
   nl: {
@@ -56,7 +53,6 @@ const COPY: Record<string, Copy> = {
     thanks: "Bedankt. We mailen je op de dag van de opening.",
     error: "Er ging iets mis, probeer opnieuw",
     opening: "Opening op",
-    tz: "Brusselse tijd",
     enter: "Binnenkomen",
   },
   ja: {
@@ -68,7 +64,6 @@ const COPY: Record<string, Copy> = {
     thanks: "ありがとうございます。オープン当日にご連絡します。",
     error: "エラーが発生しました。もう一度お試しください",
     opening: "オープン",
-    tz: "ブリュッセル時間",
     enter: "入る",
   },
 }
@@ -78,6 +73,35 @@ const Arrow = () => (
     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
+
+function Rail({ items, top, thickness }: { items: Item[]; top: string; thickness: number }) {
+  return (
+    <div aria-hidden="true" className="absolute inset-x-0" style={{ top }}>
+      <div className="gate-rail" style={{ height: thickness, top: -thickness, opacity: 0.55, filter: "blur(1.5px)" }} />
+      {items.map((g, i) => (
+        <div
+          key={i}
+          className="gate-item"
+          style={{ left: g.left, height: g.height, aspectRatio: String(g.ratio), opacity: g.opacity, filter: `blur(${g.blur}px)` }}
+        >
+          <div
+            className="gate-swinger"
+            style={
+              {
+                width: "100%",
+                height: "100%",
+                transformOrigin: "50% 0",
+                "--swing": g.swing,
+                animation: `gate-swing ${g.sway}s ease-in-out ${g.delay}s infinite`,
+              } as React.CSSProperties
+            }
+            dangerouslySetInnerHTML={{ __html: g.svg }}
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function PreLaunchGate({ openAt }: { openAt: string }) {
   const locale = useLocale()
@@ -103,17 +127,21 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
     }
   }, [])
 
-  // « 15 décembre 2026 à 12:00 », dans la langue du visiteur, à l'heure de Bruxelles
+  // « 15 décembre 2026 à 12:00 CET (UTC+1) » : date dans la langue du visiteur, fuseau horaire lisible partout
   const openingText = useMemo(() => {
     try {
-      const date = new Intl.DateTimeFormat(locale, {
-        dateStyle: "long",
-        timeStyle: "short",
-        timeZone: "Europe/Brussels",
-      }).format(new Date(openAt))
-      return `${c.opening} ${date} (${c.tz})`
+      const d = new Date(openAt)
+      const tz = "Europe/Brussels"
+      const date = new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short", timeZone: tz, hourCycle: "h23" }).format(d)
+      const part = (style: "short" | "shortOffset") =>
+        new Intl.DateTimeFormat("en-GB", { timeZone: tz, timeZoneName: style })
+          .formatToParts(d)
+          .find((x) => x.type === "timeZoneName")?.value
+      const zone = part("short") ?? "CET"
+      const offset = (part("shortOffset") ?? "GMT+1").replace("GMT", "UTC")
+      return `${c.opening} ${date} ${zone} (${offset})`
     } catch {
-      return `${c.opening} 15 December 2026, 12:00 (${COPY.en.tz})`
+      return `${c.opening} 15 December 2026, 12:00 CET (UTC+1)`
     }
   }, [locale, openAt, c])
 
@@ -176,33 +204,9 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
     >
       <style>{GATE_CSS}</style>
 
-      {/* Plantes, derrière la vitre */}
-      <div aria-hidden="true" className="absolute inset-0">
-        {PLANTS.map((p, i) => (
-          <div
-            key={i}
-            className="gate-plant"
-            style={{
-              left: p.left,
-              bottom: p.bottom,
-              height: p.height,
-              opacity: p.opacity,
-              filter: `blur(${p.blur}px)`,
-              transform: p.flip ? "scaleX(-1)" : undefined,
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                transformOrigin: "50% 100%",
-                animation: `gate-sway ${p.sway}s ease-in-out ${p.delay}s infinite`,
-              }}
-              dangerouslySetInnerHTML={{ __html: p.svg }}
-            />
-          </div>
-        ))}
-      </div>
+      {/* Deux tringles de vêtements, derrière la vitre (celle du fond plus floue) */}
+      <Rail items={BACK} top="15vh" thickness={2} />
+      <Rail items={FRONT} top="22vh" thickness={3} />
 
       {/* La vitre */}
       <div aria-hidden="true" className="gate-glass absolute inset-0" />
@@ -301,10 +305,10 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
         <img
           src="/images/fysu-light.png"
           alt="FYSU"
-          style={{ width: "clamp(130px, 24vw, 210px)", height: "auto" }}
+          style={{ width: "clamp(78px, 12vw, 108px)", height: "auto" }}
           draggable={false}
         />
-        <p className="mt-4 text-[10px] uppercase leading-relaxed tracking-[0.22em] text-white/85 sm:text-[11px]">
+        <p className="mt-9 text-[10px] uppercase leading-relaxed tracking-[0.22em] text-white/85 sm:text-[11px]">
           {openingText}
         </p>
       </footer>
