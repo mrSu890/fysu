@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 import { HOME_DESCRIPTION, HOME_TITLE, SITE } from "@/lib/seo";
 
 import HomeSection from "@/components/Home/HomeSection";
+import RecentlyViewed from "@/components/RecentlyViewed";
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
@@ -44,6 +45,7 @@ export default async function Home() {
       <LogoIntro>
         <HomeHero initialSlides={slides} />
       </LogoIntro>
+      <RecentlyViewed className="mt-20 sm:mt-28" />
       <div className="flex flex-col gap-36 sm:gap-48">
         <HomeSection slug="solos" index={1} />
         <HomeSection slug="duos" index={2} />
