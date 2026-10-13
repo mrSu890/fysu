@@ -496,31 +496,129 @@ html.theme-fade *::after {
 /* FIN ÉPURE */
 
 /* ====================================================================
-   AMBIANCES (voir lib/mood.ts) : aube et après-midi
-   - aube : un sombre plus chaud, taupe (s'ajoute au mode sombre)
-   - après-midi : le même clair en crème plus chaud (le blanc cassé d'origine #FAF9F7 reste intact)
+   AMBIANCES (voir lib/mood.ts) : aube, après-midi, coucher de soleil, nuit
+   (le jour reste le blanc cassé d'origine #FAF9F7, intact)
+   Chaque ambiance règle : le fond, le texte, et le Liquid Glass (barre de navigation, pastilles).
    Les pages qui gardent leur propre fond (TheWave, arcade, Ökēn) ne changent pas.
+   Réglages du verre : --glass-color (teinte), --glass-tint (force), --glass-brightness, --glass-rim (liseré).
    ==================================================================== */
-html.dawn.dark:not(.event-page):not(.wave-page):not(.arcade-page) {
-  --background: #6a6455;
-  --foreground: #f4f0e4;
-  --menu: #2a261e;
-  --toggle-button-bg: #5a5548;
-  --toggle-button-btn: #766f60;
+
+/* ---- AUBE : clair bleuté céladon, verre bleu ---- */
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
+  --background: #dde9e6;
+  --foreground: #19282b;
+  --menu: #f1f7f6;
+  --toggle-button-bg: #eaf3f1;
+  --toggle-button-btn: #ffffff;
+  --navbar-bg: #2f5563;
+  --glass-color: #4f7f93;
+  --glass-tint: 52%;
+  --glass-brightness: 0.95;
+  --glass-rim: rgba(225, 245, 250, 0.6);
+  --glass-shadow: rgba(30, 70, 85, 0.25);
 }
-html.dawn.dark:not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
-  background-color: #6a6455;
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
+  background-color: #dde9e6;
 }
-html.dawn.dark:not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #5f5a4d;
-  color: #f4f0e4;
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
+  background: #e8f1ef;
+  color: #19282b;
 }
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
+  background: linear-gradient(180deg, rgba(128, 175, 190, 0.62) 0%, rgba(58, 104, 122, 0.74) 100%);
+}
+
+/* ---- APRÈS-MIDI : crème chaud, verre vert forêt en dégradé, texte blanc ---- */
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
   --background: #f4f1ea;
-  --menu: #f4f1ea;
+  --menu: #f7f5ee;
+  --navbar-bg: #2f4a2c;
+  --glass-color: #3f5d3a;
+  --glass-tint: 70%;
+  --glass-brightness: 0.9;
+  --glass-rim: rgba(235, 245, 215, 0.5);
+  --glass-shadow: rgba(30, 50, 25, 0.28);
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
   background: #f8f6f1;
+}
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
+  background: linear-gradient(180deg, rgba(104, 128, 78, 0.78) 0%, rgba(44, 74, 42, 0.88) 100%);
+}
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(20, 38, 18, 0.35);
+}
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
+  opacity: 0.95;
+}
+
+/* ---- COUCHER DE SOLEIL : taupe chaud, verre fumé gris-vert (une pointe de vert de plante derrière une vitre) ---- */
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) {
+  --background: #6b6454;
+  --foreground: #f6f0e2;
+  --menu: #2a2820;
+  --toggle-button-bg: #5a5548;
+  --toggle-button-btn: #766f60;
+  --navbar-bg: #d8d6c4;
+  --glass-color: #d3d4c0;
+  --glass-tint: 34%;
+  --glass-brightness: 1.05;
+  --glass-rim: rgba(255, 236, 205, 0.55);
+  --glass-shadow: rgba(40, 34, 20, 0.32);
+}
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
+  background-color: #6b6454;
+}
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
+  background: #5f5a4d;
+  color: #f6f0e2;
+}
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
+  background: linear-gradient(180deg, rgba(222, 218, 196, 0.42) 0%, rgba(168, 172, 150, 0.36) 100%);
+}
+/* le logo et les textes de la barre étaient trop sombres : moins d'opacité */
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
+  color: color-mix(in srgb, #2a2820 74%, transparent);
+}
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
+  opacity: 0.66;
+}
+
+/* ---- NUIT : sombre bleu-gris brumeux, verre givré (comme une vitre dépolie dans la brume) ---- */
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) {
+  --background: #1d2329;
+  --foreground: #e6eaf0;
+  --menu: #161b20;
+  --toggle-button-bg: #2a3138;
+  --toggle-button-btn: #3d464e;
+  --navbar-bg: #c9d2de;
+  --glass-color: #b8c3d2;
+  --glass-tint: 24%;
+  --glass-brightness: 1.1;
+  --glass-rim: rgba(215, 226, 245, 0.5);
+  --glass-shadow: rgba(4, 8, 14, 0.45);
+}
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
+  background-color: #1d2329;
+}
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
+  background: #262d34;
+  color: #e6eaf0;
+}
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
+  background: linear-gradient(180deg, rgba(150, 166, 192, 0.36) 0%, rgba(78, 94, 120, 0.42) 100%);
+}
+/* nuit : textes et logo clairs sur le verre givré */
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
+  color: #eef2f8;
+}
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
 }
 
 /* Changement d'ambiance en fondu doux (nuit, aube, jour, après-midi) : la classe est posée 2 s par lib/mood.ts */

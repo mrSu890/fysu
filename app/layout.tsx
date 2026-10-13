@@ -99,14 +99,16 @@ export default async function RootLayout({
                 var man = localStorage.getItem("fysu-mood-manual");
                 if (man) { var sv = parseFloat(localStorage.getItem("fysu-mood-v")); if (!isNaN(sv)) v = sv; }
                 var hh = (((v % 1440) + 1440) % 1440) / 60;
-                var mood = (hh >= 20 || hh < 5) ? "night" : hh < 8 ? "dawn" : hh < 15 ? "day" : hh < 18 ? "afternoon" : "dawn";
-                var dark = mood === "night" || mood === "dawn";
+                var mood = (hh >= 20 || hh < 5) ? "night" : hh < 8 ? "dawn" : hh < 15 ? "day" : hh < 18 ? "afternoon" : "sunset";
+                var dark = mood === "night" || mood === "sunset";
                 localStorage.setItem("theme", dark ? "dark" : "light");
                 var root = document.documentElement;
                 if (dark) root.classList.add("dark");
                 if (location.pathname.indexOf("/admin") !== 0) {
                   if (mood === "dawn") root.classList.add("dawn");
                   if (mood === "afternoon") root.classList.add("afternoon");
+                  if (mood === "sunset") root.classList.add("sunset");
+                  if (mood === "night") root.classList.add("night");
                 }
               } catch (e) {}
               try {
