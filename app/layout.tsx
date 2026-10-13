@@ -25,7 +25,7 @@ import { MusicPlayerProvider } from "@/context/MusicPlayerContext";
 import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { HOME_DESCRIPTION, HOME_TITLE, SITE, SITE_NAME, organizationJsonLd } from "@/lib/seo";
+import { homeCopy, SITE, SITE_NAME, organizationJsonLd } from "@/lib/seo";
 
 const inter = Inter_Tight({
   subsets: ["latin"],
@@ -41,12 +41,14 @@ const dmMono = DM_Mono({
 });
 //import AuthProvider from "@/components/AuthProvider";
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  const { title: HOME_TITLE, description: HOME_DESCRIPTION } = homeCopy(await getLocale());
+  return {
   metadataBase: new URL(SITE),
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
   applicationName: SITE_NAME,
-  keywords: ["FYSU", "fysu", "fysu clothing", "fysu fragrance", "fysu music", "independent fashion house", "slow fashion", "perfume", "piano ambient"],
+  keywords: ["FYSU", "fysu", "fysu official site", "fysu clothing", "fysu fragrance", "fysu music"],
   alternates: { canonical: SITE },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   // Codes de vérification des moteurs de recherche (à ajouter dans Vercel, voir les étapes données par Claude)
@@ -71,7 +73,8 @@ export const metadata: Metadata = {
     shortcut: "/api/favicon",
     apple: "/api/favicon",
   },
-};
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -133,7 +136,7 @@ export default async function RootLayout({
         {/* Données structurées pour Google : qui est FYSU */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()).replace(/</g, "\\u003c") }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(locale)).replace(/</g, "\\u003c") }}
         />
         {/* Écran de chargement d'arrivée sur le site */}
         <SiteLoader />
