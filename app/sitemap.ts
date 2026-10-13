@@ -29,7 +29,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
   const fixed = ["", "/thewave", "/kiban-collector", "/fygrances", "/music", "/games", "/about", "/privacy"]
 
-  const [products, collections, brandPages, albums] = await Promise.all([
+  // "pages" = pages de produits à la racine (/for-him, /for-her…) · "collectionPages" = /collections/<lien>
+  const [products, rootPages, collections, albums] = await Promise.all([
     slugs("products", "slug"),
     slugs("pages", "slug, visible"),
     slugs("collectionPages", "slug, visible"),
@@ -39,9 +40,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const reserved = new Set(["thewave", "kiban-collector", "fygrances"])
   const urls = [
     ...fixed.map((p) => ({ url: `${SITE}${p}`, changeFrequency: "weekly" as const, priority: p === "" ? 1 : 0.7 })),
-    ...brandPages.filter((s) => !reserved.has(s)).map((s) => ({ url: `${SITE}/${s}`, changeFrequency: "weekly" as const, priority: 0.7 })),
+    ...rootPages.filter((s) => !reserved.has(s)).map((s) => ({ url: `${SITE}/${s}`, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...EVENTS.map((e) => ({ url: `${SITE}/${e.slug}`, changeFrequency: "monthly" as const, priority: 0.6 })),
-    ...collections.map((s) => ({ url: `${SITE}/collections/${s}`, changeFrequency: "weekly" as const, priority: 0.7 })),
+    ...collections.filter((s) => !reserved.has(s)).map((s) => ({ url: `${SITE}/collections/${s}`, changeFrequency: "weekly" as const, priority: 0.7 })),
     ...products.map((s) => ({ url: `${SITE}/product/${s}`, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...albums.map((s) => ({ url: `${SITE}/music/${s}`, changeFrequency: "monthly" as const, priority: 0.5 })),
   ]
