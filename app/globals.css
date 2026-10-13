@@ -505,7 +505,7 @@ html.theme-fade *::after {
 
 /* ---- AUBE : clair bleuté céladon, verre bleu ---- */
 html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
-  --background: #e5ebe7;
+  --background: #e8ebe6;
   --foreground: #1c2523;
   --menu: #f4f7f5;
   --toggle-button-bg: #edf2ef;
@@ -518,10 +518,10 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
   --glass-shadow: rgba(50, 85, 95, 0.18);
 }
 html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
-  background-color: #e5ebe7;
+  background-color: #e8ebe6;
 }
 html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #edf2ef;
+  background: #eef1ed;
   color: #1c2523;
 }
 html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
@@ -537,27 +537,45 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-
   opacity: 0.8;
 }
 
+/* aube : les photos produits prennent un léger filtre bleuté (comme l'après-midi prend un filtre crème) */
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\] {
+  background-color: #eaf1f1 !important;
+  isolation: isolate;
+}
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-color: #eaf1f1;
+  mix-blend-mode: multiply;
+}
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\] span.bg-white\/90 {
+  background-color: #eaf1f1 !important;
+}
+
 /* ---- APRÈS-MIDI : crème chaud, verre vert forêt en dégradé, texte blanc ---- */
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
-  --background: #f4f1ea;
-  --menu: #f7f5ee;
-  --navbar-bg: #44563f;
-  --glass-color: #56694f;
-  --glass-tint: 62%;
+  --background: #f3eee1;
+  --menu: #f7f4ea;
+  --navbar-bg: #4f5a47;
+  --glass-color: #646e5a;
+  --glass-tint: 56%;
   --glass-brightness: 0.9;
   --glass-rim: rgba(238, 244, 225, 0.5);
   --glass-shadow: rgba(40, 55, 35, 0.22);
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #f8f6f1;
+  background: #f7f3e8;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
-  background: linear-gradient(180deg, rgba(122, 136, 104, 0.74) 0%, rgba(72, 90, 64, 0.84) 100%);
+  background: linear-gradient(180deg, rgba(134, 141, 116, 0.7) 0%, rgba(92, 103, 82, 0.8) 100%);
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
   color: #ffffff;
-  text-shadow: 0 1px 6px rgba(20, 38, 18, 0.35);
+  text-shadow: 0 1px 6px rgba(30, 38, 24, 0.4);
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
   opacity: 0.95;
@@ -644,7 +662,7 @@ html.mood-anim body *:not(video):not(canvas) {
    Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
    La pastille de disponibilité prend le même crème. */
 html.afternoon:not(.dark) .aspect-\[3\/4\] {
-  background-color: #f7f4ee !important;
+  background-color: #f6f1e4 !important;
   isolation: isolate;
 }
 html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
@@ -653,11 +671,11 @@ html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-color: #f7f4ee;
+  background-color: #f6f1e4;
   mix-blend-mode: multiply;
 }
 html.afternoon:not(.dark) .aspect-\[3\/4\] span.bg-white\/90 {
-  background-color: #f7f4ee !important;
+  background-color: #f6f1e4 !important;
 }
 
 /* Transport de l'image (carte -> fiche produit) : la vraie image reste cachée pendant que la copie arrive (components/ProductHero.tsx) */
