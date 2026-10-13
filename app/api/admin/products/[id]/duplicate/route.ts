@@ -164,6 +164,7 @@ export async function POST(
           url: image.url,
           color: image.color,
           ...(image.lit_url ? { lit_url: image.lit_url } : {}),
+          ...((image as { is_hover?: boolean | null }).is_hover ? { is_hover: true } : {}),
         })) ?? [];
 
     if (images.length) {
