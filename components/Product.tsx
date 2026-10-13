@@ -84,6 +84,10 @@ const Product = ({
     : [null]
   const hasLit = litImages.some(Boolean)
 
+  // photo portée sur mannequin : apparaît au survol de la carte (ordinateur, première image seulement)
+  const hoverUrl = product.product_images?.find((i) => i.is_hover)?.url ?? null
+  const showHover = !!hoverUrl && hoverUrl !== images[0]
+
   const goToProduct = () => {
     const path = `/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`
     // l'image de la carte est « transportée » jusqu'à la fiche (voir components/ProductHero.tsx) ;
@@ -209,6 +213,16 @@ const Product = ({
                 className="object-cover"
                 sizes="(max-width: 768px) 90vw, 350px"
               />
+              {index === 0 && showHover && (
+                <Image
+                  src={hoverUrl as string}
+                  alt=""
+                  fill
+                  draggable={false}
+                  className="pointer-events-none hidden object-cover opacity-0 transition-opacity duration-500 ease-out [@media(hover:hover)]:block group-hover:opacity-100"
+                  sizes="(max-width: 768px) 90vw, 350px"
+                />
+              )}
               {litImages[index] && (
                 <Image
                   src={litImages[index] as string}
