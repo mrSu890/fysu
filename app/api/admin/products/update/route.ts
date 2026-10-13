@@ -47,6 +47,7 @@ type ProductUpdatePayload = {
   shipping?: string;
   size_guide_image_url?: string | null;
   lit_images?: Record<string, string> | null;
+  hover_images?: string[] | null;
   size_guide?: unknown;
   colors?: ColorInput[];
   info_blocks?: ProductInfoBlockInput[];
@@ -79,6 +80,7 @@ export async function POST(req: Request) {
       shipping,
       size_guide_image_url,
       lit_images,
+      hover_images,
       size_guide,
       colors,
       info_blocks,
@@ -342,6 +344,8 @@ export async function POST(req: Request) {
           color: c.hex.trim().toLowerCase(),
           // lampes : photo « allumée » de cette image (colonne lit_url de product_images)
           ...(lit_images?.[url] ? { lit_url: lit_images[url] } : {}),
+          // photo portée (survol) : colonne is_hover de product_images
+          ...(hover_images?.includes(url) ? { is_hover: true } : {}),
         }))
     );
 
@@ -351,8 +355,11 @@ export async function POST(req: Request) {
         .insert(formattedImages);
 
       if (error) {
+        const hint = /is_hover/.test(error.message)
+          ? "La colonne « is_hover » manque dans la table product_images (voir la ligne SQL à lancer dans Supabase)."
+          : error.message;
         return NextResponse.json(
-          { error: error.message },
+          { error: hint },
           { status: 500 }
         );
       }
