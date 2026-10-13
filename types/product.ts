@@ -39,6 +39,7 @@ export type InfoBloc = {
   title: string;
   subtitle: string;
   content: string;
+  is_packaging?: boolean;
 }
 
 export type ProductType = {
