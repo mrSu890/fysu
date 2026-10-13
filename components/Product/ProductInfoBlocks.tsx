@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { useLocale } from "next-intl"
+import { titleIsPackaging } from "@/lib/packaging"
 
 /* ====================================================================
    BLOCS D'INFORMATION SOUS LE PRODUIT
@@ -20,10 +21,11 @@ export type InfoBlock = {
   title: string | null
   subtitle: string | null
   content: string | null
+  is_packaging?: boolean
 }
 
-export const isPackagingBlock = (b: { title?: string | null }) =>
-  /packag|emballage|verpakking|embalagem|imballaggio/i.test(b.title ?? "")
+export const isPackagingBlock = (b: { title?: string | null; is_packaging?: boolean }) =>
+  b.is_packaging ?? titleIsPackaging(b.title)
 
 export const isVideoUrl = (url: string) => /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url)
 
