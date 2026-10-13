@@ -1,0 +1,199 @@
+"use client"
+
+import Image from "next/image"
+import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
+import Product from "@/components/Product"
+import PageBar from "@/components/PageBar"
+import { expandByColor, variantKey } from "@/lib/expandColors"
+import GridToggle, { useGridCols } from "@/components/GridToggle"
+import { usePersistedFilters, useScrollRestore } from "@/lib/useScrollRestore"
+import ProductFilters from "@/components/ProductFilters"
+import ThemeToggle from "@/components/ThemeToggle"
+import StoryBar from "@/components/Stories/StoryBar"
+import { useTranslations } from "next-intl"
+
+// Le serveur envoie déjà la collection et ses produits (ils sont dans le HTML) ;
+// ce composant ne gère que les filtres, la grille et les animations.
+export default function CollectionClient({
+  slug,
+  initialPage,
+  initialProducts,
+}: {
+  slug: string
+  initialPage: any
+  initialProducts: any[]
+}) {
+  const t = useTranslations("Pages")
+  const tn = useTranslations("Navigation")
+
+  const page = initialPage
+  const products = initialProducts ?? []
+  const [filters, setFilters] = usePersistedFilters({
+    gender: "all",
+    sort: "default",
+  })
+  const [gridCols, setGridCols] = useGridCols()
+  useScrollRestore(true)
+
+  const filteredProducts = products
+  .filter((p) => {
+    if (filters.gender !== "all" && p.gender !== filters.gender)
+      return false
+    return true
+  })
+  .sort((a, b) => {
+    if (filters.sort === "price-asc") return a.price - b.price
+    if (filters.sort === "price-desc") return b.price - a.price
+    if (filters.sort === "newest") {
+      return (
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+      )
+    }
+    return 0
+  })
+
+
+  if (!page) {
+    return (
+      <>
+        <Navbar />
+        <div className="p-20 text-center text-foreground/50">
+          {t("collectionNotFound")}
+        </div>
+        <Footer />
+      </>
+    )
+  }
+
+  const hasHero = Boolean(page.hero_image)
+
+    return (
+      <>
+        <Navbar />
+    
+        {/* ================= MOBILE / TABLETTE ================= */}
+        <div className="hidden">
+    
+          {/* STORIES */}
+          <StoryBar collectionSlug={slug} />
+    
+          {/* TITLE */}
+          <div className="px-6 pt-24">
+            <h1 className="text-2xl font-pagetitle font-thin text-center">
+              {page.title}
+            </h1>
+          </div>
+    
+          {/* IMAGE */}
+          {hasHero && (
+            <div className="relative w-full h-[55vh] mt-6">
+              <Image
+                src={page.hero_image}
+                alt={page.title}
+                fill
+                priority
+                className="object-contain"
+              />
+            </div>
+          )}
+        </div>
+    
+        {/* ================= DESKTOP ================= */}
+        <div className="block">
+    
+          {/* HERO */}
+          {hasHero && (
+            <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
+              <Image
+                src={page.hero_image}
+                alt={page.title}
+                fill
+                priority
+                className="object-cover"
+              />
+
+              {/* Overlay léger pour lisibilité */}
+              <div className="absolute inset-0 bg-black/20" />
+
+              {/* TITLE */}
+              <div className="absolute inset-0 flex items-end">
+                <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
+                  <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
+                    {page.title}
+                  </h1>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BANDE BLANCHE : chemin / interrupteur / filtres */}
+          {hasHero && (
+            <PageBar
+              trail={[{ label: tn("collections") }, { label: page.title }]}
+              filters={products.length > 0 ? filters : undefined}
+              setFilters={products.length > 0 ? setFilters : undefined}
+            />
+          )}
+    
+          {/* STORIES */}
+          <StoryBar collectionSlug={slug} />
+    
+        </div>
+    
+        {/* TEXTE D'INTRODUCTION : phrases courtes, une par ligne */}
+        {typeof page.intro === "string" && page.intro.trim() !== "" && (
+          <div className="mx-auto max-w-xl px-6 pt-16 pb-6 text-center font-light">
+            {page.intro
+              .replace(/\\n/g, "\n")
+              .split("\n")
+              .map((line: string, i: number) =>
+                line.trim() === "" ? (
+                  <div key={i} className="h-8" aria-hidden />
+                ) : (
+                  <p key={i} className="text-[15px] leading-[2.2] opacity-80">
+                    {line}
+                  </p>
+                )
+              )}
+          </div>
+        )}
+
+        {/* CONTENT */}
+        <div className={`relative px-6 pb-44 ${hasHero ? "pt-8" : "pt-12"}`}>
+          {products.length === 0 ? (
+            <p className="text-foreground/50 font-dior">
+              {t("noProducts")}
+            </p>
+          ) : (
+            <>
+              {!hasHero && (
+                <ProductFilters filters={filters} setFilters={setFilters} />
+              )}
+              <div className={`relative ${hasHero ? "top-4" : "top-12"}`}>
+                <GridToggle cols={gridCols} setCols={setGridCols} />
+                <div
+                  className={`
+                    grid
+                    ${gridCols === 1 ? "grid-cols-1" : "grid-cols-2"}
+                    gap-x-4 gap-y-8
+                    md:grid-cols-3
+                    lg:grid-cols-4
+                  `}
+                >
+                  {expandByColor(filteredProducts).map((product) => (
+                    <Product key={variantKey(product)} product={product} />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+    
+        {!hasHero && <ThemeToggle />}
+        <Footer />
+      </>
+    )
+  
+}
