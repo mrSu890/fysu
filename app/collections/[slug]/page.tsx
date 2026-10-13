@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data?.page) return {}
   const name = String(data.page.title ?? data.page.name ?? slug)
   const description =
-    short(data.page.description ?? data.page.intro, 155) || `${name}, a FYSU collection. ${HOME_DESCRIPTION}`
+    short(data.page.description ?? data.page.intro, 155) || `${name} — official FYSU site. Spring/Summer 2027 collection.`
   const image: string | null = data.page.hero_image || null
   return pageMeta({ title: `${name} — ${SITE_NAME}`, description, path: `/collections/${slug}`, image })
 }
