@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { RAIN_EVENT } from "@/lib/rain"
 
 /* Mode pluie : fond très légèrement assombri + fines traînées de pluie presque transparentes.
-   Ne reçoit aucun toucher. S'arrête si l'onglet est caché ou si le visiteur a réduit les animations. */
+   Ne reçoit aucun toucher. Placé derrière tout le contenu : la pluie n'est visible que sur le fond de la page (jamais devant les produits, la barre de navigation, etc.). S'arrête si l'onglet est caché ou si le visiteur a réduit les animations. */
 
 const HIDDEN = ["/admin", "/games", "/thewave", "/checkout", "/success", "/password", "/auth"]
 
@@ -90,7 +90,7 @@ export default function RainLayer() {
   }, [on, hidden])
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[19]">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
       <div
         className="absolute inset-0 transition-opacity duration-[2000ms]"
         style={{ background: "rgba(24,30,38,0.08)", opacity: on && !hidden ? 1 : 0 }}

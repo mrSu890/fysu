@@ -176,7 +176,7 @@ const Product = ({
           <div
             aria-label={subBrand === "kiban" ? "Kiban Collector" : "The Wave"}
             className="pointer-events-none absolute left-3 top-3 z-10 text-[8px] font-medium tracking-[0.2em]"
-            style={{ filter: "brightness(0) invert(1) drop-shadow(0 0 3px rgba(0,0,0,0.45))" }}
+            style={{ filter: "brightness(0) drop-shadow(0 0 3px rgba(255,255,255,0.35))" }}
           >
             <CroppedLogo
               key={subBrand}

@@ -77,7 +77,7 @@ export default function QuickAdd({ product }: { product: ProductType }) {
           type="button"
           aria-label={c.aria}
           onClick={openIt}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/85 text-[18px] font-light leading-none text-black backdrop-blur-sm transition active:scale-90 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/85 text-[18px] font-light leading-none text-black backdrop-blur-sm transition active:scale-90 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100"
         >
           +
         </button>
