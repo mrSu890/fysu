@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation"
 import CroppedLogo from "@/components/CroppedLogo"
 import { useBrandOf } from "@/lib/useBrandOf"
 import QuickAdd from "@/components/QuickAdd"
+import LampSwitch from "@/components/LampSwitch"
 import { prefetchProduct } from "@/lib/productCache"
 import { BLUR } from "@/lib/blur"
 import "@/lib/useScrollRestore"
@@ -184,6 +185,15 @@ const Product = ({
               alt={subBrand === "kiban" ? "KIBAN" : "THE WAVE"}
               className="block h-[13px] w-auto max-w-[72px] sm:h-[15px]"
             />
+          </div>
+        )}
+
+        {/* lampes : interrupteur sur la carte, sauf sur la page Kiban Collector (qui a le sien en tête de rangée) */}
+        {hasLit && !pathname.startsWith("/kiban-collector") && (
+          <div
+            className={`absolute bottom-3 z-10 ${getEffectiveAvailability(product) === "available" ? "right-14" : "right-3"}`}
+          >
+            <LampSwitch glass />
           </div>
         )}
 
