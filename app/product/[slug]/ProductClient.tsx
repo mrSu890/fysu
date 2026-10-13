@@ -50,7 +50,7 @@ import {
 const CROP = "1.8%"
 const CROP_TOP = { top: `-${CROP}`, height: `calc(100% + ${CROP})` }
 
-export default function ProductClient() {
+export default function ProductClient({ initialProduct = null }: { initialProduct?: ProductType | null }) {
   const t = useTranslations("Product")
   const format = useFormatter()
   const locale = useLocale()
@@ -59,10 +59,10 @@ export default function ProductClient() {
   const router = useRouter()
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
-  const [product, setProduct] = useState<ProductType | null>(null)
+  const [product, setProduct] = useState<ProductType | null>(initialProduct)
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null)
   const [selectedSizeLabel, setSelectedSizeLabel] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialProduct)
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
   const [packagingOpen, setPackagingOpen] = useState(false)
   // lampes : allumée ou éteinte
@@ -92,8 +92,9 @@ export default function ProductClient() {
       }
     }
 
-    if (slug) fetchProduct()
-  }, [slug])
+    // le serveur a déjà envoyé le produit dans la page : pas besoin de le redemander
+    if (slug && !initialProduct) fetchProduct()
+  }, [slug, initialProduct])
 
 
   /* ================= MARQUE (style de la fiche) ================= */
