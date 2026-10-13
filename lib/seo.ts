@@ -8,10 +8,51 @@ import type { Metadata } from "next"
 export const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://f-y-s-u.com").replace(/\/$/, "")
 export const SITE_NAME = "FYSU"
 
-// Titre et description de la page d'accueil (c'est ce qui s'affiche dans Google)
-export const HOME_TITLE = "FYSU — Clothing, fragrance & music"
-export const HOME_DESCRIPTION =
-  "FYSU is a quiet independent house of clothing, fragrance and music. Pieces made slowly, to be kept and lived in."
+// Titre et description de la page d'accueil (c'est ce qui s'affiche dans Google).
+// Format voulu : « Site officiel » + une ligne sur la dernière collection, rien d'autre.
+// Quand une nouvelle collection sort, change seulement les lignes « collection » ci-dessous.
+// Les langues absentes de cette liste utilisent l'anglais.
+export const HOME_COPY: Record<string, { title: string; description: string }> = {
+  en: {
+    title: "FYSU — Official Site | Spring/Summer 2027 Collection",
+    description: "Official FYSU site. Discover the Spring/Summer 2027 collection: clothing, fragrance and music, made slowly.",
+  },
+  fr: {
+    title: "FYSU — Site officiel | Collection Printemps/Été 2027",
+    description: "Site officiel FYSU. Découvrez la collection Printemps/Été 2027 : vêtements, parfums et musique, pensés lentement.",
+  },
+  nl: {
+    title: "FYSU — Officiële website | Collectie lente/zomer 2027",
+    description: "Officiële FYSU-website. Ontdek de collectie lente/zomer 2027: kleding, geuren en muziek, rustig gemaakt.",
+  },
+  ja: {
+    title: "FYSU — 公式サイト | 2027年春夏コレクション",
+    description: "FYSU公式サイト。2027年春夏コレクションをご覧ください。服、香り、音楽をゆっくりと。",
+  },
+  de: {
+    title: "FYSU — Offizielle Website | Kollektion Frühjahr/Sommer 2027",
+    description: "Offizielle FYSU-Website. Entdecke die Kollektion Frühjahr/Sommer 2027: Mode, Düfte und Musik, in Ruhe gemacht.",
+  },
+  es: {
+    title: "FYSU — Sitio oficial | Colección Primavera/Verano 2027",
+    description: "Sitio oficial de FYSU. Descubre la colección Primavera/Verano 2027: ropa, fragancias y música, hechas con calma.",
+  },
+  it: {
+    title: "FYSU — Sito ufficiale | Collezione Primavera/Estate 2027",
+    description: "Sito ufficiale FYSU. Scopri la collezione Primavera/Estate 2027: abiti, fragranze e musica, fatti con calma.",
+  },
+  pt: {
+    title: "FYSU — Site oficial | Coleção Primavera/Verão 2027",
+    description: "Site oficial da FYSU. Descubra a coleção Primavera/Verão 2027: roupa, fragrâncias e música, feitas com calma.",
+  },
+}
+
+export function homeCopy(locale?: string) {
+  return HOME_COPY[locale ?? "en"] ?? HOME_COPY.en
+}
+
+export const HOME_TITLE = HOME_COPY.en.title
+export const HOME_DESCRIPTION = HOME_COPY.en.description
 
 // Tes pages officielles (Instagram, TikTok, Pinterest, LinkedIn…) : colle ici les adresses complètes,
 // entre guillemets, séparées par des virgules. Google s'en sert pour comprendre que ce sont les mêmes FYSU.
@@ -83,7 +124,7 @@ export function pageMeta(opts: {
 }
 
 // Données structurées : disent à Google « FYSU est une marque / un site »
-export function organizationJsonLd() {
+export function organizationJsonLd(locale?: string) {
   return [
     {
       "@context": "https://schema.org",
@@ -93,7 +134,7 @@ export function organizationJsonLd() {
       alternateName: ["Fysu", "F.Y.S.U"],
       url: SITE,
       logo: `${SITE}/api/favicon`,
-      description: HOME_DESCRIPTION,
+      description: homeCopy(locale).description,
       ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
     },
     {
@@ -101,9 +142,9 @@ export function organizationJsonLd() {
       "@type": "WebSite",
       "@id": `${SITE}/#website`,
       name: SITE_NAME,
-      alternateName: "FYSU — Clothing, fragrance & music",
+      alternateName: "FYSU Official Site",
       url: SITE,
-      inLanguage: "en",
+      inLanguage: locale ?? "en",
       publisher: { "@id": `${SITE}/#organization` },
     },
   ]
