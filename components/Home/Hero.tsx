@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 import ThemeToggle from "@/components/ThemeToggle";
 import IntroReveal from "@/components/IntroReveal";
+import { fixedTitle } from "@/lib/fixedTitles";
 
 type HeroMedia = {
   media_path: string;
@@ -26,6 +27,8 @@ const PRONUNCIATION = "/faɪ.su/"; // transcription phonétique (API)
 const INTRO: Record<string, string> = {
   fr: "FYSU est une maison discrète de vêtements, de parfums et de sons. Des pièces faites lentement, pour être gardées et portées.",
   en: "FYSU is a quiet house of clothing, scent and sound. Pieces made slowly, to be kept and lived in.",
+  nl: "FYSU is een discreet huis van kleding, geur en geluid. Stukken die langzaam gemaakt zijn, om te bewaren en te dragen.",
+  ja: "FYSUは、服と香りと音をつくる静かなメゾン。ゆっくりと丁寧に仕立てた、長く大切に着るためのピース。",
 };
 
 const isVideoMedia = (item: HeroMedia) =>
@@ -175,10 +178,10 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
           <IntroReveal delay={0.9}>
             <div className="font-info flex gap-8 text-[11px] font-light uppercase tracking-[0.06em] text-foreground/60">
               <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
-                For him
+                {fixedTitle("For him", locale) ?? "For him"}
               </Link>
               <Link href={RIGHT_LINK} className="transition-opacity hover:opacity-60">
-                For her
+                {fixedTitle("For her", locale) ?? "For her"}
               </Link>
             </div>
           </IntroReveal>
