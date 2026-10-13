@@ -3,23 +3,25 @@
    - par défaut, le site suit l'heure réelle
    - si le visiteur déplace le soleil (petit cadran sur l'heure en bas à droite), son choix est gardé
      jusqu'à ce qu'il touche « Heure réelle »
-   - nuit  = le mode sombre « sumi olive »      (classe html : dark)
-   - aube  = un sombre plus chaud, taupe          (classes html : dark + dawn)
-   - jour  = le blanc cassé d'origine, inchangé   (aucune classe)
-   - après-midi = le même en crème plus chaud     (classe html : afternoon)
+   - nuit  = sombre bleu-gris brumeux, verre givré  (classes html : dark + night)
+   - aube  = clair bleuté céladon, verre bleu       (classe html : dawn)
+   - jour  = le blanc cassé d'origine, inchangé     (aucune classe)
+   - après-midi = crème chaud, verre vert forêt     (classe html : afternoon)
+   - coucher de soleil = taupe chaud, verre fumé    (classes html : dark + sunset)
    Les couleurs sont dans app/globals.css (en bas du fichier).
    Le script de app/layout.tsx refait la même chose avant l'affichage de la page : garde les deux en phase.
    ==================================================================== */
 
-export type Mood = "night" | "dawn" | "day" | "afternoon"
+export type Mood = "night" | "dawn" | "day" | "afternoon" | "sunset"
 
-export const MOODS: Mood[] = ["night", "dawn", "day", "afternoon"]
+export const MOODS: Mood[] = ["night", "dawn", "day", "afternoon", "sunset"]
 
 export const MOOD_LABEL: Record<Mood, { fr: string; en: string }> = {
   night: { fr: "Nuit", en: "Night" },
   dawn: { fr: "Aube", en: "Dawn" },
   day: { fr: "Jour", en: "Day" },
   afternoon: { fr: "Après-midi", en: "Afternoon" },
+  sunset: { fr: "Coucher de soleil", en: "Sunset" },
 }
 
 const KEY_MANUAL = "fysu-mood-manual" // l'ambiance choisie à la main (absente = automatique)
@@ -32,7 +34,7 @@ export function moodAt(minutes: number): Mood {
   if (h < 8) return "dawn"
   if (h < 15) return "day"
   if (h < 18) return "afternoon"
-  return "dawn" // 18 h à 20 h : le coucher de soleil
+  return "sunset" // 18 h à 20 h
 }
 
 export function realMinutes(d: Date = new Date()): number {
@@ -86,7 +88,9 @@ export function applyMood(mood: Mood) {
   const admin = window.location.pathname.startsWith("/admin")
   html.classList.toggle("dawn", mood === "dawn" && !admin)
   html.classList.toggle("afternoon", mood === "afternoon" && !admin)
-  const dark = mood === "night" || mood === "dawn"
+  html.classList.toggle("sunset", mood === "sunset" && !admin)
+  html.classList.toggle("night", mood === "night" && !admin)
+  const dark = mood === "night" || mood === "sunset"
   if (!isForced(html)) html.classList.toggle("dark", dark)
   try {
     localStorage.setItem("theme", dark ? "dark" : "light")

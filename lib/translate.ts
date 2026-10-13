@@ -13,6 +13,7 @@ import { createHash } from "crypto"
 import { cookies, headers } from "next/headers"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { locales } from "@/i18n/routing"
+import { fixedTitle, isFixedTitle } from "@/lib/fixedTitles"
 
 // Langue du site -> code DeepL
 const DEEPL_TARGET: Record<string, string> = {
@@ -199,32 +200,38 @@ async function translateMany(texts: string[], locale: string) {
 // - un produit (slug + prix) : son nom, ex. « Gigil »
 // - une page, collection ou album (slug + titre) : son titre, ex. « For her »
 function keepsName(obj: Record<string, unknown>, key: string) {
+  // titres génériques (New in, For her, For him…) : toujours traduits (voir lib/fixedTitles.ts)
+  const v = obj[key]
+  if (typeof v === "string" && (key === "title" || (key === "name" && !("price" in obj))) && isFixedTitle(v)) return false
   if (!("slug" in obj)) return false
   if (key === "name") return "price" in obj
   return key === "title"
 }
 
-function collect(node: unknown, inside: boolean, out: string[]) {
+const isTranslatableKey = (k: string) => TRANSLATABLE_KEYS.has(k)
+
+function collect(node: unknown, inside: boolean, out: string[], locale: string) {
   if (typeof node === "string") {
-    if (inside) out.push(node)
+    if (inside && fixedTitle(node, locale) === undefined) out.push(node)
   } else if (Array.isArray(node)) {
-    for (const item of node) collect(item, inside, out)
+    for (const item of node) collect(item, inside, out, locale)
   } else if (node && typeof node === "object") {
     for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
-      collect(v, inside || (TRANSLATABLE_KEYS.has(k) && !keepsName(node as Record<string, unknown>, k)), out)
+      collect(v, inside || (isTranslatableKey(k) && !keepsName(node as Record<string, unknown>, k)), out, locale)
     }
   }
 }
 
-function apply(node: unknown, inside: boolean, map: Map<string, string>): unknown {
+function apply(node: unknown, inside: boolean, map: Map<string, string>, locale: string): unknown {
   if (typeof node === "string") {
-    return inside ? map.get(node) ?? node : node
+    if (!inside) return node
+    return fixedTitle(node, locale) ?? map.get(node) ?? node
   }
-  if (Array.isArray(node)) return node.map((item) => apply(item, inside, map))
+  if (Array.isArray(node)) return node.map((item) => apply(item, inside, map, locale))
   if (node && typeof node === "object") {
     const out: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
-      out[k] = apply(v, inside || (TRANSLATABLE_KEYS.has(k) && !keepsName(node as Record<string, unknown>, k)), map)
+      out[k] = apply(v, inside || (isTranslatableKey(k) && !keepsName(node as Record<string, unknown>, k)), map, locale)
     }
     return out
   }
@@ -251,11 +258,9 @@ async function visitorLocale(): Promise<string | null> {
 export async function localizeTo<T>(data: T, locale: string): Promise<T> {
   try {
     const strings: string[] = []
-    collect(data, false, strings)
-    if (!strings.length) return data
-    const map = await translateMany(strings, locale)
-    if (!map.size) return data
-    return apply(data, false, map) as T
+    collect(data, false, strings, locale)
+    const map = strings.length ? await translateMany(strings, locale) : new Map<string, string>()
+    return apply(data, false, map, locale) as T
   } catch (err) {
     console.error("localizeTo failed", err)
     return data
@@ -269,13 +274,10 @@ export async function localize<T>(data: T): Promise<T> {
     if (!locale) return data
 
     const strings: string[] = []
-    collect(data, false, strings)
-    if (!strings.length) return data
+    collect(data, false, strings, locale)
+    const map = strings.length ? await translateMany(strings, locale) : new Map<string, string>()
 
-    const map = await translateMany(strings, locale)
-    if (!map.size) return data
-
-    return apply(data, false, map) as T
+    return apply(data, false, map, locale) as T
   } catch (err) {
     console.error("localize failed", err)
     return data
