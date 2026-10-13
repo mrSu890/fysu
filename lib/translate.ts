@@ -247,6 +247,21 @@ async function visitorLocale(): Promise<string | null> {
   return value
 }
 
+/** Traduit dans une langue précise, quel que soit le visiteur (ex. catalogue public en anglais). */
+export async function localizeTo<T>(data: T, locale: string): Promise<T> {
+  try {
+    const strings: string[] = []
+    collect(data, false, strings)
+    if (!strings.length) return data
+    const map = await translateMany(strings, locale)
+    if (!map.size) return data
+    return apply(data, false, map) as T
+  } catch (err) {
+    console.error("localizeTo failed", err)
+    return data
+  }
+}
+
 /** À appeler sur les données d'une route publique juste avant de les renvoyer. */
 export async function localize<T>(data: T): Promise<T> {
   try {
