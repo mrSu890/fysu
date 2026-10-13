@@ -1,5 +1,6 @@
 "use client";
 
+import RainFill from "@/components/RainFill";
 import { useEffect, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import Link from "next/link";
@@ -149,6 +150,8 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
       <div className="relative z-10 flex min-h-[50svh] flex-col items-start justify-center bg-background px-7 py-16 text-left sm:px-14 max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
+        {/* pluie sur le fond de ce bloc (son fond plein cacherait la pluie globale) */}
+        <RainFill />
         {/* après l'intro, chaque élément monte du « sol » l'un après l'autre */}
         <IntroReveal delay={0.45}>
           <p className="font-info text-[10px] font-light uppercase tracking-[0.06em] text-foreground/55 sm:text-[11px]">
