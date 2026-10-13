@@ -81,7 +81,7 @@ export async function GET() {
 
     // descriptions en anglais (les noms ne passent jamais par la traduction)
     const descriptions = await localizeTo(
-      (products.data ?? []).map((p: any) => ({ description: String(p.description ?? "").replace(/\s+/g, " ").trim() })),
+      (products.data ?? []).map((p: any) => ({ description: String(p.description ?? "").replace(/(\\+n)+/g, " ").replace(/\s+/g, " ").trim() })),
       "en"
     )
 
