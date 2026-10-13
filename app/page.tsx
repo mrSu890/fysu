@@ -9,6 +9,8 @@ import { HOME_DESCRIPTION, HOME_TITLE, SITE } from "@/lib/seo";
 
 import HomeSection from "@/components/Home/HomeSection";
 import RecentlyViewed from "@/components/RecentlyViewed";
+import { GET as getSectionRoute } from "@/app/api/sections/[slug]/route";
+import { internalRequest, readRoute } from "@/lib/serverData";
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
@@ -36,8 +38,15 @@ async function getHeroSlides() {
   }
 }
 
+// Les deux rangées de l'accueil sont lues côté serveur : produits et prix sont dans le HTML
+async function getSection(slug: string) {
+  return readRoute<{ title?: string; products?: any[] }>(() =>
+    getSectionRoute(internalRequest(`/api/sections/${slug}`), { params: Promise.resolve({ slug }) })
+  );
+}
+
 export default async function Home() {
-  const slides = await getHeroSlides();
+  const [slides, solos, duos] = await Promise.all([getHeroSlides(), getSection("solos"), getSection("duos")]);
 
   return (
     <>
@@ -47,8 +56,8 @@ export default async function Home() {
       </LogoIntro>
       <RecentlyViewed className="mt-20 sm:mt-28" />
       <div className="flex flex-col gap-36 sm:gap-48">
-        <HomeSection slug="solos" index={1} />
-        <HomeSection slug="duos" index={2} />
+        <HomeSection slug="solos" index={1} initialSection={solos} />
+        <HomeSection slug="duos" index={2} initialSection={duos} />
       </div>
 
       <NewSelectionIntro />
