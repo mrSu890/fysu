@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data?.page) return {}
   const name = String(data.page.title ?? slug)
   const description =
-    short(data.page.description, 155) || `${name}, a FYSU selection. ${HOME_DESCRIPTION}`
+    short(data.page.description, 155) || `${name} — official FYSU site. Spring/Summer 2027 collection.`
   const image: string | null = data.page.hero_image || null
   return pageMeta({ title: `${name} — ${SITE_NAME}`, description, path: `/${slug}`, image })
 }
