@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useLocale } from "next-intl"
-import { BACK, FRONT, GATE_CSS, type Item } from "./PreLaunchPlants"
 
 /* ====================================================================
-   PAGE D'ATTENTE : vitre semi-transparente, plantes floues derrière, mot de passe + e-mail.
+   PAGE D'ATTENTE : photo de vêtements derrière une vitre givrée, texte d'ouverture, compte à rebours,
+   mot de passe + e-mail. La photo est dans public/images/gate-bg.jpg (remplaçable).
    Réglages (date, activer / désactiver) : lib/preLaunch.ts
    ==================================================================== */
 
@@ -19,6 +19,8 @@ type Copy = {
   error: string
   opening: string
   enter: string
+  countdown: string
+  units: [string, string, string, string]
 }
 
 const COPY: Record<string, Copy> = {
@@ -32,6 +34,8 @@ const COPY: Record<string, Copy> = {
     error: "Something went wrong, please try again",
     opening: "Opening",
     enter: "Enter",
+    countdown: "until opening",
+    units: ["d", "h", "min", "s"],
   },
   fr: {
     password: "Mot de passe",
@@ -43,6 +47,8 @@ const COPY: Record<string, Copy> = {
     error: "Une erreur est survenue, réessayez",
     opening: "Ouverture le",
     enter: "Entrer",
+    countdown: "avant l'ouverture",
+    units: ["j", "h", "min", "s"],
   },
   nl: {
     password: "Wachtwoord",
@@ -54,6 +60,8 @@ const COPY: Record<string, Copy> = {
     error: "Er ging iets mis, probeer opnieuw",
     opening: "Opening op",
     enter: "Binnenkomen",
+    countdown: "tot de opening",
+    units: ["d", "u", "min", "s"],
   },
   ja: {
     password: "パスワード",
@@ -65,6 +73,8 @@ const COPY: Record<string, Copy> = {
     error: "エラーが発生しました。もう一度お試しください",
     opening: "オープン",
     enter: "入る",
+    countdown: "オープンまで",
+    units: ["日", "時間", "分", "秒"],
   },
 }
 
@@ -74,34 +84,18 @@ const Arrow = () => (
   </svg>
 )
 
-function Rail({ items, top, thickness }: { items: Item[]; top: string; thickness: number }) {
-  return (
-    <div aria-hidden="true" className="absolute inset-x-0" style={{ top }}>
-      <div className="gate-rail" style={{ height: thickness, top: -thickness, opacity: 0.55, filter: "blur(1.5px)" }} />
-      {items.map((g, i) => (
-        <div
-          key={i}
-          className="gate-item"
-          style={{ left: g.left, height: g.height, aspectRatio: String(g.ratio), opacity: g.opacity, filter: `blur(${g.blur}px)` }}
-        >
-          <div
-            className="gate-swinger"
-            style={
-              {
-                width: "100%",
-                height: "100%",
-                transformOrigin: "50% 0",
-                "--swing": g.swing,
-                animation: `gate-swing ${g.sway}s ease-in-out ${g.delay}s infinite`,
-              } as React.CSSProperties
-            }
-            dangerouslySetInnerHTML={{ __html: g.svg }}
-          />
-        </div>
-      ))}
-    </div>
-  )
-}
+const GATE_CSS = `
+.gate-root{background:#8a8f86 url(/images/gate-bg.jpg) center/cover no-repeat;animation:gate-in .9s ease both;color:#fff}
+.gate-root.gate-leaving{animation:gate-out .6s ease forwards}
+@keyframes gate-in{from{opacity:0}to{opacity:1}}
+@keyframes gate-out{to{opacity:0}}
+.gate-field{width:100%;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.38);border-radius:999px;padding:13px 52px 13px 20px;color:#fff;font-size:14px;outline:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.gate-field::placeholder{color:rgba(255,255,255,0.8)}
+.gate-field:focus{border-color:rgba(255,255,255,0.75)}
+.gate-go{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,0.9);color:#2a2f2a;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;transition:opacity .2s}
+.gate-go:disabled{opacity:.45;cursor:default}
+.gate-num{font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+`
 
 export default function PreLaunchGate({ openAt }: { openAt: string }) {
   const locale = useLocale()
@@ -139,11 +133,36 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
           .find((x) => x.type === "timeZoneName")?.value
       const zone = part("short") ?? "CET"
       const offset = (part("shortOffset") ?? "GMT+1").replace("GMT", "UTC")
-      return `${c.opening} ${date} ${zone} (${offset})`
+      return { line: `${c.opening} ${date}`, zone: `${zone} (${offset})` }
     } catch {
-      return `${c.opening} 15 December 2026, 12:00 CET (UTC+1)`
+      return { line: `${c.opening} 15 December 2026, 12:00`, zone: "CET (UTC+1)" }
     }
   }, [locale, openAt, c])
+
+  // compte à rebours en direct (seulement une fois monté, pour éviter un décalage serveur / navigateur)
+  const [left, setLeft] = useState<number | null>(null)
+  useEffect(() => {
+    const target = new Date(openAt).getTime()
+    const tick = () => {
+      const ms = target - Date.now()
+      if (ms <= 0) {
+        window.location.reload()
+        return
+      }
+      setLeft(ms)
+    }
+    tick()
+    const id = window.setInterval(tick, 1000)
+    return () => window.clearInterval(id)
+  }, [openAt])
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const parts =
+    left === null
+      ? null
+      : (() => {
+          const t = Math.floor(left / 1000)
+          return [Math.floor(t / 86400), Math.floor((t % 86400) / 3600), Math.floor((t % 3600) / 60), t % 60]
+        })()
 
   async function submitPassword(e: React.FormEvent) {
     e.preventDefault()
@@ -204,28 +223,11 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
     >
       <style>{GATE_CSS}</style>
 
-      {/* Deux tringles de vêtements, derrière la vitre (celle du fond plus floue) */}
-      <Rail items={BACK} top="15vh" thickness={2} />
-      <Rail items={FRONT} top="22vh" thickness={3} />
-
-      {/* La vitre */}
-      <div aria-hidden="true" className="gate-glass absolute inset-0" />
-      <div aria-hidden="true" className="gate-grain absolute inset-0" />
+      {/* assombrit le bas pour garder les champs lisibles */}
       <div
         aria-hidden="true"
-        className="absolute inset-y-0 left-[34%] w-px"
-        style={{ background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.28), transparent)" }}
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-y-0 left-[67%] w-px"
-        style={{ background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent)" }}
-      />
-      {/* assombrit légèrement le bas pour que le logo blanc reste lisible */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-[42%]"
-        style={{ background: "linear-gradient(180deg, transparent, rgba(24,38,28,0.42))" }}
+        className="absolute inset-x-0 bottom-0 h-[45%]"
+        style={{ background: "linear-gradient(180deg, transparent, rgba(20,28,22,0.5))" }}
       />
 
       {/* Accès admin, très discret */}
@@ -237,7 +239,7 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
       </a>
 
       {/* Champs */}
-      <main className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-28">
+      <main className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center px-6 pb-8">
         <div className="w-full max-w-[330px]">
           <form onSubmit={submitPassword} className="relative">
             <input
@@ -260,7 +262,7 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
             {passwordError}
           </p>
 
-          <p className="mb-3 mt-9 text-center text-[10px] uppercase tracking-[0.3em] text-white/80">{c.notify}</p>
+          <p className="mb-3 mt-5 text-center text-[10px] uppercase tracking-[0.3em] text-white/80">{c.notify}</p>
           <form onSubmit={submitEmail} className="relative">
             <input
               type="email"
@@ -299,19 +301,42 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
         </div>
       </main>
 
-      {/* Logo et date d'ouverture, en bas au centre */}
-      <footer className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center px-6 pb-9 text-center sm:pb-11">
+      {/* Bande du milieu : texte d'ouverture + compte à rebours à gauche, logo à droite */}
+      <div
+        className="pointer-events-none absolute inset-x-0 z-10 flex items-center justify-between"
+        style={{ top: "51%", transform: "translateY(-50%)", paddingLeft: "3vw", paddingRight: "3vw" }}
+      >
+        <div style={{ maxWidth: "52%", fontSize: "clamp(11px, 1.15vw + 7px, 17px)", fontWeight: 300, lineHeight: 1.5 }}>
+          <p>{openingText.line}</p>
+          <p className="text-white/85">{openingText.zone}</p>
+          <p className="gate-num mt-3 text-[1.25em] tracking-wide" aria-live="off">
+            {parts ? (
+              <>
+                {parts[0]}
+                <span className="text-[0.7em] text-white/80"> {c.units[0]} </span>
+                {pad(parts[1])}
+                <span className="text-[0.7em] text-white/80"> {c.units[1]} </span>
+                {pad(parts[2])}
+                <span className="text-[0.7em] text-white/80"> {c.units[2]} </span>
+                {pad(parts[3])}
+                <span className="text-[0.7em] text-white/80"> {c.units[3]}</span>
+              </>
+            ) : (
+              "\u00a0"
+            )}
+          </p>
+          <p className="text-[0.75em] text-white/80">
+            {c.countdown} · {openingText.zone}
+          </p>
+        </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/fysu-light.png"
           alt="FYSU"
-          style={{ width: "clamp(78px, 12vw, 108px)", height: "auto" }}
+          style={{ width: "clamp(84px, 22vw, 260px)", height: "auto" }}
           draggable={false}
         />
-        <p className="mt-9 text-[10px] uppercase leading-relaxed tracking-[0.22em] text-white/85 sm:text-[11px]">
-          {openingText}
-        </p>
-      </footer>
+      </div>
     </div>
   )
 }
