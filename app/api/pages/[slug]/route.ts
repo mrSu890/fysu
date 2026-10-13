@@ -54,11 +54,7 @@ export async function GET(
             name,
             slug
           ),
-          product_images:product_images!product_images_productId_fkey (
-            id,
-            url,
-            color
-          )
+          product_images:product_images!product_images_productId_fkey (*)
         )
       )
     )
