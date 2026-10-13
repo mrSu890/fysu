@@ -197,6 +197,8 @@ export default function ProductEditor({ id }: { id: string }) {
   const [sizeChart, setSizeChart] = useState<SizeGuide | null>(null)
   // lampes : photo « allumée » de chaque image (clé = adresse de l'image éteinte)
   const [litMap, setLitMap] = useState<Record<string, string>>({})
+  // photo portée sur mannequin (survol de la carte) : une par couleur
+  const [hoverSet, setHoverSet] = useState<string[]>([])
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
   // image en cours de recadrage
@@ -205,8 +207,8 @@ export default function ProductEditor({ id }: { id: string }) {
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
   const snapshot = useMemo(
-    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litMap, related }),
-    [form, colors, infoBlocks, sizeGuide, sizeChart, litMap, related]
+    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, related }),
+    [form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, related]
   )
   const dirty = !loading && saved !== "" && snapshot !== saved
 
@@ -254,6 +256,8 @@ export default function ProductEditor({ id }: { id: string }) {
       for (const img of imageRows as any[]) {
         if (img.lit_url) nextLit[img.url] = img.lit_url
       }
+
+      const nextHover: string[] = (imageRows as any[]).filter((img) => img.is_hover).map((img) => img.url)
 
       let nextColors: ColorState[]
 
@@ -309,6 +313,7 @@ export default function ProductEditor({ id }: { id: string }) {
       setSizeGuide(p.size_guide_image_url ?? null)
       setSizeChart(cleanSizeGuide(p.size_guide))
       setLitMap(nextLit)
+      setHoverSet(nextHover)
       setRelated(nextRelated)
       setCategories(cats)
       setAllProducts(list.products)
@@ -320,6 +325,7 @@ export default function ProductEditor({ id }: { id: string }) {
           sizeGuide: p.size_guide_image_url ?? null,
           sizeChart: cleanSizeGuide(p.size_guide),
           litMap: nextLit,
+          hoverSet: nextHover,
           related: nextRelated,
         })
       )
@@ -698,6 +704,7 @@ export default function ProductEditor({ id }: { id: string }) {
         size_guide: sizeChart,
         // lampes seulement (la colonne lit_url de product_images doit exister dans Supabase)
         ...(form.product_type === "lamp" ? { lit_images: litMap } : {}),
+        hover_images: hoverSet.filter((u) => colors.some((c) => c.images.includes(u))),
         colors: colors.map((c) => ({
           id: c.id,
           name: c.name.trim(),
@@ -1274,6 +1281,25 @@ export default function ProductEditor({ id }: { id: string }) {
                             <Trash2 size={14} />
                           </button>
                         </div>
+                        <button
+                          type="button"
+                          aria-pressed={hoverSet.includes(url)}
+                          onClick={() =>
+                            setHoverSet((cur) => {
+                              if (cur.includes(url)) return cur.filter((u) => u !== url)
+                              // une seule photo « au survol » par couleur
+                              const sameColor = new Set(c.images)
+                              return [...cur.filter((u) => !sameColor.has(u)), url]
+                            })
+                          }
+                          className={`mt-2 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full text-xs ring-1 ${
+                            hoverSet.includes(url)
+                              ? "bg-[#171717] text-white ring-[#171717]"
+                              : "bg-white text-[#3d3a35] ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                          }`}
+                        >
+                          {hoverSet.includes(url) ? "✓ Photo portée (survol)" : "Photo portée (survol)"}
+                        </button>
                         {form.product_type === "lamp" && (
                           <div className="mt-2 flex items-center gap-2 rounded-xl bg-white p-1.5 ring-1 ring-[#e0dbd3]">
                             {litMap[url] ? (
