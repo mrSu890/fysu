@@ -12,7 +12,6 @@ import { useLamp } from "@/lib/lamp"
 import { Collapse } from "antd"
 import { useCart } from "@/context/CartContext"
 import { fetchProductCached } from "@/lib/productCache"
-import { BLUR } from "@/lib/blur"
 import RecentlyViewed from "@/components/RecentlyViewed"
 import { rememberProduct } from "@/lib/recentlyViewed"
 import DeliveryNote from "@/components/Product/DeliveryNote"
@@ -230,8 +229,6 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
         className="object-cover object-top"
         style={imageCrop}
         priority={extra.priority}
-        placeholder="blur"
-        blurDataURL={BLUR}
       />
       {img.lit_url && (
         <Image
@@ -351,7 +348,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
             <div
               data-hero-target
               className="
-                relative w-full aspect-[3/4] overflow-hidden
+                relative w-full aspect-[3/4] overflow-hidden bg-foreground/[0.06]
               "
             >
               {renderPhoto(filteredImages[0], { priority: true })}
@@ -371,7 +368,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
                 {otherImages.map((img) => (
                   <div
                     key={img.id}
-                    className="relative aspect-[3/4] overflow-hidden"
+                    className="relative aspect-[3/4] overflow-hidden bg-foreground/[0.06]"
                   >
                     {renderPhoto(img, {})}
                   </div>
@@ -383,7 +380,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
                 {otherImages.map((img) => (
                   <div
                     key={img.id}
-                    className="relative aspect-[3/4] overflow-hidden"
+                    className="relative aspect-[3/4] overflow-hidden bg-foreground/[0.06]"
                   >
                     {renderPhoto(img, {})}
                   </div>
