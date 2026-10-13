@@ -49,6 +49,12 @@ export async function GET(
           gender,
           createdAt,
           is_hidden,
+          availability,
+          release_date,
+          product_sizes (
+            stock,
+            is_active
+          ),
           categories (
             id,
             name,
