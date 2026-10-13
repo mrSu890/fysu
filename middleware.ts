@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { defaultLocale, isAppLocale, locales } from "@/i18n/routing"
+import { GATE_COOKIE, gateActive, gateToken } from "@/lib/preLaunch"
 
 function getPreferredLocale(req: NextRequest) {
   const cookieLocale = req.cookies.get("NEXT_LOCALE")?.value
@@ -66,6 +67,70 @@ async function guardAdminApi(req: NextRequest) {
   return res
 }
 
+
+// Page d'attente (voir lib/preLaunch.ts) : un compte admin connecté entre directement, sans la voir
+async function isAdminVisitor(req: NextRequest, res: NextResponse) {
+  // pas de session Supabase dans les cookies : inutile d'interroger Supabase
+  const hasSession = req.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"))
+  if (!hasSession) return false
+
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return req.cookies.get(name)?.value
+          },
+          set(name: string, value: string, options) {
+            res.cookies.set({ name, value, ...options })
+          },
+          remove(name: string, options) {
+            res.cookies.set({ name, value: "", ...options })
+          },
+        },
+      }
+    )
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return false
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+    return profile?.role === "admin"
+  } catch {
+    return false
+  }
+}
+
+// Renvoie une réponse si le visiteur doit voir la page d'attente (ou en sortir), sinon null
+async function preLaunchGate(req: NextRequest, res: NextResponse): Promise<NextResponse | null> {
+  const { pathname } = req.nextUrl
+  const onGatePage = pathname === "/password"
+
+  if (!gateActive()) {
+    // site ouvert : l'ancienne adresse /password renvoie à l'accueil
+    return onGatePage ? NextResponse.redirect(new URL("/", req.url)) : null
+  }
+
+  // la connexion admin reste toujours accessible
+  if (pathname.startsWith("/auth")) return null
+
+  const token = await gateToken()
+  const hasPassword = Boolean(token) && req.cookies.get(GATE_COOKIE)?.value === token
+  const allowed = hasPassword || (await isAdminVisitor(req, res))
+
+  if (allowed) return onGatePage ? NextResponse.redirect(new URL("/", req.url)) : null
+  if (onGatePage) return null
+
+  // Pas d'accès : la page d'attente s'affiche à la place de la page demandée (l'adresse ne change pas)
+  const out = NextResponse.rewrite(new URL("/password", req.url))
+  res.cookies.getAll().forEach((c) => out.cookies.set(c))
+  out.headers.set("X-Robots-Tag", "noindex, nofollow")
+  out.headers.set("Cache-Control", "no-store")
+  return out
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
@@ -99,6 +164,10 @@ export async function middleware(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     })
   }
+
+  // Page d'attente avant l'ouverture du site
+  const gate = await preLaunchGate(req, res)
+  if (gate) return gate
 
   // Si la route n'est ni admin ni auth, on laisse passer
   if (!isAdminPage && !isAuthPage) {
