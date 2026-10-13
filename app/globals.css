@@ -575,7 +575,6 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .na
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
   color: #ffffff;
-  text-shadow: 0 1px 6px rgba(30, 38, 24, 0.4);
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
   opacity: 0.95;
@@ -646,6 +645,23 @@ html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root 
 html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
   filter: brightness(0) invert(1);
   opacity: 0.9;
+}
+
+/* ---- FICHES PRODUIT : le même filtre, mais beaucoup plus léger que sur les rangées ---- */
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has([data-hero-target]) .aspect-\[3\/4\]:not(.cursor-pointer)::after,
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has([data-hero-target]) .aspect-\[3\/4\]:not(.cursor-pointer)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has([data-hero-target]) .aspect-\[3\/4\]:not(.cursor-pointer)::after {
+  background-color: #fafcfc;
+}
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has([data-hero-target]) .aspect-\[3\/4\]:not(.cursor-pointer)::after {
+  background-color: #fbf8f0;
 }
 
 /* Changement d'ambiance en fondu doux (nuit, aube, jour, après-midi) : la classe est posée 2 s par lib/mood.ts */
