@@ -5,19 +5,29 @@ import Product from "../Product";
 import { ProductType } from "../../types/product"
 import SectionTitle from "../SectionTitle";
 
-export default function HomeSection({ slug, index }: { slug: string; index?: number }) {
-  const [products, setProducts] = useState<ProductType[]>([]);
-  const [title, setTitle] = useState("");
+export default function HomeSection({
+  slug,
+  index,
+  initialSection,
+}: {
+  slug: string;
+  index?: number;
+  // envoyé par le serveur : les produits sont déjà dans le HTML (référencement Google)
+  initialSection?: { title?: string; products?: ProductType[] } | null;
+}) {
+  const [products, setProducts] = useState<ProductType[]>(initialSection?.products ?? []);
+  const [title, setTitle] = useState(initialSection?.title ?? "");
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
+    if (initialSection) return;
     fetch(`/api/sections/${slug}`)
       .then(res => res.json())
       .then(data => {
         setProducts(data.products || []);
         setTitle(data.title);
       });
-  }, [slug]);
+  }, [slug, initialSection]);
 
   if (!products.length) return null;
 
