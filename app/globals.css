@@ -538,21 +538,21 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-
 }
 
 /* aube : les photos produits prennent un léger filtre bleuté (comme l'après-midi prend un filtre crème) */
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\] {
-  background-color: #eaf1f1 !important;
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\].cursor-pointer.rounded-2xl {
+  background-color: #f2f6f5 !important;
   isolation: isolate;
 }
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\]::after {
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\].cursor-pointer.rounded-2xl::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-color: #eaf1f1;
+  background-color: #f2f6f5;
   mix-blend-mode: multiply;
 }
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\] span.bg-white\/90 {
-  background-color: #eaf1f1 !important;
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\].cursor-pointer.rounded-2xl span.bg-white\/90 {
+  background-color: #f2f6f5 !important;
 }
 
 /* ---- APRÈS-MIDI : crème chaud, verre vert forêt en dégradé, texte blanc ---- */
@@ -661,11 +661,11 @@ html.mood-anim body *:not(video):not(canvas) {
 /* Après-midi : les cases des photos produit sont teintées d'un crème presque identique au fond, à peine plus clair (#f7f4ee), beaucoup moins jaune qu'avant.
    Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
    La pastille de disponibilité prend le même crème. */
-html.afternoon:not(.dark) .aspect-\[3\/4\] {
+html.afternoon:not(.dark) .aspect-\[3\/4\].cursor-pointer.rounded-2xl {
   background-color: #f6f1e4 !important;
   isolation: isolate;
 }
-html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
+html.afternoon:not(.dark) .aspect-\[3\/4\].cursor-pointer.rounded-2xl::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -674,7 +674,7 @@ html.afternoon:not(.dark) .aspect-\[3\/4\]::after {
   background-color: #f6f1e4;
   mix-blend-mode: multiply;
 }
-html.afternoon:not(.dark) .aspect-\[3\/4\] span.bg-white\/90 {
+html.afternoon:not(.dark) .aspect-\[3\/4\].cursor-pointer.rounded-2xl span.bg-white\/90 {
   background-color: #f6f1e4 !important;
 }
 
