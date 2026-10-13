@@ -4,6 +4,8 @@ export type ProductImage = {
   color: string;
   // lampes : la même photo avec l'ampoule allumée
   lit_url?: string | null;
+  // photo portée sur mannequin : s'affiche au survol de la carte (ordinateur)
+  is_hover?: boolean | null;
 };
 
 export type ProductColor = {
