@@ -1,12 +1,12 @@
 import { BUSINESS } from "@/lib/business"
 
 /* ====================================================================
-   PAGES LÉGALES : livraison, paiement, retours, conditions, mentions légales, contact
+   PAGES LÉGALES : livraison, paiement, retours, conditions, mentions légales, contact, FAQ
    Textes en français et en anglais (les autres langues voient l'anglais).
    À faire relire par un professionnel avant le lancement.
    ==================================================================== */
 
-export const LEGAL_SLUGS = ["terms", "shipping", "payment", "returns", "legal-notice", "contact"] as const
+export const LEGAL_SLUGS = ["terms", "shipping", "payment", "returns", "legal-notice", "contact", "faq"] as const
 export type LegalSlug = (typeof LEGAL_SLUGS)[number]
 
 export type LegalDoc = { title: string; intro?: string; sections: { h: string; p: string[] }[] }
@@ -24,6 +24,34 @@ const idLines = (lang: Lang) =>
   ].filter(Boolean)
 
 const EN: Record<LegalSlug, LegalDoc> = {
+  faq: {
+    title: "FAQ",
+    sections: [
+      { h: "Where do you deliver?", p: ["We deliver worldwide. Delivery takes 2 to 4 working days in Belgium, the Netherlands and Luxembourg, and 4 to 8 working days in the rest of Europe. For other countries, delivery times are confirmed on request (see the Contact page)."] },
+      { h: "How much is delivery?", p: ["Delivery is free for orders of €150 and more. Below that amount, a flat fee of €5 applies, shown at checkout before you pay."] },
+      { h: "How do I track my order?", p: ["You receive a confirmation as soon as your payment is accepted, then tracking information when your parcel is on its way."] },
+      { h: "Can I change or cancel an order?", p: ["Contact us as soon as possible after ordering, with your order number. An order can be changed or cancelled as long as it has not been handed to the carrier."] },
+      { h: "Do I pay customs duties or import taxes?", p: ["No. Customs duties and taxes are included in the price."] },
+      { h: "What if my order arrives damaged or incomplete?", p: ["Tell us as soon as possible by e-mail, with your order number. Customer service will find a solution."] },
+      { h: "What is a pre-order?", p: ["Products marked “Pre-order” are paid at the time of the order and sent from the release date shown on the product page. The standard delivery times do not apply to them."] },
+      { h: "Can I return an item?", p: ["Yes. You have 14 days after receiving your order to return an item, and the return is free: we send you a prepaid label. Items must be unworn and unwashed, with their labels and in their original packaging."] },
+      { h: "Can I exchange a size?", p: ["FYSU does not offer direct exchanges. Return the item for a refund and place a new order in the size you want."] },
+      { h: "When am I refunded?", p: ["Within 14 days after we receive your return, with the same payment method as your order. The standard delivery cost you paid is refunded too."] },
+      { h: "Can I return a fragrance?", p: ["Not once it has been unsealed, for health and hygiene reasons."] },
+      { h: "How do the sizes fit?", p: ["The FYSU silhouette is slightly oversized. Each product page has a size guide with measurements."] },
+      { h: "What are the pieces made of, and how do I care for them?", p: ["Many pieces are made of cotton and wool. The materials and care instructions are listed on each product page."] },
+      { h: "Will a sold-out piece come back?", p: ["Yes, pieces come back. Use “Notify me” on the product page to be told when it is available again."] },
+      { h: "Which payment methods do you accept?", p: ["Card, Apple Pay, Google Pay and the other payment methods offered at checkout. Payments are processed by Stripe, a certified payment provider, and FYSU never sees or stores your card details. Prices are in euros."] },
+      { h: "How do I use a promo code?", p: ["Enter it at checkout. A code has the conditions stated when it is given (for example one use per code), and cannot be combined with another unless stated otherwise. This includes the codes won in our arcade games."] },
+      { h: "Where are the pieces made?", p: ["The place of manufacture is stated on each product page. Depending on the piece, they are made in Portugal, Morocco, Italy, China and other countries."] },
+      { h: "Why do you work with these factories?", p: ["We choose each factory for the complexity of the designs, the work on the material and the retail price we want to offer. Some pieces are made in China so that key pieces cost less when sold directly to customers. These factories are certified."] },
+      { h: "Which factories do you work with?", p: ["Our factories are certified. Their names are confidential, under non-disclosure agreements."] },
+      { h: "Where are made-to-measure and Kiban Collector pieces made?", p: ["In our workshops in Belgium, or by partner artisans local to the countries concerned."] },
+      { h: "What are Kiban Collector and TheWave?", p: ["Kiban Collector is FYSU's craft program: a lab where artisans and engineers work side by side to create objects. TheWave is a FYSU line of knitwear and summer accessories, and a music production platform."] },
+      { h: "Does FYSU organise events?", p: ["Yes. Subscribe to the newsletter to be informed."] },
+      { h: "How do I contact FYSU, or propose a collaboration?", p: ["By e-mail, at the address on the Contact page. The same address is used for collaborations and applications. We reply quickly."] },
+    ],
+  },
   shipping: {
     title: "Shipping",
     sections: [
@@ -90,6 +118,34 @@ const EN: Record<LegalSlug, LegalDoc> = {
 }
 
 const FR: Record<LegalSlug, LegalDoc> = {
+  faq: {
+    title: "FAQ",
+    sections: [
+      { h: "Où livrez-vous ?", p: ["Nous livrons dans le monde entier. La livraison prend 2 à 4 jours ouvrables en Belgique, aux Pays-Bas et au Luxembourg, et 4 à 8 jours ouvrables dans le reste de l'Europe. Pour les autres pays, les délais sont confirmés sur demande (voir la page Contact)."] },
+      { h: "Combien coûte la livraison ?", p: ["La livraison est offerte dès 150 € d'achat. En dessous, un forfait de 5 € s'applique, indiqué au paiement avant que tu paies."] },
+      { h: "Comment suivre ma commande ?", p: ["Tu reçois une confirmation dès que ton paiement est accepté, puis les informations de suivi quand ton colis est en route."] },
+      { h: "Puis-je modifier ou annuler une commande ?", p: ["Contacte-nous dès que possible après ta commande, avec ton numéro de commande. Une commande peut être modifiée ou annulée tant qu'elle n'a pas été remise au transporteur."] },
+      { h: "Dois-je payer des droits de douane ou des taxes à l'importation ?", p: ["Non. Les droits de douane et les taxes sont inclus dans le prix."] },
+      { h: "Que faire si ma commande arrive abîmée ou incomplète ?", p: ["Préviens-nous dès que possible par e-mail, avec ton numéro de commande. Le service client trouvera une solution."] },
+      { h: "Qu'est-ce qu'une précommande ?", p: ["Les produits marqués « Précommande » sont payés au moment de la commande et expédiés à partir de la date de sortie indiquée sur la fiche produit. Les délais de livraison standard ne s'appliquent pas."] },
+      { h: "Puis-je retourner un article ?", p: ["Oui. Tu as 14 jours après réception de ta commande pour retourner un article, et le retour est gratuit : nous t'envoyons une étiquette prépayée. Les articles doivent être non portés et non lavés, avec leurs étiquettes et dans leur emballage d'origine."] },
+      { h: "Puis-je échanger une taille ?", p: ["FYSU ne propose pas d'échange direct. Retourne l'article pour être remboursé et passe une nouvelle commande dans la taille souhaitée."] },
+      { h: "Quand suis-je remboursé ?", p: ["Dans les 14 jours après réception de ton retour, avec le même moyen de paiement que ta commande. Les frais de livraison standard payés sont remboursés aussi."] },
+      { h: "Puis-je retourner un parfum ?", p: ["Pas une fois qu'il a été descellé, pour des raisons de santé et d'hygiène."] },
+      { h: "Comment taillent les pièces ?", p: ["La silhouette FYSU est légèrement oversize. Chaque fiche produit a un guide des tailles avec les mesures."] },
+      { h: "En quoi sont faites les pièces, et comment les entretenir ?", p: ["Beaucoup de pièces sont en coton et en laine. Les matières et les conseils d'entretien sont indiqués sur chaque fiche produit."] },
+      { h: "Une pièce épuisée revient-elle ?", p: ["Oui, les pièces reviennent. Utilise « Me prévenir » sur la fiche produit pour être averti de son retour."] },
+      { h: "Quels moyens de paiement acceptez-vous ?", p: ["Carte, Apple Pay, Google Pay et les autres moyens proposés au paiement. Les paiements sont traités par Stripe, un prestataire de paiement certifié, et FYSU ne voit ni ne conserve tes données de carte. Les prix sont en euros."] },
+      { h: "Comment utiliser un code promo ?", p: ["Saisis-le au paiement. Un code a les conditions indiquées lors de son attribution (par exemple une utilisation par code) et ne se cumule pas avec un autre, sauf mention contraire. Cela inclut les codes gagnés dans nos jeux d'arcade."] },
+      { h: "Où sont fabriquées les pièces ?", p: ["Le lieu de fabrication est indiqué sur chaque fiche produit. Selon les pièces, elles sont fabriquées au Portugal, au Maroc, en Italie, en Chine et dans d'autres pays."] },
+      { h: "Pourquoi travaillez-vous avec ces usines ?", p: ["Nous choisissons chaque usine selon la complexité des designs, le travail de la matière et le prix de vente que nous voulons proposer. Certaines pièces sont fabriquées en Chine pour que les pièces clés coûtent moins cher en vente directe. Ces usines sont certifiées."] },
+      { h: "Avec quelles usines travaillez-vous ?", p: ["Nos usines sont certifiées. Leurs noms sont confidentiels, protégés par des accords de confidentialité."] },
+      { h: "Où sont fabriquées les pièces sur mesure et Kiban Collector ?", p: ["Dans nos ateliers en Belgique, ou par des artisans partenaires locaux dans les pays concernés."] },
+      { h: "Que sont Kiban Collector et TheWave ?", p: ["Kiban Collector est le programme artisanal de FYSU : un laboratoire où artisans et ingénieurs travaillent côte à côte pour créer des objets. TheWave est une ligne FYSU de knitwear et d'accessoires d'été, et une plateforme de production musicale."] },
+      { h: "FYSU organise-t-elle des événements ?", p: ["Oui. Abonne-toi à la newsletter pour être averti."] },
+      { h: "Comment contacter FYSU, ou proposer une collaboration ?", p: ["Par e-mail, à l'adresse de la page Contact. La même adresse sert pour les collaborations et les candidatures. Nous répondons rapidement."] },
+    ],
+  },
   shipping: {
     title: "Livraison",
     sections: [
