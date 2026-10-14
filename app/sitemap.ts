@@ -27,7 +27,7 @@ async function slugs(table: string, columns: string): Promise<string[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
-  const fixed = ["", "/thewave", "/kiban-collector", "/fygrances", "/music", "/games", "/about", "/privacy"]
+  const fixed = ["", "/thewave", "/kiban-collector", "/fygrances", "/music", "/games", "/about", "/privacy", "/legal/faq"]
 
   // "pages" = pages de produits à la racine (/for-him, /for-her…) · "collectionPages" = /collections/<lien>
   const [products, rootPages, collections, albums] = await Promise.all([
