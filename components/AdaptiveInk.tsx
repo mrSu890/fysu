@@ -137,7 +137,7 @@ function isTarget(el: Element, root: Element): boolean {
     }
   }
   // un texte posé sur un bouton ou un bloc qui a son propre fond (bouton vert, Apple Pay…) garde sa couleur
-  if (ok) {
+  if (ok && tag !== "svg" && tag !== "img") {
     let p: Element | null = el
     while (p && p !== root) {
       if (p.hasAttribute("data-keep-color")) {
@@ -152,6 +152,11 @@ function isTarget(el: Element, root: Element): boolean {
       p = p.parentElement
     }
   }
+  // les traits de l'icône menu (fond = couleur du texte) suivent aussi
+  if (!ok && !el.hasAttribute("data-keep-color")) {
+    const cs = getComputedStyle(el)
+    if (cs.backgroundColor === cs.color && parseColor(cs.backgroundColor)) ok = true
+  }
   eligible.set(el, ok)
   return ok
 }
@@ -159,7 +164,9 @@ function isTarget(el: Element, root: Element): boolean {
 function run() {
   if (document.visibilityState !== "visible") return
   const html = document.documentElement
-  const tint = html.classList.contains("dark") ? 0.3 : 0.85
+  // sensibilité réduite : on garde la couleur d'origine du mood (clair en sombre, sombre en clair)
+  // et on ne bascule que si le fond est NETTEMENT contraire (blanc franc ou noir franc)
+  const darkMood = html.classList.contains("dark")
   document.querySelectorAll(ROOTS).forEach((root) => {
     const rr = root.getBoundingClientRect()
     if (rr.width === 0 || rr.height === 0 || rr.bottom < 0 || rr.top > window.innerHeight) return
@@ -170,15 +177,19 @@ function run() {
       if (r.width === 0 || r.height === 0) return
       const x = Math.min(window.innerWidth - 1, Math.max(0, r.left + r.width / 2))
       const y = Math.min(window.innerHeight - 1, Math.max(0, r.top + r.height / 2))
-      const eff = 0.7 * behindLum(x, y) + 0.3 * tint
+      const L = behindLum(x, y)
       const prev = previous.get(el)
       let next: "dark" | "light"
-      if (eff > 0.6) next = "dark"
-      else if (eff < 0.5) next = "light"
-      else next = prev ?? (tint > 0.5 ? "dark" : "light")
-      if (prev !== next || el.dataset.ink !== next) {
+      if (darkMood) {
+        // texte clair par défaut ; sombre seulement sur un fond très clair
+        next = L > (prev === "dark" ? 0.72 : 0.82) ? "dark" : "light"
+      } else {
+        // texte sombre par défaut ; clair seulement sur un fond très sombre
+        next = L < (prev === "light" ? 0.36 : 0.26) ? "light" : "dark"
+      }
+      if (prev !== next || el.getAttribute("data-ink") !== next) {
         previous.set(el, next)
-        el.dataset.ink = next
+        el.setAttribute("data-ink", next)
       }
     })
   })
