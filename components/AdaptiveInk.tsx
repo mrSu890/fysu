@@ -17,7 +17,8 @@ const SKIP_AREA = ".navbar-root, [data-ink-root]"
 const GRID = 16
 
 type Grid = Float32Array | null
-const imgCache = new WeakMap<HTMLImageElement, { src: string; grid: Grid }>()
+const imgCache = new WeakMap<HTMLImageElement, { src: string; grid: Grid; pending?: boolean }>()
+const UNKNOWN = 0.55 // fond illisible (image d'un autre site) : on ne bascule pas, la couleur du mood reste
 const eligible = new WeakMap<Element, boolean>()
 const previous = new WeakMap<Element, "dark" | "light">()
 
@@ -51,19 +52,34 @@ function sampleGrid(el: HTMLImageElement | HTMLVideoElement): Grid {
 function mediaLum(el: HTMLImageElement | HTMLVideoElement, x: number, y: number): number {
   let grid: Grid = null
   if (el instanceof HTMLImageElement) {
-    if (!el.complete || !el.naturalWidth) return 0.85
+    if (!el.complete || !el.naturalWidth) return UNKNOWN
     const src = el.currentSrc || el.src
     const c = imgCache.get(el)
     if (c && c.src === src) grid = c.grid
     else {
       grid = sampleGrid(el)
       imgCache.set(el, { src, grid })
+      if (!grid) {
+        // image d'un autre domaine : on la recharge en mode « autorisé » pour pouvoir lire ses pixels
+        const entry = { src, grid: null as Grid, pending: true }
+        imgCache.set(el, entry)
+        const probe = new Image()
+        probe.crossOrigin = "anonymous"
+        probe.onload = () => {
+          entry.grid = sampleGrid(probe)
+          entry.pending = false
+        }
+        probe.onerror = () => {
+          entry.pending = false
+        }
+        probe.src = src
+      }
     }
   } else {
-    if (el.readyState < 2) return 0.5
+    if (el.readyState < 2) return UNKNOWN
     grid = sampleGrid(el)
   }
-  if (!grid) return 0.85
+  if (!grid) return UNKNOWN
   const r = el.getBoundingClientRect()
   const nw = el instanceof HTMLImageElement ? el.naturalWidth : el.videoWidth
   const nh = el instanceof HTMLImageElement ? el.naturalHeight : el.videoHeight
@@ -171,6 +187,25 @@ function run() {
     const rr = root.getBoundingClientRect()
     if (rr.width === 0 || rr.height === 0 || rr.bottom < 0 || rr.top > window.innerHeight) return
     const nodes = root.querySelectorAll<HTMLElement>("*")
+    // une pastille de la barre (logo + icône, ou panier + menu) : une seule décision pour tout son contenu,
+    // prise sur plusieurs points de sa largeur, pour que logo et icônes restent toujours de la même couleur
+    const isPill = rr.height < 130 && root.matches(".navbar-root .liquid-glass")
+    let pillInk: "dark" | "light" | null = null
+    if (isPill) {
+      const y = Math.min(window.innerHeight - 1, Math.max(0, rr.top + rr.height / 2))
+      let sum = 0
+      const N = 7
+      for (let i = 0; i < N; i++) {
+        const x = Math.min(window.innerWidth - 1, Math.max(0, rr.left + rr.width * (0.08 + (0.84 * i) / (N - 1))))
+        sum += behindLum(x, y)
+      }
+      const L = sum / N
+      const prev = previous.get(root)
+      pillInk = darkMood
+        ? L > (prev === "dark" ? 0.72 : 0.82) ? "dark" : "light"
+        : L < (prev === "light" ? 0.36 : 0.26) ? "light" : "dark"
+      previous.set(root, pillInk)
+    }
     nodes.forEach((el) => {
       if (!isTarget(el, root)) return
       const r = el.getBoundingClientRect()
@@ -180,7 +215,9 @@ function run() {
       const L = behindLum(x, y)
       const prev = previous.get(el)
       let next: "dark" | "light"
-      if (darkMood) {
+      if (pillInk) {
+        next = pillInk
+      } else if (darkMood) {
         // texte clair par défaut ; sombre seulement sur un fond très clair
         next = L > (prev === "dark" ? 0.72 : 0.82) ? "dark" : "light"
       } else {
