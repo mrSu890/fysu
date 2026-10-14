@@ -12,7 +12,7 @@ import { useEffect } from "react"
    Pour exclure un élément : lui ajouter data-keep-color.
    ==================================================================== */
 
-const ROOTS = ".navbar-root .liquid-glass, [data-ink-root]"
+const ROOTS = "[data-ink-root]" // la barre de navigation est gérée en CSS : tout en blanc
 const SKIP_AREA = ".navbar-root, [data-ink-root]"
 const GRID = 16
 

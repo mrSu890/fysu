@@ -450,6 +450,7 @@ function MobileMenu({
                 {totalItems > 0 && (
                   <motion.span
                     key={totalItems}
+                    data-keep-color
                     initial={{ scale: 1.6 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 16 }}
@@ -478,6 +479,7 @@ function MobileMenu({
             {panel === "cart" && mounted && (
               <motion.div
                 key="cart"
+                data-nav-cart
                 ref={setContentEl}
                 style={{ width: rowW || "100%" }}
                 initial={{ opacity: 0 }}
@@ -650,6 +652,7 @@ function MobileMenu({
                             key={preview.image}
                             src={preview.image}
                             alt=""
+                            data-keep-color
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
