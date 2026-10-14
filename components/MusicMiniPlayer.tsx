@@ -88,6 +88,7 @@ export default function MiniPlayer() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
           transition={{ duration: 0.22 }}
+          data-fab
           className="fixed inset-x-0 z-[60] flex justify-center px-3"
           style={{ bottom, pointerEvents: "none" }}
         >

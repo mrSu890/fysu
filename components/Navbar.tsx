@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { useBrandPage } from "@/lib/useBrandPage";
+import { usePopupClaim } from "@/lib/popups";
 import { ChevronDown, ArrowUpRight, UserRound, ShoppingBag, Search } from "lucide-react";
 import Image from "next/image";
 import CartDrawer from "./CartDrawer";
@@ -103,6 +104,8 @@ function MobileMenu({
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  usePopupClaim("search", searchOpen);
+  usePopupClaim("cart", isCartOpen);
   const locale = useLocale();
 
   const brandPage = useBrandPage();

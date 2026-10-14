@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { releasePopup, whenPopupIdle } from "@/lib/popups"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion, type PanInfo } from "framer-motion"
@@ -319,6 +320,7 @@ export default function NotificationToasts() {
   useEffect(() => {
     let cancelled = false
     const timers: number[] = []
+    const cancels: (() => void)[] = []
 
     const sleep = (ms: number) =>
       new Promise<void>((resolve) => {
@@ -361,18 +363,25 @@ export default function NotificationToasts() {
       EXCLUDED.some((p) => pathRef.current.startsWith(p)) ||
       document.documentElement.classList.contains("a11y-focus")
 
+    // une notification n'apparaît que lorsque plus rien d'autre n'est en cours
     const show = (id: ToastId, visibleMs: number) =>
       new Promise<void>((resolve) => {
-        setToast(id)
-        const timer = window.setTimeout(() => finish(), visibleMs)
-        timers.push(timer)
+        let timer: number | undefined
+        const cancelIdle = whenPopupIdle("toast", start, { quiet: 2000 })
+        cancels.push(cancelIdle)
+        function start() {
+          setToast(id)
+          timer = window.setTimeout(() => finish(), visibleMs)
+          timers.push(timer)
+          dismissRef.current = finish
+        }
         function finish() {
-          window.clearTimeout(timer)
+          if (timer) window.clearTimeout(timer)
           dismissRef.current = null
           setToast(null)
+          releasePopup("toast")
           resolve()
         }
-        dismissRef.current = finish
       })
 
     // On demande l'astuce de l'horloge et on attend qu'elle soit fermée (ou qu'il n'y ait rien à montrer)
@@ -459,6 +468,8 @@ export default function NotificationToasts() {
     return () => {
       cancelled = true
       timers.forEach((t) => window.clearTimeout(t))
+      cancels.forEach((c) => c())
+      releasePopup("toast")
     }
   }, [])
 

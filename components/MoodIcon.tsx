@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { usePathname } from "next/navigation"
 import { RAIN_EVENT } from "@/lib/rain"
+import { claimPopup, releasePopup, whenPopupIdle } from "@/lib/popups"
 import { applyMood, moodAt, readManual, realMinutes, type Mood } from "@/lib/mood"
 
 /* Petite icône d'ambiance dans la barre de navigation (à la place de la loupe).
@@ -90,8 +91,12 @@ export default function MoodIcon({ label }: { label: string }) {
     } catch {}
     if (seen || readManual()) return
     let t2: number | undefined
-    const t1 = window.setTimeout(() => {
-      if (document.visibilityState !== "visible" || readManual()) return
+    let cancelIdle: (() => void) | undefined
+    const run = () => {
+      if (document.visibilityState !== "visible" || readManual()) {
+        releasePopup("mood")
+        return
+      }
       try {
         localStorage.setItem(DEMO_KEY, "1")
       } catch {}
@@ -101,16 +106,23 @@ export default function MoodIcon({ label }: { label: string }) {
       applyMood(other)
       setV(other === "day" ? 12 * 60 : 23 * 60)
       t2 = window.setTimeout(() => {
+        releasePopup("mood")
         if (readManual()) return
         applyMood(moodAt(realMinutes()))
         setV(realMinutes())
         setPulse((n) => n + 1)
       }, 2600)
+    }
+    // la démonstration n'a lieu que lorsque plus rien n'est en cours (ni pop-up, ni astuce, ni panneau ouvert)
+    const t1 = window.setTimeout(() => {
+      cancelIdle = whenPopupIdle("mood", run, { quiet: 3000, hideFabs: false })
     }, 11000)
     return () => {
       window.clearTimeout(t1)
+      if (cancelIdle) cancelIdle()
       // si on quitte la page en pleine démonstration, ClockWeather remet l'ambiance réelle
       if (t2 !== undefined) window.clearTimeout(t2)
+      releasePopup("mood")
     }
   }, [pathname])
 

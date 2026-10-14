@@ -52,6 +52,7 @@ export default function BackButton() {
           router.push("/")
         }
       }}
+      data-fab
       className="liquid-glass absolute left-4 top-[116px] z-[35] flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition active:scale-90 sm:left-6"
       style={{
         color: "var(--menu)",

@@ -175,6 +175,7 @@ export default function DraggableFab({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.7 }}
       transition={{ duration: 0.25 }}
+      data-fab
       className="pointer-events-none fixed inset-0"
       style={{ zIndex }}
     >

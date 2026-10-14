@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useLocale } from "next-intl"
 import DraggableFab from "@/components/DraggableFab"
+import { usePopupClaim } from "@/lib/popups"
 import { resetTips } from "@/lib/tips"
 
 /* ====================================================================
@@ -195,6 +196,7 @@ export default function AccessibilityMenu() {
   const copy = COPY[locale] ?? COPY.en
 
   const [open, setOpen] = useState(false)
+  usePopupClaim("a11y-panel", open)
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS)
   // pastille : visible sur la page d'arrivée seulement. null = pas encore lu.
   const [gone, setGone] = useState<boolean | null>(null)

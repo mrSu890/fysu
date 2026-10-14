@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import PixelGrid from "@/components/PixelGrid"
 import HomeIntro, { type IntroMedia } from "@/components/HomeIntro"
+import { claimPopup, releasePopup } from "@/lib/popups"
 
 const DURATION = 2800 // durée de la ligne et du pourcentage (ms)
 const LOGO_DURATION = 700 // durée d'apparition du logo (ms) : rapide
@@ -12,12 +13,13 @@ const SESSION_KEY = "fysu:loader:seen" // l'écran de chargement n'apparaît qu'
 // Le choix de zone a-t-il déjà été fait ?
 const hasRegion = () =>
   typeof document !== "undefined" &&
-  document.cookie.split("; ").some((row) => row.startsWith("FYSU_COUNTRY="))
+  document.cookie.split("; ").some((row) => row.startsWith("FYSU_COUNTRY=") || row.startsWith("FYSU_REGION_SKIP="))
 
 // Appelé quand l'écran de chargement n'est plus visible :
 // - le pop-up de choix de zone peut apparaître (si besoin)
 // - cookies et notifications attendent que la zone soit choisie
 const finishLoader = () => {
+  releasePopup("loader")
   ;(window as any).__loaderVisualDone = true
   window.dispatchEvent(new Event("loader-visual-done"))
 
@@ -79,8 +81,10 @@ export default function SiteLoader() {
         setMedia(m)
         setMode("intro")
       }
+      claimPopup("loader", false, true)
       setReady(true)
     } else {
+      claimPopup("loader", false, true)
       setReady(true)
     }
   }, [])

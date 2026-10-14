@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { releasePopup, whenPopupIdle } from "@/lib/popups"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Music, X } from "lucide-react"
 import { useMusicPlayer } from "@/context/MusicPlayerContext"
 import { useMusicCopy } from "@/lib/musicCopy"
-import { getStoredCountry } from "@/lib/regions"
+import { getStoredCountry, regionSkipped } from "@/lib/regions"
 
 /* ====================================================================
    POP-UP « ÉCOUTER LA MUSIQUE DE CETTE COLLECTION ? »
@@ -72,7 +73,7 @@ export default function MusicPrompt() {
   useEffect(() => {
     let timer: number | undefined
     const check = () => {
-      if (!getStoredCountry() || timer) return
+      if ((!getStoredCountry() && !regionSkipped()) || timer) return
       timer = window.setTimeout(() => setRegionReady(true), PROMPT_DELAY)
     }
     check()
@@ -132,8 +133,23 @@ export default function MusicPrompt() {
     typeof document !== "undefined" && document.documentElement.classList.contains("a11y-focus")
   // De la musique est déjà chargée (pastille présente) : on ne pose pas la question
   const musicLoaded = Boolean(playingAlbum)
-  const visible =
+  const want =
     regionReady && handled === false && !closed && albums.length > 0 && !musicLoaded && !focusMode
+  // la question attend que plus rien d'autre ne soit en cours
+  const [slot, setSlot] = useState(false)
+  useEffect(() => {
+    if (!want) {
+      if (slot) setSlot(false)
+      return
+    }
+    if (slot) return
+    return whenPopupIdle("music", () => setSlot(true), { quiet: 2500 })
+  }, [want, slot])
+  useEffect(() => {
+    if (!slot) return
+    return () => releasePopup("music")
+  }, [slot])
+  const visible = want && slot
 
   // La question est posée une seule fois par visite : on le note dès qu'elle apparaît
   useEffect(() => {

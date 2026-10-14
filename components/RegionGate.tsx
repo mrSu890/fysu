@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLocale, useMessages } from "next-intl"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { claimPopup, releasePopup, whenPopupIdle } from "@/lib/popups"
 import {
   CONTINENTS,
   COUNTRIES,
@@ -14,6 +15,8 @@ import {
   getStoredCountry,
   offeredLanguages,
   saveRegion,
+  regionSkipped,
+  skipRegion,
   type ContinentId,
   type Country,
 } from "@/lib/regions"
@@ -99,6 +102,8 @@ const COPY: Record<string, Copy> = {
 
 type Step = "continent" | "country" | "language"
 
+const SKIP: Record<string, string> = { en: "Skip", fr: "Passer", nl: "Overslaan", ja: "スキップ", de: "Überspringen", es: "Omitir", it: "Salta", pt: "Ignorar" }
+
 /* ====== POP-UP DE CHOIX DE ZONE ====== */
 
 export default function RegionGate() {
@@ -115,25 +120,20 @@ export default function RegionGate() {
 
   // Première visite : le pop-up apparaît dès que l'écran de chargement est terminé
   useEffect(() => {
-    const start = () => {
-      if (getStoredCountry()) return
-      setClosable(false)
+    if (getStoredCountry() || regionSkipped()) return
+    // s'ouvre quand plus rien n'est en cours ; peut toujours être fermé (le site reste en anglais)
+    const cancel = whenPopupIdle("region", () => {
+      setClosable(true)
       setStep("continent")
       setOpen(true)
-    }
-
-    if ((window as any).__loaderVisualDone) {
-      start()
-      return
-    }
-
-    window.addEventListener("loader-visual-done", start, { once: true })
-    return () => window.removeEventListener("loader-visual-done", start)
+    })
+    return cancel
   }, [])
 
   // Réouverture depuis le menu (changer de zone / de langue)
   useEffect(() => {
     const reopen = () => {
+      claimPopup("region", true, true)
       setClosable(true)
       setStep("continent")
       setContinent(null)
@@ -143,6 +143,23 @@ export default function RegionGate() {
     window.addEventListener("open-region-picker", reopen)
     return () => window.removeEventListener("open-region-picker", reopen)
   }, [])
+
+  // libère la place quand le pop-up se ferme
+  useEffect(() => {
+    if (!open) return
+    return () => releasePopup("region")
+  }, [open])
+
+  // fermer sans choisir : on reste en anglais et on ne redemande pas
+  const dismiss = () => {
+    const first = !getStoredCountry()
+    if (first) skipRegion()
+    setOpen(false)
+    if (first) {
+      ;(window as any).__regionDone = true
+      window.dispatchEvent(new Event("region-done"))
+    }
+  }
 
   // Bloque le scroll tant que le pop-up est ouvert
   useEffect(() => {
@@ -159,7 +176,7 @@ export default function RegionGate() {
   useEffect(() => {
     if (!open || !closable) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false)
+      if (e.key === "Escape") dismiss()
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
@@ -226,7 +243,7 @@ export default function RegionGate() {
         >
           <div
             className="absolute inset-0 bg-black/45 backdrop-blur-sm"
-            onClick={closable ? () => setOpen(false) : undefined}
+            onClick={closable ? dismiss : undefined}
           />
 
           <motion.div
@@ -272,7 +289,7 @@ export default function RegionGate() {
               {closable && (
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={dismiss}
                   aria-label={copy.close}
                   className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/15"
                 >
@@ -338,6 +355,16 @@ export default function RegionGate() {
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {step === "continent" && (
+              <button
+                type="button"
+                onClick={dismiss}
+                className="mt-4 cursor-pointer self-center text-xs underline underline-offset-4 opacity-70 transition hover:opacity-100"
+              >
+                {SKIP[locale] ?? SKIP.en}
+              </button>
+            )}
           </motion.div>
         </motion.div>
       )}

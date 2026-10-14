@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { supabaseClient } from "@/lib/supabaseClient"
 import { useLocale } from "next-intl"
+import { claimPopup, popupBusy, popupReady, releasePopup } from "@/lib/popups"
 import { TIPS, TEXT, markTipSeen, syncTipsWithAccount, tipsOff, tipsSeen, turnTipsOff, type Tip } from "@/lib/tips"
 
 /* ====================================================================
@@ -97,8 +98,8 @@ export default function Tips() {
           return finish()
         }
         const target = document.querySelector(tip.trigger) && findTarget(tip.steps[0].target)
-        const busy = activeRef.current != null
-        if (target && !busy) {
+        const busy = activeRef.current != null || popupBusy("tip")
+        if (target && !busy && popupReady("tip", 1500) && claimPopup("tip", false)) {
           window.clearInterval(poll)
           markTipSeen(tip.id)
           setActive({ tip, step: 0 })
@@ -142,6 +143,8 @@ export default function Tips() {
         const target = findTarget(tip.steps[0].target)!
         const blockers = Array.from(document.querySelectorAll('[role="dialog"]'))
         if (blockers.some((b) => !b.contains(target))) continue
+        // une astuce ne démarre que si plus rien d'autre n'est en cours
+        if (!popupReady("tip", 2000) || !claimPopup("tip", false)) continue
         markTipSeen(tip.id)
         setActive({ tip, step: 0 })
         return
@@ -178,6 +181,14 @@ export default function Tips() {
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
   }, [active])
+
+  // la place est libérée quand l'astuce se termine
+  const isActive = active !== null
+  useEffect(() => {
+    if (!isActive) return
+    claimPopup("tip", false, true)
+    return () => releasePopup("tip")
+  }, [isActive])
 
   // la page change : on ferme
   useEffect(() => {

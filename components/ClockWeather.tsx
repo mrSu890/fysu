@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
+import { usePopupClaim } from "@/lib/popups"
 import { applyRain, isRainCode, readRainManual, saveRainManual } from "@/lib/rain"
 import { MOOD_LABEL, applyMood, clearManual, currentMood, moodAt, readManual, realMinutes, saveManual, type Mood } from "@/lib/mood"
 
@@ -232,6 +233,7 @@ export default function ClockWeather() {
   const [now, setNow] = useState<Date | null>(null)
   const [weather, setWeather] = useState<Weather | null>(null)
   const [open, setOpen] = useState(false)
+  usePopupClaim("clock-panel", open)
   // position du soleil choisie à la main (null = on suit l'heure réelle)
   const [manualV, setManualV] = useState<number | null>(null)
   const [mood, setMood] = useState<Mood>("day")
@@ -401,6 +403,7 @@ export default function ClockWeather() {
         aria-label={`${label}. ${tx.dial}`}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
+        data-fab
         className="font-info fixed bottom-[calc(6px+env(safe-area-inset-bottom))] right-0 z-30 flex cursor-pointer items-center gap-1.5 px-3 py-1 text-[10px] tabular-nums tracking-[0.12em] text-foreground/45 transition-opacity hover:text-foreground/80"
       >
         {weather && (

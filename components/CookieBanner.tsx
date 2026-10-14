@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { claimPopup, releasePopup, whenPopupIdle } from "@/lib/popups";
 import { AnimatePresence, motion } from "framer-motion";
 import { acceptAll, rejectAll, getConsent, setConsent, CookieConsent } from "@/lib/cookieConsent";
 import { useTranslations } from "next-intl";
@@ -34,12 +35,15 @@ export default function CookieBanner() {
     // On attend la fin du chargement ET le choix de la zone, puis un bon moment :
     // le message de bienvenue passe d'abord, les cookies arrivent plus tard
     let timer: number | undefined;
+    let cancelIdle: (() => void) | undefined;
     const show = () => {
       setVisible(true);
       setMode("banner");
     };
     const later = () => {
-      timer = window.setTimeout(show, COOKIE_DELAY);
+      timer = window.setTimeout(() => {
+        cancelIdle = whenPopupIdle("cookie", show);
+      }, COOKIE_DELAY);
     };
 
     if ((window as any).__siteLoaderDone) {
@@ -51,8 +55,16 @@ export default function CookieBanner() {
     return () => {
       window.removeEventListener("site-loader-done", later);
       if (timer) window.clearTimeout(timer);
+      if (cancelIdle) cancelIdle();
     };
   }, []);
+
+  // la place est libérée quand la bannière se ferme
+  useEffect(() => {
+    if (!visible) return;
+    claimPopup("cookie", true, true);
+    return () => releasePopup("cookie");
+  }, [visible]);
 
   const openPrefs = () => {
     const existing = getConsent();
