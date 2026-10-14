@@ -119,7 +119,7 @@ export default function CheckoutClient() {
 
   const handleCheckout = async () => {
     if (!user) {
-      router.push("/auth/signin");
+      router.push("/auth/signin?next=" + encodeURIComponent("/checkout"));
       return;
     }
 
@@ -176,7 +176,7 @@ export default function CheckoutClient() {
             >
               <div className="relative h-24 w-[72px] shrink-0 overflow-hidden rounded-2xl bg-neutral-200/60">
                 <Image
-                  src={item.selectedImageUrl ?? item.product_images?.[0]?.url ?? "/placeholder.png"}
+                  src={item.selectedImageUrl || item.product_images?.[0]?.url || "/placeholder.png"}
                   alt={item.name}
                   fill
                   sizes="72px"
