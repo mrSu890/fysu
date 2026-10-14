@@ -201,7 +201,7 @@
   color: color-mix(in srgb, var(--menu) 85%, transparent);
 }
 
-.navbar-root .liquid-glass img {
+.navbar-root .liquid-glass img:not([data-keep-color]) {
   opacity: 0.85;
 }
 /* Mode sombre : « sumi olive », noir chaud avec une pointe de vert (#22231F) */
@@ -532,7 +532,7 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-
 html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
   color: color-mix(in srgb, #1f3640 88%, transparent);
 }
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img:not([data-keep-color]) {
   filter: brightness(0);
   opacity: 0.8;
 }
@@ -576,7 +576,7 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .na
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
   color: #ffffff;
 }
-html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
+html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img:not([data-keep-color]) {
   opacity: 0.95;
 }
 
@@ -609,7 +609,7 @@ html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root
 html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
   color: color-mix(in srgb, #2a2820 74%, transparent);
 }
-html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
+html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img:not([data-keep-color]) {
   opacity: 0.66;
 }
 
@@ -642,7 +642,7 @@ html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root 
 html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
   color: #eef2f8;
 }
-html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img {
+html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass img:not([data-keep-color]) {
   filter: brightness(0) invert(1);
   opacity: 0.9;
 }
@@ -770,4 +770,11 @@ html[data-popup] [data-fab] {
   opacity: 0 !important;
   pointer-events: none !important;
   transition: opacity 0.2s ease;
+}
+
+/* Texte qui s'adapte au fond en temps réel : blanc au-dessus d'un fond sombre, noir au-dessus d'un fond clair
+   (à poser sur un élément qui n'est PAS dans une pastille de verre). Exemple : className="ink-adaptive" */
+.ink-adaptive {
+  color: #fff;
+  mix-blend-mode: difference;
 }
