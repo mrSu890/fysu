@@ -10,6 +10,7 @@ export async function GET() {
       .select(`
         *,
         product_images (*),
+        product_colors!product_colors_product_id_fkey (*),
         product_sizes (*)
       `)
       .eq("is_hidden", false)
