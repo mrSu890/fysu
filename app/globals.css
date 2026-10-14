@@ -764,3 +764,10 @@ html.rain .liquid-glass::after {
 @media (prefers-reduced-motion: reduce) {
   html.rain .liquid-glass::after { animation-duration: 0.01s; }
 }
+
+/* Pendant un pop-up, les pastilles s'effacent : rien ne se superpose (voir lib/popups.ts) */
+html[data-popup] [data-fab] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.2s ease;
+}
