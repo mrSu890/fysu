@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { captureNext, clearNext, getNext, stashNextForOAuth } from "@/lib/authNext";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -14,6 +15,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // on retient la page d'où on vient pour y revenir après la connexion
+  useEffect(() => {
+    captureNext();
+  }, []);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -30,12 +36,15 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    const target = getNext();
+    clearNext();
+    router.push(target);
     setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    stashNextForOAuth();
 
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: "google",
