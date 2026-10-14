@@ -113,9 +113,17 @@ export default function MoodIcon({ label }: { label: string }) {
         setPulse((n) => n + 1)
       }, 2600)
     }
+    // seulement quand la barre de navigation est bien là (pas pendant le grand logo rose de l'accueil)
+    const navbarShown = () => {
+      const nav = document.querySelector(".navbar-root") as HTMLElement | null
+      if (!nav) return false
+      if (parseFloat(getComputedStyle(nav).opacity) < 0.95) return false
+      const r = nav.getBoundingClientRect()
+      return r.width > 0 && r.bottom > 0 && r.top < window.innerHeight * 0.4
+    }
     // la démonstration n'a lieu que lorsque plus rien n'est en cours (ni pop-up, ni astuce, ni panneau ouvert)
     const t1 = window.setTimeout(() => {
-      cancelIdle = whenPopupIdle("mood", run, { quiet: 3000, hideFabs: false })
+      cancelIdle = whenPopupIdle("mood", run, { quiet: 3000, hideFabs: false, ready: navbarShown })
     }, 11000)
     return () => {
       window.clearTimeout(t1)

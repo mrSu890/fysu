@@ -130,11 +130,11 @@ export default function CookieBanner() {
               <div>
                 <p className="text-sm md:text-base font-medium">{title}</p>
                 {mode === "banner" ? (
-                  <p className="mt-2 text-xs md:text-sm text-gray-700 leading-relaxed">
+                  <p className="mt-2 text-xs md:text-sm text-black/85 leading-relaxed">
                     {t("privacyText")}
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs md:text-sm text-gray-700 leading-relaxed">
+                  <p className="mt-2 text-xs md:text-sm text-black/85 leading-relaxed">
                     {t("prefsText")}
                   </p>
                 )}
@@ -143,7 +143,7 @@ export default function CookieBanner() {
               <button
                 onClick={close}
                 aria-label={t("close")}
-                className="text-gray-500 hover:text-gray-900 transition text-xl leading-none cursor-pointer"
+                className="text-black/60 hover:text-black transition text-xl leading-none cursor-pointer"
               >
                 ×
               </button>
@@ -227,7 +227,7 @@ export default function CookieBanner() {
 
                 <button
                   onClick={() => setMode("banner")}
-                  className="mt-3 text-xs md:text-sm text-gray-700 hover:underline"
+                  className="mt-3 text-xs md:text-sm text-black/80 underline underline-offset-4 hover:text-black"
                 >
                   {t("back")}
                 </button>
@@ -235,7 +235,7 @@ export default function CookieBanner() {
             )}
 
             {/* Optionnel: lien vers ta policy */}
-            <p className="mt-4 text-[11px] md:text-xs text-gray-500 leading-relaxed">
+            <p className="mt-4 text-[11px] md:text-xs text-black/70 leading-relaxed">
               {t("policy")}
             </p>
           </div>
@@ -262,7 +262,7 @@ function PrefRow({
     <div className="flex items-start justify-between gap-4 rounded-2xl border border-black/10 bg-white p-4">
       <div className="min-w-0">
         <p className="text-xs md:text-sm font-medium">{title}</p>
-        <p className="mt-1 text-[11px] md:text-xs text-gray-600">{desc}</p>
+        <p className="mt-1 text-[11px] md:text-xs text-black/75">{desc}</p>
       </div>
 
       <button

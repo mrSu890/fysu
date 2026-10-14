@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { claimPopup, releasePopup } from "@/lib/popups"
 
 /* ====================================================================
    TRANSPORT DE L'IMAGE : de la carte produit à la fiche produit
@@ -34,15 +35,26 @@ export default function ProductHero() {
   const [flying, setFlying] = useState(false)
   const imgRef = useRef<HTMLImageElement | null>(null)
   const [bg, setBg] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const jobRef = useRef<Job | null>(null)
+  const leavingRef = useRef(false)
   jobRef.current = job
 
+  // fin nette : l'image copiée s'efface en douceur (jamais de disparition brutale)
   const finish = useCallback(() => {
+    if (leavingRef.current) return
+    leavingRef.current = true
     document.documentElement.classList.remove("hero-running")
     ;(window as any).__heroActive = false
-    setJob(null)
-    setFlying(false)
-    setBg(false)
+    releasePopup("hero")
+    setLeaving(true)
+    window.setTimeout(() => {
+      setJob(null)
+      setFlying(false)
+      setBg(false)
+      setLeaving(false)
+      leavingRef.current = false
+    }, 280)
   }, [])
 
   // la carte demande le transport
@@ -55,7 +67,9 @@ export default function ProductHero() {
         if (r.width < 40 || r.height < 40) return false
         const radius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
         ;(window as any).__heroActive = true
+        claimPopup("hero", false, true)
         document.documentElement.classList.add("hero-running")
+        setLeaving(false)
         setFlying(false)
         setJob({ src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius })
         requestAnimationFrame(() => setBg(true))
@@ -85,6 +99,9 @@ export default function ProductHero() {
     let clipEl: HTMLElement | null | undefined
     const started = Date.now()
     const DURATION = 900
+    // la fiche s'ouvre toujours tout en haut (sinon l'animation attendait un défilement qui ne vient jamais)
+    if (window.scrollY > 0) window.scrollTo(0, 0)
+    let seenAt = 0
     const ease = (t: number) => 1 - Math.pow(1 - t, 4)
     // le plus proche parent qui découpe son contenu (zone de défilement de la fiche sur téléphone, par exemple) :
     // la vraie image y est coupée, donc la copie doit l'être aussi, sinon elle « se recadre » d'un coup à l'arrivée
@@ -111,7 +128,11 @@ export default function ProductHero() {
       const l = live()
       if (!flyingNow) {
         const img = l?.el.querySelector("img") as HTMLImageElement | null
-        if (l && img && img.complete && window.scrollY < 2) {
+        if (l && !seenAt) seenAt = Date.now()
+        // on n'attend pas indéfiniment le chargement de l'image : au bout de 700 ms elle est simplement posée par-dessus
+        const imgReady = !!img && (img.complete || Date.now() - seenAt > 700)
+        if (window.scrollY > 2) window.scrollTo(0, 0)
+        if (l && img && imgReady) {
           const r = l.r
           const key = `${Math.round(r.top)}|${Math.round(r.left)}|${Math.round(r.width)}|${Math.round(r.height)}`
           if (r.width > 0 && key === last) stable++
@@ -123,7 +144,7 @@ export default function ProductHero() {
             setFlying(true)
           }
         }
-        if (Date.now() - started > 4500 && !flyingNow) {
+        if (Date.now() - started > 3200 && !flyingNow) {
           finish()
           return
         }
@@ -183,7 +204,7 @@ export default function ProductHero() {
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-[44] bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: bg && !flying ? 1 : 0 }}
+        animate={{ opacity: bg && !flying && !leaving ? 1 : 0 }}
         transition={{ duration: flying ? 0.6 : 0.35, ease: "easeOut", delay: flying ? 0.45 : 0 }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -194,6 +215,8 @@ export default function ProductHero() {
         draggable={false}
         className="pointer-events-none fixed z-[45] object-cover"
         style={{
+          opacity: leaving ? 0 : 1,
+          transition: "opacity 0.28s ease",
           top: job.from.top,
           left: job.from.left,
           width: job.from.width,

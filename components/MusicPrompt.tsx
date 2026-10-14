@@ -230,9 +230,10 @@ export default function MusicPrompt() {
                   <Link
                     href={`/music/${albums[0].slug}`}
                     onClick={() => close(true)}
-                    className="rounded-full bg-current px-4 py-2 text-xs font-medium"
+                    className="rounded-full px-4 py-2 text-xs font-medium"
+                    style={{ background: "var(--foreground)", color: "var(--background)" }}
                   >
-                    <span style={{ color: "var(--navbar-bg, #fff)" }}>{copy.yes}</span>
+                    {copy.yes}
                   </Link>
                 </div>
               </div>

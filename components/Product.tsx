@@ -65,11 +65,13 @@ const Product = ({
 
   // Extraire les couleurs uniques depuis les images
   const uniqueColors = useMemo(() => {
+    // une carte « une couleur » (produit à plusieurs couleurs affiché couleur par couleur) montre sa propre couleur
+    if (product.variant_color) return [product.variant_color]
     const colors = (product.product_images || [])
       .map((img) => img.color)
-      .filter((c): c is string => !!c)
+      .filter((c): c is string => !!c && !["lit", "swatch"].includes(c.toLowerCase()))
     return Array.from(new Set(colors))
-  }, [product.product_images])
+  }, [product.product_images, product.variant_color])
 
   const displayedColors = uniqueColors.slice(0, 4)
   const extraCount = uniqueColors.length - displayedColors.length
@@ -291,7 +293,7 @@ const Product = ({
             )}
 
             {/* Couleurs */}
-            {uniqueColors.length > 0 && !product.variant_color && (
+            {uniqueColors.length > 0 && (
               <div className="flex items-center gap-2">
                 <p className="text-xs text-foreground/60">{t("colors")}</p>
 

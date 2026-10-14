@@ -140,6 +140,7 @@ function Dial({ v, minute, onDrag, onEnd, label }: { v: number; minute: number; 
       aria-label={label}
       data-tip="clock-dial"
       data-ready={drawn ? "1" : "0"}
+      data-sun={sunDeg.toFixed(1)}
       className="mx-auto block h-auto w-[78%] max-w-[240px] touch-none select-none"
       onPointerDown={(e) => {
         // on attrape le soleil (ou on le fait sauter sous le doigt si on touche le cercle)
@@ -404,7 +405,7 @@ export default function ClockWeather() {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         data-fab
-        className="font-info fixed bottom-[calc(6px+env(safe-area-inset-bottom))] right-0 z-30 flex cursor-pointer items-center gap-1.5 px-3 py-1 text-[10px] tabular-nums tracking-[0.12em] text-foreground/45 transition-opacity hover:text-foreground/80"
+        className="font-info fixed bottom-[calc(6px+env(safe-area-inset-bottom))] right-0 z-30 flex cursor-pointer items-center gap-1.5 px-3 py-1 text-[10px] tabular-nums tracking-[0.12em] text-white mix-blend-difference"
       >
         {weather && (
           <>

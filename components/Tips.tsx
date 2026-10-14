@@ -37,6 +37,99 @@ function findTarget(name: string): HTMLElement | null {
   return null
 }
 
+
+// Geste guidé : un doigt fantôme glisse le long du cercle du cadran, vers la droite puis vers la gauche
+function GhostSlide({ box }: { box: Box }) {
+  const dotRef = useRef<HTMLDivElement | null>(null)
+  const trailRef = useRef<SVGPathElement | null>(null)
+  const boxRef = useRef(box)
+  boxRef.current = box
+
+  useEffect(() => {
+    let raf = 0
+    const t0 = performance.now()
+    const startDeg = (() => {
+      const el = document.querySelector<HTMLElement>('[data-tip="clock-dial"]')
+      const v = parseFloat(el?.getAttribute("data-sun") ?? "0")
+      return Number.isFinite(v) ? v : 0
+    })()
+    const SPAN = 110
+    const CYCLE = 5200
+    const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
+    const tick = (now: number) => {
+      const b = boxRef.current
+      const cx = b.left + b.width / 2
+      const cy = b.top + b.height / 2
+      const r = (92 / 240) * b.width
+      const t = ((now - t0) % CYCLE) / CYCLE
+      // 0–.10 apparition + appui · .10–.45 vers la droite · .45–.58 pause · .58–.93 retour · .93–1 relâche
+      let delta = 0
+      let alpha = 1
+      let scale = 1
+      if (t < 0.1) {
+        alpha = t / 0.1
+        scale = 1.25 - 0.25 * (t / 0.1)
+      } else if (t < 0.45) {
+        delta = SPAN * ease((t - 0.1) / 0.35)
+        scale = 0.9
+      } else if (t < 0.58) {
+        delta = SPAN
+        scale = 0.9
+      } else if (t < 0.93) {
+        delta = SPAN * (1 - ease((t - 0.58) / 0.35))
+        scale = 0.9
+      } else {
+        alpha = 1 - (t - 0.93) / 0.07
+        scale = 0.9 + 0.35 * ((t - 0.93) / 0.07)
+      }
+      const deg = startDeg + delta
+      const a = (deg * Math.PI) / 180
+      const x = cx + r * Math.sin(a)
+      const y = cy - r * Math.cos(a)
+      const dot = dotRef.current
+      if (dot) {
+        dot.style.transform = `translate(${x}px, ${y}px) scale(${scale})`
+        dot.style.opacity = String(alpha)
+      }
+      const trail = trailRef.current
+      if (trail) {
+        const a0 = (startDeg * Math.PI) / 180
+        const x0 = cx + r * Math.sin(a0)
+        const y0 = cy - r * Math.cos(a0)
+        trail.setAttribute("d", delta < 0.5 ? "" : `M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x} ${y}`)
+        trail.style.opacity = String(alpha * 0.7)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  return (
+    <>
+      <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">
+        <path ref={trailRef} fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="1 7" />
+      </svg>
+      <div
+        ref={dotRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute left-0 top-0"
+        style={{
+          width: 42,
+          height: 42,
+          marginLeft: -21,
+          marginTop: -21,
+          borderRadius: 9999,
+          background: "rgba(255,255,255,0.28)",
+          border: "2px solid rgba(255,255,255,0.95)",
+          boxShadow: "0 6px 22px rgba(0,0,0,0.35)",
+          willChange: "transform, opacity",
+        }}
+      />
+    </>
+  )
+}
+
 export default function Tips() {
   const pathname = usePathname() ?? "/"
   const locale = useLocale()
@@ -243,6 +336,9 @@ export default function Tips() {
           transition: "all 0.25s ease",
         }}
       />
+
+      {/* geste guidé sur le cadran */}
+      {tip.id === "clock-dial" && <GhostSlide box={box} />}
 
       {/* bulle + flèche */}
       <div

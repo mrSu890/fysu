@@ -46,8 +46,9 @@ export default function CartDrawer() {
               <div className="flex items-center gap-4">
                 <div className="relative w-16 h-20 bg-neutral-100 rounded overflow-hidden shrink-0">
                   <Image
-                    src={item.selectedImageUrl ?? item.product_images?.[0]?.url}
+                    src={item.selectedImageUrl || item.product_images?.[0]?.url || "/placeholder.png"}
                     alt={item.name}
+                    data-keep-color
                     fill
                     className="object-contain"
                     sizes="64px"

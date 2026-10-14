@@ -4,22 +4,21 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { animate, motion, useMotionValue } from "framer-motion"
 import { Download, Printer } from "lucide-react"
-import { COPY, barcodeBars, dateText, money, type ReceiptData, type ReceiptLang } from "@/lib/receipt"
+import { COPY, dateText, money, type ReceiptData, type ReceiptLang } from "@/lib/receipt"
 import { downloadReceiptPdf } from "@/lib/receiptPdf"
 
 /* ====================================================================
    REÇU QUI S'IMPRIME
-   Une petite imprimante (noire en mode clair, gris clair en mode sombre) fait sortir le reçu
-   par saccades. À la fin : tampon « PAID », puis boutons « Télécharger en PDF » et « Continuer ».
+   Une carte sombre (résumé de la commande + fente) fait sortir un reçu blanc, épuré, par saccades.
+   À la fin : boutons « Télécharger en PDF » et « Continuer ».
    Réglages : DURATION (secondes d'impression), STEPS (nombre de saccades), couleurs ci-dessous.
    Pas d'animation si « Moins d'animations » est activé ou si ce reçu a déjà été imprimé sur cet appareil.
    ==================================================================== */
 
-const PAPER = "#f9f7f1"
+const PAPER = "#ffffff"
 const INK = "#1a1a1a"
 const SOFT = "rgba(26,26,26,0.5)"
 const LINE = "rgba(26,26,26,0.3)"
-const GREEN = "#154733" // le vert du pied de page
 const DURATION = 5.5
 const STEPS = 14
 
@@ -113,152 +112,101 @@ export default function ReceiptPrinter({
   }, [h, receipt.number, y])
 
   const cur = receipt.currency
-  const bars = barcodeBars(receipt.number)
-  const barTotal = bars.reduce((s, b) => s + b, 0)
-  let bx = 0
+  const subtotal = receipt.lines.reduce((s, l) => s + l.a, 0)
 
   return (
     <div className="w-full max-w-[380px]">
-      {/* la machine */}
+      {/* la machine : carte sombre avec le résumé de la commande, et la fente d'où sort le reçu */}
       <motion.div
-        animate={printing ? { x: [0, 0.7, -0.7, 0] } : { x: 0 }}
+        animate={printing ? { x: [0, 0.6, -0.6, 0] } : { x: 0 }}
         transition={printing ? { repeat: Infinity, duration: 0.14 } : { duration: 0.2 }}
-        className="relative z-10 mx-auto h-[58px] w-full rounded-[20px] bg-gradient-to-b from-[#3c3c3c] via-[#1b1b1b] to-[#0a0a0a] shadow-[0_14px_30px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.18)] dark:from-[#f4f4f4] dark:via-[#d6d6d6] dark:to-[#aeaeae] dark:shadow-[0_14px_30px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.8)]"
+        className="relative z-10 mx-auto w-full rounded-[28px] p-3"
+        style={{ background: "#2b2b2b", boxShadow: "0 18px 40px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.08)" }}
       >
-        <span className="font-info absolute left-5 top-3 text-[9px] tracking-[0.4em] text-white/45 dark:text-black/45">
-          FYSU
-        </span>
-        <motion.span
-          className="absolute right-5 top-[13px] h-[6px] w-[6px] rounded-full"
-          style={{ background: "#4EAC6C", boxShadow: "0 0 8px #4EAC6C" }}
-          animate={printing ? { opacity: [1, 0.25, 1] } : { opacity: 1 }}
-          transition={printing ? { repeat: Infinity, duration: 0.5 } : { duration: 0.2 }}
-        />
-        <span className="absolute inset-x-4 bottom-[7px] h-[8px] rounded-full bg-black shadow-[inset_0_2px_3px_rgba(0,0,0,0.9)] dark:bg-[#3a3a3a]" />
+        <div className="rounded-[20px] px-5 py-4" style={{ background: "#232323", color: "#f4f4f2" }}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="truncate text-[17px] font-medium leading-tight">
+                {receipt.lines[0]?.d ?? c.title}
+              </p>
+              <p className="font-info mt-1 text-[12px] font-light" style={{ color: "rgba(244,244,242,0.55)" }}>
+                {receipt.lines.length > 1 ? `+ ${receipt.lines.length - 1} ${c.articles}` : c.title}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="font-info text-[11px] font-light" style={{ color: "rgba(244,244,242,0.55)" }}>
+                {c.total}
+              </p>
+              <p className="text-[24px] font-medium leading-tight tracking-tight">{money(receipt.total, cur)}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2.5 text-[14px]">
+            <motion.span
+              className="flex h-[22px] w-[22px] items-center justify-center rounded-full"
+              style={{ background: "#4EAC6C" }}
+              animate={printing ? { opacity: [1, 0.45, 1] } : { opacity: 1 }}
+              transition={printing ? { repeat: Infinity, duration: 0.6 } : { duration: 0.2 }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M2.5 6.3l2.3 2.3 4.7-4.9" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </motion.span>
+            {c.confirmed}
+          </div>
+        </div>
+        {/* la fente */}
+        <div className="mx-auto mt-3 h-[10px] w-[calc(100%-24px)] rounded-full" style={{ background: "#141414", boxShadow: "inset 0 2px 3px rgba(0,0,0,0.9)" }} />
       </motion.div>
 
       {/* le reçu, qui sort de la fente */}
       <div
-        className="relative mx-auto -mt-[6px] w-[88%] overflow-hidden"
-        style={{ height: h || undefined, filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.22))" }}
+        className="relative mx-auto -mt-[6px] w-[84%] overflow-hidden"
+        style={{ height: h || undefined, filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.18))" }}
       >
         <motion.div ref={paperRef} style={{ y, color: INK }}>
-          <div className="px-5 pb-3 pt-9" style={{ background: PAPER }}>
-            {/* en-tête */}
+          <div className="px-6 pb-7 pt-9" style={{ background: PAPER }}>
             <div className="text-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/fysu-dark.png" alt="FYSU" className="mx-auto block h-[30px] w-auto" draggable={false} />
-              <div
-                className="font-info mt-1 text-[9px] uppercase"
-                style={{ letterSpacing: "0.3em", paddingLeft: "0.3em", color: SOFT }}
-              >
-                {c.title}
-              </div>
+              <img src="/images/fysu-dark.png" alt="FYSU" className="mx-auto block h-[26px] w-auto" draggable={false} />
             </div>
 
-            <div className="my-4" style={{ borderTop: `1px dashed ${LINE}` }} />
-
-            <Row label={c.receipt} value={receipt.number} />
-            <Row label={c.date} value={dateText(receipt.created, locale)} />
-            {receipt.name && <Row label={c.customer} value={receipt.name.toUpperCase().slice(0, 24)} />}
-
-            <div className="my-4" style={{ borderTop: `1px dashed ${LINE}` }} />
+            <div className="my-6" style={{ borderTop: `1px dashed ${LINE}` }} />
 
             {/* articles */}
             {receipt.lines.map((l, i) => (
-              <div key={i} className="font-info mb-2.5 flex justify-between gap-3 text-[11.5px] leading-[1.5]">
-                <span className="min-w-0 break-words font-medium">
+              <div key={i} className="font-info mb-3 flex justify-between gap-3 text-[12px] font-semibold uppercase leading-[1.5]">
+                <span className="min-w-0 break-words">
                   {l.d}
                   {l.q > 1 ? ` × ${l.q}` : ""}
                 </span>
                 <span className="shrink-0">{money(l.a, cur)}</span>
               </div>
             ))}
+
+            <div className="my-5" style={{ borderTop: `1px dashed ${LINE}` }} />
+
+            <Row label={c.subtotal} value={money(subtotal, cur)} />
             {receipt.shipping !== null ? (
-              <Row label={c.shipping} value={receipt.shipping > 0 ? money(receipt.shipping, cur) : c.free} soft />
+              <Row label={c.shipping} value={receipt.shipping > 0 ? money(receipt.shipping, cur) : c.free} />
             ) : receipt.other > 0 ? (
-              <Row label={c.other} value={money(receipt.other, cur)} soft />
+              <Row label={c.other} value={money(receipt.other, cur)} />
             ) : null}
-            {receipt.discount > 0 && <Row label={c.discount} value={`-${money(receipt.discount, cur)}`} soft />}
-            {receipt.tax > 0 && <Row label={c.vat} value={money(receipt.tax, cur)} soft />}
+            {receipt.discount > 0 && <Row label={c.discount} value={`-${money(receipt.discount, cur)}`} />}
+            {receipt.tax > 0 && <Row label={c.vat} value={money(receipt.tax, cur)} />}
 
-            <div className="mt-3" style={{ borderTop: `1px solid ${INK}` }} />
-
-            {/* total + tampon */}
-            <div className="relative flex items-baseline justify-between pb-1 pt-5">
-              <span className="font-info text-[15px] font-medium uppercase">{c.total}</span>
-              <span className="font-info text-[21px] font-medium">{money(receipt.total, cur)}</span>
-              <motion.div
-                aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-1/2"
-                style={{ x: "-50%", y: "-46%", mixBlendMode: "multiply" }}
-                initial={{ scale: 1.9, opacity: 0, rotate: -30 }}
-                animate={done ? { scale: 1, opacity: 0.88, rotate: -12 } : { scale: 1.9, opacity: 0, rotate: -30 }}
-                transition={{ type: "spring", stiffness: 380, damping: 18 }}
-              >
-                <svg viewBox="0 0 100 100" width="92" height="92">
-                  <defs>
-                    <path id="fysu-stamp-arc" d="M50,50 m-35,0 a35,35 0 1,1 70,0 a35,35 0 1,1 -70,0" />
-                  </defs>
-                  <circle cx="50" cy="50" r="46" fill="none" stroke={GREEN} strokeWidth="2" />
-                  <circle cx="50" cy="50" r="28" fill="none" stroke={GREEN} strokeWidth="1" />
-                  <text fontSize="7" fill={GREEN} fontFamily="ui-monospace, Menlo, monospace">
-                    <textPath href="#fysu-stamp-arc" textLength="214" lengthAdjust="spacing">
-                      {c.stampTop}
-                    </textPath>
-                  </text>
-                  <text
-                    x="50"
-                    y="57"
-                    textAnchor="middle"
-                    fontSize="19"
-                    fontWeight="700"
-                    fill={GREEN}
-                    fontFamily="ui-monospace, Menlo, monospace"
-                  >
-                    {c.paid.toUpperCase()}
-                  </text>
-                </svg>
-              </motion.div>
+            <div className="font-info mt-4 flex items-baseline justify-between gap-3">
+              <span className="text-[13px] font-semibold uppercase" style={{ letterSpacing: "0.04em" }}>
+                {c.totalPaid}
+              </span>
+              <span className="text-[22px] font-semibold">{money(receipt.total, cur)}</span>
             </div>
 
-            <div className="font-info flex justify-between gap-3 pb-4 text-[9px] uppercase" style={{ color: SOFT, letterSpacing: "0.1em" }}>
-              <span>{receipt.method ? `${c.paidBy} ${receipt.method}` : c.paid}</span>
-              <span>{c.approved}</span>
-            </div>
+            <div className="my-5" style={{ borderTop: `1px dashed ${LINE}` }} />
 
-            <div className="mb-4" style={{ borderTop: `1px dashed ${LINE}` }} />
-
-            {/* code-barres décoratif */}
-            <svg viewBox={`0 0 ${barTotal} 36`} preserveAspectRatio="none" className="h-[38px] w-full" aria-hidden="true">
-              {bars.map((b, i) => {
-                const x = bx
-                bx += b
-                return i % 2 === 0 ? <rect key={i} x={x} y={0} width={b} height={36} fill={INK} /> : null
-              })}
-            </svg>
-            <div className="font-info mt-2 text-center text-[9px]" style={{ letterSpacing: "0.25em", color: SOFT }}>
-              {receipt.number}
-            </div>
-
-            <div
-              className="mt-4 pb-3 text-center text-[15px]"
-              style={{ fontStyle: "italic", fontFamily: 'Georgia, "Times New Roman", serif' }}
-            >
-              {c.thanks}
-            </div>
+            <Row label={c.orderNo} value={receipt.number} />
+            {receipt.method && <Row label={c.paidWith} value={receipt.method} />}
+            <Row label={c.date} value={dateText(receipt.created, locale)} />
           </div>
-
-          {/* bord dentelé */}
-          <div
-            aria-hidden="true"
-            style={{
-              height: 10,
-              backgroundImage: `linear-gradient(135deg, ${PAPER} 50%, transparent 50%), linear-gradient(225deg, ${PAPER} 50%, transparent 50%)`,
-              backgroundSize: "14px 10px",
-              backgroundRepeat: "repeat-x",
-            }}
-          />
         </motion.div>
       </div>
 
