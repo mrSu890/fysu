@@ -23,6 +23,7 @@ const DOCS = [
   { slug: "returns", label: "Retours" },
   { slug: "legal-notice", label: "Mentions légales" },
   { slug: "contact", label: "Contact" },
+  { slug: "faq", label: "FAQ" },
 ]
 
 const toDraft = (d: Doc): Draft => ({
