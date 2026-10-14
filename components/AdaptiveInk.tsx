@@ -182,7 +182,10 @@ function run() {
   const html = document.documentElement
   // sensibilité réduite : on garde la couleur d'origine du mood (clair en sombre, sombre en clair)
   // et on ne bascule que si le fond est NETTEMENT contraire (blanc franc ou noir franc)
-  const darkMood = html.classList.contains("dark")
+  // après-midi (verre vert) et coucher de soleil : toujours blanc, pas d'adaptation
+  // aube : texte sombre par défaut ; nuit et jour : texte clair par défaut
+  const forceLight = html.classList.contains("afternoon") || html.classList.contains("sunset")
+  const darkMood = !html.classList.contains("dawn")
   document.querySelectorAll(ROOTS).forEach((root) => {
     const rr = root.getBoundingClientRect()
     if (rr.width === 0 || rr.height === 0 || rr.bottom < 0 || rr.top > window.innerHeight) return
@@ -201,7 +204,7 @@ function run() {
       }
       const L = sum / N
       const prev = previous.get(root)
-      pillInk = darkMood
+      pillInk = forceLight ? "light" : darkMood
         ? L > (prev === "dark" ? 0.72 : 0.82) ? "dark" : "light"
         : L < (prev === "light" ? 0.36 : 0.26) ? "light" : "dark"
       previous.set(root, pillInk)
@@ -215,7 +218,9 @@ function run() {
       const L = behindLum(x, y)
       const prev = previous.get(el)
       let next: "dark" | "light"
-      if (pillInk) {
+      if (forceLight) {
+        next = "light"
+      } else if (pillInk) {
         next = pillInk
       } else if (darkMood) {
         // texte clair par défaut ; sombre seulement sur un fond très clair
