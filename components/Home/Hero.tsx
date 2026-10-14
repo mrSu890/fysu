@@ -25,10 +25,10 @@ const RIGHT_LINK = "/for-her";
    ==================================================================== */
 const PRONUNCIATION = "/faɪ.su/"; // transcription phonétique (API)
 const INTRO: Record<string, string> = {
-  fr: "FYSU crée des vêtements, des parfums et de la musique. Première collection : printemps/été 2027.",
-  en: "FYSU creates clothing, fragrances and music. First collection: Spring/Summer 2027.",
-  nl: "FYSU maakt kleding, geuren en muziek. Eerste collectie: lente/zomer 2027.",
-  ja: "FYSUは、服と香りと音楽をつくります。最初のコレクション：2027年春夏。",
+  fr: "FYSU est une maison de vêtements, de parfums et de sons. Des pièces faites pour être gardées et portées.",
+  en: "FYSU is a house of clothing, scent and sound. Pieces made to be kept and lived in.",
+  nl: "FYSU is een huis van kleding, geur en geluid. Stukken gemaakt om te bewaren en te dragen.",
+  ja: "FYSUは、服と香りと音をつくるメゾン。長く着るためのピース。",
 };
 
 const isVideoMedia = (item: HeroMedia) =>
