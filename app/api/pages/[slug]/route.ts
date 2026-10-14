@@ -60,7 +60,8 @@ export async function GET(
             name,
             slug
           ),
-          product_images:product_images!product_images_productId_fkey (*)
+          product_images:product_images!product_images_productId_fkey (*),
+          product_colors!product_colors_product_id_fkey (*)
         )
       )
     )
