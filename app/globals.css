@@ -195,6 +195,11 @@
 .cookie-glass .bg-white {
   color: #171717;
 }
+/* Textes adaptatifs : sombre ou clair selon ce qui est derrière (voir components/AdaptiveInk.tsx) */
+[data-ink="dark"] { color: #151515 !important; transition: color 0.2s; }
+[data-ink="light"] { color: #f6f6f3 !important; transition: color 0.2s; }
+img[data-ink="dark"] { filter: brightness(0) !important; opacity: 0.88 !important; transition: filter 0.2s; }
+img[data-ink="light"] { filter: brightness(0) invert(1) !important; opacity: 0.94 !important; transition: filter 0.2s; }
 /* Barre de navigation : logo, textes et icônes légèrement moins blancs */
 .navbar-root .liquid-glass,
 .navbar-root .liquid-glass * {
