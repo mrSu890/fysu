@@ -42,6 +42,12 @@ export const COPY: Record<ReceiptLang, Record<string, string>> = {
     ready: "Your receipt is ready",
     download: "Download PDF",
     stampTop: "THANK YOU · PAYMENT RECEIVED · ",
+    subtotal: "Subtotal",
+    totalPaid: "Total paid",
+    orderNo: "Order",
+    paidWith: "Paid with",
+    confirmed: "Order complete",
+    articles: "items",
   },
   fr: {
     title: "Reçu de commande",
@@ -62,6 +68,12 @@ export const COPY: Record<ReceiptLang, Record<string, string>> = {
     ready: "Votre reçu est prêt",
     download: "Télécharger en PDF",
     stampTop: "MERCI · PAIEMENT REÇU · ",
+    subtotal: "Sous-total",
+    totalPaid: "Total payé",
+    orderNo: "Commande",
+    paidWith: "Payé avec",
+    confirmed: "Commande confirmée",
+    articles: "articles",
   },
 }
 

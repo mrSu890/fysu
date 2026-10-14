@@ -65,9 +65,9 @@ export function releasePopup(id: string) {
 export function whenPopupIdle(
   id: string,
   cb: () => void,
-  opts: { quiet?: number; hideFabs?: boolean } = {}
+  opts: { quiet?: number; hideFabs?: boolean; ready?: () => boolean } = {}
 ): () => void {
-  const { quiet = 1500, hideFabs = true } = opts
+  const { quiet = 1500, hideFabs = true, ready } = opts
   let stopped = false
   const stop = () => {
     stopped = true
@@ -75,7 +75,7 @@ export function whenPopupIdle(
   }
   const tick = () => {
     if (stopped) return
-    if (popupReady(id, quiet) && claimPopup(id, hideFabs)) {
+    if ((!ready || ready()) && popupReady(id, quiet) && claimPopup(id, hideFabs)) {
       stop()
       cb()
     }

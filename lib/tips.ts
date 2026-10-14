@@ -40,8 +40,8 @@ export const TIPS: Tip[] = [
       {
         target: "clock",
         text: {
-          fr: "Touche l'heure : un petit cadran s'ouvre. Fais glisser le soleil pour changer l'ambiance du site (nuit, aube, jour, après-midi).",
-          en: "Tap the time: a small dial opens. Drag the sun to change the mood of the site (night, dawn, day, afternoon).",
+          fr: "Touche le soleil ou la lune : un petit cadran s'ouvre. Fais glisser le soleil pour changer l'ambiance du site (aube, jour, après-midi, coucher de soleil, nuit).",
+          en: "Tap the sun or the moon: a small dial opens. Drag the sun to change the mood of the site (dawn, day, afternoon, sunset, night).",
         },
       },
     ],
@@ -54,8 +54,8 @@ export const TIPS: Tip[] = [
       {
         target: "clock-dial",
         text: {
-          fr: "Pose le doigt sur le soleil et fais-le glisser tout autour du cercle, sans lever le doigt : vers la droite pour avancer dans la journée, vers la gauche pour reculer. Les couleurs du site changent doucement avec lui.",
-          en: "Put your finger on the sun and slide it all around the circle without lifting: to the right to move forward through the day, to the left to go back. The site's colours change gently with it.",
+          fr: "Regarde le geste : pose le doigt sur le soleil et fais-le glisser le long du cercle, sans lever le doigt. Vers la droite, la journée avance ; vers la gauche, elle recule.",
+          en: "Watch the gesture: put your finger on the sun and slide it along the circle without lifting. To the right, the day moves forward; to the left, it goes back.",
         },
       },
     ],
@@ -72,14 +72,6 @@ export const TIPS: Tip[] = [
         text: {
           fr: "Touche le disque pour l'ouvrir en grand et voir le vinyle tourner.",
           en: "Tap the record to open it full screen and watch the vinyl spin.",
-        },
-      },
-      {
-        target: "music-collapse",
-        round: true,
-        text: {
-          fr: "Cette flèche réduit le lecteur en petite bulle. Tu peux ensuite la glisser où tu veux sur l'écran.",
-          en: "This arrow shrinks the player into a small bubble. You can then drag it anywhere on the screen.",
         },
       },
     ],
