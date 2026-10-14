@@ -583,7 +583,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
             </div>
           )}
   
-                    <div ref={buyRef} className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
+                    <div ref={buyRef} data-ink-root className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
             {canBuy && colorSoldOut ? (
               <div className="w-full space-y-3">
                 <div
