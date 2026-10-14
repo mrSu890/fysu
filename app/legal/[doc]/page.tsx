@@ -26,8 +26,24 @@ export default async function LegalPage({ params }: Props) {
   let page = await getLegalDocResolved(doc, lang)
   if (locale !== "fr" && locale !== "en") page = await localize(page)
 
+  const faq = doc === "faq"
+  const jsonLd = faq
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: page.sections.map((s) => ({
+          "@type": "Question",
+          name: s.h,
+          acceptedAnswer: { "@type": "Answer", text: s.p.join(" ") },
+        })),
+      }
+    : null
+
   return (
     <div className="bg-background text-foreground">
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      )}
       <Navbar />
 
       <main className="mx-auto max-w-[880px] px-7 pb-[14vh] pt-40 sm:pt-52 md:ml-[max(64px,12vw)] md:mr-auto md:px-0">
@@ -36,9 +52,9 @@ export default async function LegalPage({ params }: Props) {
           <p className="mt-8 max-w-[24em] text-[17px] font-light leading-[1.6] tracking-[-0.01em] text-foreground/75 sm:text-xl">{page.intro}</p>
         )}
 
-        <div className="mt-[14vh]">
+        <div className={faq ? "mt-[8vh]" : "mt-[14vh]"}>
           {page.sections.map((section, i) => (
-            <section key={section.h} className="pb-[10vh]">
+            <section key={section.h} className={faq ? "pb-[5vh]" : "pb-[10vh]"}>
               <div className="mb-8 border-t border-foreground/50 pt-4">
                 <p className="font-info text-[11px] font-light uppercase tracking-[0.06em] text-foreground/55">
                   ( {String(i + 1).padStart(2, "0")} )
