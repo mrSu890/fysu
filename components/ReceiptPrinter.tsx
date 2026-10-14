@@ -160,7 +160,7 @@ export default function ReceiptPrinter({
 
       {/* le reçu, qui sort de la fente */}
       <div
-        className="relative mx-auto -mt-[6px] w-[84%] overflow-hidden"
+        className="relative z-20 mx-auto -mt-[17px] w-[84%] overflow-hidden"
         style={{ height: h || undefined, filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.18))" }}
       >
         <motion.div ref={paperRef} style={{ y, color: INK }}>

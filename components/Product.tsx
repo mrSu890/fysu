@@ -65,13 +65,18 @@ const Product = ({
 
   // Extraire les couleurs uniques depuis les images
   const uniqueColors = useMemo(() => {
-    // une carte « une couleur » (produit à plusieurs couleurs affiché couleur par couleur) montre sa propre couleur
-    if (product.variant_color) return [product.variant_color]
-    const colors = (product.product_images || [])
+    // toutes les couleurs du produit (celles déclarées sur la fiche d'abord, sinon celles des photos)
+    const declared = [...(product.product_colors ?? [])]
+      .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+      .map((c) => c.hex)
+      .filter((c): c is string => !!c)
+    const fromImages = (product.product_images || [])
       .map((img) => img.color)
       .filter((c): c is string => !!c && !["lit", "swatch"].includes(c.toLowerCase()))
-    return Array.from(new Set(colors))
-  }, [product.product_images, product.variant_color])
+    const all = Array.from(new Set([...declared, ...fromImages].map((c) => c.toLowerCase())))
+    if (product.variant_color && !all.includes(product.variant_color.toLowerCase())) all.unshift(product.variant_color.toLowerCase())
+    return all
+  }, [product.product_colors, product.product_images, product.variant_color])
 
   const displayedColors = uniqueColors.slice(0, 4)
   const extraCount = uniqueColors.length - displayedColors.length
@@ -302,7 +307,13 @@ const Product = ({
                     key={color}
                     title={color}
                     className="h-3.5 w-3.5 rounded-full"
-                    style={{ backgroundColor: color }}
+                    style={{
+                      backgroundColor: color,
+                      boxShadow:
+                        product.variant_color && product.variant_color.toLowerCase() === color
+                          ? "0 0 0 1.5px var(--background), 0 0 0 2.5px var(--foreground)"
+                          : "inset 0 0 0 1px rgba(128,128,128,0.35)",
+                    }}
                   />
                 ))}
 
