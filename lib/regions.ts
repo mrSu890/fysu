@@ -144,6 +144,16 @@ export function getStoredCountry(): string | null {
   return value ? decodeURIComponent(value) : null
 }
 
+// « Passer » : la personne ferme le choix de zone sans choisir. Le site reste en anglais, on ne redemande pas.
+export const REGION_SKIP_COOKIE = "FYSU_REGION_SKIP"
+export function regionSkipped(): boolean {
+  if (typeof document === "undefined") return false
+  return document.cookie.split("; ").some((row) => row.startsWith(`${REGION_SKIP_COOKIE}=`))
+}
+export function skipRegion() {
+  document.cookie = `${REGION_SKIP_COOKIE}=1; path=/; max-age=31536000; samesite=lax`
+}
+
 export function saveRegion(countryCode: string, locale: string) {
   const opts = "path=/; max-age=31536000; samesite=lax"
   document.cookie = `${COUNTRY_COOKIE}=${encodeURIComponent(countryCode)}; ${opts}`

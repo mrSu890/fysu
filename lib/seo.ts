@@ -15,35 +15,35 @@ export const SITE_NAME = "FYSU"
 export const HOME_COPY: Record<string, { title: string; description: string }> = {
   en: {
     title: "FYSU — Official Site | Spring/Summer 2027 Collection",
-    description: "Official FYSU site. Discover the Spring/Summer 2027 collection: clothing, fragrance and music, made slowly.",
+    description: "Official FYSU site. Discover the Spring/Summer 2027 collection: clothing, fragrance and music.",
   },
   fr: {
     title: "FYSU — Site officiel | Collection Printemps/Été 2027",
-    description: "Site officiel FYSU. Découvrez la collection Printemps/Été 2027 : vêtements, parfums et musique, pensés lentement.",
+    description: "Site officiel FYSU. Découvrez la collection Printemps/Été 2027 : vêtements, parfums et musique.",
   },
   nl: {
     title: "FYSU — Officiële website | Collectie lente/zomer 2027",
-    description: "Officiële FYSU-website. Ontdek de collectie lente/zomer 2027: kleding, geuren en muziek, rustig gemaakt.",
+    description: "Officiële FYSU-website. Ontdek de collectie lente/zomer 2027: kleding, geuren en muziek.",
   },
   ja: {
     title: "FYSU — 公式サイト | 2027年春夏コレクション",
-    description: "FYSU公式サイト。2027年春夏コレクションをご覧ください。服、香り、音楽をゆっくりと。",
+    description: "FYSU公式サイト。2027年春夏コレクションをご覧ください。服、香り、音楽。",
   },
   de: {
     title: "FYSU — Offizielle Website | Kollektion Frühjahr/Sommer 2027",
-    description: "Offizielle FYSU-Website. Entdecke die Kollektion Frühjahr/Sommer 2027: Mode, Düfte und Musik, in Ruhe gemacht.",
+    description: "Offizielle FYSU-Website. Entdecke die Kollektion Frühjahr/Sommer 2027: Mode, Düfte und Musik.",
   },
   es: {
     title: "FYSU — Sitio oficial | Colección Primavera/Verano 2027",
-    description: "Sitio oficial de FYSU. Descubre la colección Primavera/Verano 2027: ropa, fragancias y música, hechas con calma.",
+    description: "Sitio oficial de FYSU. Descubre la colección Primavera/Verano 2027: ropa, fragancias y música.",
   },
   it: {
     title: "FYSU — Sito ufficiale | Collezione Primavera/Estate 2027",
-    description: "Sito ufficiale FYSU. Scopri la collezione Primavera/Estate 2027: abiti, fragranze e musica, fatti con calma.",
+    description: "Sito ufficiale FYSU. Scopri la collezione Primavera/Estate 2027: abiti, fragranze e musica.",
   },
   pt: {
     title: "FYSU — Site oficial | Coleção Primavera/Verão 2027",
-    description: "Site oficial da FYSU. Descubra a coleção Primavera/Verão 2027: roupa, fragrâncias e música, feitas com calma.",
+    description: "Site oficial da FYSU. Descubra a coleção Primavera/Verão 2027: roupa, fragrâncias e música.",
   },
 }
 
@@ -64,12 +64,12 @@ export const PAGES = {
   thewave: {
     path: "/thewave",
     title: "TheWave — FYSU",
-    description: "TheWave is the playful side of FYSU: clothing, objects and music with a light, young spirit.",
+    description: "TheWave is a FYSU line of knitwear, summer accessories and music.",
   },
   kibanCollector: {
     path: "/kiban-collector",
     title: "Kiban Collector — FYSU",
-    description: "Kiban Collector is the FYSU collector line: refined pieces made slowly, in the spirit of a quiet gallery.",
+    description: "Kiban Collector is the FYSU craft program: objects made by artisans and engineers.",
   },
   fygrances: {
     path: "/fygrances",
@@ -79,7 +79,7 @@ export const PAGES = {
   music: {
     path: "/music",
     title: "Music — FYSU",
-    description: "Piano, ambient and curated albums to accompany the FYSU collections. Listen on the site.",
+    description: "Piano, ambient and other albums to accompany the FYSU collections. Listen on the site.",
   },
   games: {
     path: "/games",
@@ -89,7 +89,7 @@ export const PAGES = {
   about: {
     path: "/about",
     title: "About — FYSU",
-    description: "The story of FYSU, an independent house of clothing, fragrance and music.",
+    description: "About FYSU: clothing, fragrance and music.",
   },
 } as const
 

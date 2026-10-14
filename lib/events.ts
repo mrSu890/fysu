@@ -56,7 +56,7 @@ export const EVENTS: EventData[] = [
       { label: { fr: "Lieu", en: "Place" }, value: { fr: "Ökēn, sous TheMerode, place Poelaert 6, Bruxelles", en: "Ökēn, beneath TheMerode, Place Poelaert 6, Brussels" } },
       { label: { fr: "Collection", en: "Collection" }, value: { fr: "When the flowers bloom", en: "When the flowers bloom" } },
       { label: { fr: "Collab", en: "Collab" }, value: { fr: "Labarik, cocktails", en: "Labarik, cocktails" } },
-      { label: { fr: "Musique", en: "Music" }, value: { fr: "Curation FYSU", en: "FYSU curation" } },
+      { label: { fr: "Musique", en: "Music" }, value: { fr: "Sélection FYSU", en: "FYSU selection" } },
     ],
     hero: img("01", 2000, 1333, "Une silhouette FYSU sous un kiban, dans la pénombre d'Ökēn", "A FYSU look under a kiban, in the half-light of Ökēn"),
     heroPosition: "72% 50%",
@@ -100,8 +100,8 @@ export const EVENTS: EventData[] = [
         label: { fr: "La musique", en: "The music" },
         paragraphs: [
           {
-            fr: "Une curation musicale a accompagné la soirée. Elle est à retrouver sur le site.",
-            en: "A music curation accompanied the evening. You can find it on the site.",
+            fr: "Une sélection musicale a accompagné la soirée. Elle est à retrouver sur le site.",
+            en: "A music selection accompanied the evening. You can find it on the site.",
           },
         ],
       },
