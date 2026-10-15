@@ -87,6 +87,9 @@ const Arrow = () => (
 const GATE_CSS = `
 .gate-root{background:#8a8f86 url(/images/gate-bg.jpg) center/cover no-repeat;animation:gate-in .9s ease both;color:#fff}
 .gate-root.gate-leaving{animation:gate-out .6s ease forwards}
+.gate-video{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+@media (orientation:portrait) and (pointer:coarse){.gate-video{display:block}}
+@media (prefers-reduced-motion:reduce){.gate-video{display:none!important}}
 @keyframes gate-in{from{opacity:0}to{opacity:1}}
 @keyframes gate-out{to{opacity:0}}
 .gate-field{width:100%;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.38);border-radius:999px;padding:13px 52px 13px 20px;color:#fff;font-size:14px;outline:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -222,6 +225,20 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
       aria-modal="true"
     >
       <style>{GATE_CSS}</style>
+
+      {/* Téléphone et iPad en portrait : une vidéo en boucle remplace l'image de fond */}
+      <video
+        className="gate-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        poster="/images/gate-video-poster.jpg"
+        aria-hidden="true"
+      >
+        <source src="/videos/gate-bg.mp4" type="video/mp4" />
+      </video>
 
       {/* assombrit le bas pour garder les champs lisibles */}
       <div
