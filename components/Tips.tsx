@@ -283,6 +283,14 @@ export default function Tips() {
     return () => releasePopup("tip")
   }, [isActive])
 
+  // astuce « cliquable » : un clic sur l'élément éclairé (ex. l'icône d'ambiance) ferme l'astuce
+  useEffect(() => {
+    if (!active || !active.tip.steps[active.step].clickable) return
+    const close = () => setActive(null)
+    window.addEventListener("fysu-open-clock", close)
+    return () => window.removeEventListener("fysu-open-clock", close)
+  }, [active])
+
   // la page change : on ferme
   useEffect(() => {
     setActive(null)
@@ -316,13 +324,28 @@ export default function Tips() {
     setActive(null)
   }
 
+  const open = !!s.clickable
+  const hole = { left: box.left - PAD, top: box.top - PAD, width: box.width + PAD * 2, height: box.height + PAD * 2 }
+  // quatre bandes qui bloquent tout sauf l'élément éclairé (quand il reste cliquable)
+  const blockers = open
+    ? [
+        { left: 0, top: 0, width: vw, height: Math.max(0, hole.top) },
+        { left: 0, top: hole.top + hole.height, width: vw, height: Math.max(0, vh - hole.top - hole.height) },
+        { left: 0, top: hole.top, width: Math.max(0, hole.left), height: hole.height },
+        { left: hole.left + hole.width, top: hole.top, width: Math.max(0, vw - hole.left - hole.width), height: hole.height },
+      ]
+    : []
+
   return (
     <div
       role="presentation"
       className="fixed inset-0"
-      style={{ zIndex: Z, touchAction: "none" }}
+      style={{ zIndex: Z, touchAction: "none", pointerEvents: open ? "none" : "auto" }}
       onClick={(e) => e.stopPropagation()}
     >
+      {blockers.map((b, i) => (
+        <div key={i} className="absolute" style={{ ...b, pointerEvents: "auto" }} onClick={(e) => e.stopPropagation()} />
+      ))}
       {/* éclairage : un trou dans le fond sombre autour de l'élément */}
       <div
         className="pointer-events-none absolute"
@@ -344,6 +367,7 @@ export default function Tips() {
       <div
         className="absolute text-white"
         style={{
+          pointerEvents: "auto",
           left,
           width: cardW,
           ...(inside
