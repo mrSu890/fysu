@@ -10,6 +10,7 @@ import {
   ReactNode,
 } from "react";
 import { ProductType } from "@/types/product";
+import { supabaseClient } from "@/lib/supabaseClient";
 
 type CartItem = ProductType & {
   quantity: number;
@@ -91,6 +92,65 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.warn("Cart save failed:", e);
     }
+  }, [cart, isHydrated]);
+
+  /* -------------------- SYNC entre appareils (utilisateur connecté) -------------------- */
+  const syncReady = useRef(false);
+  const loggedIn = useRef(false);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    let cancelled = false;
+
+    const pull = async () => {
+      try {
+        const res = await fetch("/api/cart", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { items?: CartItem[] };
+        const remote = Array.isArray(data.items) ? data.items : [];
+        if (cancelled) return;
+        loggedIn.current = true;
+        // fusion : une même pièce (id + taille) garde la plus grande quantité
+        setCart((local) => {
+          const merged = [...local];
+          for (const r of remote) {
+            const i = merged.findIndex((m) => m.id === r.id && m.selectedSizeId === r.selectedSizeId);
+            if (i === -1) merged.push(r);
+            else merged[i] = { ...merged[i], quantity: Math.max(merged[i].quantity, r.quantity) };
+          }
+          return merged;
+        });
+      } catch {
+        /* hors ligne : le panier reste local */
+      } finally {
+        syncReady.current = true;
+      }
+    };
+
+    supabaseClient.auth.getSession().then(({ data }) => {
+      if (data.session) pull();
+      else syncReady.current = true;
+    });
+    const { data: sub } = supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") pull();
+      if (event === "SIGNED_OUT") loggedIn.current = false;
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated || !syncReady.current || !loggedIn.current) return;
+    const t = setTimeout(() => {
+      fetch("/api/cart", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart }),
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(t);
   }, [cart, isHydrated]);
 
   /* -------------------- CART OPS -------------------- */
