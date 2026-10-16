@@ -6,6 +6,7 @@ import { ArrowLeft, Copy, Crop, ExternalLink, ImagePlus, Plus, RefreshCw, Trash2
 import { AdminButton, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
+import { supabaseClient } from "@/lib/supabaseClient"
 import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
@@ -514,10 +515,19 @@ export default function ProductEditor({ id }: { id: string }) {
   async function uploadInfoBlockImage(index: number, files: File[]) {
     setUploading(true)
     try {
-      const fd = new FormData()
-      fd.append("file", files[0].type.startsWith("video") ? files[0] : await resizeImage(files[0]))
-      fd.append("productId", String(productId))
-      const data = await api.upload<{ url: string }>("/api/admin/products/upload-info-block", fd)
+      const isVideo = files[0].type.startsWith("video")
+      const file = isVideo ? files[0] : await resizeImage(files[0])
+      const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase()
+      // envoi direct vers Supabase : le fichier ne passe pas par le serveur (évite l'erreur 413)
+      const sig = await api.post<{ path: string; token: string; url: string }>(
+        "/api/admin/products/upload-info-block/sign",
+        { productId, ext }
+      )
+      const { error: upErr } = await supabaseClient.storage
+        .from("products")
+        .uploadToSignedUrl(sig.path, sig.token, file, { contentType: file.type || undefined })
+      if (upErr) throw new Error(upErr.message)
+      const data = { url: sig.url }
       setInfoBlocks((cur) => cur.map((b, i) => (i === index ? { ...b, image_url: data.url } : b)))
     } catch (e) {
       notify.error(errorMessage(e, "Erreur d'envoi de l'image"))
