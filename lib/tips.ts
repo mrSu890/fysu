@@ -71,6 +71,7 @@ export const TIPS: Tip[] = [
       {
         target: "music-vinyl",
         round: true,
+        clickable: true,
         text: {
           fr: "Touche le disque pour l'ouvrir en grand et voir le vinyle tourner.",
           en: "Tap the record to open it full screen and watch the vinyl spin.",
