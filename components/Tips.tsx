@@ -283,12 +283,16 @@ export default function Tips() {
     return () => releasePopup("tip")
   }, [isActive])
 
-  // astuce « cliquable » : un clic sur l'élément éclairé (ex. l'icône d'ambiance) ferme l'astuce
+  // astuce « cliquable » : un clic sur l'élément éclairé (icône d'ambiance, disque…) ferme l'astuce
   useEffect(() => {
     if (!active || !active.tip.steps[active.step].clickable) return
-    const close = () => setActive(null)
-    window.addEventListener("fysu-open-clock", close)
-    return () => window.removeEventListener("fysu-open-clock", close)
+    const target = active.tip.steps[active.step].target
+    const onClick = (e: Event) => {
+      const el = e.target as Element | null
+      if (el?.closest?.(`[data-tip="${target}"]`)) window.setTimeout(() => setActive(null), 0)
+    }
+    document.addEventListener("click", onClick, true)
+    return () => document.removeEventListener("click", onClick, true)
   }, [active])
 
   // la page change : on ferme
