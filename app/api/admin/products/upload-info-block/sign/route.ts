@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     if (error || !data) return NextResponse.json({ error: error?.message || "Sign failed" }, { status: 500 })
 
     const { data: pub } = supabaseAdmin.storage.from("products").getPublicUrl(path)
-    return NextResponse.json({ path, token: data.token, url: pub.publicUrl })
+    return NextResponse.json({ path, token: data.token, signedUrl: data.signedUrl, url: pub.publicUrl })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: "Sign failed" }, { status: 500 })
