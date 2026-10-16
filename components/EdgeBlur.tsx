@@ -1,46 +1,41 @@
 "use client"
 
 /* ====================================================================
-   FLOU EN HAUT ET EN BAS DE L'ÉCRAN (comme Apple Musique)
-   Le contenu qui défile sous la barre d'état et sous la zone des pastilles du bas se floute
-   progressivement, pour que le regard reste sur ce qui est au milieu.
-   Réglages : TOP / BOTTOM (hauteur en px, sans les zones de sécurité de l'iPhone), BLUR (flou max en px).
-   Désactivé si l'appareil demande moins de transparence.
+   FONDU EN HAUT ET EN BAS DE L'ÉCRAN (comme Apple Musique)
+   Le contenu qui défile sous la barre d'état et sous la zone des pastilles du bas s'efface
+   dans la couleur de fond de l'ambiance en cours (nuit, aube, jour, après-midi, coucher de soleil).
+   Pas de flou : un simple dégradé de la couleur du fond vers la transparence.
+   Réglages : TOP / BOTTOM (hauteur en px, hors zones de sécurité de l'iPhone), STRENGTH (0 à 1, opacité au bord).
    ==================================================================== */
 
-const TOP = 96
+const TOP = 92
 const BOTTOM = 84
-const BLUR = 12
+const STRENGTH = 0.94
+
+// dégradé « adouci » : la couleur s'estompe progressivement, sans bord visible
+const stops = (dir: "to bottom" | "to top") =>
+  `linear-gradient(${dir},
+    color-mix(in srgb, var(--background) ${STRENGTH * 100}%, transparent) 0%,
+    color-mix(in srgb, var(--background) ${STRENGTH * 86}%, transparent) 22%,
+    color-mix(in srgb, var(--background) ${STRENGTH * 58}%, transparent) 46%,
+    color-mix(in srgb, var(--background) ${STRENGTH * 28}%, transparent) 70%,
+    color-mix(in srgb, var(--background) ${STRENGTH * 9}%, transparent) 88%,
+    transparent 100%)`
 
 const CSS = `
-.edge-blur{position:fixed;left:0;right:0;pointer-events:none;z-index:40}
-.edge-blur>i{position:absolute;inset:0;display:block}
-.edge-blur-top{top:0;height:calc(env(safe-area-inset-top,0px) + ${TOP}px)}
-.edge-blur-bottom{bottom:0;height:calc(env(safe-area-inset-bottom,0px) + ${BOTTOM}px)}
-.edge-blur-top>i:nth-child(1){-webkit-backdrop-filter:blur(${BLUR * 0.2}px);backdrop-filter:blur(${BLUR * 0.2}px);-webkit-mask-image:linear-gradient(to bottom,#000 0%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0%,transparent 100%)}
-.edge-blur-top>i:nth-child(2){-webkit-backdrop-filter:blur(${BLUR * 0.55}px);backdrop-filter:blur(${BLUR * 0.55}px);-webkit-mask-image:linear-gradient(to bottom,#000 0%,transparent 70%);mask-image:linear-gradient(to bottom,#000 0%,transparent 70%)}
-.edge-blur-top>i:nth-child(3){-webkit-backdrop-filter:blur(${BLUR}px);backdrop-filter:blur(${BLUR}px);-webkit-mask-image:linear-gradient(to bottom,#000 0%,transparent 42%);mask-image:linear-gradient(to bottom,#000 0%,transparent 42%)}
-.edge-blur-bottom>i:nth-child(1){-webkit-backdrop-filter:blur(${BLUR * 0.2}px);backdrop-filter:blur(${BLUR * 0.2}px);-webkit-mask-image:linear-gradient(to top,#000 0%,transparent 100%);mask-image:linear-gradient(to top,#000 0%,transparent 100%)}
-.edge-blur-bottom>i:nth-child(2){-webkit-backdrop-filter:blur(${BLUR * 0.55}px);backdrop-filter:blur(${BLUR * 0.55}px);-webkit-mask-image:linear-gradient(to top,#000 0%,transparent 70%);mask-image:linear-gradient(to top,#000 0%,transparent 70%)}
-.edge-blur-bottom>i:nth-child(3){-webkit-backdrop-filter:blur(${BLUR}px);backdrop-filter:blur(${BLUR}px);-webkit-mask-image:linear-gradient(to top,#000 0%,transparent 42%);mask-image:linear-gradient(to top,#000 0%,transparent 42%)}
-@media (prefers-reduced-transparency:reduce){.edge-blur{display:none}}
-html.a11y-calm .edge-blur,html.a11y-focus .edge-blur{display:none}
+.edge-fade{position:fixed;left:0;right:0;pointer-events:none;z-index:40}
+.edge-fade-top{top:0;height:calc(env(safe-area-inset-top,0px) + ${TOP}px);background:${stops("to bottom")}}
+.edge-fade-bottom{bottom:0;height:calc(env(safe-area-inset-bottom,0px) + ${BOTTOM}px);background:${stops("to top")}}
+html.a11y-calm .edge-fade,html.a11y-focus .edge-fade{display:none}
+html.wave-page .edge-fade,html.arcade-page .edge-fade,html.event-page .edge-fade{display:none}
 `
 
 export default function EdgeBlur() {
   return (
     <>
       <style>{CSS}</style>
-      <div className="edge-blur edge-blur-top" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
-      <div className="edge-blur edge-blur-bottom" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
+      <div className="edge-fade edge-fade-top" aria-hidden="true" />
+      <div className="edge-fade edge-fade-bottom" aria-hidden="true" />
     </>
   )
 }
