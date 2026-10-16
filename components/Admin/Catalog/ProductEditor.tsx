@@ -7,6 +7,7 @@ import { AdminButton, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
 import { supabaseClient } from "@/lib/supabaseClient"
+import { compressVideo, MAX_UPLOAD_BYTES } from "@/lib/videoTools"
 import ImageEditorModal from "@/components/Admin/Catalog/ImageEditorModal"
 import { PRODUCT_TYPE_LIST, getAdminLabels, getProductType } from "@/lib/productTypes"
 import { AVAILABILITY_LIST, getEffectiveAvailability, isAvailabilityId } from "@/lib/availability"
@@ -516,7 +517,19 @@ export default function ProductEditor({ id }: { id: string }) {
     setUploading(true)
     try {
       const isVideo = files[0].type.startsWith("video")
-      const file = isVideo ? files[0] : await resizeImage(files[0])
+      let file: File
+      if (isVideo) {
+        file = files[0]
+        if (file.size > 12 * 1024 * 1024) {
+          notify.success("Vidéo lourde : allègement en cours, ça peut prendre un moment…")
+          file = await compressVideo(file)
+        }
+        if (file.size > MAX_UPLOAD_BYTES) {
+          throw new Error("Vidéo trop lourde (max 45 Mo). Raccourcis-la ou baisse sa qualité.")
+        }
+      } else {
+        file = await resizeImage(files[0])
+      }
       const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase()
       // envoi direct vers Supabase : le fichier ne passe pas par le serveur (évite l'erreur 413)
       const sig = await api.post<{ path: string; token: string; url: string }>(
