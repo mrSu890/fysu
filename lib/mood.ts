@@ -77,6 +77,28 @@ const isForced = (html: HTMLElement) =>
   html.classList.contains("event-page") ||
   window.location.pathname.startsWith("/kiban-collector")
 
+// couleur de la barre d'état du téléphone (haut de l'écran) : elle suit l'ambiance
+const THEME_COLORS: Record<Mood, string> = {
+  night: "#212427",
+  dawn: "#e9ebe7",
+  day: "#faf9f7",
+  afternoon: "#f7f3e8",
+  sunset: "#6b6454",
+}
+
+function setThemeColor(mood: Mood, keepOwn: boolean) {
+  if (keepOwn) return
+  try {
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove())
+    const meta = document.createElement("meta")
+    meta.name = "theme-color"
+    meta.content = THEME_COLORS[mood]
+    document.head.appendChild(meta)
+  } catch {
+    /* ignore */
+  }
+}
+
 let animTimer: number | undefined
 
 export function applyMood(mood: Mood) {
@@ -95,5 +117,6 @@ export function applyMood(mood: Mood) {
   try {
     localStorage.setItem("theme", dark ? "dark" : "light")
   } catch {}
+  setThemeColor(mood, admin || isForced(html))
   window.dispatchEvent(new Event("theme-change"))
 }
