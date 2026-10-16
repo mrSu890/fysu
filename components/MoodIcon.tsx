@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { usePathname } from "next/navigation"
 import { RAIN_EVENT } from "@/lib/rain"
 import { claimPopup, releasePopup, whenPopupIdle } from "@/lib/popups"
+import { tipsOff, tipsSeen } from "@/lib/tips"
 import { applyMood, moodAt, readManual, realMinutes, type Mood } from "@/lib/mood"
 
 /* Petite icône d'ambiance dans la barre de navigation (à la place de la loupe).
@@ -82,21 +83,38 @@ export default function MoodIcon({ label }: { label: string }) {
     }
   }, [])
 
-  // démonstration unique (première visite)
+  // démonstration unique (première visite), bien après la question d'inscription :
+  // le site passe à l'ambiance opposée et reste bloqué, l'astuce de l'horloge s'affiche,
+  // et l'ambiance ne revient qu'à la fermeture de l'astuce
   useEffect(() => {
     if (NO_CLOCK.some((p) => pathname.startsWith(p)) || pathname.startsWith("/kiban-collector")) return
-    let seen = false
-    try {
-      seen = !!localStorage.getItem(DEMO_KEY)
-    } catch {}
-    if (seen || readManual()) return
-    let t2: number | undefined
+    const eligible = () => {
+      try {
+        if (localStorage.getItem(DEMO_KEY)) return false
+      } catch {}
+      return !readManual() && !tipsOff() && !tipsSeen().includes("clock")
+    }
+    if (!eligible()) return
+
     let cancelIdle: (() => void) | undefined
+    let started = false
+    let off: (() => void) | undefined
+
+    const finish = () => {
+      off?.()
+      releasePopup("mood")
+      if (readManual()) return
+      applyMood(moodAt(realMinutes()))
+      setV(realMinutes())
+      setPulse((n) => n + 1)
+    }
+
     const run = () => {
-      if (document.visibilityState !== "visible" || readManual()) {
+      if (document.visibilityState !== "visible" || !eligible()) {
         releasePopup("mood")
         return
       }
+      started = true
       try {
         localStorage.setItem(DEMO_KEY, "1")
       } catch {}
@@ -105,14 +123,29 @@ export default function MoodIcon({ label }: { label: string }) {
       setPulse((n) => n + 1)
       applyMood(other)
       setV(other === "day" ? 12 * 60 : 23 * 60)
-      t2 = window.setTimeout(() => {
-        releasePopup("mood")
-        if (readManual()) return
-        applyMood(moodAt(realMinutes()))
-        setV(realMinutes())
-        setPulse((n) => n + 1)
+
+      // on laisse la transition se faire, puis l'astuce apparaît ; le site reste dans cette ambiance
+      window.setTimeout(() => {
+        let acked = false
+        const onDone = (e: Event) => {
+          if ((e as CustomEvent).detail === "clock") finish()
+        }
+        const onAck = (e: Event) => {
+          if ((e as CustomEvent).detail === "clock") acked = true
+        }
+        off = () => {
+          window.removeEventListener("fysu-tip-done", onDone)
+          window.removeEventListener("fysu-tip-ack", onAck)
+        }
+        window.addEventListener("fysu-tip-done", onDone)
+        window.addEventListener("fysu-tip-ack", onAck)
+        releasePopup("mood") // l'astuce doit pouvoir prendre la place
+        window.dispatchEvent(new CustomEvent("fysu-tip-request", { detail: "clock" }))
+        window.setTimeout(() => !acked && finish(), 1500) // personne n'a répondu
+        window.setTimeout(finish, 180000) // sécurité
       }, 2600)
     }
+
     // seulement quand la barre de navigation est bien là (pas pendant le grand logo rose de l'accueil)
     const navbarShown = () => {
       const nav = document.querySelector(".navbar-root") as HTMLElement | null
@@ -121,15 +154,18 @@ export default function MoodIcon({ label }: { label: string }) {
       const r = nav.getBoundingClientRect()
       return r.width > 0 && r.bottom > 0 && r.top < window.innerHeight * 0.4
     }
-    // la démonstration n'a lieu que lorsque plus rien n'est en cours (ni pop-up, ni astuce, ni panneau ouvert)
-    const t1 = window.setTimeout(() => {
+
+    const begin = () => {
+      if (started || cancelIdle) return
       cancelIdle = whenPopupIdle("mood", run, { quiet: 3000, hideFabs: false, ready: navbarShown })
-    }, 11000)
+    }
+
+    if ((window as any).__fysuMoodDemoReady) begin()
+    window.addEventListener("fysu-mood-demo-ready", begin)
     return () => {
-      window.clearTimeout(t1)
-      if (cancelIdle) cancelIdle()
-      // si on quitte la page en pleine démonstration, ClockWeather remet l'ambiance réelle
-      if (t2 !== undefined) window.clearTimeout(t2)
+      window.removeEventListener("fysu-mood-demo-ready", begin)
+      cancelIdle?.()
+      off?.()
       releasePopup("mood")
     }
   }, [pathname])

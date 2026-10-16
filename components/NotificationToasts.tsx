@@ -109,6 +109,7 @@ const WELCOME_VISIBLE = 6500 // durée d'affichage (ms)
 const SHIPPING_GAP = 14000 // silence avant la livraison offerte
 const SHIPPING_VISIBLE = 8000
 const SIGNUP_GAP = 18000 // silence avant la question d'inscription
+const MOOD_DEMO_GAP = 40000 // silence après la question d'inscription avant la démonstration d'ambiance
 const SIGNUP_VISIBLE = 20000
 
 const EXCLUDED = ["/admin", "/checkout", "/success", "/auth", "/password"]
@@ -384,28 +385,6 @@ export default function NotificationToasts() {
         }
       })
 
-    // On demande l'astuce de l'horloge et on attend qu'elle soit fermée (ou qu'il n'y ait rien à montrer)
-    const clockTip = () =>
-      new Promise<void>((resolve) => {
-        let acked = false
-        const end = () => {
-          window.removeEventListener("fysu-tip-done", onDone)
-          window.removeEventListener("fysu-tip-ack", onAck)
-          resolve()
-        }
-        const onDone = (e: Event) => {
-          if ((e as CustomEvent).detail === "clock") end()
-        }
-        const onAck = (e: Event) => {
-          if ((e as CustomEvent).detail === "clock") acked = true
-        }
-        window.addEventListener("fysu-tip-done", onDone)
-        window.addEventListener("fysu-tip-ack", onAck)
-        window.dispatchEvent(new CustomEvent("fysu-tip-request", { detail: "clock" }))
-        timers.push(window.setTimeout(() => !acked && end(), 1500)) // personne n'a répondu
-        timers.push(window.setTimeout(end, 180000)) // sécurité
-      })
-
     // Le message de bienvenue : une seule fois par visite
     const welcomeOk = () => readSession("fysu:toast:welcome") !== "1"
 
@@ -450,16 +429,18 @@ export default function NotificationToasts() {
         await waitCookies()
         await sleep(3000)
         if (cancelled) return
-        if (!isExcluded()) {
-          // la petite astuce sur l'heure passe juste AVANT la question, jamais en même temps
-          await clockTip()
-          if (cancelled) return
-          await sleep(1500)
-        }
         if (!cancelled && !isExcluded() && signupOk()) {
           writeStore("fysu:toast:signup", String(Date.now()))
           await show("signup", SIGNUP_VISIBLE)
         }
+      }
+
+      // 4. Bien plus tard : la démonstration du changement d'ambiance (avec son astuce), jamais collée à la question
+      if (!cancelled) {
+        await sleep(MOOD_DEMO_GAP)
+        if (cancelled) return
+        ;(window as any).__fysuMoodDemoReady = true
+        window.dispatchEvent(new Event("fysu-mood-demo-ready"))
       }
     }
 
