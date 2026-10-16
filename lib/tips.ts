@@ -19,6 +19,7 @@ export type TipStep = {
   target: string // valeur de data-tip de l'élément à éclairer
   text: TipText
   round?: boolean // éclairage tout rond (boutons ronds) au lieu de coins arrondis
+  clickable?: boolean // l'élément éclairé reste cliquable pendant l'astuce (un clic sur lui ferme l'astuce)
 }
 
 export type Tip = {
@@ -35,10 +36,11 @@ export const TIPS: Tip[] = [
     // l'heure en bas à droite ouvre le petit cadran qui change l'ambiance du site
     id: "clock",
     trigger: '[data-tip="clock"]',
-    manual: true, // montrée juste avant la question d'inscription (voir NotificationToasts)
+    manual: true, // demandée par la démonstration du changement d'ambiance (voir MoodIcon)
     steps: [
       {
         target: "clock",
+        clickable: true,
         text: {
           fr: "Touche le soleil ou la lune : un petit cadran s'ouvre. Fais glisser le soleil pour changer l'ambiance du site (aube, jour, après-midi, coucher de soleil, nuit).",
           en: "Tap the sun or the moon: a small dial opens. Drag the sun to change the mood of the site (dawn, day, afternoon, sunset, night).",
