@@ -515,7 +515,7 @@ export default function ProductEditor({ id }: { id: string }) {
   async function uploadInfoBlockImage(index: number, files: File[]) {
     setUploading(true)
     try {
-      const url = await uploadInfoBlockMedia(files[0], productId, (m) => notify.success(m))
+      const url = await uploadInfoBlockMedia(files[0], productId, (m) => void m)
       const data = { url }
       setInfoBlocks((cur) => cur.map((b, i) => (i === index ? { ...b, image_url: data.url } : b)))
     } catch (e) {
