@@ -228,32 +228,26 @@ export default function FygrancesClient({ initialData }: { initialData: Fygrance
                   </div>
                 )}
 
-                {/* Une rangée par famille */}
-                <div className="space-y-14">
-                  {familiesPresent
-                    .filter((f) => !activeFamily || activeFamily === f)
-                    .map((f) => {
-                      const fam = getFamilyCopy(f, locale)
-                      return (
-                        <div key={f}>
-                          <h3 className="text-xl font-light tracking-tight sm:text-2xl">{fam.name}</h3>
-                          <p className="mb-6 mt-1 max-w-lg text-xs opacity-65 sm:text-sm">{fam.line}</p>
-                          <Row products={fragrances.filter((p) => p.olfactive_family === f)} />
-                        </div>
-                      )
-                    })}
-
-                  {!activeFamily && withoutFamily.length > 0 && (
-                    <div>
-                      {familiesPresent.length > 0 && (
-                        <h3 className="mb-6 text-xl font-light tracking-tight sm:text-2xl">
-                          {copy.otherFamily}
-                        </h3>
-                      )}
-                      <Row products={withoutFamily} />
-                    </div>
-                  )}
-                </div>
+                {/* « Toutes » : une seule rangée, tous les parfums côte à côte (classés par famille) */}
+                {!activeFamily ? (
+                  <Row
+                    products={[
+                      ...familiesPresent.flatMap((f) => fragrances.filter((p) => p.olfactive_family === f)),
+                      ...withoutFamily,
+                    ]}
+                  />
+                ) : (
+                  /* une famille choisie : son titre et sa rangée */
+                  <div>
+                    <h3 className="text-xl font-light tracking-tight sm:text-2xl">
+                      {getFamilyCopy(activeFamily, locale).name}
+                    </h3>
+                    <p className="mb-6 mt-1 max-w-lg text-xs opacity-65 sm:text-sm">
+                      {getFamilyCopy(activeFamily, locale).line}
+                    </p>
+                    <Row products={fragrances.filter((p) => p.olfactive_family === activeFamily)} />
+                  </div>
+                )}
               </div>
             ) : (
               <Row products={products} />
