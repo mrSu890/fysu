@@ -17,6 +17,7 @@ import {
 } from "antd";
 import { DeleteOutlined, PlusOutlined, SwapOutlined } from "@ant-design/icons";
 import { ProductType } from "../../../types/product";
+import { uploadInfoBlockMedia } from "@/lib/infoBlockUpload";
 
 type ColorSet = {
   color: string;
@@ -694,33 +695,19 @@ export default function ProductEditModal({
                   <input
                     type="file"
                     className="hidden"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-
-                      const formData = new FormData();
-                      formData.append("file", file);
-                      formData.append("productId", product!.id.toString());
-
-                      const res = await fetch(
-                        "/api/admin/products/upload-info-block",
-                        {
-                          method: "POST",
-                          body: formData,
-                        }
-                      );
-
-                      const data = await res.json();
-
-                      if (!res.ok) {
-                        alert(data.error || "Upload error");
-                        return;
+                      try {
+                        const url = await uploadInfoBlockMedia(file, product!.id);
+                        const newBlocks = [...infoBlocks];
+                        newBlocks[index].image_url = url;
+                        setInfoBlocks(newBlocks);
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : "Upload error");
                       }
-                      
-                      const newBlocks = [...infoBlocks];
-                      newBlocks[index].image_url = data.url;
-                      setInfoBlocks(newBlocks);
+                      e.target.value = "";
                     }}
                   />
                 </label>
