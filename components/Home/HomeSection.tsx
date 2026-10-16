@@ -18,6 +18,7 @@ export default function HomeSection({
   const [products, setProducts] = useState<ProductType[]>(initialSection?.products ?? []);
   const [title, setTitle] = useState(initialSection?.title ?? "");
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [loaded, setLoaded] = useState(!!initialSection)
 
   useEffect(() => {
     if (initialSection) return;
@@ -26,8 +27,27 @@ export default function HomeSection({
       .then(data => {
         setProducts(data.products || []);
         setTitle(data.title);
-      });
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, [slug, initialSection]);
+
+  // pendant le chargement : des cartes grises qui respirent, à la place d'un vide
+  if (!products.length && !loaded) {
+    return (
+      <section className="relative top-6 mx-auto w-11/12 sm:mb-24" aria-hidden="true">
+        <div className="mb-12 h-8 w-40 animate-pulse rounded-full bg-foreground/10 sm:mb-16" />
+        <div className="flex gap-6 overflow-hidden">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="min-w-[220px] flex-shrink-0 sm:min-w-[260px] md:min-w-[300px]">
+              <div className="aspect-[3/4] w-full animate-pulse rounded-2xl bg-foreground/10" />
+              <div className="mt-3 h-3 w-2/3 animate-pulse rounded-full bg-foreground/10" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   if (!products.length) return null;
 
@@ -43,6 +63,7 @@ export default function HomeSection({
 
       <div
         ref={scrollRef}
+        data-row-memory={slug}
         className="
           flex
           gap-6
