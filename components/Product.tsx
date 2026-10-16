@@ -16,6 +16,7 @@ import { ProductType } from "@/types/product"
 import { useLocale, useTranslations } from "next-intl"
 import { useLamp } from "@/lib/lamp"
 import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/lib/availability"
+import { lowStockCount, lowStockText } from "@/lib/lowStock"
 
 /* ====================================================================
    CARTE PRODUIT
@@ -45,6 +46,8 @@ const Product = ({
     getEffectiveAvailability(product),
     getAvailabilityCopy(locale)
   )
+  const lowN = getEffectiveAvailability(product) === "available" ? lowStockCount(product) : null
+  const lowText = lowN ? lowStockText(lowN, locale) : null
   const router = useRouter()
   const pathname = usePathname() ?? ""
   // petit logo Kiban Collector / The Wave sur les cartes affichées hors de leur propre page
@@ -203,9 +206,9 @@ const Product = ({
           </div>
         )}
 
-        {badgeText && (
+        {(badgeText || lowText) && (
           <span className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-black">
-            {badgeText}
+            {badgeText ?? lowText}
           </span>
         )}
 

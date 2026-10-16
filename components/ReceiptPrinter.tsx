@@ -61,6 +61,7 @@ export default function ReceiptPrinter({
   const [h, setH] = useState(0)
   const [printing, setPrinting] = useState(false)
   const [done, setDone] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // hauteur du reçu
   useLayoutEffect(() => {
@@ -203,7 +204,28 @@ export default function ReceiptPrinter({
 
             <div className="my-5" style={{ borderTop: `1px dashed ${LINE}` }} />
 
-            <Row label={c.orderNo} value={receipt.number} />
+            <div className="font-info flex justify-between gap-3 text-[10.5px] leading-[2]">
+              <span className="uppercase" style={{ color: SOFT, letterSpacing: "0.12em" }}>
+                {c.orderNo}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    navigator.clipboard.writeText(receipt.number)
+                    setCopied(true)
+                    window.setTimeout(() => setCopied(false), 1600)
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+                className="cursor-pointer text-right underline decoration-dotted underline-offset-4"
+                style={{ color: INK }}
+                aria-label={lang === "fr" ? "Copier le numéro de commande" : "Copy order number"}
+              >
+                {copied ? (lang === "fr" ? "Copié" : "Copied") : receipt.number}
+              </button>
+            </div>
             {receipt.method && <Row label={c.paidWith} value={receipt.method} />}
             <Row label={c.date} value={dateText(receipt.created, locale)} />
           </div>

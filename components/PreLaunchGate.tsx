@@ -20,6 +20,7 @@ type Copy = {
   opening: string
   enter: string
   countdown: string
+  calendar: string
   units: [string, string, string, string]
 }
 
@@ -35,6 +36,7 @@ const COPY: Record<string, Copy> = {
     opening: "Opening",
     enter: "Enter",
     countdown: "until opening",
+    calendar: "Add to calendar",
     units: ["d", "h", "min", "s"],
   },
   fr: {
@@ -48,6 +50,7 @@ const COPY: Record<string, Copy> = {
     opening: "Ouverture le",
     enter: "Entrer",
     countdown: "avant l'ouverture",
+    calendar: "Ajouter à l'agenda",
     units: ["j", "h", "min", "s"],
   },
   nl: {
@@ -61,6 +64,7 @@ const COPY: Record<string, Copy> = {
     opening: "Opening op",
     enter: "Binnenkomen",
     countdown: "tot de opening",
+    calendar: "Toevoegen aan agenda",
     units: ["d", "u", "min", "s"],
   },
   ja: {
@@ -74,6 +78,7 @@ const COPY: Record<string, Copy> = {
     opening: "オープン",
     enter: "入る",
     countdown: "オープンまで",
+    calendar: "カレンダーに追加",
     units: ["日", "時間", "分", "秒"],
   },
 }
@@ -141,6 +146,45 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
       return { line: `${c.opening} 15 December 2026, 12:00`, zone: "CET (UTC+1)" }
     }
   }, [locale, openAt, c])
+
+  // « Ajouter à l'agenda » : fichier .ics (s'ouvre directement dans l'app Calendrier du téléphone)
+  const addToCalendar = () => {
+    try {
+      const start = new Date(openAt)
+      const end = new Date(start.getTime() + 60 * 60 * 1000)
+      const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")
+      const ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//FYSU//Opening//EN",
+        "BEGIN:VEVENT",
+        `UID:fysu-opening-${fmt(start)}@f-y-s-u.com`,
+        `DTSTAMP:${fmt(new Date())}`,
+        `DTSTART:${fmt(start)}`,
+        `DTEND:${fmt(end)}`,
+        "SUMMARY:FYSU",
+        "DESCRIPTION:https://f-y-s-u.com",
+        "URL:https://f-y-s-u.com",
+        "BEGIN:VALARM",
+        "TRIGGER:-PT15M",
+        "ACTION:DISPLAY",
+        "DESCRIPTION:FYSU",
+        "END:VALARM",
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n")
+      const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }))
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "fysu-opening.ics"
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 4000)
+    } catch {
+      /* ignore */
+    }
+  }
 
   // compte à rebours en direct (seulement une fois monté, pour éviter un décalage serveur / navigateur)
   const [left, setLeft] = useState<number | null>(null)
@@ -345,6 +389,13 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
           <p className="text-[0.75em] text-white/80">
             {c.countdown} · {openingText.zone}
           </p>
+          <button
+            type="button"
+            onClick={addToCalendar}
+            className="mt-1 cursor-pointer text-[0.7em] uppercase tracking-[0.18em] text-white/80 underline underline-offset-4 transition hover:text-white"
+          >
+            {c.calendar}
+          </button>
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
