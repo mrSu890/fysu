@@ -194,6 +194,7 @@ export default function CollectionPage({
                     <div className="relative">
                       <div 
                         ref={scrollRef}
+                        data-row-memory={String(section.id)}
                         className="
                           flex
                           gap-6
