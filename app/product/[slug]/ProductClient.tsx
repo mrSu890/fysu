@@ -1,5 +1,6 @@
 "use client"
 
+import { lowStockCount, lowStockText } from "@/lib/lowStock"
 import { useParams, notFound, useSearchParams, useRouter } from "next/navigation"
 import { useEffect, useLayoutEffect, useState, useMemo, useRef } from "react"
 import Link from "next/link"
@@ -180,6 +181,17 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
     if (availableSizes.length === 1) {
       setSelectedSizeId(availableSizes[0].id)
       setSelectedSizeLabel(availableSizes[0].size)
+    } else if (!selectedSizeId && availableSizes.length > 1) {
+      // la taille choisie sur une pièce précédente est présélectionnée si elle existe ici
+      let pref: string | null = null
+      try {
+        pref = localStorage.getItem("fysu-pref-size")
+      } catch {}
+      const hit = pref ? availableSizes.find((s) => String(s.size).trim().toLowerCase() === pref!.trim().toLowerCase()) : undefined
+      if (hit) {
+        setSelectedSizeId(hit.id)
+        setSelectedSizeLabel(hit.size)
+      }
     } else if (selectedSizeId) {
       setSelectedSizeId(null)
       setSelectedSizeLabel(null)
@@ -421,6 +433,12 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
                 currency: "EUR",
               })}
             </p>
+            {(() => {
+              const n = mode === "available" ? lowStockCount(product) : null
+              return n ? (
+                <p className="font-info text-[11px] font-light uppercase tracking-[0.12em] opacity-70">{lowStockText(n, locale)}</p>
+              ) : null
+            })()}
           </div>
 
           {/* Description : une phrase par ligne, une ligne vide = un temps de pause */}
@@ -515,6 +533,9 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
                       onClick={() => {
                         setSelectedSizeId(s.id)
                         setSelectedSizeLabel(s.size)
+                        try {
+                          localStorage.setItem("fysu-pref-size", String(s.size))
+                        } catch {}
                       }}
                       className={`
                         min-w-[48px]
