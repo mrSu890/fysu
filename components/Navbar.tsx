@@ -22,6 +22,7 @@ import { gamesCopyFor } from "@/lib/games";
 import SearchOverlay, { searchLabel } from "./SearchOverlay";
 import MoodIcon from "./MoodIcon";
 import AdaptiveInk from "./AdaptiveInk";
+import EdgeBlur from "./EdgeBlur";
 
 // Un lien du menu ; « image » = l'aperçu qui s'ouvre quand la souris passe dessus
 type MenuLink = { label: string; href: string; image?: string | null };
@@ -358,6 +359,7 @@ function MobileMenu({
     <>
     <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     <AdaptiveInk />
+    <EdgeBlur />
     <div
       className="navbar-root fixed top-2 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-3xl transition-[transform,opacity] duration-500 ease-out"
       style={hiddenBar ? { transform: "translateY(-140%)", opacity: 0, pointerEvents: "none" } : undefined}
