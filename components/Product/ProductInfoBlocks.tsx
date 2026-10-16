@@ -98,6 +98,16 @@ export function BlockMedia({
   )
 }
 
+// image ou vidéo en entier, sans recadrage : elle garde ses proportions d'origine
+function FullMedia({ url, alt }: { url: string; alt: string }) {
+  return isVideoUrl(url) ? (
+    <video src={url} className="block h-auto w-full lg:max-h-[92svh] lg:object-contain" muted autoPlay loop playsInline />
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={url} alt={alt} loading="lazy" className="block h-auto w-full lg:max-h-[92svh] lg:object-contain" />
+  )
+}
+
 export default function ProductInfoBlocks({ blocks }: { blocks: InfoBlock[] }) {
   const list = (blocks ?? []).filter((b) => b.image_url && !isPackagingBlock(b))
   if (!list.length) return null
@@ -116,11 +126,11 @@ export default function ProductInfoBlocks({ blocks }: { blocks: InfoBlock[] }) {
             viewport={{ once: true, margin: "-60px" }}
           >
             <div
-              className={`relative aspect-[79/100] w-full overflow-hidden bg-neutral-300 lg:max-h-[92svh] dark:bg-neutral-800 ${
+              className={`relative flex w-full items-center justify-center overflow-hidden bg-neutral-300 dark:bg-neutral-800 ${
                 flip ? "lg:order-2" : ""
               }`}
             >
-              <BlockMedia url={block.image_url!} alt={block.title ?? "FYSU"} cropTop={26} />
+              <FullMedia url={block.image_url!} alt={block.title ?? "FYSU"} />
             </div>
 
             <div className="flex flex-col justify-center px-8 py-14 sm:px-14 lg:px-20 lg:py-0">
