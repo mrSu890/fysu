@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { claimPopup, releasePopup } from "@/lib/popups";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -10,6 +11,7 @@ type StoryItem = {
   type: "image" | "video";
   media_url: string;
   duration: number;
+  products?: { id: number; name: string; slug: string; price: number; image: string | null }[];
 };
 
 type Story = {
@@ -30,6 +32,9 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [tray, setTray] = useState(false); // tiroir « Shop now » ouvert
+  const router = useRouter();
+  const hold = paused || tray; // la story s'arrête pendant un appui long ou quand le tiroir est ouvert
   // transition rond -> plein écran
   type Rect = { top: number; left: number; width: number; height: number };
   const [origin, setOrigin] = useState<Rect | null>(null);
@@ -211,6 +216,14 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
     }
   };
 
+  const currentProducts = activeStory?.story_items[currentIndex]?.products ?? [];
+
+  // un produit choisi : on quitte la story et on va sur sa fiche
+  const goProduct = (slug: string) => {
+    finishClose();
+    router.push(`/product/${slug}`);
+  };
+
   const prevSlide = () => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : prev));
 
   // pendant une story : le reste du site se met à l'écart, la page ne défile plus, Échap ferme
@@ -220,9 +233,14 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeStory();
+      if (e.key === "Escape") {
+        if (tray) setTray(false);
+        else closeStory();
+      }
       if (e.key === "ArrowRight") nextSlide();
       if (e.key === "ArrowLeft") prevSlide();
+      if (e.key === "ArrowUp" && (activeStory.story_items[currentIndex]?.products?.length ?? 0) > 0) setTray(true);
+      if (e.key === "ArrowDown") setTray(false);
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -231,6 +249,11 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
       releasePopup("story");
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStory, currentIndex, tray]);
+
+  // le tiroir se referme à chaque nouvelle diapo / story
+  useEffect(() => {
+    setTray(false);
   }, [activeStory, currentIndex]);
 
   // nouvelle diapo : on attend qu'elle soit chargée (une image déjà en cache est prête tout de suite)
@@ -248,9 +271,9 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (paused || !shown) v.pause();
+    if (hold || !shown) v.pause();
     else v.play().catch(() => {});
-  }, [paused, currentIndex, activeStory, shown]);
+  }, [hold, currentIndex, activeStory, shown]);
 
   if (loading) return null;
   if (stories.length === 0) return null;
@@ -321,7 +344,17 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
               setPaused(false);
               const y0 = touchY.current;
               touchY.current = null;
-              if (y0 !== null && e.changedTouches[0].clientY - y0 > 110) closeStory();
+              if (y0 === null) return;
+              const dy = e.changedTouches[0].clientY - y0;
+              if (dy < -70 && currentProducts.length > 0) setTray(true); // glisser vers le haut : les produits
+              else if (dy > 110) {
+                if (tray) setTray(false);
+                else closeStory();
+              }
+            }}
+            onWheel={(e) => {
+              if (e.deltaY > 30 && currentProducts.length > 0) setTray(true);
+              else if (e.deltaY < -30) setTray(false);
             }}
             onMouseDown={() => setPaused(true)}
             onMouseUp={() => setPaused(false)}
@@ -386,7 +419,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                         className="h-full w-full origin-left bg-white"
                         style={{
                           animation: `fysu-story-bar ${(item.type === "video" && videoDur) || item.duration || 5}s linear forwards`,
-                          animationPlayState: paused || !mediaReady ? "paused" : "running",
+                          animationPlayState: hold || !mediaReady ? "paused" : "running",
                         }}
                         onAnimationEnd={nextSlide}
                       />
@@ -422,6 +455,96 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                   ✕
                 </button>
               </div>
+
+              {/* « Shop now » : flèche discrète, glisser vers le haut (ou toucher) ouvre les produits */}
+              {currentProducts.length > 0 && !tray && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTray(true);
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  className="absolute inset-x-0 flex cursor-pointer flex-col items-center gap-1 text-white"
+                  style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 22px)" }}
+                  aria-label="Shop now"
+                >
+                  <motion.svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    animate={{ y: [0, -5, 0], opacity: [0.55, 1, 0.55] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <path d="M6 14l6-6 6 6" />
+                  </motion.svg>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.28em] drop-shadow">Shop now</span>
+                </button>
+              )}
+
+              {/* tiroir des produits : monte depuis le bas */}
+              <AnimatePresence>
+                {tray && currentProducts.length > 0 && (
+                  <>
+                    <motion.div
+                      key="tray-bg"
+                      className="absolute inset-0 bg-black/45"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTray(false);
+                      }}
+                    />
+                    <motion.div
+                      key="tray"
+                      className="absolute inset-x-0 bottom-0 rounded-t-[28px] bg-white text-[#171717]"
+                      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 18px)" }}
+                      initial={{ y: "100%" }}
+                      animate={{ y: 0 }}
+                      exit={{ y: "100%" }}
+                      transition={{ type: "spring", stiffness: 340, damping: 36 }}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchEnd={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        aria-label="Fermer"
+                        onClick={() => setTray(false)}
+                        className="mx-auto mt-2.5 block h-1.5 w-11 cursor-pointer rounded-full bg-[#171717]/20"
+                      />
+                      <p className="px-5 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.28em] text-[#171717]/55">Shop the look</p>
+                      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
+                        {currentProducts.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => goProduct(p.slug)}
+                            className="w-[132px] shrink-0 cursor-pointer text-left active:scale-[0.98]"
+                          >
+                            <span
+                              className="block aspect-[3/4] w-full rounded-2xl bg-[#f0ece5] bg-cover bg-center"
+                              style={{ backgroundImage: p.image ? `url(${p.image})` : undefined }}
+                            />
+                            <span className="mt-2 block truncate text-[13px] font-medium">{p.name}</span>
+                            <span className="text-xs text-[#171717]/60">{p.price} EUR</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
             </motion.div>
           </motion.div>
