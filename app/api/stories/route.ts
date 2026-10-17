@@ -44,10 +44,31 @@ export async function GET(req: Request) {
 
     const { data: rows, error } = await supabaseAdmin
       .from("stories")
-      .select("id, title, cover_url, order_index, is_active, story_items ( id, type, media_url, duration, order_index )")
+      .select("id, title, cover_url, order_index, is_active, story_items(*)")
       .in("id", links.map((l: any) => l.story_id))
       .eq("is_active", true)
     if (error) throw error
+
+    // produits « Shop now » des diapos (une seule requête pour tous)
+    const wanted = new Set<number>()
+    ;(rows ?? []).forEach((s: any) =>
+      (s.story_items ?? []).forEach((it: any) =>
+        (Array.isArray(it.product_ids) ? it.product_ids : []).forEach((x: any) => Number.isFinite(Number(x)) && wanted.add(Number(x)))
+      )
+    )
+    const productMap = new Map<number, any>()
+    if (wanted.size > 0) {
+      const { data: prods } = await supabaseAdmin
+        .from("products")
+        .select("id, name, slug, price, is_hidden, product_images(url, is_hover)")
+        .in("id", [...wanted])
+      ;(prods ?? []).forEach((p: any) => {
+        if (p.is_hidden) return
+        const imgs = (p.product_images ?? []) as { url: string; is_hover?: boolean }[]
+        const img = imgs.find((i) => !i.is_hover) ?? imgs[0]
+        productMap.set(Number(p.id), { id: p.id, name: p.name, slug: p.slug, price: Number(p.price ?? 0), image: img?.url ?? null })
+      })
+    }
 
     const stories = (rows ?? [])
       .map((s: any) => ({
@@ -66,6 +87,9 @@ export async function GET(req: Request) {
               media_url: it.media_url,
               // jamais 0 ou vide : l'ancien système fermait la story tout de suite quand la durée manquait
               duration: num(it.duration) || (video ? 8 : 5),
+              products: (Array.isArray(it.product_ids) ? it.product_ids : [])
+                .map((x: any) => productMap.get(Number(x)))
+                .filter(Boolean),
             }
           }),
       }))
