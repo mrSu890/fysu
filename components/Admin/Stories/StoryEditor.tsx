@@ -72,26 +72,24 @@ export default function StoryEditor({
 
   useEffect(() => {
     const fetchPages = async () => {
-      const { data: pages } = await supabase
-        .from("pages")
-        .select("id, title");
-
-      const { data: collections } = await supabase
-        .from("collectionPages")
-        .select("id, title");
-
-      const formatted = [
-        ...(pages || []).map((p) => ({
-          label: `Page • ${p.title}`,
-          value: `page:${p.id}`,
-        })),
-        ...(collections || []).map((c) => ({
-          label: `Collection • ${c.title}`,
-          value: `collection:${c.id}`,
-        })),
-      ];
-
-      setPageOptions(formatted);
+      try {
+        const res = await fetch("/api/admin/stories/targets", { cache: "no-store" });
+        const d = await res.json();
+        const formatted = [
+          ...(d.pages || []).map((p: any) => ({
+            label: `Page • ${p.label}`,
+            value: `page:${p.id}`,
+          })),
+          ...(d.collections || []).map((c: any) => ({
+            label: `Collection • ${c.label}`,
+            value: `collection:${c.id}`,
+          })),
+        ];
+        setPageOptions(formatted);
+        if (d.errors?.length) message.error("Liste des pages : " + d.errors[0]);
+      } catch {
+        message.error("Impossible de charger la liste des pages");
+      }
     };
 
     fetchPages();
@@ -115,26 +113,24 @@ export default function StoryEditor({
     setItems(editingStory.story_items || []);
   
     const fetchLinks = async () => {
-      const { data } = await supabase
-        .from("story_page_links")
-        .select("*")
-        .eq("story_id", editingStory.id);
-  
-      if (!data) return;
-  
-      const formatted = data.map((link) => {
-        if (link.page_id) {
-          return { type: "page", id: link.page_id };
-        }
-        if (link.collection_page_id) {
-          return { type: "collection", id: link.collection_page_id };
-        }
-        return null;
-      }).filter(Boolean);
-  
-      setTargets(formatted as PageTarget[]);
+      try {
+        const res = await fetch(
+          `/api/admin/stories/targets?story=${editingStory.id}`,
+          { cache: "no-store" }
+        );
+        const d = await res.json();
+        const formatted = (d.links || [])
+          .map((link: any) => {
+            if (link.page_id) return { type: "page", id: link.page_id };
+            if (link.collection_page_id)
+              return { type: "collection", id: link.collection_page_id };
+            return null;
+          })
+          .filter(Boolean);
+        setTargets(formatted as PageTarget[]);
+      } catch {}
     };
-  
+
     fetchLinks();
   
   }, [editingStory]);
