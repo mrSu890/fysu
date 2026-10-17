@@ -6,6 +6,7 @@ import { AdminButton, Badge, EmptyState, PageHeader, Panel, Skeleton } from "@/c
 import { Field, Modal, Toggle, inputClass } from "@/components/Admin/ui/controls"
 import { adminFetch, api, errorMessage, notify } from "@/lib/adminApi"
 import { uploadStoryFile } from "@/lib/storyUpload"
+import { GAMES } from "@/lib/games"
 
 /* ====================================================================
    ADMIN > STORIES
@@ -16,12 +17,13 @@ import { uploadStoryFile } from "@/lib/storyUpload"
 
 type Item = { key: string; type: "image" | "video"; media_url: string; duration: number; product_ids: number[] }
 type Target = { type: "page" | "collection"; id: string | number }
-type Draft = { id?: string; title: string; cover_url: string; is_active: boolean; items: Item[]; targets: Target[] }
+type Draft = { id?: string; title: string; cover_url: string; is_active: boolean; link_url: string; items: Item[]; targets: Target[] }
 type StoryRow = {
   id: string
   title: string
   cover_url: string
   is_active: boolean
+  link_url?: string | null
   story_items: any[]
   story_page_links: any[]
 }
@@ -30,7 +32,7 @@ type Prod = { id: number; name: string; price: number; thumbnail: string | null;
 
 const newKey = () => "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 const isVideoUrl = (u: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u)
-const emptyDraft = (): Draft => ({ title: "", cover_url: "", is_active: true, items: [], targets: [] })
+const emptyDraft = (): Draft => ({ title: "", cover_url: "", is_active: true, link_url: "", items: [], targets: [] })
 
 function draftFrom(s: StoryRow): Draft {
   return {
@@ -38,6 +40,7 @@ function draftFrom(s: StoryRow): Draft {
     title: s.title ?? "",
     cover_url: s.cover_url ?? "",
     is_active: !!s.is_active,
+    link_url: s.link_url ?? "",
     items: (s.story_items ?? []).map((it) => ({
       key: newKey(),
       type: it.type === "video" || isVideoUrl(it.media_url ?? "") ? "video" : "image",
@@ -227,7 +230,7 @@ export default function StoriesAdmin() {
     if (!draft) return
     if (!draft.title.trim()) return notify.error("Donne un titre à la story")
     if (!draft.cover_url) return notify.error("Ajoute une couverture (la pastille ronde)")
-    if (draft.items.length === 0) return notify.error("Ajoute au moins une photo ou une vidéo")
+    if (!draft.link_url.trim() && draft.items.length === 0) return notify.error("Ajoute au moins une photo ou une vidéo (ou choisis « Ouvrir directement »)")
     setSaving(true)
     try {
       const body = {
@@ -235,6 +238,7 @@ export default function StoriesAdmin() {
         title: draft.title.trim(),
         cover_url: draft.cover_url,
         is_active: draft.is_active,
+        link_url: draft.link_url.trim() || null,
         items: draft.items.map(({ type, media_url, duration, product_ids }) => ({ type, media_url, duration, product_ids })),
         targets: draft.targets,
       }
@@ -308,7 +312,7 @@ export default function StoriesAdmin() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{s.title}</p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        <Badge>{slides} diapo{slides > 1 ? "s" : ""}</Badge>
+                        {s.link_url ? <Badge tone="blue">Ouvre {s.link_url}</Badge> : <Badge>{slides} diapo{slides > 1 ? "s" : ""}</Badge>}
                         <Badge tone={pagesCount ? "blue" : "orange"}>{pagesCount ? `${pagesCount} page${pagesCount > 1 ? "s" : ""}` : "Aucune page"}</Badge>
                         {prodCount > 0 && <Badge tone="green">{prodCount} produit{prodCount > 1 ? "s" : ""} shop now</Badge>}
                       </div>
@@ -390,6 +394,32 @@ export default function StoriesAdmin() {
                   <Toggle checked={draft.is_active} onChange={(v) => patch({ is_active: v })} label="Visible" />
                   {draft.is_active ? "Visible sur le site" : "Masquée"}
                 </div>
+              </div>
+            </div>
+
+            {/* ouverture directe (jeux…) */}
+            <div className="rounded-2xl bg-[#faf8f5] p-4">
+              <p className="mb-1 text-sm font-semibold">Ouvrir directement</p>
+              <p className="mb-3 text-xs text-[#7a756d]">
+                Au lieu d'un diaporama, toucher la pastille ouvre tout de suite une page (par exemple un jeu d'arcade). Les diapos ci-dessous ne sont alors pas utilisées.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[{ label: "Non (diaporama)", href: "" }, ...GAMES.map((g) => ({ label: "Jeu · " + g.name, href: "/games/" + g.slug })), { label: "Arcade (tous les jeux)", href: "/games" }].map((o) => {
+                  const on = draft.link_url === o.href
+                  return (
+                    <button
+                      key={o.href || "none"}
+                      type="button"
+                      onClick={() => patch({ link_url: o.href })}
+                      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-xs transition ${
+                        on ? "bg-[#171717] text-white" : "bg-white text-[#171717] ring-1 ring-[#e0dbd3]"
+                      }`}
+                    >
+                      {on && <Check size={12} />}
+                      {o.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
