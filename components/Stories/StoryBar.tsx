@@ -478,6 +478,9 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
 
               {/* « Shop now » : flèche discrète, glisser vers le haut (ou toucher) ouvre les produits */}
               {currentProducts.length > 0 && !tray && (
+                <>
+                {/* voile très léger sous le texte pour qu'il reste lisible sur un fond clair */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/30 via-black/10 to-transparent" />
                 <button
                   type="button"
                   onClick={(e) => {
@@ -506,6 +509,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                   </motion.svg>
                   <span className="text-[11px] font-medium uppercase tracking-[0.28em] drop-shadow">Shop now</span>
                 </button>
+                </>
               )}
 
               {/* tiroir des produits : monte depuis le bas */}
