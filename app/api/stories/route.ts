@@ -44,7 +44,7 @@ export async function GET(req: Request) {
 
     const { data: rows, error } = await supabaseAdmin
       .from("stories")
-      .select("id, title, cover_url, order_index, is_active, story_items(*)")
+      .select("*, story_items(*)")
       .in("id", links.map((l: any) => l.story_id))
       .eq("is_active", true)
     if (error) throw error
@@ -75,6 +75,7 @@ export async function GET(req: Request) {
         id: s.id,
         title: s.title,
         cover_url: s.cover_url,
+        link_url: s.link_url || null,
         order_index: s.order_index ?? 0,
         story_items: [...(s.story_items ?? [])]
           .filter((it: any) => it.media_url)
@@ -93,7 +94,7 @@ export async function GET(req: Request) {
             }
           }),
       }))
-      .filter((s: any) => s.story_items.length > 0)
+      .filter((s: any) => s.story_items.length > 0 || s.link_url)
       .sort(
         (a: any, b: any) =>
           (priority.get(String(b.id)) ?? 0) - (priority.get(String(a.id)) ?? 0) || a.order_index - b.order_index
