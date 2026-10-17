@@ -18,6 +18,7 @@ type Story = {
   id: string;
   title: string;
   cover_url: string;
+  link_url?: string | null; // story qui ouvre directement une page (ex. un jeu), sans visionneuse
   story_items: StoryItem[];
 };
 
@@ -192,6 +193,11 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   };
 
   const openStory = (story: Story) => {
+    if (story.link_url) {
+      router.push(story.link_url);
+      return;
+    }
+    if (story.story_items.length === 0) return;
     const r = circleRect(story.id);
     setOrigin(r ?? { top: window.innerHeight / 2 - 40, left: window.innerWidth / 2 - 40, width: 80, height: 80 });
     setClosing(false);
