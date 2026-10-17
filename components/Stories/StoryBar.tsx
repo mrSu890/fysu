@@ -42,6 +42,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   const [shown, setShown] = useState(false); // le contenu apparaît une fois la forme agrandie
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [videoDur, setVideoDur] = useState<number | null>(null);
+  const [landscape, setLandscape] = useState(false); // photo / vidéo en paysage : on la montre en entier, bords noirs en haut et en bas
   const [mediaReady, setMediaReady] = useState(false); // la diapo est chargée : le temps peut s'écouler
   const [mounted, setMounted] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -260,8 +261,12 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   useEffect(() => {
     setMediaReady(false);
     setVideoDur(null);
+    setLandscape(false);
     const im = imgRef.current;
-    if (im && im.complete && im.naturalWidth > 0) setMediaReady(true);
+    if (im && im.complete && im.naturalWidth > 0) {
+      setMediaReady(true);
+      setLandscape(im.naturalWidth > im.naturalHeight);
+    }
     // sécurité : si rien ne charge au bout de 12 s, on avance quand même
     const t = window.setTimeout(() => setMediaReady(true), 12000);
     return () => window.clearTimeout(t);
@@ -368,15 +373,22 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
               style={{ pointerEvents: shown && !closing ? "auto" : "none" }}
             >
             {/* colonne de la story : tout l'écran sur téléphone, colonne 9:16 centrée sur grand écran */}
-            <div className="relative h-full w-full overflow-hidden md:aspect-[9/16] md:h-full md:w-auto md:max-w-full">
+            <div
+              className="relative h-full w-full overflow-hidden md:aspect-[9/16] md:h-full md:w-auto md:max-w-full"
+              style={{ background: mediaReady ? "#000" : "transparent" }}
+            >
               {activeStory.story_items[currentIndex].type === "image" ? (
                 <img
                   ref={imgRef}
-                  onLoad={() => setMediaReady(true)}
+                  onLoad={(e) => {
+                    setMediaReady(true);
+                    const im = e.currentTarget as HTMLImageElement;
+                    setLandscape(im.naturalWidth > im.naturalHeight);
+                  }}
                   onError={() => setMediaReady(true)}
                   key={activeStory.story_items[currentIndex].id ?? currentIndex}
                   src={activeStory.story_items[currentIndex].media_url}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className={`absolute inset-0 h-full w-full ${landscape ? "object-contain" : "object-cover"}`}
                   alt=""
                   draggable={false}
                 />
@@ -386,12 +398,14 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                   ref={videoRef}
                   onLoadedData={(e) => {
                     setMediaReady(true);
+                    const vid = e.currentTarget as HTMLVideoElement;
+                    setLandscape(vid.videoWidth > vid.videoHeight);
                     const d = (e.currentTarget as HTMLVideoElement).duration;
                     if (Number.isFinite(d) && d > 0) setVideoDur(Math.min(60, Math.max(2, d)));
                   }}
                   onError={() => setMediaReady(true)}
                   src={activeStory.story_items[currentIndex].media_url}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className={`absolute inset-0 h-full w-full ${landscape ? "object-contain" : "object-cover"}`}
                   autoPlay
                   muted
                   playsInline
