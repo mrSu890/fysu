@@ -1,277 +1,164 @@
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
-/* ===================================================== */
-/* GET - List all stories (admin)                       */
-/* ===================================================== */
+export const runtime = "nodejs"
 
-export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from("stories")
-    .select("*, story_items(*), story_page_links(*)")
+/* ====================================================================
+   ADMIN > STORIES  (réservé aux admins par le middleware)
+   GET     : toutes les stories (ordre d'affichage), avec diapos et pages choisies
+   POST    : créer         PUT : modifier
+   PATCH   : { order: [id, id…] } réordonner   ou   { id, is_active } activer / désactiver
+   DELETE  : ?id=…
+   Les produits « Shop now » d'une diapo sont dans story_items.product_ids (liste d'identifiants).
+   Si cette colonne n'existe pas encore (SQL pas lancé), tout marche quand même, sans les produits.
+   ==================================================================== */
 
-  if (error) {
-    console.error("GET stories error:", error);
-    return NextResponse.json({ error }, { status: 500 });
-  }
+const fail = (message: string, status = 500) => NextResponse.json({ error: message }, { status })
 
-  return NextResponse.json(data);
+type ItemIn = { type?: string; media_url?: string; duration?: number; product_ids?: (string | number)[] }
+type TargetIn = { type: string; id: string | number }
+
+function cleanItems(items: ItemIn[]) {
+  return (items ?? [])
+    .filter((it) => it?.media_url)
+    .map((it, index) => ({
+      type: it.type === "video" ? "video" : "image",
+      media_url: it.media_url,
+      duration: Number(it.duration) > 0 ? Number(it.duration) : it.type === "video" ? 8 : 5,
+      order_index: index,
+      product_ids: Array.isArray(it.product_ids) ? it.product_ids.map((x) => Number(x)).filter((x) => Number.isFinite(x)) : [],
+    }))
 }
 
-/* ===================================================== */
-/* POST - Create story                                  */
-/* ===================================================== */
+async function writeItems(storyId: string | number, items: ItemIn[]) {
+  const rows = cleanItems(items).map((r) => ({ ...r, story_id: storyId }))
+  if (rows.length === 0) return null
+  let { error } = await supabaseAdmin.from("story_items").insert(rows)
+  if (error && /product_ids/i.test(error.message)) {
+    // la colonne n'existe pas encore : on enregistre sans les produits
+    ;({ error } = await supabaseAdmin.from("story_items").insert(rows.map(({ product_ids, ...rest }) => rest)))
+  }
+  return error
+}
+
+async function writeTargets(storyId: string | number, targets: TargetIn[]) {
+  const rows = (targets ?? [])
+    .map((t) =>
+      t.type === "page"
+        ? { story_id: storyId, page_id: t.id }
+        : t.type === "collection"
+          ? { story_id: storyId, collection_page_id: t.id }
+          : null
+    )
+    .filter(Boolean)
+  if (rows.length === 0) return null
+  const { error } = await supabaseAdmin.from("story_page_links").insert(rows as any[])
+  return error
+}
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin.from("stories").select("*, story_items(*), story_page_links(*)")
+  if (error) return fail(error.message)
+
+  const stories = (data ?? [])
+    .map((s: any) => ({
+      ...s,
+      story_items: [...(s.story_items ?? [])].sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0)),
+    }))
+    .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0) || String(a.created_at).localeCompare(String(b.created_at)))
+  return NextResponse.json(stories)
+}
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const {
-      title,
-      cover_url,
-      is_active,
-      items = [],
-      targets = [],
-    } = body;
+    const { title, cover_url, is_active = true, items = [], targets = [] } = await req.json()
+    if (!title || !cover_url) return fail("Titre et couverture obligatoires", 400)
 
-    /* -------- CREATE STORY -------- */
+    const { data: last } = await supabaseAdmin.from("stories").select("order_index").order("order_index", { ascending: false }).limit(1)
+    const next = Number(last?.[0]?.order_index ?? -1) + 1
 
-    const { data: story, error: storyError } =
-      await supabaseAdmin
-        .from("stories")
-        .insert({
-          title,
-          cover_url,
-          is_active,
-        })
-        .select()
-        .single();
+    const { data: story, error } = await supabaseAdmin
+      .from("stories")
+      .insert({ title, cover_url, is_active, order_index: next })
+      .select()
+      .single()
+    if (error || !story) return fail(error?.message || "Création impossible")
 
-    if (storyError || !story) {
-      console.error("Story insert error:", storyError);
-      return NextResponse.json(
-        { error: storyError },
-        { status: 500 }
-      );
-    }
+    const e1 = await writeItems(story.id, items)
+    if (e1) return fail("Diapos : " + e1.message)
+    const e2 = await writeTargets(story.id, targets)
+    if (e2) return fail("Pages : " + e2.message)
 
-    /* -------- INSERT ITEMS -------- */
-
-    if (items.length > 0) {
-      const formattedItems = items.map(
-        (item: any, index: number) => ({
-          story_id: story.id,
-          type: item.type,
-          media_url: item.media_url,
-          duration: Number(item.duration) > 0 ? Number(item.duration) : item.type === "video" ? 8 : 5,
-          order_index: index,
-        })
-      );
-
-      const { error: itemsError } =
-        await supabaseAdmin
-          .from("story_items")
-          .insert(formattedItems);
-
-      if (itemsError) {
-        console.error("Story items error:", itemsError);
-      }
-    }
-
-    /* -------- INSERT TARGET LINKS -------- */
-
-    if (targets.length > 0) {
-      const formattedTargets = targets
-        .map((target: any) => {
-          if (target.type === "page") {
-            return {
-              story_id: story.id,
-              page_id: target.id,
-            };
-          }
-
-          if (target.type === "collection") {
-            return {
-              story_id: story.id,
-              collection_page_id: target.id,
-            };
-          }
-
-          return null;
-        })
-        .filter(Boolean);
-
-      if (formattedTargets.length > 0) {
-        const { error: linkError } =
-          await supabaseAdmin
-            .from("story_page_links")
-            .insert(formattedTargets);
-
-        if (linkError) {
-          console.error("Story links error:", linkError);
-        }
-      }
-    }
-
-    return NextResponse.json({ success: true });
-
-  } catch (err) {
-    console.error("POST crash:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, id: story.id })
+  } catch (e) {
+    console.error("POST stories", e)
+    return fail("Erreur serveur")
   }
 }
-
-/* ===================================================== */
-/* PUT - Update story                                   */
-/* ===================================================== */
 
 export async function PUT(req: Request) {
   try {
-    const body = await req.json();
+    const { id, title, cover_url, is_active, items = [], targets = [] } = await req.json()
+    if (!id) return fail("Story manquante", 400)
+    if (!title || !cover_url) return fail("Titre et couverture obligatoires", 400)
 
-    const {
-      id,
-      title,
-      cover_url,
-      is_active,
-      items = [],
-      targets = [],
-    } = body;
+    const { error } = await supabaseAdmin.from("stories").update({ title, cover_url, is_active }).eq("id", id)
+    if (error) return fail(error.message)
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing story id" },
-        { status: 400 }
-      );
-    }
+    await supabaseAdmin.from("story_items").delete().eq("story_id", id)
+    const e1 = await writeItems(id, items)
+    if (e1) return fail("Diapos : " + e1.message)
 
-    /* -------- UPDATE STORY -------- */
+    await supabaseAdmin.from("story_page_links").delete().eq("story_id", id)
+    const e2 = await writeTargets(id, targets)
+    if (e2) return fail("Pages : " + e2.message)
 
-    const { error: storyError } =
-      await supabaseAdmin
-        .from("stories")
-        .update({
-          title,
-          cover_url,
-          is_active,
-        })
-        .eq("id", id);
-
-    if (storyError) {
-      console.error("Story update error:", storyError);
-      return NextResponse.json(
-        { error: storyError },
-        { status: 500 }
-      );
-    }
-
-    /* -------- RESET ITEMS -------- */
-
-    await supabaseAdmin
-      .from("story_items")
-      .delete()
-      .eq("story_id", id);
-
-    if (items.length > 0) {
-      const formattedItems = items.map(
-        (item: any, index: number) => ({
-          story_id: id,
-          type: item.type,
-          media_url: item.media_url,
-          duration: Number(item.duration) > 0 ? Number(item.duration) : item.type === "video" ? 8 : 5,
-          order_index: index,
-        })
-      );
-
-      await supabaseAdmin
-        .from("story_items")
-        .insert(formattedItems);
-    }
-
-    /* -------- RESET LINKS -------- */
-
-    await supabaseAdmin
-      .from("story_page_links")
-      .delete()
-      .eq("story_id", id);
-
-    if (targets.length > 0) {
-      const formattedTargets = targets
-        .map((target: any) => {
-          if (target.type === "page") {
-            return {
-              story_id: id,
-              page_id: target.id,
-            };
-          }
-
-          if (target.type === "collection") {
-            return {
-              story_id: id,
-              collection_page_id: target.id,
-            };
-          }
-
-          return null;
-        })
-        .filter(Boolean);
-
-      if (formattedTargets.length > 0) {
-        await supabaseAdmin
-          .from("story_page_links")
-          .insert(formattedTargets);
-      }
-    }
-
-    return NextResponse.json({ success: true });
-
-  } catch (err) {
-    console.error("PUT crash:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    console.error("PUT stories", e)
+    return fail("Erreur serveur")
   }
 }
 
-/* ===================================================== */
-/* DELETE - Remove story                                */
-/* ===================================================== */
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json()
+
+    if (Array.isArray(body.order)) {
+      const results = await Promise.all(
+        (body.order as (string | number)[]).map((id, index) =>
+          supabaseAdmin.from("stories").update({ order_index: index }).eq("id", id)
+        )
+      )
+      const bad = results.find((r) => r.error)
+      if (bad?.error) return fail(bad.error.message)
+      return NextResponse.json({ success: true })
+    }
+
+    if (body.id !== undefined && typeof body.is_active === "boolean") {
+      const { error } = await supabaseAdmin.from("stories").update({ is_active: body.is_active }).eq("id", body.id)
+      if (error) return fail(error.message)
+      return NextResponse.json({ success: true })
+    }
+
+    return fail("Requête inconnue", 400)
+  } catch (e) {
+    console.error("PATCH stories", e)
+    return fail("Erreur serveur")
+  }
+}
 
 export async function DELETE(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing id" },
-        { status: 400 }
-      );
-    }
-
-    const { error } = await supabaseAdmin
-      .from("stories")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Delete error:", error);
-      return NextResponse.json(
-        { error },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
-
-  } catch (err) {
-    console.error("DELETE crash:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    const id = new URL(req.url).searchParams.get("id")
+    if (!id) return fail("Missing id", 400)
+    await supabaseAdmin.from("story_items").delete().eq("story_id", id)
+    await supabaseAdmin.from("story_page_links").delete().eq("story_id", id)
+    const { error } = await supabaseAdmin.from("stories").delete().eq("id", id)
+    if (error) return fail(error.message)
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    console.error("DELETE stories", e)
+    return fail("Erreur serveur")
   }
 }
