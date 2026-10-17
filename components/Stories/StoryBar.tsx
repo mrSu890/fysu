@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { claimPopup, releasePopup } from "@/lib/popups";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -125,37 +126,56 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   }, [pageSlug, collectionSlug]);
 
   /* -------------------------------------------------- */
-  /* AUTOPLAY */
+  /* VISIONNEUSE PLEIN ÉCRAN                             */
   /* -------------------------------------------------- */
 
-  useEffect(() => {
-    if (!activeStory) return;
-    if (paused) return;
-  
-    const item = activeStory.story_items[currentIndex];
-    if (!item) return;
-  
-    const timer = setTimeout(() => {
-      nextSlide();
-    }, item.duration * 1000);
-  
-    return () => clearTimeout(timer);
-  }, [activeStory, currentIndex, paused]);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const touchY = useRef<number | null>(null);
+
+  const closeStory = () => {
+    setActiveStory(null);
+    setCurrentIndex(0);
+    setPaused(false);
+  };
 
   const nextSlide = () => {
     if (!activeStory) return;
-
     if (currentIndex < activeStory.story_items.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
-      setActiveStory(null);
-      setCurrentIndex(0);
+      closeStory();
     }
   };
 
-  /* -------------------------------------------------- */
-  /* RENDER */
-  /* -------------------------------------------------- */
+  const prevSlide = () => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : prev));
+
+  // pendant une story : le reste du site se met à l'écart, la page ne défile plus, Échap ferme
+  useEffect(() => {
+    if (!activeStory) return;
+    claimPopup("story", true, true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeStory();
+      if (e.key === "ArrowRight") nextSlide();
+      if (e.key === "ArrowLeft") prevSlide();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      releasePopup("story");
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStory, currentIndex]);
+
+  // maintenir le doigt = pause (la barre et la vidéo s'arrêtent)
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (paused) v.pause();
+    else v.play().catch(() => {});
+  }, [paused, currentIndex, activeStory]);
 
   if (loading) return null;
   if (stories.length === 0) return null;
@@ -189,101 +209,109 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
         ))}
       </div>
 
-      {/* STORY MODAL */}
+      {/* STORY PLEIN ÉCRAN */}
+      <style>{`@keyframes fysu-story-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}`}</style>
       <AnimatePresence>
-        {activeStory && (
+        {activeStory && activeStory.story_items[currentIndex] && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => {
-              setActiveStory(null);
-              setCurrentIndex(0);
+            className="fixed inset-0 flex items-center justify-center bg-black"
+            style={{ zIndex: 9000, touchAction: "none" }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            onTouchStart={(e) => {
+              touchY.current = e.touches[0].clientY;
+              setPaused(true);
             }}
+            onTouchEnd={(e) => {
+              setPaused(false);
+              const y0 = touchY.current;
+              touchY.current = null;
+              if (y0 !== null && e.changedTouches[0].clientY - y0 > 110) closeStory();
+            }}
+            onMouseDown={() => setPaused(true)}
+            onMouseUp={() => setPaused(false)}
           >
-            {/* Close */}
-            <button
-              onClick={() => setActiveStory(null)}
-              className="absolute top-6 right-6 text-white text-2xl z-50"
-            >
-              ✕
-            </button>
+            {/* colonne de la story : tout l'écran sur téléphone, colonne 9:16 centrée sur grand écran */}
+            <div className="relative h-full w-full overflow-hidden bg-black md:aspect-[9/16] md:h-full md:w-auto md:max-w-full">
+              {activeStory.story_items[currentIndex].type === "image" ? (
+                <img
+                  key={activeStory.story_items[currentIndex].id ?? currentIndex}
+                  src={activeStory.story_items[currentIndex].media_url}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  alt=""
+                  draggable={false}
+                />
+              ) : (
+                <video
+                  key={activeStory.story_items[currentIndex].id ?? currentIndex}
+                  ref={videoRef}
+                  src={activeStory.story_items[currentIndex].media_url}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  playsInline
+                />
+              )}
 
-            {/* Story Container */}
-            <div className="relative w-full max-w-xl h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              {/* dégradé léger en haut pour lire les barres et le titre */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/55 to-transparent" />
 
-              {/* Timeline */}
-              <div className="flex gap-1 px-3 pt-4">
-                {activeStory.story_items.map((item, index) => {
-                  const isActive = index === currentIndex;
-                  const isPast = index < currentIndex;
+              {/* zones de navigation : gauche = précédent, droite = suivant */}
+              <div className="absolute left-0 top-0 h-full w-1/3" onClick={prevSlide} />
+              <div className="absolute right-0 top-0 h-full w-2/3" onClick={nextSlide} />
 
-                  return (
-                    <div key={index} className="flex-1 h-1 bg-white/30 rounded overflow-hidden mb-4">
-                      {isPast && <div className="w-full h-full bg-white" />}
-                      {isActive && (
-                        <motion.div
-                          className="h-full bg-white"
-                          initial={{ width: 0 }}
-                          animate={{ width: "100%" }}
-                          transition={{
-                            duration:
-                              activeStory.story_items[currentIndex].duration,
-                            ease: "linear",
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Media */}
+              {/* barres de progression */}
               <div
-                className="flex-1 flex items-center justify-center px-4"
-                onMouseDown={() => setPaused(true)}
-                onMouseUp={() => setPaused(false)}
-                onTouchStart={() => setPaused(true)}
-                onTouchEnd={() => setPaused(false)}
+                className="pointer-events-none absolute inset-x-0 top-0 flex gap-1 px-3"
+                style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
               >
-                <div className="relative w-full h-full rounded-2xl overflow-hidden bg-black">
-
-                  {activeStory.story_items[currentIndex].type === "image" ? (
-                    <img
-                      src={activeStory.story_items[currentIndex].media_url}
-                      className="w-full h-full object-cover"
-                      alt=""
-                    />
-                  ) : (
-                    <video
-                      src={activeStory.story_items[currentIndex].media_url}
-                      className="w-full h-full object-cover"
-                      autoPlay
-                      muted
-                      playsInline
-                    />
-                  )}
-
-                  {/* Navigation Zones */}
-                  <div
-                    className="absolute left-0 top-0 w-1/2 h-full"
-                    onClick={() =>
-                      setCurrentIndex((prev) =>
-                        prev > 0 ? prev - 1 : prev
-                      )
-                    }
-                  />
-
-                  <div
-                    className="absolute right-0 top-0 w-1/2 h-full"
-                    onClick={nextSlide}
-                  />
-                </div>
+                {activeStory.story_items.map((item, index) => (
+                  <div key={index} className="h-[3px] flex-1 overflow-hidden rounded bg-white/35">
+                    {index < currentIndex && <div className="h-full w-full bg-white" />}
+                    {index === currentIndex && (
+                      <div
+                        key={`${activeStory.id}-${currentIndex}`}
+                        className="h-full w-full origin-left bg-white"
+                        style={{
+                          animation: `fysu-story-bar ${item.duration || 5}s linear forwards`,
+                          animationPlayState: paused ? "paused" : "running",
+                        }}
+                        onAnimationEnd={nextSlide}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
 
-              {/* Bottom spacing */}
-              <div className="h-10" />
+              {/* titre + fermer */}
+              <div
+                className="absolute inset-x-0 flex items-center justify-between px-4"
+                style={{ top: "calc(env(safe-area-inset-top, 0px) + 28px)" }}
+              >
+                <div className="pointer-events-none flex items-center gap-2.5 text-white">
+                  <span
+                    className="h-8 w-8 rounded-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${activeStory.cover_url})` }}
+                  />
+                  <span className="text-sm font-medium drop-shadow">{activeStory.title}</span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Fermer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeStory();
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-2xl leading-none text-white"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
