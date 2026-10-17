@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { optimizeStoryMedia } from "@/lib/storyMedia";
+import { putSigned, withTimeout } from "@/lib/signedUpload";
 
 const { Title } = Typography;
 
@@ -165,37 +166,69 @@ export default function StoryEditor({
   /* -------------------------------------------------- */
 
   const uploadToSupabase = async (original: File, bucket: string) => {
-    const hide = message.loading("Allègement et envoi en cours…", 0);
+    const key = "story-upload";
+    message.loading({ content: "Allègement du fichier…", key, duration: 0 });
     try {
-      // photo -> 1080 px / vidéo -> 720 px : bien plus léger donc la story s'ouvre instantanément
-      const file = await optimizeStoryMedia(
-        original,
-        bucket === "story-covers" ? "cover" : "media"
+      // photo -> 1080 px / vidéo -> 720 px (jamais bloqué : au pire on garde le fichier d'origine)
+      const isVideo = original.type.startsWith("video/");
+      const file = await withTimeout(
+        optimizeStoryMedia(original, bucket === "story-covers" ? "cover" : "media"),
+        isVideo ? 180000 : 20000,
+        original
       );
 
-      const res = await fetch("/api/admin/stories/sign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bucket, filename: file.name }),
-      });
-      const sig = await res.json().catch(() => null);
-      if (!res.ok || !sig) throw new Error(sig?.error || `Erreur ${res.status}`);
-
-      const { error } = await supabase.storage
-        .from(bucket)
-        .uploadToSignedUrl(sig.path, sig.token, file, {
-          contentType: file.type || undefined,
+      let url: string;
+      if (file.size <= 4 * 1024 * 1024) {
+        // fichier léger : même chemin que les autres envois de l'admin
+        message.loading({ content: "Envoi en cours…", key, duration: 0 });
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("bucket", bucket);
+        const ctrl = new AbortController();
+        const timer = window.setTimeout(() => ctrl.abort(), 60000);
+        let res: Response;
+        try {
+          res = await fetch("/api/admin/stories/upload", {
+            method: "POST",
+            body: fd,
+            signal: ctrl.signal,
+          });
+        } finally {
+          window.clearTimeout(timer);
+        }
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.url) {
+          throw new Error(data?.error || `Erreur ${res.status}`);
+        }
+        url = data.url;
+      } else {
+        // gros fichier (vidéo) : envoi direct vers Supabase, avec pourcentage
+        if (file.size > 48 * 1024 * 1024) {
+          throw new Error("Fichier trop lourd (max 48 Mo). Raccourcis la vidéo.");
+        }
+        const res = await fetch("/api/admin/stories/sign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bucket, filename: file.name }),
         });
-      if (error) throw new Error(error.message);
+        const sig = await res.json().catch(() => null);
+        if (!res.ok || !sig?.signedUrl) {
+          throw new Error(sig?.error || `Erreur ${res.status}`);
+        }
+        await putSigned(sig.signedUrl, file, (pct) =>
+          message.loading({ content: `Envoi… ${pct} %`, key, duration: 0 })
+        );
+        url = sig.url;
+      }
 
-      return sig.url as string;
+      message.destroy(key);
+      return url;
     } catch (e) {
+      message.destroy(key);
       message.error(
         "Envoi impossible : " + (e instanceof Error ? e.message : "erreur")
       );
       return null;
-    } finally {
-      hide();
     }
   };
 
