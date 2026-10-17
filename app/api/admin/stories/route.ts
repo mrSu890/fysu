@@ -62,7 +62,7 @@ export async function POST(req: Request) {
           story_id: story.id,
           type: item.type,
           media_url: item.media_url,
-          duration: item.duration,
+          duration: Number(item.duration) > 0 ? Number(item.duration) : item.type === "video" ? 8 : 5,
           order_index: index,
         })
       );
@@ -180,7 +180,7 @@ export async function PUT(req: Request) {
           story_id: id,
           type: item.type,
           media_url: item.media_url,
-          duration: item.duration,
+          duration: Number(item.duration) > 0 ? Number(item.duration) : item.type === "video" ? 8 : 5,
           order_index: index,
         })
       );
