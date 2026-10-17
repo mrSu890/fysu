@@ -22,6 +22,7 @@ import {
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { optimizeStoryMedia } from "@/lib/storyMedia";
 
 const { Title } = Typography;
 
@@ -163,9 +164,15 @@ export default function StoryEditor({
   /* STORAGE */
   /* -------------------------------------------------- */
 
-  const uploadToSupabase = async (file: File, bucket: string) => {
-    const hide = message.loading("Envoi en cours…", 0);
+  const uploadToSupabase = async (original: File, bucket: string) => {
+    const hide = message.loading("Allègement et envoi en cours…", 0);
     try {
+      // photo -> 1080 px / vidéo -> 720 px : bien plus léger donc la story s'ouvre instantanément
+      const file = await optimizeStoryMedia(
+        original,
+        bucket === "story-covers" ? "cover" : "media"
+      );
+
       const res = await fetch("/api/admin/stories/sign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
