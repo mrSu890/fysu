@@ -161,6 +161,13 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
     return { top: r.top, left: r.left, width: r.width, height: r.height };
   };
 
+  // sécurité : le contenu apparaît même si l'animation d'ouverture ne signale pas sa fin
+  useEffect(() => {
+    if (!activeStory || closing) return;
+    const t = window.setTimeout(() => setShown(true), 700);
+    return () => window.clearTimeout(t);
+  }, [activeStory, closing]);
+
   // la story se rétracte vers sa pastille
   const closeStory = () => {
     if (!activeStory || closing) return;
@@ -379,7 +386,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                         className="h-full w-full origin-left bg-white"
                         style={{
                           animation: `fysu-story-bar ${(item.type === "video" && videoDur) || item.duration || 5}s linear forwards`,
-                          animationPlayState: paused || !mediaReady || !shown ? "paused" : "running",
+                          animationPlayState: paused || !mediaReady ? "paused" : "running",
                         }}
                         onAnimationEnd={nextSlide}
                       />
