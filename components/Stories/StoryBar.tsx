@@ -32,6 +32,12 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [paused, setPaused] = useState(false);
+  // transition rond -> plein écran
+  type Rect = { top: number; left: number; width: number; height: number };
+  const [origin, setOrigin] = useState<Rect | null>(null);
+  const [closing, setClosing] = useState(false);
+  const [shown, setShown] = useState(false); // le contenu apparaît une fois la forme agrandie
+  const [vp, setVp] = useState({ w: 0, h: 0 });
 
   /* -------------------------------------------------- */
   /* FETCH STORIES */
@@ -126,16 +132,103 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   }, [pageSlug, collectionSlug]);
 
   /* -------------------------------------------------- */
+  /* PRÉCHARGEMENT : tout est prêt avant le premier toucher */
+  /* -------------------------------------------------- */
+
+  const keep = useRef<any[]>([]);
+  useEffect(() => {
+    if (stories.length === 0) return;
+    const run = () => {
+      const bag: any[] = [];
+      stories.forEach((st) => {
+        if (st.cover_url) {
+          const c = new Image();
+          c.src = st.cover_url;
+          bag.push(c);
+        }
+        st.story_items.forEach((it, i) => {
+          if (!it.media_url) return;
+          if (it.type === "image") {
+            const im = new Image();
+            im.src = it.media_url;
+            bag.push(im);
+          } else if (i === 0) {
+            // première vidéo de chaque story : on commence déjà à la télécharger
+            const v = document.createElement("video");
+            v.preload = "auto";
+            v.muted = true;
+            v.playsInline = true;
+            v.src = it.media_url;
+            v.load();
+            bag.push(v);
+          }
+        });
+      });
+      keep.current = bag;
+    };
+    const w = window as any;
+    const id = w.requestIdleCallback ? w.requestIdleCallback(run, { timeout: 2500 }) : window.setTimeout(run, 800);
+    return () => {
+      if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(id);
+      else window.clearTimeout(id);
+    };
+  }, [stories]);
+
+  // pendant une story : on charge déjà la diapo suivante
+  useEffect(() => {
+    if (!activeStory) return;
+    const nxt = activeStory.story_items[currentIndex + 1];
+    if (nxt?.type === "image") {
+      const im = new Image();
+      im.src = nxt.media_url;
+    }
+  }, [activeStory, currentIndex]);
+
+  useEffect(() => {
+    const on = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+
+  /* -------------------------------------------------- */
   /* VISIONNEUSE PLEIN ÉCRAN                             */
   /* -------------------------------------------------- */
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const touchY = useRef<number | null>(null);
 
+  const circleRect = (id: string): Rect | null => {
+    const el = document.querySelector(`[data-story-cover="${id}"]`) as HTMLElement | null;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { top: r.top, left: r.left, width: r.width, height: r.height };
+  };
+
+  // la story se rétracte vers sa pastille
   const closeStory = () => {
+    if (!activeStory || closing) return;
+    const r = circleRect(activeStory.id);
+    if (r) setOrigin(r);
+    setShown(false);
+    setPaused(false);
+    setClosing(true);
+  };
+
+  const finishClose = () => {
     setActiveStory(null);
     setCurrentIndex(0);
-    setPaused(false);
+    setClosing(false);
+    setOrigin(null);
+  };
+
+  const openStory = (story: Story) => {
+    const r = circleRect(story.id);
+    setOrigin(r ?? { top: window.innerHeight / 2 - 40, left: window.innerWidth / 2 - 40, width: 80, height: 80 });
+    setClosing(false);
+    setShown(false);
+    setCurrentIndex(0);
+    setActiveStory(story);
   };
 
   const nextSlide = () => {
@@ -188,14 +281,12 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
           <motion.div
             key={story.id}
             whileHover={{ scale: 1.05 }}
-            onClick={() => {
-              setActiveStory(story);
-              setCurrentIndex(0);
-            }}
+            onClick={() => openStory(story)}
             className="flex flex-col items-center cursor-pointer"
           >
             <div className="w-20 h-20 rounded-full p-[2px] bg-gray-100 border border-gray-700">
               <div
+                data-story-cover={story.id}
                 className="w-full h-full rounded-full bg-cover bg-center"
                 style={{
                   backgroundImage: `url(${story.cover_url})`,
@@ -214,12 +305,30 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
       <AnimatePresence>
         {activeStory && activeStory.story_items[currentIndex] && (
           <motion.div
-            className="fixed inset-0 flex items-center justify-center bg-black"
-            style={{ zIndex: 9000, touchAction: "none" }}
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="fixed overflow-hidden bg-black bg-cover bg-center"
+            style={{
+              zIndex: 9000,
+              touchAction: "none",
+              backgroundImage: `url(${activeStory.cover_url})`,
+            }}
+            initial={{
+              top: origin?.top ?? 0,
+              left: origin?.left ?? 0,
+              width: origin?.width ?? vp.w,
+              height: origin?.height ?? vp.h,
+              borderRadius: 9999,
+            }}
+            animate={
+              closing && origin
+                ? { top: origin.top, left: origin.left, width: origin.width, height: origin.height, borderRadius: 9999 }
+                : { top: 0, left: 0, width: vp.w, height: vp.h, borderRadius: 0 }
+            }
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+            onAnimationComplete={() => {
+              if (closing) finishClose();
+              else setShown(true);
+            }}
             onTouchStart={(e) => {
               touchY.current = e.touches[0].clientY;
               setPaused(true);
@@ -233,6 +342,14 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
             onMouseDown={() => setPaused(true)}
             onMouseUp={() => setPaused(false)}
           >
+            {/* le contenu apparaît en fondu quand la forme est agrandie */}
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center bg-black"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: shown && !closing ? 1 : 0 }}
+              transition={{ duration: shown ? 0.25 : 0.12 }}
+              style={{ pointerEvents: shown && !closing ? "auto" : "none" }}
+            >
             {/* colonne de la story : tout l'écran sur téléphone, colonne 9:16 centrée sur grand écran */}
             <div className="relative h-full w-full overflow-hidden bg-black md:aspect-[9/16] md:h-full md:w-auto md:max-w-full">
               {activeStory.story_items[currentIndex].type === "image" ? (
@@ -313,6 +430,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                 </button>
               </div>
             </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
