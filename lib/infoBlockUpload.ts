@@ -93,6 +93,19 @@ export async function uploadInfoBlockMedia(
       file = await resizeImage(original)
     }
 
+    // fichier léger : même chemin que les autres envois de l'admin (fiable)
+    if (file.size <= 4 * 1024 * 1024) {
+      toast.loading("Envoi…", { id: toastId })
+      const fd = new FormData()
+      fd.append("file", file)
+      fd.append("productId", String(productId))
+      const res = await fetch("/api/admin/products/upload-info-block", { method: "POST", body: fd })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.url) throw new Error(data?.error || `Erreur ${res.status}`)
+      toast.success("Média envoyé", { id: toastId })
+      return data.url as string
+    }
+
     const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase()
     const sig = await sign(productId, ext)
     toast.loading("Envoi… 0 %", { id: toastId })
