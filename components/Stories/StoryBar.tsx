@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { claimPopup, releasePopup } from "@/lib/popups";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 
 type StoryItem = {
@@ -26,8 +25,6 @@ type Props = {
 };
 
 export default function StoryBar({ pageSlug, collectionSlug }: Props) {
-  const supabase = supabaseClient;
-
   const [stories, setStories] = useState<Story[]>([]);
   const [activeStory, setActiveStory] = useState<Story | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -39,100 +36,54 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   const [closing, setClosing] = useState(false);
   const [shown, setShown] = useState(false); // le contenu apparaît une fois la forme agrandie
   const [vp, setVp] = useState({ w: 0, h: 0 });
+  const [videoDur, setVideoDur] = useState<number | null>(null);
   const [mediaReady, setMediaReady] = useState(false); // la diapo est chargée : le temps peut s'écouler
   const [mounted, setMounted] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   /* -------------------------------------------------- */
-  /* FETCH STORIES */
+  /* CHARGEMENT : une requête serveur + copie gardée sur l'appareil (affichage instantané) */
   /* -------------------------------------------------- */
 
   useEffect(() => {
-    const fetchStories = async () => {
-      setLoading(true);
-  
-      let pageId: string | null = null;
-      let collectionPageId: string | null = null;
-  
-      // 1) Resolve target id
-      if (pageSlug) {
-        const { data, error } = await supabase
-          .from("pages")
-          .select("id")
-          .eq("slug", pageSlug)
-          .maybeSingle();
-  
-        if (error) console.log("pages slug error:", error);
-        pageId = data?.id ?? null;
-      } else if (collectionSlug) {
-        const { data, error } = await supabase
-          .from("collectionPages") // <-- IMPORTANT: exact table name from your schema
-          .select("id")
-          .eq("slug", collectionSlug)
-          .maybeSingle();
-  
-        if (error) console.log("collectionPages slug error:", error);
-        collectionPageId = data?.id ?? null;
-      }
-  
-      if (!pageId && !collectionPageId) {
-        setStories([]);
+    const key = `fysu-stories:${pageSlug ? "p:" + pageSlug : "c:" + collectionSlug}`;
+    let alive = true;
+
+    // 1) la dernière copie connue s'affiche tout de suite
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || "null");
+      if (Array.isArray(cached) && cached.length) {
+        setStories(cached);
         setLoading(false);
-        return;
       }
-  
-      // 2) Fetch links from the SAME table, filtering on the right column
-      let linksQuery = supabase
-        .from("story_page_links")
-        .select("story_id, priority");
-  
-      if (pageId) linksQuery = linksQuery.eq("page_id", pageId);
-      if (collectionPageId)
-        linksQuery = linksQuery.eq("collection_page_id", collectionPageId);
-  
-      const { data: links, error: linksError } = await linksQuery.order("priority", {
-        ascending: false,
-      });
-  
-      if (linksError) console.log("story_page_links error:", linksError);
-  
-      if (!links || links.length === 0) {
-        setStories([]);
-        setLoading(false);
-        return;
-      }
-  
-      const storyIds = links.map((l) => l.story_id);
-  
-      // 3) Fetch stories + items
-      const { data: storyData, error: storyError } = await supabase
-        .from("stories")
-        .select(
-          `
-            id, title, cover_url, order_index, is_active,
-            story_items ( id, type, media_url, duration, order_index )
-          `
-        )
-        .in("id", storyIds)
-        .eq("is_active", true)
-        .order("order_index", { ascending: true });
-  
-      if (storyError) console.log("stories error:", storyError);
-  
-      // 4) Sort story_items by order_index (important!)
-      const sorted =
-        (storyData ?? []).map((s) => ({
-          ...s,
-          story_items: [...(s.story_items ?? [])].sort(
-            (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
-          ),
-        })) ?? [];
-  
-      setStories(sorted);
+    } catch {}
+
+    // 2) puis on vérifie auprès du serveur
+    const qs = pageSlug
+      ? `page=${encodeURIComponent(pageSlug)}`
+      : collectionSlug
+        ? `collection=${encodeURIComponent(collectionSlug)}`
+        : "";
+    if (!qs) {
       setLoading(false);
+      return;
+    }
+    fetch(`/api/stories?${qs}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        const list: Story[] = Array.isArray(d?.stories) ? d.stories : [];
+        setStories(list);
+        setLoading(false);
+        try {
+          localStorage.setItem(key, JSON.stringify(list));
+        } catch {}
+      })
+      .catch(() => alive && setLoading(false));
+
+    return () => {
+      alive = false;
     };
-  
-    fetchStories();
   }, [pageSlug, collectionSlug]);
 
   /* -------------------------------------------------- */
@@ -241,7 +192,15 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
     if (currentIndex < activeStory.story_items.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
-      closeStory();
+      // dernière diapo : on enchaîne sur la story suivante (comme Instagram), sinon on ferme
+      const i = stories.findIndex((st) => st.id === activeStory.id);
+      const nextStory = i >= 0 ? stories[i + 1] : undefined;
+      if (nextStory) {
+        setCurrentIndex(0);
+        setActiveStory(nextStory);
+      } else {
+        closeStory();
+      }
     }
   };
 
@@ -270,6 +229,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   // nouvelle diapo : on attend qu'elle soit chargée (une image déjà en cache est prête tout de suite)
   useEffect(() => {
     setMediaReady(false);
+    setVideoDur(null);
     const im = imgRef.current;
     if (im && im.complete && im.naturalWidth > 0) setMediaReady(true);
     // sécurité : si rien ne charge au bout de 12 s, on avance quand même
@@ -384,7 +344,11 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                 <video
                   key={activeStory.story_items[currentIndex].id ?? currentIndex}
                   ref={videoRef}
-                  onLoadedData={() => setMediaReady(true)}
+                  onLoadedData={(e) => {
+                    setMediaReady(true);
+                    const d = (e.currentTarget as HTMLVideoElement).duration;
+                    if (Number.isFinite(d) && d > 0) setVideoDur(Math.min(60, Math.max(2, d)));
+                  }}
                   onError={() => setMediaReady(true)}
                   src={activeStory.story_items[currentIndex].media_url}
                   className="absolute inset-0 h-full w-full object-cover"
@@ -414,7 +378,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                         key={`${activeStory.id}-${currentIndex}`}
                         className="h-full w-full origin-left bg-white"
                         style={{
-                          animation: `fysu-story-bar ${item.duration || 5}s linear forwards`,
+                          animation: `fysu-story-bar ${(item.type === "video" && videoDur) || item.duration || 5}s linear forwards`,
                           animationPlayState: paused || !mediaReady || !shown ? "paused" : "running",
                         }}
                         onAnimationEnd={nextSlide}
