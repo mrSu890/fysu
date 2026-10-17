@@ -71,17 +71,25 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { title, cover_url, is_active = true, items = [], targets = [] } = await req.json()
+    const { title, cover_url, is_active = true, items = [], targets = [], link_url = null } = await req.json()
     if (!title || !cover_url) return fail("Titre et couverture obligatoires", 400)
 
     const { data: last } = await supabaseAdmin.from("stories").select("order_index").order("order_index", { ascending: false }).limit(1)
     const next = Number(last?.[0]?.order_index ?? -1) + 1
 
-    const { data: story, error } = await supabaseAdmin
+    let { data: story, error } = await supabaseAdmin
       .from("stories")
-      .insert({ title, cover_url, is_active, order_index: next })
+      .insert({ title, cover_url, is_active, order_index: next, link_url: link_url || null })
       .select()
       .single()
+    if (error && /link_url/i.test(error.message)) {
+      // colonne pas encore créée (SQL pas lancé) : on enregistre sans le lien direct
+      ;({ data: story, error } = await supabaseAdmin
+        .from("stories")
+        .insert({ title, cover_url, is_active, order_index: next })
+        .select()
+        .single())
+    }
     if (error || !story) return fail(error?.message || "Création impossible")
 
     const e1 = await writeItems(story.id, items)
@@ -98,11 +106,14 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const { id, title, cover_url, is_active, items = [], targets = [] } = await req.json()
+    const { id, title, cover_url, is_active, items = [], targets = [], link_url = null } = await req.json()
     if (!id) return fail("Story manquante", 400)
     if (!title || !cover_url) return fail("Titre et couverture obligatoires", 400)
 
-    const { error } = await supabaseAdmin.from("stories").update({ title, cover_url, is_active }).eq("id", id)
+    let { error } = await supabaseAdmin.from("stories").update({ title, cover_url, is_active, link_url: link_url || null }).eq("id", id)
+    if (error && /link_url/i.test(error.message)) {
+      ;({ error } = await supabaseAdmin.from("stories").update({ title, cover_url, is_active }).eq("id", id))
+    }
     if (error) return fail(error.message)
 
     await supabaseAdmin.from("story_items").delete().eq("story_id", id)
