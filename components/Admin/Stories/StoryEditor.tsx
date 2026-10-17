@@ -164,22 +164,32 @@ export default function StoryEditor({
   /* -------------------------------------------------- */
 
   const uploadToSupabase = async (file: File, bucket: string) => {
-    const filePath = `${Date.now()}-${file.name}`;
+    const hide = message.loading("Envoi en cours…", 0);
+    try {
+      const res = await fetch("/api/admin/stories/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bucket, filename: file.name }),
+      });
+      const sig = await res.json().catch(() => null);
+      if (!res.ok || !sig) throw new Error(sig?.error || `Erreur ${res.status}`);
 
-    const { error } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file);
+      const { error } = await supabase.storage
+        .from(bucket)
+        .uploadToSignedUrl(sig.path, sig.token, file, {
+          contentType: file.type || undefined,
+        });
+      if (error) throw new Error(error.message);
 
-    if (error) {
-      message.error("Upload failed");
+      return sig.url as string;
+    } catch (e) {
+      message.error(
+        "Envoi impossible : " + (e instanceof Error ? e.message : "erreur")
+      );
       return null;
+    } finally {
+      hide();
     }
-
-    const { data } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
   };
 
   const handleCoverUpload = async (file: File) => {
