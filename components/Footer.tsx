@@ -36,7 +36,6 @@ const Footer: React.FC = () => {
   const t = useTranslations("Footer");
   const isWave = useBrandPage() === "thewave";
   const pathname = usePathname();
-  const showGame = pathname === "/collections/when-the-flowers-bloom"; // jamais sur les pages musique
   const ink = isWave ? { color: WAVE_INK } : undefined;
 
   return (
@@ -46,23 +45,6 @@ const Footer: React.FC = () => {
 
       {/* Page d'accueil : « Explore The Universe » juste au-dessus de l'anthurium */}
       {pathname === "/" && <HomeTiles />}
-
-      {/* Pastille du jeu FYSU Bird (page When the flowers bloom) */}
-      {showGame && (
-        <div className="mt-16 mb-20 flex flex-col items-center gap-2">
-          <Link href="/games/fysu-bird" aria-label="FYSU Bird" className="block active:scale-95 transition">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/games-bird-icon.png"
-              alt=""
-              width={84}
-              height={84}
-              style={{ width: 84, height: 84, borderRadius: 19, imageRendering: "pixelated", boxShadow: "0 6px 18px rgba(0,0,0,0.3)" }}
-            />
-          </Link>
-          <span className="text-xs tracking-wide opacity-80">FYSU Bird</span>
-        </div>
-      )}
 
       {/* L'anthurium est retiré (en attendant une nouvelle photo). Ancienne image : /images/anthurium-v3.png */}
 
