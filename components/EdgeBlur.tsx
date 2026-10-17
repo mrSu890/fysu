@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation"
 
 const TOP = 78
 const BOTTOM = 72
-const STRENGTH = 0.55
+const STRENGTH = 0.34
 
 // dégradé « adouci » : la couleur s'estompe progressivement, sans bord visible
 const stops = (dir: "to bottom" | "to top") =>

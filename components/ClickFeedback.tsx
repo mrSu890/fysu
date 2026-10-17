@@ -53,12 +53,34 @@ export default function ClickFeedback() {
       if (plain) el.removeAttribute("data-no-green")
       else el.setAttribute("data-no-green", "")
 
-      const inline = getComputedStyle(el).display === "inline"
-      el.removeAttribute("data-tap")
-      // petit saut de ligne dans le temps pour relancer l'animation si on re-clique vite
-      void el.offsetWidth
-      el.setAttribute("data-tap", inline ? "inline" : "box")
-      window.setTimeout(() => el.removeAttribute("data-tap"), 480)
+      const fire = () => {
+        const inline = getComputedStyle(el).display === "inline"
+        el.removeAttribute("data-tap")
+        // petit saut de ligne dans le temps pour relancer l'animation si on re-clique vite
+        void el.offsetWidth
+        el.setAttribute("data-tap", inline ? "inline" : "box")
+        window.setTimeout(() => el.removeAttribute("data-tap"), 480)
+      }
+
+      // carte produit : pas de rebond pendant qu'on glisse (changer d'image, faire défiler) :
+      // le rebond n'a lieu que pour un vrai toucher (le doigt n'a presque pas bougé)
+      if (el.hasAttribute("data-href")) {
+        const x0 = e.clientX
+        const y0 = e.clientY
+        const end = () => {
+          document.removeEventListener("pointerup", up)
+          document.removeEventListener("pointercancel", end)
+        }
+        const up = (ev: PointerEvent) => {
+          end()
+          if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 10) fire()
+        }
+        document.addEventListener("pointerup", up)
+        document.addEventListener("pointercancel", end)
+        return
+      }
+
+      fire()
     }
 
     document.addEventListener("pointerdown", onDown, { passive: true })
