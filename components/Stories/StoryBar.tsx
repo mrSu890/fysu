@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { claimPopup, releasePopup } from "@/lib/popups";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +39,9 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   const [closing, setClosing] = useState(false);
   const [shown, setShown] = useState(false); // le contenu apparaît une fois la forme agrandie
   const [vp, setVp] = useState({ w: 0, h: 0 });
+  const [mediaReady, setMediaReady] = useState(false); // la diapo est chargée : le temps peut s'écouler
+  const [mounted, setMounted] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   /* -------------------------------------------------- */
   /* FETCH STORIES */
@@ -187,6 +191,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   useEffect(() => {
     const on = () => setVp({ w: window.innerWidth, h: window.innerHeight });
     on();
+    setMounted(true);
     window.addEventListener("resize", on);
     return () => window.removeEventListener("resize", on);
   }, []);
@@ -262,13 +267,23 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStory, currentIndex]);
 
+  // nouvelle diapo : on attend qu'elle soit chargée (une image déjà en cache est prête tout de suite)
+  useEffect(() => {
+    setMediaReady(false);
+    const im = imgRef.current;
+    if (im && im.complete && im.naturalWidth > 0) setMediaReady(true);
+    // sécurité : si rien ne charge au bout de 12 s, on avance quand même
+    const t = window.setTimeout(() => setMediaReady(true), 12000);
+    return () => window.clearTimeout(t);
+  }, [activeStory, currentIndex]);
+
   // maintenir le doigt = pause (la barre et la vidéo s'arrêtent)
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (paused) v.pause();
+    if (paused || !shown) v.pause();
     else v.play().catch(() => {});
-  }, [paused, currentIndex, activeStory]);
+  }, [paused, currentIndex, activeStory, shown]);
 
   if (loading) return null;
   if (stories.length === 0) return null;
@@ -302,6 +317,8 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
 
       {/* STORY PLEIN ÉCRAN */}
       <style>{`@keyframes fysu-story-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}`}</style>
+      {mounted &&
+        createPortal(
       <AnimatePresence>
         {activeStory && activeStory.story_items[currentIndex] && (
           <motion.div
@@ -344,16 +361,19 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
           >
             {/* le contenu apparaît en fondu quand la forme est agrandie */}
             <motion.div
-              className="absolute inset-0 flex items-center justify-center bg-black"
+              className="absolute inset-0 flex items-center justify-center md:bg-black"
               initial={{ opacity: 0 }}
               animate={{ opacity: shown && !closing ? 1 : 0 }}
               transition={{ duration: shown ? 0.25 : 0.12 }}
               style={{ pointerEvents: shown && !closing ? "auto" : "none" }}
             >
             {/* colonne de la story : tout l'écran sur téléphone, colonne 9:16 centrée sur grand écran */}
-            <div className="relative h-full w-full overflow-hidden bg-black md:aspect-[9/16] md:h-full md:w-auto md:max-w-full">
+            <div className="relative h-full w-full overflow-hidden md:aspect-[9/16] md:h-full md:w-auto md:max-w-full">
               {activeStory.story_items[currentIndex].type === "image" ? (
                 <img
+                  ref={imgRef}
+                  onLoad={() => setMediaReady(true)}
+                  onError={() => setMediaReady(true)}
                   key={activeStory.story_items[currentIndex].id ?? currentIndex}
                   src={activeStory.story_items[currentIndex].media_url}
                   className="absolute inset-0 h-full w-full object-cover"
@@ -364,6 +384,8 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                 <video
                   key={activeStory.story_items[currentIndex].id ?? currentIndex}
                   ref={videoRef}
+                  onLoadedData={() => setMediaReady(true)}
+                  onError={() => setMediaReady(true)}
                   src={activeStory.story_items[currentIndex].media_url}
                   className="absolute inset-0 h-full w-full object-cover"
                   autoPlay
@@ -393,7 +415,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                         className="h-full w-full origin-left bg-white"
                         style={{
                           animation: `fysu-story-bar ${item.duration || 5}s linear forwards`,
-                          animationPlayState: paused ? "paused" : "running",
+                          animationPlayState: paused || !mediaReady || !shown ? "paused" : "running",
                         }}
                         onAnimationEnd={nextSlide}
                       />
@@ -433,7 +455,9 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+          document.body
+        )}
     </>
   );
 }
