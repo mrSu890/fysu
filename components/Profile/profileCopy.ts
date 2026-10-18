@@ -9,6 +9,8 @@ export type PCopy = {
   avatar: string
   chooseAvatar: string
   uploadPhoto: string
+  useAvatar: string
+  createAvatar: string
   removeAvatar: string
   username: string
   usernameHint: string
@@ -54,6 +56,8 @@ const fr: PCopy = {
   avatar: "Avatar",
   chooseAvatar: "Choisis un avatar FYSU",
   uploadPhoto: "Envoyer ma photo",
+  useAvatar: "Utiliser mon avatar",
+  createAvatar: "Créer ou modifier mon avatar",
   removeAvatar: "Retirer",
   username: "Pseudo",
   usernameHint: "3 à 20 caractères : lettres, chiffres, _ et .",
@@ -99,6 +103,8 @@ const en: PCopy = {
   avatar: "Avatar",
   chooseAvatar: "Pick a FYSU avatar",
   uploadPhoto: "Upload my photo",
+  useAvatar: "Use my avatar",
+  createAvatar: "Create or edit my avatar",
   removeAvatar: "Remove",
   username: "Username",
   usernameHint: "3 to 20 characters: letters, numbers, _ and .",
