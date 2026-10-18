@@ -9,8 +9,40 @@ export const REWARD_PERCENT = 10 // pourcentage de réduction
 export const REWARD_DAYS = 30 // durée de validité du code
 
 export const GAMES = [
-  { slug: "fysu-bird", name: "FYSU Bird", image: "/games-bird-icon.png", cover: "/games-bird-fond.jpg" },
+  { slug: "fysu-bird", name: "FYSU Bird", image: "/games-bird-icon.png", cover: "/games-bird-fond.jpg", reward: true },
+  { slug: "fysu-pool", name: "FYSU Pool", image: "", cover: "", reward: false },
+  { slug: "fysu-hoops", name: "FYSU Hoops", image: "", cover: "", reward: false },
+  { slug: "fysu-crossing", name: "FYSU Crossing", image: "", cover: "", reward: false },
+  { slug: "fysu-slice", name: "FYSU Slice", image: "", cover: "", reward: false },
 ] as const
+
+/* clé de stockage du meilleur score (sur l'appareil) */
+export const bestKey = (slug: string) => (slug === "fysu-bird" ? "fysu-bird-best" : `${slug}-best`)
+
+/* Descriptions et consignes des jeux sans récompense (fr / en ; autres : anglais) */
+type GameText = { tag: string; hint: [string, string] }
+const GAME_TEXT: Record<string, Record<string, GameText>> = {
+  "fysu-pool": {
+    en: { tag: "Pocket a ball with every shot. Miss once and it's over.", hint: ["Drag back from anywhere", "and release to shoot"] },
+    fr: { tag: "Rentre une bille à chaque coup. Un seul raté et c'est fini.", hint: ["Tire en arrière n'importe où", "et relâche pour tirer"] },
+  },
+  "fysu-hoops": {
+    en: { tag: "Score as many baskets in a row as you can. Miss once and it's over.", hint: ["Drag back from the ball", "and release to throw"] },
+    fr: { tag: "Enchaîne les paniers. Un seul raté et c'est fini.", hint: ["Tire la balle en arrière", "et relâche pour lancer"] },
+  },
+  "fysu-crossing": {
+    en: { tag: "Cross the highways. The cars don't brake.", hint: ["Tap to go forward", "swipe to go sideways"] },
+    fr: { tag: "Traverse les autoroutes. Les voitures ne freinent pas.", hint: ["Touche pour avancer", "glisse pour aller sur le côté"] },
+  },
+  "fysu-slice": {
+    en: { tag: "Slice the flowers with your finger. Avoid the bombs.", hint: ["Swipe through the flowers", "never touch a bomb"] },
+    fr: { tag: "Coupe les fleurs avec ton doigt. Évite les bombes.", hint: ["Glisse ton doigt sur les fleurs", "ne touche jamais une bombe"] },
+  },
+}
+export function gameTextFor(slug: string, locale: string): GameText {
+  const t = GAME_TEXT[slug]
+  return t ? t[locale] ?? t.en : { tag: "", hint: ["", ""] }
+}
 
 export type GameSlug = (typeof GAMES)[number]["slug"]
 
