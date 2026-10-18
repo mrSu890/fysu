@@ -1,7 +1,6 @@
 "use client"
 
 import { useRef, useState } from "react"
-import Link from "next/link"
 import { X, Upload, Check } from "lucide-react"
 import { ACCENTS, BIO_MAX, DEFAULT_ACCENT, NAME_MAX, type ProfileData } from "@/lib/profile"
 import type { PCopy } from "./profileCopy"
@@ -32,6 +31,7 @@ export default function ProfileEditor({
   fallbackName,
   onClose,
   onSaved,
+  onOpenAvatar,
 }: {
   profile: ProfileData
   avatars: GalleryAvatar[]
@@ -40,6 +40,7 @@ export default function ProfileEditor({
   fallbackName: string
   onClose: () => void
   onSaved: () => void
+  onOpenAvatar?: () => void
 }) {
   const [username, setUsername] = useState(profile.username ?? "")
   const [displayName, setDisplayName] = useState(profile.display_name ?? "")
@@ -169,9 +170,9 @@ export default function ProfileEditor({
             )}
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => pickFile(e.target.files?.[0])} />
           </div>
-          <Link href="/games/avatar" className="text-sm text-foreground/60 underline underline-offset-2">
+          <button type="button" onClick={onOpenAvatar} className="text-sm text-foreground/60 underline underline-offset-2">
             {copy.createAvatar}
-          </Link>
+          </button>
 
           {avatars.length > 0 && (
             <div className="w-full">
