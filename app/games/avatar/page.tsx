@@ -8,9 +8,11 @@ import AvatarCanvas from "@/components/arcade/AvatarCanvas"
 import {
   BEARDS,
   DEFAULT_AVATAR,
+  GLASSES,
   HAIR_PRESETS,
   HAIR_STYLES,
   SKIN_PRESETS,
+  avatarPortrait,
   loadAvatar,
   saveAvatar,
   type AvatarConfig,
@@ -30,8 +32,8 @@ const PIXEL = '"Press Start 2P", "VT323", ui-monospace, monospace'
 const TERM = '"VT323", ui-monospace, monospace'
 
 const TXT = {
-  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", beard: "BARBE", none: "Aucune", glasses: "LUNETTES", on: "OUI", off: "NON", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur" },
-  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", beard: "BEARD", none: "None", glasses: "GLASSES", on: "ON", off: "OFF", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour" },
+  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", beard: "BARBE", none: "Aucune", glasses: "LUNETTES", profile: "PHOTO DE PROFIL", setProfile: "UTILISER COMME PHOTO", profOk: "PHOTO DE PROFIL MISE À JOUR", profLogin: "CONNECTE-TOI D'ABORD", profErr: "ERREUR, RÉESSAIE", login: "SE CONNECTER", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur" },
+  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", beard: "BEARD", none: "None", glasses: "GLASSES", profile: "PROFILE PICTURE", setProfile: "USE AS PROFILE PICTURE", profOk: "PROFILE PICTURE UPDATED", profLogin: "LOG IN FIRST", profErr: "ERROR, TRY AGAIN", login: "LOG IN", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour" },
 }
 
 const HEAD_CROP = { x: 20, y: 0, w: 200, h: 190 }
@@ -69,6 +71,7 @@ export default function AvatarPage() {
   const [cfg, setCfg] = useState<AvatarConfig>(DEFAULT_AVATAR)
   const [ready, setReady] = useState(false)
   const [flash, setFlash] = useState(false)
+  const [pm, setPm] = useState<"idle" | "busy" | "ok" | "login" | "err">("idle")
 
   useEffect(() => {
     setCfg(loadAvatar())
@@ -80,6 +83,20 @@ export default function AvatarPage() {
     saveAvatar(next)
     setFlash(true)
     window.setTimeout(() => setFlash(false), 1200)
+  }
+
+  async function setAsProfile() {
+    setPm("busy")
+    try {
+      const blob = await avatarPortrait(cfg)
+      const form = new FormData()
+      form.append("file", new File([blob], "avatar.jpg", { type: "image/jpeg" }))
+      const res = await fetch("/api/profile", { method: "POST", body: form })
+      if (res.status === 401) return setPm("login")
+      setPm(res.ok ? "ok" : "err")
+    } catch {
+      setPm("err")
+    }
   }
 
   const custom = (v: string | null, list: (string | null)[]) => v !== null && !list.includes(v)
@@ -181,16 +198,30 @@ export default function AvatarPage() {
 
         {/* lunettes */}
         <Label text={t.glasses} />
-        <div className="flex gap-3">
-          {[true, false].map((on) => (
+        <div className="grid grid-cols-5 gap-2">
+          <button
+            type="button"
+            onClick={() => update({ ...cfg, glasses: null })}
+            className="flex flex-col items-center justify-center border-2 p-1 active:translate-y-0.5"
+            style={box(cfg.glasses === null)}
+          >
+            <span className="text-center leading-none" style={{ fontFamily: TERM, fontSize: 16, color: cfg.glasses === null ? GREEN : "#bbb" }}>
+              {t.none}
+            </span>
+          </button>
+          {GLASSES.map((g) => (
             <button
-              key={String(on)}
+              key={g.id}
               type="button"
-              onClick={() => update({ ...cfg, glasses: on })}
-              className="flex-1 border-2 py-2 active:translate-y-0.5"
-              style={{ borderColor: cfg.glasses === on ? GREEN : "#444", fontFamily: PIXEL, fontSize: 12, color: cfg.glasses === on ? GREEN : "#888" }}
+              onClick={() => update({ ...cfg, glasses: g.id })}
+              className="flex flex-col items-center border-2 p-1 active:translate-y-0.5"
+              style={box(cfg.glasses === g.id)}
+              aria-label={g.name[lang]}
             >
-              {on ? t.on : t.off}
+              {ready && <AvatarCanvas cfg={{ ...cfg, glasses: g.id }} crop={FACE_CROP} width={130} height={90} className="h-auto w-full" />}
+              <span className="mt-1 text-center leading-none" style={{ fontFamily: TERM, fontSize: 13, color: cfg.glasses === g.id ? GREEN : "#bbb" }}>
+                {g.name[lang]}
+              </span>
             </button>
           ))}
         </div>
@@ -216,6 +247,30 @@ export default function AvatarPage() {
             <input type="color" aria-label={t.custom} className="absolute inset-0 h-full w-full opacity-0" value={cfg.hair ?? "#46301e"} onChange={(e) => update({ ...cfg, hair: e.target.value })} />
           </label>
         </div>
+
+        {/* photo de profil */}
+        <Label text={t.profile} />
+        <button
+          type="button"
+          onClick={setAsProfile}
+          disabled={pm === "busy"}
+          className="w-full border-2 py-3 active:translate-y-0.5 disabled:opacity-50"
+          style={{ borderColor: CYAN, fontFamily: PIXEL, fontSize: 11, color: CYAN }}
+        >
+          {t.setProfile}
+        </button>
+        <p className="mt-3 text-center" style={{ fontFamily: PIXEL, fontSize: 10, lineHeight: 1.6, color: pm === "ok" ? GREEN : ORANGE }}>
+          {pm === "ok" && t.profOk}
+          {pm === "err" && t.profErr}
+          {pm === "login" && (
+            <>
+              {t.profLogin}{" "}
+              <Link href="/auth/signin" style={{ color: CYAN, textDecoration: "underline" }}>
+                {t.login}
+              </Link>
+            </>
+          )}
+        </p>
       </main>
     </div>
   )
