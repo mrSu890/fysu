@@ -1,7 +1,7 @@
 /* ====================================================================
    AVATAR FYSU
-   Un avatar = une silhouette (corps chauve en t-shirt, + vêtements plus tard)
-             + un visage nu (lié à la silhouette)
+   Un avatar = un corps (calques : peau, chaussures, pantalon, t-shirt)
+             + un visage nu (A ou B)
              + une coiffure (au choix, indépendante de la silhouette)
              + une barbe (facultative, indépendante)
              + des lunettes (facultatif)
@@ -22,7 +22,7 @@ export type AvatarConfig = {
   sil: Silhouette
   style: number // coiffure (id dans HAIR_STYLES)
   beard: number | null // id dans BEARDS
-  glasses: boolean
+  glasses: number | null // id dans GLASSES
   skin: string | null
   hair: string | null
 }
@@ -55,6 +55,13 @@ export const HAIR_STYLES: Named[] = [
   { id: 24, name: { fr: "Chignon bouclé", en: "Curly bun" } },
 ]
 
+export const GLASSES: Named[] = [
+  { id: 1, name: { fr: "Carrées", en: "Square" } },
+  { id: 2, name: { fr: "Rondes", en: "Round" } },
+  { id: 4, name: { fr: "Épaisses", en: "Thick" } },
+  { id: 3, name: { fr: "Solaires", en: "Shades" } },
+]
+
 export const BEARDS: Named[] = [
   { id: 9, name: { fr: "Barbe légère", en: "Light stubble" } },
   { id: 10, name: { fr: "Barbe courte", en: "Short beard" } },
@@ -71,10 +78,10 @@ export const HAIR_PRESETS: (string | null)[] = [
 
 /* Teinte de peau d'origine du visage et du corps (pour changer la couleur de peau) */
 const NATIVE_FACE: Record<Silhouette, [number, number, number]> = { a: [253, 173, 123], b: [253, 176, 127] }
-const NATIVE_BODY: Record<Silhouette, [number, number, number]> = { a: [251, 162, 113], b: [251, 163, 115] }
+const NATIVE_BODY: [number, number, number] = [253, 179, 131]
 
 /* Par défaut : silhouette B, cheveux longs, lunettes. */
-export const DEFAULT_AVATAR: AvatarConfig = { sil: "b", style: 13, beard: null, glasses: true, skin: null, hair: null }
+export const DEFAULT_AVATAR: AvatarConfig = { sil: "b", style: 13, beard: null, glasses: 1, skin: null, hair: null }
 const KEY = "fysu-avatar"
 
 const OLD_STYLE: Record<number, number> = { 12: 13, 20: 16, 10: 8 }
@@ -91,7 +98,7 @@ export function loadAvatar(): AvatarConfig {
           sil: c.sil,
           style: c.style,
           beard: BEARDS.some((b) => b.id === c.beard) ? c.beard : null,
-          glasses: !!c.glasses,
+          glasses: GLASSES.some((g) => g.id === c.glasses) ? c.glasses : c.glasses === true ? 1 : null,
           skin,
           hair,
         }
@@ -103,7 +110,7 @@ export function loadAvatar(): AvatarConfig {
           sil: head < 12 ? "a" : "b",
           style: OLD_STYLE[head] ?? head,
           beard: head >= 8 && head <= 11 ? head : null,
-          glasses: head === 0 || head === 12,
+          glasses: head === 0 || head === 12 ? 1 : null,
           skin,
           hair,
         }
@@ -185,19 +192,22 @@ const rendered = new Map<string, HTMLCanvasElement>()
 
 /* Avatar complet (AV_W × AV_H, fond transparent). */
 export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement> {
-  const key = `${cfg.sil}|${cfg.style}|${cfg.beard ?? ""}|${cfg.glasses ? 1 : 0}|${cfg.skin ?? ""}|${cfg.hair ?? ""}`
+  const key = `${cfg.sil}|${cfg.style}|${cfg.beard ?? ""}|${cfg.glasses ?? ""}|${cfg.skin ?? ""}|${cfg.hair ?? ""}`
   const hit = rendered.get(key)
   if (hit) return hit
   const sil = cfg.sil
   const bald = cfg.style === 11 // le visage de base est déjà chauve
   // les coupes rasées sont décalées vers le haut sur la silhouette B (crâne plus haut)
   const hairFile = sil === "b" && (cfg.style === 8 || cfg.style === 9) ? `b${cfg.style}` : String(cfg.style)
-  const [body, face, hairL, beardL, glassL] = await Promise.all([
-    loadLayer(`/games-av-body-${sil}.png`, AV_H),
+  const [skinL, shoesL, pantsL, teeL, face, hairL, beardL, glassL] = await Promise.all([
+    loadLayer("/games-av-skin.png", AV_H),
+    loadLayer("/games-av-shoes.png", AV_H),
+    loadLayer("/games-av-pants.png", AV_H),
+    loadLayer("/games-av-tee.png", AV_H),
     loadLayer(`/games-av-face-${sil}.png`, AV_HEAD_H),
     bald ? Promise.resolve(null) : loadLayer(`/games-av-hair-${hairFile}.png`, AV_HEAD_H),
     cfg.beard !== null ? loadLayer(`/games-av-beard-${sil}-${cfg.beard}.png`, AV_HEAD_H) : Promise.resolve(null),
-    cfg.glasses ? loadLayer(`/games-av-glasses-${sil}.png`, AV_HEAD_H) : Promise.resolve(null),
+    cfg.glasses !== null ? loadLayer(`/games-av-glasses-${sil}-${cfg.glasses}.png`, AV_HEAD_H) : Promise.resolve(null),
   ])
   const chosen = cfg.skin ? hexRgb(cfg.skin) : null
   const hairRgb = cfg.hair ? hexRgb(cfg.hair) : null
@@ -205,7 +215,11 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   out.width = AV_W
   out.height = AV_H
   const ctx = out.getContext("2d")!
-  ctx.drawImage(tinted(body, NATIVE_BODY[sil], chosen, null), 0, 0)
+  // ordre : peau, chaussures, pantalon, t-shirt, visage, cheveux, barbe, lunettes
+  ctx.drawImage(tinted(skinL, NATIVE_BODY, chosen, null), 0, 0)
+  ctx.drawImage(tinted(shoesL, null, null, null), 0, 0)
+  ctx.drawImage(tinted(pantsL, null, null, null), 0, 0)
+  ctx.drawImage(tinted(teeL, null, null, null), 0, 0)
   ctx.drawImage(tinted(face, NATIVE_FACE[sil], chosen, null), 0, 0)
   if (hairL) ctx.drawImage(tinted(hairL, null, null, hairRgb), 0, 0)
   if (beardL) ctx.drawImage(tinted(beardL, null, null, null), 0, 0) // jamais teintée
@@ -213,4 +227,18 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   if (rendered.size > 60) rendered.clear()
   rendered.set(key, out)
   return out
+}
+
+/* Portrait carré (tête et épaules) en JPEG, pour en faire la photo de profil. */
+export async function avatarPortrait(cfg: AvatarConfig, bg = "#e8e4dc", size = 320): Promise<Blob> {
+  const src = await renderAvatar(cfg)
+  const c = document.createElement("canvas")
+  c.width = size
+  c.height = size
+  const ctx = c.getContext("2d")!
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, size, size)
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(src, 20, 14, 200, 200, 0, 0, size, size)
+  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas"))), "image/jpeg", 0.9))
 }
