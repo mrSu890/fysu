@@ -6,19 +6,19 @@ import { useLocale } from "next-intl"
 import { ArrowLeft, Check } from "lucide-react"
 import AvatarCanvas from "@/components/arcade/AvatarCanvas"
 import {
+  BEARDS,
   DEFAULT_AVATAR,
   HAIR_PRESETS,
-  HEADS,
+  HAIR_STYLES,
   SKIN_PRESETS,
   loadAvatar,
   saveAvatar,
-  silOf,
   type AvatarConfig,
   type Silhouette,
 } from "@/lib/avatar"
 
 /* ====================================================================
-   MON AVATAR : silhouette, coiffure, peau, cheveux.
+   MON AVATAR : silhouette, coiffure, barbe, lunettes, peau, cheveux.
    Enregistré automatiquement sur l'appareil.
    ==================================================================== */
 
@@ -30,8 +30,19 @@ const PIXEL = '"Press Start 2P", "VT323", ui-monospace, monospace'
 const TERM = '"VT323", ui-monospace, monospace'
 
 const TXT = {
-  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur", a: "A", b: "B" },
-  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour", a: "A", b: "B" },
+  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", beard: "BARBE", none: "Aucune", glasses: "LUNETTES", on: "OUI", off: "NON", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur" },
+  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", beard: "BEARD", none: "None", glasses: "GLASSES", on: "ON", off: "OFF", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour" },
+}
+
+const HEAD_CROP = { x: 20, y: 0, w: 200, h: 190 }
+const FACE_CROP = { x: 55, y: 95, w: 130, h: 90 }
+
+function Label({ text }: { text: string }) {
+  return (
+    <p className="mt-6 mb-2" style={{ fontFamily: PIXEL, fontSize: 11, color: YELLOW }}>
+      {text}
+    </p>
+  )
 }
 
 function Swatch({ color, active, onClick, label }: { color: string | null; active: boolean; onClick: () => void; label: string }) {
@@ -62,10 +73,6 @@ export default function AvatarPage() {
   useEffect(() => {
     setCfg(loadAvatar())
     setReady(true)
-    const prev = document.body.style.overflow
-    return () => {
-      document.body.style.overflow = prev
-    }
   }, [])
 
   function update(next: AvatarConfig) {
@@ -75,12 +82,8 @@ export default function AvatarPage() {
     window.setTimeout(() => setFlash(false), 1200)
   }
 
-  const sil = silOf(cfg.head)
-  const setSil = (s: Silhouette) => {
-    if (s === sil) return
-    update({ ...cfg, head: HEADS.find((h) => h.sil === s)!.id })
-  }
   const custom = (v: string | null, list: (string | null)[]) => v !== null && !list.includes(v)
+  const box = (on: boolean) => ({ borderColor: on ? GREEN : "#444", background: "#0b0b14" })
 
   return (
     <div className="fixed inset-0 overflow-y-auto bg-black text-white" style={{ zIndex: 45 }}>
@@ -109,43 +112,91 @@ export default function AvatarPage() {
         </p>
 
         {/* silhouette */}
-        <p className="mt-6 mb-2" style={{ fontFamily: PIXEL, fontSize: 11, color: YELLOW }}>{t.sil}</p>
+        <Label text={t.sil} />
         <div className="flex gap-3">
           {(["a", "b"] as Silhouette[]).map((s) => (
             <button
               key={s}
               type="button"
-              onClick={() => setSil(s)}
-              className="flex-1 border-2 py-2 active:translate-y-0.5"
-              style={{ borderColor: sil === s ? GREEN : "#444", fontFamily: PIXEL, fontSize: 14, color: sil === s ? GREEN : "#888" }}
+              onClick={() => update({ ...cfg, sil: s })}
+              className="flex flex-1 flex-col items-center border-2 p-1 active:translate-y-0.5"
+              style={box(cfg.sil === s)}
+              aria-label={s.toUpperCase()}
             >
-              {s === "a" ? t.a : t.b}
+              {ready && <AvatarCanvas cfg={{ ...cfg, sil: s }} crop={HEAD_CROP} width={100} height={95} className="h-auto w-24" />}
+              <span style={{ fontFamily: PIXEL, fontSize: 12, color: cfg.sil === s ? GREEN : "#888" }}>{s.toUpperCase()}</span>
             </button>
           ))}
         </div>
 
         {/* coiffure */}
-        <p className="mt-6 mb-2" style={{ fontFamily: PIXEL, fontSize: 11, color: YELLOW }}>{t.style}</p>
+        <Label text={t.style} />
         <div className="grid grid-cols-4 gap-2">
-          {HEADS.filter((h) => h.sil === sil).map((h) => (
+          {HAIR_STYLES.map((h) => (
             <button
               key={h.id}
               type="button"
-              onClick={() => update({ ...cfg, head: h.id })}
+              onClick={() => update({ ...cfg, style: h.id })}
               className="flex flex-col items-center border-2 p-1 active:translate-y-0.5"
-              style={{ borderColor: cfg.head === h.id ? GREEN : "#444", background: "#0b0b14" }}
+              style={box(cfg.style === h.id)}
               aria-label={h.name[lang]}
             >
-              <AvatarCanvas cfg={{ ...cfg, head: h.id }} crop={{ x: 20, y: 0, w: 200, h: 190 }} width={100} height={95} className="h-auto w-full" />
-              <span className="mt-1 text-center leading-none" style={{ fontFamily: TERM, fontSize: 15, color: cfg.head === h.id ? GREEN : "#bbb" }}>
+              {ready && <AvatarCanvas cfg={{ ...cfg, style: h.id }} crop={HEAD_CROP} width={100} height={95} className="h-auto w-full" />}
+              <span className="mt-1 text-center leading-none" style={{ fontFamily: TERM, fontSize: 15, color: cfg.style === h.id ? GREEN : "#bbb" }}>
                 {h.name[lang]}
               </span>
             </button>
           ))}
         </div>
 
+        {/* barbe */}
+        <Label text={t.beard} />
+        <div className="grid grid-cols-5 gap-2">
+          <button
+            type="button"
+            onClick={() => update({ ...cfg, beard: null })}
+            className="flex flex-col items-center justify-center border-2 p-1 active:translate-y-0.5"
+            style={box(cfg.beard === null)}
+          >
+            <span className="text-center leading-none" style={{ fontFamily: TERM, fontSize: 16, color: cfg.beard === null ? GREEN : "#bbb" }}>
+              {t.none}
+            </span>
+          </button>
+          {BEARDS.map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => update({ ...cfg, beard: b.id })}
+              className="flex flex-col items-center border-2 p-1 active:translate-y-0.5"
+              style={box(cfg.beard === b.id)}
+              aria-label={b.name[lang]}
+            >
+              {ready && <AvatarCanvas cfg={{ ...cfg, beard: b.id }} crop={FACE_CROP} width={130} height={90} className="h-auto w-full" />}
+              <span className="mt-1 text-center leading-none" style={{ fontFamily: TERM, fontSize: 13, color: cfg.beard === b.id ? GREEN : "#bbb" }}>
+                {b.name[lang]}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* lunettes */}
+        <Label text={t.glasses} />
+        <div className="flex gap-3">
+          {[true, false].map((on) => (
+            <button
+              key={String(on)}
+              type="button"
+              onClick={() => update({ ...cfg, glasses: on })}
+              className="flex-1 border-2 py-2 active:translate-y-0.5"
+              style={{ borderColor: cfg.glasses === on ? GREEN : "#444", fontFamily: PIXEL, fontSize: 12, color: cfg.glasses === on ? GREEN : "#888" }}
+            >
+              {on ? t.on : t.off}
+            </button>
+          ))}
+        </div>
+
         {/* peau */}
-        <p className="mt-6 mb-2" style={{ fontFamily: PIXEL, fontSize: 11, color: YELLOW }}>{t.skin}</p>
+        <Label text={t.skin} />
         <div className="flex flex-wrap gap-2">
           {SKIN_PRESETS.map((c) => (
             <Swatch key={c ?? "orig"} color={c} active={cfg.skin === c} onClick={() => update({ ...cfg, skin: c })} label={c ?? t.orig} />
@@ -156,7 +207,7 @@ export default function AvatarPage() {
         </div>
 
         {/* cheveux */}
-        <p className="mt-6 mb-2" style={{ fontFamily: PIXEL, fontSize: 11, color: YELLOW }}>{t.hair}</p>
+        <Label text={t.hair} />
         <div className="flex flex-wrap gap-2">
           {HAIR_PRESETS.map((c) => (
             <Swatch key={c ?? "orig"} color={c} active={cfg.hair === c} onClick={() => update({ ...cfg, hair: c })} label={c ?? t.orig} />
