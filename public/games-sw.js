@@ -1,7 +1,7 @@
 /* Hors-ligne pour les jeux d'arcade FYSU.
    Ne touche à RIEN d'autre sur le site : seules la page du jeu, ses images
    et les fichiers du site demandés par cette page sont gardés en mémoire. */
-const CACHE = "fysu-games-v2"
+const CACHE = "fysu-games-v3"
 const GAME_PAGE = /^\/games\/[a-z-]+$/
 
 self.addEventListener("install", () => self.skipWaiting())
@@ -21,7 +21,7 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== self.location.origin) return
 
   const isGamePage = req.mode === "navigate" && GAME_PAGE.test(url.pathname)
-  const isGameAsset = url.pathname.startsWith("/games-bird-")
+  const isGameAsset = url.pathname.startsWith("/games-") && url.pathname !== "/games-sw.js"
   const fromGamePage = (req.referrer || "").includes("/games/")
   const isSiteFile = url.pathname.startsWith("/_next/static/") && fromGamePage
 
