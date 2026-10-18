@@ -88,6 +88,7 @@ export const ITEMS: Item[] = [
   { id: "jupe", slot: "bottom", name: { fr: "Jupe longue noire", en: "Long black skirt" } },
   { id: "short", slot: "bottom", name: { fr: "Short gris", en: "Grey shorts" } },
   { id: "baskets", slot: "shoes", base: true, name: { fr: "Baskets", en: "Sneakers" } },
+  { id: "nus", slot: "shoes", base: true, name: { fr: "Pieds nus", en: "Barefoot" } },
   { id: "bottes", slot: "shoes", name: { fr: "Bottes hautes", en: "Tall boots" } },
   { id: "talons", slot: "shoes", name: { fr: "Bottines à talons", en: "Heeled boots" } },
 ]
@@ -277,7 +278,8 @@ function loadItem(src: string): Promise<HTMLCanvasElement> {
   return p
 }
 const BASE_FILE: Record<string, string> = { tee: "/games-av-tee.png", noir: "/games-av-pants.png", baskets: "/games-av-shoes.png" }
-async function pieceLayer(id: string): Promise<HTMLCanvasElement> {
+async function pieceLayer(id: string): Promise<HTMLCanvasElement | null> {
+  if (id === "nus") return null // pieds nus : dessinés avec la peau
   const base = BASE_FILE[id]
   if (base) {
     const l = await loadLayer(base, AV_H)
@@ -298,8 +300,9 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   const bald = cfg.style === 11 // le visage de base est déjà chauve
   // les coupes rasées sont décalées vers le haut sur la silhouette B (crâne plus haut)
   const hairFile = sil === "b" && (cfg.style === 8 || cfg.style === 9) ? `b${cfg.style}` : String(cfg.style)
-  const [skinL, shoesC, bottomC, topC, outerC, face, hairL, beardL, glassL] = await Promise.all([
+  const [skinL, feetL, shoesC, bottomC, topC, outerC, face, hairL, beardL, glassL] = await Promise.all([
     loadLayer("/games-av-skin.png", AV_H),
+    cfg.shoes === "nus" ? loadLayer("/games-av-feet.png", AV_H) : Promise.resolve(null),
     pieceLayer(itemById(cfg.shoes)?.slot === "shoes" ? cfg.shoes : "baskets"),
     pieceLayer(itemById(cfg.bottom)?.slot === "bottom" ? cfg.bottom : "noir"),
     pieceLayer(itemById(cfg.top)?.slot === "top" ? cfg.top : "tee"),
@@ -317,9 +320,10 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   const ctx = out.getContext("2d")!
   // ordre : peau, chaussures, bas, haut, cou, veste, menton, cheveux, barbe, lunettes
   ctx.drawImage(tinted(skinL, NATIVE_BODY, chosen, null), 0, 0)
-  ctx.drawImage(shoesC, 0, 0)
-  ctx.drawImage(bottomC, 0, 0)
-  ctx.drawImage(topC, 0, 0)
+  if (feetL) ctx.drawImage(tinted(feetL, NATIVE_BODY, chosen, null), 0, 0)
+  if (shoesC) ctx.drawImage(shoesC, 0, 0)
+  if (bottomC) ctx.drawImage(bottomC, 0, 0)
+  if (topC) ctx.drawImage(topC, 0, 0)
   const faceC = tinted(face, NATIVE_FACE[sil], chosen, null)
   ctx.drawImage(faceC, 0, FACE_SPLIT, AV_W, AV_HEAD_H - FACE_SPLIT, 0, FACE_SPLIT, AV_W, AV_HEAD_H - FACE_SPLIT)
   if (outerC) ctx.drawImage(outerC, 0, 0)
