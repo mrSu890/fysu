@@ -1,7 +1,7 @@
 /* ====================================================================
    AVATAR FYSU
-   Un avatar = une silhouette (corps + vêtements par défaut)
-             + un visage (lié à la silhouette)
+   Un avatar = une silhouette (corps chauve en t-shirt, + vêtements plus tard)
+             + un visage nu (lié à la silhouette)
              + une coiffure (au choix, indépendante de la silhouette)
              + une barbe (facultative, indépendante)
              + des lunettes (facultatif)
@@ -14,8 +14,8 @@
 export const AV_W = 240
 export const AV_H = 616
 export const AV_HEAD_H = 240 // hauteur des calques de tête (visage, cheveux, barbe, lunettes)
-export const AV_FEET = 592 // ligne des pieds dans l'image (pour poser le personnage)
-export const AV_TOP = 52 // haut de la tête (sans cheveux volumineux)
+export const AV_FEET = 604 // ligne des pieds dans l'image (pour poser le personnage)
+export const AV_TOP = 64 // haut du crâne (sans cheveux volumineux)
 
 export type Silhouette = "a" | "b"
 export type AvatarConfig = {
@@ -69,18 +69,11 @@ export const HAIR_PRESETS: (string | null)[] = [
   "#ebc86e", "#f0ebd7", "#969699", "#f5f5f5", "#f064aa", "#4682f0", "#3cc878", "#965adc",
 ]
 
-/* Teinte de peau d'origine de chaque calque (pour tout ramener à la même couleur) */
-const NATIVE_HAIR: Record<number, [number, number, number]> = {
-  0: [249, 180, 121], 1: [253, 181, 125], 2: [253, 179, 121], 3: [252, 179, 120], 4: [252, 177, 119],
-  5: [252, 173, 117], 6: [252, 174, 117], 7: [252, 174, 117], 8: [252, 163, 106], 9: [251, 163, 106],
-  11: [247, 165, 119], 13: [253, 177, 118], 14: [253, 171, 113], 15: [252, 179, 126], 16: [253, 184, 132],
-  17: [253, 173, 116], 18: [252, 170, 114], 19: [252, 176, 123], 21: [222, 131, 80], 22: [251, 168, 115],
-  23: [251, 167, 113], 24: [249, 172, 117], 25: [252, 174, 121],
-}
-const NATIVE_FACE: Record<Silhouette, [number, number, number]> = { a: [252, 179, 120], b: [253, 177, 118] }
-const NATIVE_BODY: Record<Silhouette, [number, number, number]> = { a: [212, 129, 75], b: [219, 121, 79] }
+/* Teinte de peau d'origine du visage et du corps (pour changer la couleur de peau) */
+const NATIVE_FACE: Record<Silhouette, [number, number, number]> = { a: [253, 173, 123], b: [253, 176, 127] }
+const NATIVE_BODY: Record<Silhouette, [number, number, number]> = { a: [251, 162, 113], b: [251, 163, 115] }
 
-/* Par défaut : le personnage de David (silhouette B, longs cheveux, lunettes). */
+/* Par défaut : silhouette B, cheveux longs, lunettes. */
 export const DEFAULT_AVATAR: AvatarConfig = { sil: "b", style: 13, beard: null, glasses: true, skin: null, hair: null }
 const KEY = "fysu-avatar"
 
@@ -196,23 +189,25 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   const hit = rendered.get(key)
   if (hit) return hit
   const sil = cfg.sil
+  const bald = cfg.style === 11 // le visage de base est déjà chauve
+  // les coupes rasées sont décalées vers le haut sur la silhouette B (crâne plus haut)
+  const hairFile = sil === "b" && (cfg.style === 8 || cfg.style === 9) ? `b${cfg.style}` : String(cfg.style)
   const [body, face, hairL, beardL, glassL] = await Promise.all([
     loadLayer(`/games-av-body-${sil}.png`, AV_H),
     loadLayer(`/games-av-face-${sil}.png`, AV_HEAD_H),
-    loadLayer(`/games-av-hair-${cfg.style}.png`, AV_HEAD_H),
-    cfg.beard !== null ? loadLayer(`/games-av-beard-${cfg.beard}.png`, AV_HEAD_H) : Promise.resolve(null),
+    bald ? Promise.resolve(null) : loadLayer(`/games-av-hair-${hairFile}.png`, AV_HEAD_H),
+    cfg.beard !== null ? loadLayer(`/games-av-beard-${sil}-${cfg.beard}.png`, AV_HEAD_H) : Promise.resolve(null),
     cfg.glasses ? loadLayer(`/games-av-glasses-${sil}.png`, AV_HEAD_H) : Promise.resolve(null),
   ])
   const chosen = cfg.skin ? hexRgb(cfg.skin) : null
-  const faceTarget = chosen ?? NATIVE_FACE[sil] // sans choix : tout est ramené à la peau du visage
   const hairRgb = cfg.hair ? hexRgb(cfg.hair) : null
   const out = document.createElement("canvas")
   out.width = AV_W
   out.height = AV_H
   const ctx = out.getContext("2d")!
   ctx.drawImage(tinted(body, NATIVE_BODY[sil], chosen, null), 0, 0)
-  ctx.drawImage(tinted(face, NATIVE_FACE[sil], faceTarget, null), 0, 0)
-  ctx.drawImage(tinted(hairL, NATIVE_HAIR[cfg.style] ?? NATIVE_FACE[sil], faceTarget, hairRgb), 0, 0)
+  ctx.drawImage(tinted(face, NATIVE_FACE[sil], chosen, null), 0, 0)
+  if (hairL) ctx.drawImage(tinted(hairL, null, null, hairRgb), 0, 0)
   if (beardL) ctx.drawImage(tinted(beardL, null, null, null), 0, 0) // jamais teintée
   if (glassL) ctx.drawImage(tinted(glassL, null, null, null), 0, 0)
   if (rendered.size > 60) rendered.clear()
