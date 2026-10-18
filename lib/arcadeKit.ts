@@ -17,6 +17,8 @@ export type ArcadeEnv = {
   c: CanvasRenderingContext2D
   W: number
   H: number
+  /** décor / balle choisis (objet modifié en direct par la page) */
+  skin: { bg: string; ball: string }
   /** à appeler quand la partie est perdue (après avoir figé la logique du jeu) */
   end: () => void
 }
