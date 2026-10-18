@@ -1,8 +1,8 @@
 /* Hors-ligne pour les jeux d'arcade FYSU.
    Ne touche à RIEN d'autre sur le site : seules la page du jeu, ses images
    et les fichiers du site demandés par cette page sont gardés en mémoire. */
-const CACHE = "fysu-games-v1"
-const GAME_PAGE = "/games/fysu-bird"
+const CACHE = "fysu-games-v2"
+const GAME_PAGE = /^\/games\/[a-z-]+$/
 
 self.addEventListener("install", () => self.skipWaiting())
 self.addEventListener("activate", (e) => {
@@ -20,9 +20,9 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
 
-  const isGamePage = req.mode === "navigate" && url.pathname === GAME_PAGE
+  const isGamePage = req.mode === "navigate" && GAME_PAGE.test(url.pathname)
   const isGameAsset = url.pathname.startsWith("/games-bird-")
-  const fromGamePage = (req.referrer || "").includes(GAME_PAGE)
+  const fromGamePage = (req.referrer || "").includes("/games/")
   const isSiteFile = url.pathname.startsWith("/_next/static/") && fromGamePage
 
   if (isGamePage) {
@@ -31,10 +31,10 @@ self.addEventListener("fetch", (e) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone()
-          caches.open(CACHE).then((c) => c.put(GAME_PAGE, copy))
+          caches.open(CACHE).then((c) => c.put(url.pathname, copy))
           return res
         })
-        .catch(() => caches.match(GAME_PAGE).then((r) => r || Response.error()))
+        .catch(() => caches.match(url.pathname).then((r) => r || Response.error()))
     )
     return
   }
