@@ -1,4 +1,5 @@
 import { NEON, clamp, rand, type ArcadeMaker } from "@/lib/arcadeKit"
+import { skinItem } from "@/lib/skins"
 
 /* FYSU Hoops : enchaîne les paniers. Un panier raté = fin. */
 
@@ -9,7 +10,19 @@ const MAX_PULL = 140
 const K = 8
 const RIM_W = 88
 
-export const makeHoops: ArcadeMaker = ({ c, W, H, end }) => {
+export const makeHoops: ArcadeMaker = ({ c, W, H, end, skin }) => {
+  const imgs = new Map<string, HTMLImageElement>()
+  function bgImage() {
+    const it = skinItem("fysu-hoops", "bg", skin.bg)
+    if (!it || !it.image) return null
+    let im = imgs.get(it.image)
+    if (!im) {
+      im = new Image()
+      im.src = it.image
+      imgs.set(it.image, im)
+    }
+    return im.complete && im.naturalWidth ? im : null
+  }
   let score = 0
   let dead = false
   let hx = 330
@@ -128,14 +141,15 @@ export const makeHoops: ArcadeMaker = ({ c, W, H, end }) => {
     c.save()
     c.translate(x, y)
     c.rotate(spin)
+    const col = skinItem("fysu-hoops", "ball", skin.ball)?.colors ?? ["#ff9a4d", "#c4410c", "#2a1005"]
     const g = c.createRadialGradient(-r * 0.35, -r * 0.4, 2, 0, 0, r)
-    g.addColorStop(0, "#ff9a4d")
-    g.addColorStop(1, "#c4410c")
+    g.addColorStop(0, col[0])
+    g.addColorStop(1, col[1])
     c.fillStyle = g
     c.beginPath()
     c.arc(0, 0, r, 0, Math.PI * 2)
     c.fill()
-    c.strokeStyle = "#2a1005"
+    c.strokeStyle = col[2]
     c.lineWidth = 2
     c.beginPath()
     c.arc(0, 0, r, 0, Math.PI * 2)
@@ -152,32 +166,39 @@ export const makeHoops: ArcadeMaker = ({ c, W, H, end }) => {
   }
 
   function draw() {
-    // salle
-    const g = c.createLinearGradient(0, 0, 0, H)
-    g.addColorStop(0, "#0b0f24")
-    g.addColorStop(1, "#1a1030")
-    c.fillStyle = g
-    c.fillRect(0, 0, W, H)
-    c.strokeStyle = "rgba(63,208,255,.12)"
-    c.lineWidth = 1
-    for (let x = 0; x < W; x += 40) {
-      c.beginPath()
-      c.moveTo(x, 0)
-      c.lineTo(x, 650)
-      c.stroke()
+    const bg = bgImage()
+    if (bg) {
+      c.drawImage(bg, 0, 0, W, H)
+      c.fillStyle = "rgba(0,0,0,.12)"
+      c.fillRect(0, 0, W, H)
+    } else {
+      // salle
+      const g = c.createLinearGradient(0, 0, 0, H)
+      g.addColorStop(0, "#0b0f24")
+      g.addColorStop(1, "#1a1030")
+      c.fillStyle = g
+      c.fillRect(0, 0, W, H)
+      c.strokeStyle = "rgba(63,208,255,.12)"
+      c.lineWidth = 1
+      for (let x = 0; x < W; x += 40) {
+        c.beginPath()
+        c.moveTo(x, 0)
+        c.lineTo(x, 650)
+        c.stroke()
+      }
+      // parquet
+      c.fillStyle = "#b9722e"
+      c.fillRect(0, 650, W, H - 650)
+      c.strokeStyle = "rgba(0,0,0,.25)"
+      for (let x = 0; x < W; x += 60) {
+        c.beginPath()
+        c.moveTo(x, 650)
+        c.lineTo(x - 30, H)
+        c.stroke()
+      }
+      c.fillStyle = NEON.orange
+      c.fillRect(0, 648, W, 4)
     }
-    // parquet
-    c.fillStyle = "#b9722e"
-    c.fillRect(0, 650, W, H - 650)
-    c.strokeStyle = "rgba(0,0,0,.25)"
-    for (let x = 0; x < W; x += 60) {
-      c.beginPath()
-      c.moveTo(x, 650)
-      c.lineTo(x - 30, H)
-      c.stroke()
-    }
-    c.fillStyle = NEON.orange
-    c.fillRect(0, 648, W, 4)
 
     // panneau + support
     const bx = rx1() + 10

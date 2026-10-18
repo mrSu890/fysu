@@ -12,6 +12,8 @@ type Car = { x: number; len: number; color: string }
 type Lane = { row: number; road: boolean; dir: 1 | -1; speed: number; minGap: number; cars: Car[]; nextGap: number; seed: number }
 
 export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
+  const hero = new Image()
+  hero.src = "/games-hero.png"
   const CW = W / COLS
   let lanes = new Map<number, Lane>()
   let col = 3
@@ -24,9 +26,9 @@ export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
   let roadsInARow = 0
   let nextGrassAfter = 3
   let genRow = -1
-  let t0 = 0
   let sx = 0
   let sy = 0
+  let fired = false
 
   function makeLane(r: number): Lane {
     const seed = Math.floor(Math.random() * 1000)
@@ -91,7 +93,7 @@ export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
   function hits(r: number, px: number) {
     const l = lanes.get(r)
     if (!l || !l.road) return false
-    return l.cars.some((k) => px + 14 > k.x + 3 && px - 14 < k.x + k.len - 3)
+    return l.cars.some((k) => px + 9 > k.x + 5 && px - 9 < k.x + k.len - 5)
   }
 
   function update(dt: number) {
@@ -105,9 +107,16 @@ export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
       if (hop.t >= 1) hop = null
     }
     cam += (row - cam) * Math.min(1, dt * 8)
+    // position réelle du personnage (celle qu'on voit à l'écran)
     const px = (col + 0.5) * CW
-    const pxFrom = hop ? (hop.fromCol + 0.5) * CW : px
-    if (hits(row, px) || (hop && (hits(hop.fromRow, pxFrom) || hits(hop.fromRow, px)))) {
+    let cx = px
+    let cr = row
+    if (hop) {
+      const fx = (hop.fromCol + 0.5) * CW
+      cx = fx + (px - fx) * hop.t
+      cr = hop.t < 0.5 ? hop.fromRow : row
+    }
+    if (hits(cr, cx)) {
       dead = true
       end()
     }
@@ -167,31 +176,25 @@ export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
     }
     c.fillStyle = "rgba(0,0,0,.35)"
     c.beginPath()
-    c.ellipse(ox, oy + 14, 13, 6, 0, 0, Math.PI * 2)
+    c.ellipse(ox, oy + 16, 14, 6, 0, 0, Math.PI * 2)
     c.fill()
     oy -= lift
-    if (dead) {
-      c.fillStyle = NEON.orange
-      c.fillRect(ox - 20, oy + 6, 40, 8)
-      c.fillStyle = "#f2c9a0"
-      c.beginPath()
-      c.arc(ox + 14, oy + 10, 7, 0, Math.PI * 2)
-      c.fill()
+    if (!(hero.complete && hero.naturalWidth)) {
+      c.fillStyle = NEON.yellow
+      c.fillRect(ox - 11, oy - 20, 22, 34)
       return
     }
-    c.fillStyle = "#222"
-    c.fillRect(ox - 8, oy + 6, 6, 12)
-    c.fillRect(ox + 2, oy + 6, 6, 12)
-    c.fillStyle = NEON.yellow
-    c.fillRect(ox - 11, oy - 12, 22, 20)
-    c.fillStyle = NEON.pink
-    c.fillRect(ox - 11, oy - 12, 22, 5)
-    c.fillStyle = "#f2c9a0"
-    c.beginPath()
-    c.arc(ox, oy - 20, 9, 0, Math.PI * 2)
-    c.fill()
-    c.fillStyle = "#111"
-    c.fillRect(ox - 9, oy - 30, 18, 6)
+    const hh = 66
+    const ww = (hero.naturalWidth * hh) / hero.naturalHeight
+    if (dead) {
+      c.save()
+      c.translate(ox, oy + 8)
+      c.rotate(Math.PI / 2)
+      c.drawImage(hero, -hh / 2, -ww / 2, hh, ww)
+      c.restore()
+      return
+    }
+    c.drawImage(hero, ox - ww / 2, oy + 18 - hh, ww, hh)
   }
 
   function draw() {
@@ -241,16 +244,25 @@ export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
     down(x, y) {
       sx = x
       sy = y
-      t0 = performance.now()
+      fired = false
     },
-    move() {},
+    move(x, y) {
+      // glissade : on part tout de suite, sans attendre que le doigt se lève
+      if (fired) return
+      const dx = x - sx
+      const dy = y - sy
+      if (Math.abs(dx) < 22 && Math.abs(dy) < 22) return
+      fired = true
+      if (Math.abs(dx) > Math.abs(dy)) go(dx > 0 ? 1 : -1, 0)
+      else go(0, dy > 0 ? 1 : -1)
+    },
     up(x, y) {
+      if (fired) return
       const dx = x - sx
       const dy = y - sy
       if (Math.abs(dx) < 22 && Math.abs(dy) < 22) go(0, -1)
       else if (Math.abs(dx) > Math.abs(dy)) go(dx > 0 ? 1 : -1, 0)
       else go(0, dy > 0 ? 1 : -1)
-      void t0
     },
     key: (dx, dy) => go(dx, dy),
   }

@@ -1,4 +1,5 @@
 import { NEON, clamp, rand, type ArcadeMaker } from "@/lib/arcadeKit"
+import { skinItem } from "@/lib/skins"
 
 /* FYSU Pool : un coup = au moins une bille rentrée, sinon fin.
    Le score est le nombre de coups réussis d'affilée. */
@@ -21,9 +22,11 @@ const COLORS = [NEON.yellow, NEON.pink, NEON.cyan, NEON.orange, NEON.green, "#b5
 const MAX_PULL = 150
 const MAX_SPEED = 1250
 
-type Ball = { x: number; y: number; vx: number; vy: number; color: string; cue: boolean; sunk: number }
+type Ball = { x: number; y: number; vx: number; vy: number; ci: number; cue: boolean; sunk: number }
 
-export const makePool: ArcadeMaker = ({ c, W, H, end }) => {
+export const makePool: ArcadeMaker = ({ c, W, H, end, skin }) => {
+  const ballColors = () => skinItem("fysu-pool", "ball", skin.ball)?.colors ?? COLORS
+  const felt = () => skinItem("fysu-pool", "bg", skin.bg)?.colors ?? ["#0f6b43", "#1c8a55"]
   let balls: Ball[] = []
   let score = 0
   let dead = false
@@ -47,14 +50,14 @@ export const makePool: ArcadeMaker = ({ c, W, H, end }) => {
       const x = rand(TX0 + 40, TX1 - 40)
       const y = rand(TY0 + 40, TY1 - 200)
       if (free(x, y)) {
-        balls.push({ x, y, vx: 0, vy: 0, color: COLORS[(balls.length + k) % COLORS.length], cue: false, sunk: 0 })
+        balls.push({ x, y, vx: 0, vy: 0, ci: balls.length + k, cue: false, sunk: 0 })
         k++
       }
     }
   }
 
   function reset() {
-    balls = [{ x: W / 2, y: TY1 - 110, vx: 0, vy: 0, color: "#fff", cue: true, sunk: 0 }]
+    balls = [{ x: W / 2, y: TY1 - 110, vx: 0, vy: 0, ci: 0, cue: true, sunk: 0 }]
     addBalls(6)
     score = 0
     dead = false
@@ -199,7 +202,8 @@ export const makePool: ArcadeMaker = ({ c, W, H, end }) => {
   function ball3d(b: Ball) {
     const g = c.createRadialGradient(b.x - R * 0.35, b.y - R * 0.4, 1, b.x, b.y, R)
     g.addColorStop(0, "#fff")
-    g.addColorStop(0.25, b.color)
+    const pal = ballColors()
+    g.addColorStop(0.25, b.cue ? "#fff" : pal[b.ci % pal.length])
     g.addColorStop(1, "#111")
     c.fillStyle = g
     c.beginPath()
@@ -217,7 +221,7 @@ export const makePool: ArcadeMaker = ({ c, W, H, end }) => {
     c.lineWidth = 2
     c.strokeRect(TX0 - 22, TY0 - 22, TX1 - TX0 + 44, TY1 - TY0 + 44)
     // tapis
-    c.fillStyle = flash > 0 ? "#1c8a55" : "#0f6b43"
+    c.fillStyle = flash > 0 ? felt()[1] : felt()[0]
     c.fillRect(TX0, TY0, TX1 - TX0, TY1 - TY0)
     c.strokeStyle = "rgba(255,255,255,.07)"
     c.lineWidth = 1

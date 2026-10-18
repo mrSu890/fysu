@@ -16,12 +16,17 @@ type Props = {
   hint: [string, string]
   bestKey: string
   copy: GamesCopy
+  skin: { bg: string; ball: string }
+  /** éléments à débloquer : score à atteindre + nom affiché */
+  unlocks: { need: number; label: string }[]
+  unlockedLabel: string
+  onState?: (s: "ready" | "play" | "over") => void
 }
 
-export default function ArcadeCanvas({ make, title, hint, bestKey, copy }: Props) {
+export default function ArcadeCanvas({ make, title, hint, bestKey, copy, skin, unlocks, unlockedLabel, onState }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null)
-  const propsRef = useRef({ title, hint, copy })
-  propsRef.current = { title, hint, copy }
+  const propsRef = useRef({ title, hint, copy, unlocks, unlockedLabel, onState })
+  propsRef.current = { title, hint, copy, unlocks, unlockedLabel, onState }
 
   useEffect(() => {
     const cv = ref.current
@@ -42,6 +47,11 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy }: Props
     let overT = 0
     let t = 0
     let best = 0
+    let fresh: string[] = []
+    const setState = (n: "ready" | "play" | "over") => {
+      state = n
+      propsRef.current.onState?.(n)
+    }
     try {
       best = Number(localStorage.getItem(bestKey)) || 0
     } catch {}
@@ -50,11 +60,13 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy }: Props
       c,
       W: AW,
       H: AH,
+      skin,
       end: () => {
         if (state !== "play") return
-        state = "over"
+        setState("over")
         overT = 0
         const s = game.score()
+        fresh = propsRef.current.unlocks.filter((u) => u.need > best && u.need <= s).map((u) => u.label)
         if (s > best) {
           best = s
           try {
@@ -84,7 +96,8 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy }: Props
         pixelText(c, cp.lost, AW / 2, 280, 40, NEON.orange)
         pixelText(c, `${cp.score.toUpperCase()} ${game.score()}`, AW / 2, 360, 20, "#fff")
         pixelText(c, `${cp.record.toUpperCase()} ${best}`, AW / 2, 410, 16, NEON.yellow)
-        if (overT > 0.7 && Math.floor(t * 2) % 2 === 0) pixelText(c, cp.replay, AW / 2, 520, 13, NEON.cyan)
+        fresh.slice(0, 3).forEach((n, i) => pixelText(c, `${p.unlockedLabel} : ${n}`, AW / 2, 460 + i * 26, 12, NEON.green))
+        if (overT > 0.7 && Math.floor(t * 2) % 2 === 0) pixelText(c, cp.replay, AW / 2, 560, 13, NEON.cyan)
       }
     }
 
@@ -112,11 +125,11 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy }: Props
       if (state === "over") {
         if (overT > 0.7) {
           game.reset()
-          state = "ready"
+          setState("ready")
         }
         return
       }
-      if (state === "ready") state = "play"
+      if (state === "ready") setState("play")
       const p = pos(e)
       game.down(p.x, p.y)
     }
@@ -145,11 +158,11 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy }: Props
       if (state === "over") {
         if (overT > 0.7) {
           game.reset()
-          state = "ready"
+          setState("ready")
         }
         return
       }
-      if (state === "ready") state = "play"
+      if (state === "ready") setState("play")
       game.key(d[0], d[1])
     }
     window.addEventListener("keydown", onKey)
@@ -165,7 +178,7 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy }: Props
       window.removeEventListener("keydown", onKey)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [make, bestKey])
+  }, [make, bestKey, skin])
 
   return (
     <canvas
