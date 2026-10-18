@@ -13,10 +13,13 @@ import {
   HAIR_STYLES,
   SKIN_PRESETS,
   avatarPortrait,
+  itemsOf,
   loadAvatar,
+  ownedIds,
   saveAvatar,
   type AvatarConfig,
   type Silhouette,
+  type Slot,
 } from "@/lib/avatar"
 
 /* ====================================================================
@@ -32,12 +35,19 @@ const PIXEL = '"Press Start 2P", "VT323", ui-monospace, monospace'
 const TERM = '"VT323", ui-monospace, monospace'
 
 const TXT = {
-  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", beard: "BARBE", none: "Aucune", glasses: "LUNETTES", profile: "PHOTO DE PROFIL", setProfile: "UTILISER COMME PHOTO", profOk: "PHOTO DE PROFIL MISE À JOUR", profLogin: "CONNECTE-TOI D'ABORD", profErr: "ERREUR, RÉESSAIE", login: "SE CONNECTER", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur" },
-  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", beard: "BEARD", none: "None", glasses: "GLASSES", profile: "PROFILE PICTURE", setProfile: "USE AS PROFILE PICTURE", profOk: "PROFILE PICTURE UPDATED", profLogin: "LOG IN FIRST", profErr: "ERROR, TRY AGAIN", login: "LOG IN", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour" },
+  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", beard: "BARBE", none: "Aucune", glasses: "LUNETTES", profile: "PHOTO DE PROFIL", setProfile: "UTILISER COMME PHOTO", profOk: "PHOTO DE PROFIL MISE À JOUR", profLogin: "CONNECTE-TOI D'ABORD", profErr: "ERREUR, RÉESSAIE", login: "SE CONNECTER", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur", wardrobe: "GARDE-ROBE", slots: { top: "HAUT", outer: "VESTE", bottom: "BAS", shoes: "CHAUSSURES" }, trying: "ESSAYAGE : PAS ÉQUIPÉ", reset: "REMETTRE MA TENUE", locked: "À DÉBLOQUER", worn: "ÉQUIPÉ", tryHint: "Touche une pièce verrouillée pour l'essayer. Tu ne peux l'équiper qu'une fois débloquée." },
+  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", beard: "BEARD", none: "None", glasses: "GLASSES", profile: "PROFILE PICTURE", setProfile: "USE AS PROFILE PICTURE", profOk: "PROFILE PICTURE UPDATED", profLogin: "LOG IN FIRST", profErr: "ERROR, TRY AGAIN", login: "LOG IN", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour", wardrobe: "WARDROBE", slots: { top: "TOP", outer: "JACKET", bottom: "BOTTOM", shoes: "SHOES" }, trying: "TRY-ON: NOT EQUIPPED", reset: "BACK TO MY OUTFIT", locked: "LOCKED", worn: "WORN", tryHint: "Tap a locked piece to try it on. You can only equip it once unlocked." },
 }
 
 const HEAD_CROP = { x: 20, y: 0, w: 200, h: 190 }
 const FACE_CROP = { x: 55, y: 95, w: 130, h: 90 }
+const SLOT_CROP: Record<Slot, { x: number; y: number; w: number; h: number }> = {
+  top: { x: 20, y: 140, w: 200, h: 220 },
+  outer: { x: 0, y: 140, w: 240, h: 290 },
+  bottom: { x: 20, y: 300, w: 200, h: 316 },
+  shoes: { x: 20, y: 440, w: 200, h: 176 },
+}
+const SLOTS: Slot[] = ["top", "outer", "bottom", "shoes"]
 
 function Label({ text }: { text: string }) {
   return (
@@ -72,11 +82,33 @@ export default function AvatarPage() {
   const [ready, setReady] = useState(false)
   const [flash, setFlash] = useState(false)
   const [pm, setPm] = useState<"idle" | "busy" | "ok" | "login" | "err">("idle")
+  const [own, setOwn] = useState<string[]>([])
+  const [slot, setSlot] = useState<Slot>("top")
+  const [tryOn, setTryOn] = useState<Partial<Record<Slot, string | null>>>({})
 
   useEffect(() => {
     setCfg(loadAvatar())
+    setOwn(ownedIds())
     setReady(true)
   }, [])
+
+  // ce qu'on voit à l'écran = ma tenue + les pièces en essayage (jamais enregistrées)
+  const shown: AvatarConfig = { ...cfg, ...tryOn } as AvatarConfig
+  const trying = Object.keys(tryOn).length > 0
+  const worn = (sl: Slot) => (sl === "outer" ? cfg.outer : cfg[sl])
+  function pick(sl: Slot, id: string | null) {
+    const mine = id === null || own.includes(id)
+    if (mine) {
+      setTryOn((t) => {
+        const n = { ...t }
+        delete n[sl]
+        return n
+      })
+      update({ ...cfg, [sl]: id } as AvatarConfig)
+    } else {
+      setTryOn((t) => ({ ...t, [sl]: id }))
+    }
+  }
 
   function update(next: AvatarConfig) {
     setCfg(next)
@@ -122,10 +154,67 @@ export default function AvatarPage() {
 
         {/* aperçu */}
         <div className="mt-6 flex justify-center border-2 py-4" style={{ borderColor: ORANGE, background: "linear-gradient(#14082e,#08131f)" }}>
-          {ready && <AvatarCanvas cfg={cfg} crop={{ x: 0, y: 0, w: 240, h: 616 }} width={240} height={616} className="h-[390px] w-auto" />}
+          {ready && <AvatarCanvas cfg={shown} crop={{ x: 0, y: 0, w: 240, h: 616 }} width={240} height={616} className="h-[390px] w-auto" />}
         </div>
+        {trying && (
+          <div className="mt-2 flex items-center justify-between gap-2 border-2 px-3 py-2" style={{ borderColor: YELLOW }}>
+            <span style={{ fontFamily: PIXEL, fontSize: 9, lineHeight: 1.6, color: YELLOW }}>{t.trying}</span>
+            <button type="button" onClick={() => setTryOn({})} className="border-2 px-2 py-2 active:translate-y-0.5" style={{ borderColor: CYAN, fontFamily: PIXEL, fontSize: 9, color: CYAN }}>
+              {t.reset}
+            </button>
+          </div>
+        )}
         <p className="mt-2 h-6 text-center" style={{ fontFamily: PIXEL, color: GREEN, fontSize: 10, opacity: flash ? 1 : 0, transition: "opacity .3s" }}>
           {t.saved}
+        </p>
+
+        {/* garde-robe */}
+        <Label text={t.wardrobe} />
+        <div className="flex gap-2">
+          {SLOTS.map((sl) => (
+            <button
+              key={sl}
+              type="button"
+              onClick={() => setSlot(sl)}
+              className="flex-1 border-2 py-2 active:translate-y-0.5"
+              style={{ borderColor: slot === sl ? GREEN : "#444", fontFamily: PIXEL, fontSize: 8, color: slot === sl ? GREEN : "#888" }}
+            >
+              {t.slots[sl]}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {slot === "outer" && (
+            <button type="button" onClick={() => pick("outer", null)} className="flex flex-col items-center justify-center border-2 p-1 active:translate-y-0.5" style={box((shown.outer ?? null) === null)}>
+              <span style={{ fontFamily: TERM, fontSize: 16, color: shown.outer === null ? GREEN : "#bbb" }}>{t.none}</span>
+            </button>
+          )}
+          {itemsOf(slot).map((it) => {
+            const mine = own.includes(it.id)
+            const on = shown[slot] === it.id
+            return (
+              <button key={it.id} type="button" onClick={() => pick(slot, it.id)} className="relative flex flex-col items-center border-2 p-1 active:translate-y-0.5" style={box(on)} aria-label={it.name[lang]}>
+                {ready && (
+                  <AvatarCanvas
+                    cfg={{ ...shown, [slot]: it.id } as AvatarConfig}
+                    crop={SLOT_CROP[slot]}
+                    width={SLOT_CROP[slot].w}
+                    height={SLOT_CROP[slot].h}
+                    className="h-auto w-full"
+                  />
+                )}
+                <span className="mt-1 text-center leading-none" style={{ fontFamily: TERM, fontSize: 14, color: on ? GREEN : "#bbb" }}>
+                  {it.name[lang]}
+                </span>
+                <span className="mt-1" style={{ fontFamily: PIXEL, fontSize: 7, color: !mine ? ORANGE : worn(slot) === it.id ? GREEN : "#666" }}>
+                  {!mine ? t.locked : worn(slot) === it.id ? t.worn : "\u00a0"}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="mt-3" style={{ fontFamily: TERM, fontSize: 15, color: "#888" }}>
+          {t.tryHint}
         </p>
 
         {/* silhouette */}
