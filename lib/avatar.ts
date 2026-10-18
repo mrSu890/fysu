@@ -1,6 +1,6 @@
 /* ====================================================================
    AVATAR FYSU
-   Un avatar = un corps (calques : peau, chaussures, bas, haut, veste)
+   Un avatar = un corps (calques : peau, bas + chaussures, haut)
              + un visage nu (A ou B)
              + une coiffure (au choix, indépendante de la silhouette)
              + une barbe (facultative, indépendante)
@@ -18,13 +18,11 @@ export const AV_FEET = 604 // ligne des pieds dans l'image (pour poser le person
 export const AV_TOP = 64 // haut du crâne (sans cheveux volumineux)
 
 export type Silhouette = "a" | "b"
-export type Slot = "top" | "outer" | "bottom" | "shoes"
+export type Slot = "top" | "bottom"
 export type AvatarConfig = {
   sil: Silhouette
-  top: string // id d'un haut (ITEMS)
-  outer: string | null // id d'une veste / manteau
-  bottom: string // id d'un bas
-  shoes: string // id de chaussures
+  top: string // id d'un haut complet (ITEMS) : veste + chemise = un seul haut
+  bottom: string // id d'un bas complet : pantalon / jupe / short + chaussures
   style: number // coiffure (id dans HAIR_STYLES)
   beard: number | null // id dans BEARDS
   glasses: number | null // id dans GLASSES
@@ -77,20 +75,16 @@ export const ITEMS: Item[] = [
   { id: "tee", slot: "top", base: true, name: { fr: "T-shirt blanc", en: "White tee" } },
   { id: "chemise", slot: "top", name: { fr: "Chemise bleue", en: "Blue shirt" } },
   { id: "chemisecol", slot: "top", name: { fr: "Chemise col bateau", en: "Boat-neck shirt" } },
-  { id: "blazer", slot: "outer", name: { fr: "Blazer beige", en: "Beige blazer" } },
-  { id: "denim", slot: "outer", name: { fr: "Veste denim noire", en: "Black denim jacket" } },
-  { id: "sable", slot: "outer", name: { fr: "Veste sable", en: "Sand jacket" } },
-  { id: "manteau", slot: "outer", name: { fr: "Manteau long noir", en: "Long black coat" } },
-  { id: "doudoune", slot: "outer", name: { fr: "Doudoune grise", en: "Grey puffer" } },
-  { id: "capuche", slot: "outer", name: { fr: "Veste courte à capuche", en: "Cropped hooded jacket" } },
-  { id: "noir", slot: "bottom", base: true, name: { fr: "Pantalon noir", en: "Black trousers" } },
-  { id: "sakura", slot: "bottom", name: { fr: "Pantalon sakura", en: "Sakura trousers" } },
-  { id: "jupe", slot: "bottom", name: { fr: "Jupe longue noire", en: "Long black skirt" } },
-  { id: "short", slot: "bottom", name: { fr: "Short gris", en: "Grey shorts" } },
-  { id: "baskets", slot: "shoes", base: true, name: { fr: "Baskets", en: "Sneakers" } },
-  { id: "nus", slot: "shoes", base: true, name: { fr: "Pieds nus", en: "Barefoot" } },
-  { id: "bottes", slot: "shoes", name: { fr: "Bottes hautes", en: "Tall boots" } },
-  { id: "talons", slot: "shoes", name: { fr: "Bottines à talons", en: "Heeled boots" } },
+  { id: "blazer", slot: "top", name: { fr: "Blazer, chemise et cravate", en: "Blazer, shirt and tie" } },
+  { id: "denim", slot: "top", name: { fr: "Veste denim noire", en: "Black denim jacket" } },
+  { id: "sable", slot: "top", name: { fr: "Veste sable", en: "Sand jacket" } },
+  { id: "manteau", slot: "top", name: { fr: "Manteau long noir", en: "Long black coat" } },
+  { id: "doudoune", slot: "top", name: { fr: "Doudoune grise", en: "Grey puffer" } },
+  { id: "capuche", slot: "top", name: { fr: "Veste courte à capuche", en: "Cropped hooded jacket" } },
+  { id: "noir", slot: "bottom", base: true, name: { fr: "Pantalon noir, baskets", en: "Black trousers, sneakers" } },
+  { id: "sakura", slot: "bottom", name: { fr: "Pantalon sakura, baskets", en: "Sakura trousers, sneakers" } },
+  { id: "jupe", slot: "bottom", name: { fr: "Jupe longue, bottines", en: "Long skirt, heeled boots" } },
+  { id: "short", slot: "bottom", name: { fr: "Short, bottes hautes", en: "Shorts, tall boots" } },
 ]
 export const itemsOf = (slot: Slot) => ITEMS.filter((i) => i.slot === slot)
 const itemById = (id: string | null | undefined) => ITEMS.find((i) => i.id === id)
@@ -116,13 +110,7 @@ export function grantItem(id: string) {
 export function onlyOwned(c: AvatarConfig): AvatarConfig {
   const own = ownedIds()
   const keep = (id: string, slot: Slot, def: string) => (itemById(id)?.slot === slot && own.includes(id) ? id : def)
-  return {
-    ...c,
-    top: keep(c.top, "top", "tee"),
-    outer: c.outer && itemById(c.outer)?.slot === "outer" && own.includes(c.outer) ? c.outer : null,
-    bottom: keep(c.bottom, "bottom", "noir"),
-    shoes: keep(c.shoes, "shoes", "baskets"),
-  }
+  return { ...c, top: keep(c.top, "top", "tee"), bottom: keep(c.bottom, "bottom", "noir") }
 }
 
 export const BEARDS: Named[] = [
@@ -144,7 +132,7 @@ const NATIVE_FACE: Record<Silhouette, [number, number, number]> = { a: [253, 173
 const NATIVE_BODY: [number, number, number] = [253, 179, 131]
 
 /* Par défaut : silhouette B, cheveux longs, lunettes. */
-export const DEFAULT_AVATAR: AvatarConfig = { sil: "b", top: "tee", outer: null, bottom: "noir", shoes: "baskets", style: 13, beard: null, glasses: 6, skin: null, hair: null }
+export const DEFAULT_AVATAR: AvatarConfig = { sil: "b", top: "tee", bottom: "noir", style: 13, beard: null, glasses: 6, skin: null, hair: null }
 const KEY = "fysu-avatar"
 
 const OLD_STYLE: Record<number, number> = { 12: 13, 20: 16, 10: 8 }
@@ -160,9 +148,7 @@ export function loadAvatar(): AvatarConfig {
         return onlyOwned({
           sil: c.sil,
           top: typeof c.top === "string" ? c.top : "tee",
-          outer: typeof c.outer === "string" ? c.outer : null,
           bottom: typeof c.bottom === "string" ? c.bottom : "noir",
-          shoes: typeof c.shoes === "string" ? c.shoes : "baskets",
           style: c.style,
           beard: BEARDS.some((b) => b.id === c.beard) ? c.beard : null,
           glasses: GLASSES.some((g) => g.id === c.glasses) ? c.glasses : OLD_GLASSES[c.glasses] ?? (c.glasses === true ? 6 : null),
@@ -277,14 +263,8 @@ function loadItem(src: string): Promise<HTMLCanvasElement> {
   }
   return p
 }
-const BASE_FILE: Record<string, string> = { tee: "/games-av-tee.png", noir: "/games-av-pants.png", baskets: "/games-av-shoes.png" }
-async function pieceLayer(id: string): Promise<HTMLCanvasElement | null> {
-  if (id === "nus") return null // pieds nus : dessinés avec la peau
-  const base = BASE_FILE[id]
-  if (base) {
-    const l = await loadLayer(base, AV_H)
-    return tinted(l, null, null, null)
-  }
+async function pieceLayer(id: string): Promise<HTMLCanvasElement> {
+  if (id === "tee") return tinted(await loadLayer("/games-av-tee.png", AV_H), null, null, null)
   return loadItem(`/games-av-it-${id}.png`)
 }
 const FACE_SPLIT = 168 // sous cette ligne : cou (passe derrière le col) ; au-dessus : menton (passe devant)
@@ -293,20 +273,17 @@ const rendered = new Map<string, HTMLCanvasElement>()
 
 /* Avatar complet (AV_W × AV_H, fond transparent). */
 export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement> {
-  const key = `${cfg.sil}|${cfg.top}|${cfg.outer ?? ""}|${cfg.bottom}|${cfg.shoes}|${cfg.style}|${cfg.beard ?? ""}|${cfg.glasses ?? ""}|${cfg.skin ?? ""}|${cfg.hair ?? ""}`
+  const key = `${cfg.sil}|${cfg.top}|${cfg.bottom}|${cfg.style}|${cfg.beard ?? ""}|${cfg.glasses ?? ""}|${cfg.skin ?? ""}|${cfg.hair ?? ""}`
   const hit = rendered.get(key)
   if (hit) return hit
   const sil = cfg.sil
   const bald = cfg.style === 11 // le visage de base est déjà chauve
   // les coupes rasées sont décalées vers le haut sur la silhouette B (crâne plus haut)
   const hairFile = sil === "b" && (cfg.style === 8 || cfg.style === 9) ? `b${cfg.style}` : String(cfg.style)
-  const [skinL, feetL, shoesC, bottomC, topC, outerC, face, hairL, beardL, glassL] = await Promise.all([
+  const [skinL, bottomC, topC, face, hairL, beardL, glassL] = await Promise.all([
     loadLayer("/games-av-skin.png", AV_H),
-    cfg.shoes === "nus" ? loadLayer("/games-av-feet.png", AV_H) : Promise.resolve(null),
-    pieceLayer(itemById(cfg.shoes)?.slot === "shoes" ? cfg.shoes : "baskets"),
     pieceLayer(itemById(cfg.bottom)?.slot === "bottom" ? cfg.bottom : "noir"),
     pieceLayer(itemById(cfg.top)?.slot === "top" ? cfg.top : "tee"),
-    cfg.outer && itemById(cfg.outer)?.slot === "outer" ? pieceLayer(cfg.outer) : Promise.resolve(null),
     loadLayer(`/games-av-face-${sil}.png`, AV_HEAD_H),
     bald ? Promise.resolve(null) : loadLayer(`/games-av-hair-${hairFile}.png`, AV_HEAD_H),
     cfg.beard !== null ? loadLayer(`/games-av-beard-${sil}-${cfg.beard}.png`, AV_HEAD_H) : Promise.resolve(null),
@@ -318,15 +295,14 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   out.width = AV_W
   out.height = AV_H
   const ctx = out.getContext("2d")!
-  // ordre : peau, chaussures, bas, haut, cou, veste, menton, cheveux, barbe, lunettes
+  // ordre : peau, bas + chaussures, (t-shirt), cou, haut complet, menton, cheveux, barbe, lunettes
   ctx.drawImage(tinted(skinL, NATIVE_BODY, chosen, null), 0, 0)
-  if (feetL) ctx.drawImage(tinted(feetL, NATIVE_BODY, chosen, null), 0, 0)
-  if (shoesC) ctx.drawImage(shoesC, 0, 0)
-  if (bottomC) ctx.drawImage(bottomC, 0, 0)
-  if (topC) ctx.drawImage(topC, 0, 0)
+  ctx.drawImage(bottomC, 0, 0)
+  const tee = cfg.top === "tee"
+  if (tee) ctx.drawImage(topC, 0, 0)
   const faceC = tinted(face, NATIVE_FACE[sil], chosen, null)
   ctx.drawImage(faceC, 0, FACE_SPLIT, AV_W, AV_HEAD_H - FACE_SPLIT, 0, FACE_SPLIT, AV_W, AV_HEAD_H - FACE_SPLIT)
-  if (outerC) ctx.drawImage(outerC, 0, 0)
+  if (!tee) ctx.drawImage(topC, 0, 0)
   ctx.drawImage(faceC, 0, 0, AV_W, FACE_SPLIT, 0, 0, AV_W, FACE_SPLIT)
   if (hairL) ctx.drawImage(tinted(hairL, null, null, hairRgb), 0, 0)
   if (beardL) ctx.drawImage(tinted(beardL, null, null, null), 0, 0) // jamais teintée
