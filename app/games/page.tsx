@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useLayoutEffect, useEffect, useState } from "react"
 import { useLocale } from "next-intl"
 import Navbar from "@/components/Navbar"
-import { GAMES, REWARD_PERCENT, REWARD_SCORE, gamesCopyFor } from "@/lib/games"
+import { GAMES, REWARD_PERCENT, REWARD_SCORE, bestKey, gameTextFor, gamesCopyFor } from "@/lib/games"
 
 /* ====================================================================
    JEUX D'ARCADE : style borne d'arcade / terminal des années 70-80
@@ -22,6 +22,58 @@ const GREEN = "#39ff88"
 const PIXEL = `"Press Start 2P", "VT323", ui-monospace, "SF Mono", Menlo, Consolas, monospace`
 const TERM = `"VT323", ui-monospace, "SF Mono", Menlo, Consolas, monospace`
 
+function GameIcon({ slug }: { slug: string }) {
+  const box = { width: 84, height: 84, borderRadius: 19, boxShadow: `0 0 0 2px ${YELLOW}` }
+  return (
+    <svg viewBox="0 0 84 84" className="shrink-0" style={box} aria-hidden>
+      {slug === "fysu-pool" && (
+        <>
+          <rect width="84" height="84" fill="#0f6b43" />
+          <circle cx="12" cy="12" r="9" fill="#000" />
+          <circle cx="72" cy="72" r="9" fill="#000" />
+          <circle cx="30" cy="60" r="9" fill="#fff" />
+          <circle cx="50" cy="38" r="8" fill={YELLOW} />
+          <circle cx="62" cy="26" r="8" fill={PINK} />
+          <path d="M30 60 L8 82" stroke={YELLOW} strokeWidth="4" />
+        </>
+      )}
+      {slug === "fysu-hoops" && (
+        <>
+          <rect width="84" height="84" fill="#0b0f24" />
+          <rect x="60" y="8" width="8" height="40" fill="#fff" />
+          <path d="M22 34 H58" stroke={ORANGE} strokeWidth="5" />
+          <path d="M24 36 L32 54 M36 36 L38 54 M48 36 L46 54 M56 36 L50 54" stroke="#fff" strokeWidth="1.5" />
+          <circle cx="40" cy="20" r="10" fill="#e8601c" stroke="#2a1005" strokeWidth="2" />
+          <circle cx="16" cy="68" r="10" fill="#e8601c" stroke="#2a1005" strokeWidth="2" />
+        </>
+      )}
+      {slug === "fysu-crossing" && (
+        <>
+          <rect width="84" height="84" fill="#26282f" />
+          <rect y="0" width="84" height="18" fill="#1d7540" />
+          <path d="M0 42 H84" stroke="#fff" strokeWidth="2" strokeDasharray="10 8" />
+          <rect x="8" y="22" width="34" height="16" fill={ORANGE} />
+          <rect x="46" y="48" width="30" height="16" fill={CYAN} />
+          <rect x="34" y="62" width="10" height="14" fill={YELLOW} />
+          <circle cx="39" cy="58" r="5" fill="#f2c9a0" />
+        </>
+      )}
+      {slug === "fysu-slice" && (
+        <>
+          <rect width="84" height="84" fill="#14082e" />
+          <g transform="translate(42 44)">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <ellipse key={i} cx="16" cy="0" rx="11" ry="8" fill={PINK} transform={`rotate(${i * 60})`} />
+            ))}
+            <circle r="8" fill={YELLOW} />
+          </g>
+          <path d="M6 76 L78 10" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
+        </>
+      )}
+    </svg>
+  )
+}
+
 function Row({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div
@@ -38,7 +90,8 @@ function Row({ label, value, color }: { label: string; value: string; color: str
 
 export default function GamesPage() {
   const copy = gamesCopyFor(useLocale())
-  const [best, setBest] = useState(0)
+  const locale = useLocale()
+  const [bests, setBests] = useState<Record<string, number>>({})
 
   // page toujours noire, sans mode clair / sombre
   useLayoutEffect(() => {
@@ -55,9 +108,13 @@ export default function GamesPage() {
   }, [])
 
   useEffect(() => {
-    try {
-      setBest(Number(localStorage.getItem("fysu-bird-best")) || 0)
-    } catch {}
+    const out: Record<string, number> = {}
+    for (const g of GAMES) {
+      try {
+        out[g.slug] = Number(localStorage.getItem(bestKey(g.slug))) || 0
+      } catch {}
+    }
+    setBests(out)
   }, [])
 
   return (
@@ -100,24 +157,33 @@ export default function GamesPage() {
           {GAMES.map((g) => (
             <li key={g.slug} className="border" style={{ borderColor: CYAN }}>
               <div className="flex items-center gap-5 px-4 py-5 sm:px-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={g.image}
-                  alt=""
-                  width={84}
-                  height={84}
-                  className="shrink-0"
-                  style={{ width: 84, height: 84, borderRadius: 19, imageRendering: "pixelated", boxShadow: `0 0 0 2px ${YELLOW}` }}
-                />
+                {g.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={g.image}
+                    alt=""
+                    width={84}
+                    height={84}
+                    className="shrink-0"
+                    style={{ width: 84, height: 84, borderRadius: 19, imageRendering: "pixelated", boxShadow: `0 0 0 2px ${YELLOW}` }}
+                  />
+                ) : (
+                  <GameIcon slug={g.slug} />
+                )}
                 <div>
                   <h2 style={{ fontFamily: PIXEL, color: "#fff", fontSize: 16, lineHeight: 1.6 }}>{g.name.toUpperCase()}</h2>
                   <p style={{ fontFamily: TERM, color: GREEN, fontSize: 20, letterSpacing: "0.1em" }}>1 PLAYER</p>
                 </div>
               </div>
+              {!g.reward && (
+                <p className="px-4 pb-4 sm:px-6" style={{ fontFamily: TERM, color: "#bdbdbd", fontSize: 20, letterSpacing: "0.06em" }}>
+                  {gameTextFor(g.slug, locale).tag}
+                </p>
+              )}
 
-              <Row label={copy.highScore} value={String(best).padStart(3, "0")} color={YELLOW} />
-              <Row label={copy.goalLabel} value={`${REWARD_SCORE} PTS`} color={PINK} />
-              <Row label={copy.rewardLabel} value={`−${REWARD_PERCENT} %`} color={ORANGE} />
+              <Row label={copy.highScore} value={String(bests[g.slug] ?? 0).padStart(3, "0")} color={YELLOW} />
+              {g.reward && <Row label={copy.goalLabel} value={`${REWARD_SCORE} PTS`} color={PINK} />}
+              {g.reward && <Row label={copy.rewardLabel} value={`−${REWARD_PERCENT} %`} color={ORANGE} />}
               <Row label={copy.offlineLabel} value={copy.offlineValue} color={GREEN} />
 
               <Link
