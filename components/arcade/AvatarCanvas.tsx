@@ -18,7 +18,7 @@ export default function AvatarCanvas({
   className?: string
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null)
-  const { head, skin, hair } = cfg
+  const { sil, style, beard, glasses, skin, hair } = cfg
   const cx = crop?.x ?? 0
   const cy = crop?.y ?? 0
   const cw = crop?.w ?? 240
@@ -26,7 +26,7 @@ export default function AvatarCanvas({
 
   useEffect(() => {
     let alive = true
-    renderAvatar({ head, skin, hair })
+    renderAvatar({ sil, style, beard, glasses, skin, hair })
       .then((src) => {
         const cv = ref.current
         if (!alive || !cv) return
@@ -40,7 +40,7 @@ export default function AvatarCanvas({
     return () => {
       alive = false
     }
-  }, [head, skin, hair, cx, cy, cw, ch])
+  }, [sil, style, beard, glasses, skin, hair, cx, cy, cw, ch])
 
   return <canvas ref={ref} width={width} height={height} className={className} style={{ imageRendering: "pixelated" }} />
 }
