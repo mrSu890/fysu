@@ -1,4 +1,5 @@
 import { NEON, clamp, pick, rand, type ArcadeMaker } from "@/lib/arcadeKit"
+import { AV_FEET, AV_H, AV_TOP, AV_W, loadAvatar, renderAvatar } from "@/lib/avatar"
 
 /* FYSU Crossing : traverse des autoroutes sans fin. Une voiture te touche = fin. */
 
@@ -12,8 +13,12 @@ type Car = { x: number; len: number; color: string }
 type Lane = { row: number; road: boolean; dir: 1 | -1; speed: number; minGap: number; cars: Car[]; nextGap: number; seed: number }
 
 export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
-  const hero = new Image()
-  hero.src = "/games-hero.png"
+  let hero: HTMLCanvasElement | null = null
+  renderAvatar(loadAvatar())
+    .then((c) => {
+      hero = c
+    })
+    .catch(() => {})
   const CW = W / COLS
   let lanes = new Map<number, Lane>()
   let col = 3
@@ -179,22 +184,23 @@ export const makeCrossing: ArcadeMaker = ({ c, W, H, end }) => {
     c.ellipse(ox, oy + 16, 14, 6, 0, 0, Math.PI * 2)
     c.fill()
     oy -= lift
-    if (!(hero.complete && hero.naturalWidth)) {
+    if (!hero) {
       c.fillStyle = NEON.yellow
       c.fillRect(ox - 11, oy - 20, 22, 34)
       return
     }
-    const hh = 66
-    const ww = (hero.naturalWidth * hh) / hero.naturalHeight
+    const k = 66 / (AV_FEET - AV_TOP) // le personnage mesure 66 px de haut
+    const ww = AV_W * k
+    const hh = AV_H * k
     if (dead) {
       c.save()
       c.translate(ox, oy + 8)
       c.rotate(Math.PI / 2)
-      c.drawImage(hero, -hh / 2, -ww / 2, hh, ww)
+      c.drawImage(hero, -ww / 2, -hh / 2, ww, hh)
       c.restore()
       return
     }
-    c.drawImage(hero, ox - ww / 2, oy + 18 - hh, ww, hh)
+    c.drawImage(hero, ox - ww / 2, oy + 18 - AV_FEET * k, ww, hh)
   }
 
   function draw() {
