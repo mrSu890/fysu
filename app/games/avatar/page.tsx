@@ -35,19 +35,17 @@ const PIXEL = '"Press Start 2P", "VT323", ui-monospace, monospace'
 const TERM = '"VT323", ui-monospace, monospace'
 
 const TXT = {
-  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", beard: "BARBE", none: "Aucune", glasses: "LUNETTES", profile: "PHOTO DE PROFIL", setProfile: "UTILISER COMME PHOTO", profOk: "PHOTO DE PROFIL MISE À JOUR", profLogin: "CONNECTE-TOI D'ABORD", profErr: "ERREUR, RÉESSAIE", login: "SE CONNECTER", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur", wardrobe: "GARDE-ROBE", slots: { top: "HAUT", outer: "VESTE", bottom: "BAS", shoes: "CHAUSSURES" }, trying: "ESSAYAGE : PAS ÉQUIPÉ", reset: "REMETTRE MA TENUE", locked: "À DÉBLOQUER", worn: "ÉQUIPÉ", tryHint: "Touche une pièce verrouillée pour l'essayer. Tu ne peux l'équiper qu'une fois débloquée." },
-  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", beard: "BEARD", none: "None", glasses: "GLASSES", profile: "PROFILE PICTURE", setProfile: "USE AS PROFILE PICTURE", profOk: "PROFILE PICTURE UPDATED", profLogin: "LOG IN FIRST", profErr: "ERROR, TRY AGAIN", login: "LOG IN", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour", wardrobe: "WARDROBE", slots: { top: "TOP", outer: "JACKET", bottom: "BOTTOM", shoes: "SHOES" }, trying: "TRY-ON: NOT EQUIPPED", reset: "BACK TO MY OUTFIT", locked: "LOCKED", worn: "WORN", tryHint: "Tap a locked piece to try it on. You can only equip it once unlocked." },
+  fr: { title: "MON AVATAR", back: "JEUX", sil: "SILHOUETTE", style: "COIFFURE", beard: "BARBE", none: "Aucune", glasses: "LUNETTES", profile: "PHOTO DE PROFIL", setProfile: "UTILISER COMME PHOTO", profOk: "PHOTO DE PROFIL MISE À JOUR", profLogin: "CONNECTE-TOI D'ABORD", profErr: "ERREUR, RÉESSAIE", login: "SE CONNECTER", skin: "PEAU", hair: "CHEVEUX", orig: "Origine", saved: "ENREGISTRÉ", custom: "Autre couleur", wardrobe: "GARDE-ROBE", slots: { top: "HAUT", bottom: "BAS" }, trying: "ESSAYAGE : PAS ÉQUIPÉ", reset: "REMETTRE MA TENUE", locked: "À DÉBLOQUER", worn: "ÉQUIPÉ", tryHint: "Touche une pièce verrouillée pour l'essayer. Tu ne peux l'équiper qu'une fois débloquée." },
+  en: { title: "MY AVATAR", back: "GAMES", sil: "SILHOUETTE", style: "HAIRSTYLE", beard: "BEARD", none: "None", glasses: "GLASSES", profile: "PROFILE PICTURE", setProfile: "USE AS PROFILE PICTURE", profOk: "PROFILE PICTURE UPDATED", profLogin: "LOG IN FIRST", profErr: "ERROR, TRY AGAIN", login: "LOG IN", skin: "SKIN", hair: "HAIR", orig: "Original", saved: "SAVED", custom: "Custom colour", wardrobe: "WARDROBE", slots: { top: "TOP", bottom: "BOTTOM" }, trying: "TRY-ON: NOT EQUIPPED", reset: "BACK TO MY OUTFIT", locked: "LOCKED", worn: "WORN", tryHint: "Tap a locked piece to try it on. You can only equip it once unlocked." },
 }
 
 const HEAD_CROP = { x: 20, y: 0, w: 200, h: 190 }
 const FACE_CROP = { x: 55, y: 95, w: 130, h: 90 }
 const SLOT_CROP: Record<Slot, { x: number; y: number; w: number; h: number }> = {
-  top: { x: 20, y: 140, w: 200, h: 220 },
-  outer: { x: 0, y: 140, w: 240, h: 290 },
+  top: { x: 0, y: 140, w: 240, h: 290 },
   bottom: { x: 20, y: 300, w: 200, h: 316 },
-  shoes: { x: 20, y: 440, w: 200, h: 176 },
 }
-const SLOTS: Slot[] = ["top", "outer", "bottom", "shoes"]
+const SLOTS: Slot[] = ["top", "bottom"]
 
 function Label({ text }: { text: string }) {
   return (
@@ -95,9 +93,9 @@ export default function AvatarPage() {
   // ce qu'on voit à l'écran = ma tenue + les pièces en essayage (jamais enregistrées)
   const shown: AvatarConfig = { ...cfg, ...tryOn } as AvatarConfig
   const trying = Object.keys(tryOn).length > 0
-  const worn = (sl: Slot) => (sl === "outer" ? cfg.outer : cfg[sl])
-  function pick(sl: Slot, id: string | null) {
-    const mine = id === null || own.includes(id)
+  const worn = (sl: Slot) => cfg[sl]
+  function pick(sl: Slot, id: string) {
+    const mine = own.includes(id)
     if (mine) {
       setTryOn((t) => {
         const n = { ...t }
@@ -184,11 +182,6 @@ export default function AvatarPage() {
           ))}
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2">
-          {slot === "outer" && (
-            <button type="button" onClick={() => pick("outer", null)} className="flex flex-col items-center justify-center border-2 p-1 active:translate-y-0.5" style={box((shown.outer ?? null) === null)}>
-              <span style={{ fontFamily: TERM, fontSize: 16, color: shown.outer === null ? GREEN : "#bbb" }}>{t.none}</span>
-            </button>
-          )}
           {itemsOf(slot).map((it) => {
             const mine = own.includes(it.id)
             const on = shown[slot] === it.id
