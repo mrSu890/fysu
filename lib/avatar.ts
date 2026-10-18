@@ -70,7 +70,7 @@ const OLD_GLASSES: Record<number, number> = { 1: 6, 2: 6, 3: 7, 4: 6 }
    (t-shirt, pantalon noir, baskets) qui sont toujours possédées.
    Tout le monde peut ESSAYER n'importe quelle pièce ; on ne peut ÉQUIPER
    (donc la garder sur l'avatar, dans le profil, dans les jeux) que ce qu'on possède. */
-export type Item = { id: string; slot: Slot; name: { fr: string; en: string }; base?: boolean }
+export type Item = { id: string; slot: Slot; name: { fr: string; en: string }; base?: boolean; legs?: boolean }
 export const ITEMS: Item[] = [
   { id: "tee", slot: "top", base: true, name: { fr: "T-shirt blanc", en: "White tee" } },
   { id: "chemise", slot: "top", name: { fr: "Chemise bleue", en: "Blue shirt" } },
@@ -84,7 +84,7 @@ export const ITEMS: Item[] = [
   { id: "noir", slot: "bottom", base: true, name: { fr: "Pantalon noir, baskets", en: "Black trousers, sneakers" } },
   { id: "sakura", slot: "bottom", name: { fr: "Pantalon sakura, baskets", en: "Sakura trousers, sneakers" } },
   { id: "jupe", slot: "bottom", name: { fr: "Jupe longue, bottines", en: "Long skirt, heeled boots" } },
-  { id: "short", slot: "bottom", name: { fr: "Short, bottes hautes", en: "Shorts, tall boots" } },
+  { id: "short", slot: "bottom", legs: true, name: { fr: "Short, bottes hautes", en: "Shorts, tall boots" } },
 ]
 export const itemsOf = (slot: Slot) => ITEMS.filter((i) => i.slot === slot)
 const itemById = (id: string | null | undefined) => ITEMS.find((i) => i.id === id)
@@ -263,7 +263,9 @@ function loadItem(src: string): Promise<HTMLCanvasElement> {
   }
   return p
 }
-async function pieceLayer(id: string): Promise<HTMLCanvasElement> {
+async function pieceLayer(id: string, skin: [number, number, number] | null): Promise<HTMLCanvasElement> {
+  // pièce avec ses propres jambes : fichier à masque (peau teintée)
+  if (itemById(id)?.legs) return tinted(await loadLayer(`/games-av-it-${id}.png`, AV_H), NATIVE_BODY, skin, null)
   if (id === "tee") return tinted(await loadLayer("/games-av-tee.png", AV_H), null, null, null)
   return loadItem(`/games-av-it-${id}.png`)
 }
@@ -280,16 +282,16 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   const bald = cfg.style === 11 // le visage de base est déjà chauve
   // les coupes rasées sont décalées vers le haut sur la silhouette B (crâne plus haut)
   const hairFile = sil === "b" && (cfg.style === 8 || cfg.style === 9) ? `b${cfg.style}` : String(cfg.style)
+  const chosen = cfg.skin ? hexRgb(cfg.skin) : null
   const [skinL, bottomC, topC, face, hairL, beardL, glassL] = await Promise.all([
     loadLayer("/games-av-skin.png", AV_H),
-    pieceLayer(itemById(cfg.bottom)?.slot === "bottom" ? cfg.bottom : "noir"),
-    pieceLayer(itemById(cfg.top)?.slot === "top" ? cfg.top : "tee"),
+    pieceLayer(itemById(cfg.bottom)?.slot === "bottom" ? cfg.bottom : "noir", chosen),
+    pieceLayer(itemById(cfg.top)?.slot === "top" ? cfg.top : "tee", chosen),
     loadLayer(`/games-av-face-${sil}.png`, AV_HEAD_H),
     bald ? Promise.resolve(null) : loadLayer(`/games-av-hair-${hairFile}.png`, AV_HEAD_H),
     cfg.beard !== null ? loadLayer(`/games-av-beard-${sil}-${cfg.beard}.png`, AV_HEAD_H) : Promise.resolve(null),
     cfg.glasses !== null ? loadLayer(`/games-av-glasses-${sil}-${cfg.glasses}.png`, AV_HEAD_H) : Promise.resolve(null),
   ])
-  const chosen = cfg.skin ? hexRgb(cfg.skin) : null
   const hairRgb = cfg.hair ? hexRgb(cfg.hair) : null
   const out = document.createElement("canvas")
   out.width = AV_W
@@ -297,6 +299,7 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   const ctx = out.getContext("2d")!
   // ordre : peau, bas + chaussures, (t-shirt), cou, haut complet, menton, cheveux, barbe, lunettes
   ctx.drawImage(tinted(skinL, NATIVE_BODY, chosen, null), 0, 0)
+  if (itemById(cfg.bottom)?.legs) ctx.clearRect(0, 352, AV_W, AV_H - 352) // jambes du mannequin remplacées par celles du bas
   ctx.drawImage(bottomC, 0, 0)
   const tee = cfg.top === "tee"
   if (tee) ctx.drawImage(topC, 0, 0)
