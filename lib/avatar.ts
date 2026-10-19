@@ -70,7 +70,7 @@ const OLD_GLASSES: Record<number, number> = { 1: 6, 2: 6, 3: 7, 4: 6 }
    (t-shirt, pantalon noir, baskets) qui sont toujours possédées.
    Tout le monde peut ESSAYER n'importe quelle pièce ; on ne peut ÉQUIPER
    (donc la garder sur l'avatar, dans le profil, dans les jeux) que ce qu'on possède. */
-export type Item = { id: string; slot: Slot; name: { fr: string; en: string }; base?: boolean; legs?: boolean }
+export type Item = { id: string; slot: Slot; name: { fr: string; en: string }; base?: boolean; legs?: boolean; under?: string }
 export const ITEMS: Item[] = [
   { id: "tee", slot: "top", base: true, name: { fr: "T-shirt blanc", en: "White tee" } },
   { id: "chemise", slot: "top", name: { fr: "Chemise bleue", en: "Blue shirt" } },
@@ -80,7 +80,7 @@ export const ITEMS: Item[] = [
   { id: "sable", slot: "top", name: { fr: "Veste sable", en: "Sand jacket" } },
   { id: "manteau", slot: "top", name: { fr: "Manteau long noir", en: "Long black coat" } },
   { id: "doudoune", slot: "top", name: { fr: "Doudoune grise", en: "Grey puffer" } },
-  { id: "capuche", slot: "top", name: { fr: "Veste courte à capuche", en: "Cropped hooded jacket" } },
+  { id: "capuche", slot: "top", under: "tee", name: { fr: "Veste courte à capuche", en: "Cropped hooded jacket" } },
   { id: "noir", slot: "bottom", base: true, name: { fr: "Pantalon noir, baskets", en: "Black trousers, sneakers" } },
   { id: "sakura", slot: "bottom", name: { fr: "Pantalon sakura, baskets", en: "Sakura trousers, sneakers" } },
   { id: "jupe", slot: "bottom", name: { fr: "Jupe longue, bottines", en: "Long skirt, heeled boots" } },
@@ -269,6 +269,8 @@ async function pieceLayer(id: string, skin: [number, number, number] | null): Pr
   if (id === "tee") return tinted(await loadLayer("/games-av-tee.png", AV_H), null, null, null)
   return loadItem(`/games-av-it-${id}.png`)
 }
+const TORSO_X0 = 76 // torse fin : colonnes conservées sous les hauts (le reste du mannequin est caché ou inutile)
+const TORSO_X1 = 164
 const FACE_SPLIT = 168 // sous cette ligne : cou (passe derrière le col) ; au-dessus : menton (passe devant)
 
 const rendered = new Map<string, HTMLCanvasElement>()
@@ -283,7 +285,8 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   // les coupes rasées sont décalées vers le haut sur la silhouette B (crâne plus haut)
   const hairFile = sil === "b" && (cfg.style === 8 || cfg.style === 9) ? `b${cfg.style}` : String(cfg.style)
   const chosen = cfg.skin ? hexRgb(cfg.skin) : null
-  const [skinL, bottomC, topC, face, hairL, beardL, glassL] = await Promise.all([
+  const underId = itemById(cfg.top)?.under
+  const [skinL, bottomC, topC, face, hairL, beardL, glassL, underC] = await Promise.all([
     loadLayer("/games-av-skin.png", AV_H),
     pieceLayer(itemById(cfg.bottom)?.slot === "bottom" ? cfg.bottom : "noir", chosen),
     pieceLayer(itemById(cfg.top)?.slot === "top" ? cfg.top : "tee", chosen),
@@ -291,6 +294,7 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
     bald ? Promise.resolve(null) : loadLayer(`/games-av-hair-${hairFile}.png`, AV_HEAD_H),
     cfg.beard !== null ? loadLayer(`/games-av-beard-${sil}-${cfg.beard}.png`, AV_HEAD_H) : Promise.resolve(null),
     cfg.glasses !== null ? loadLayer(`/games-av-glasses-${sil}-${cfg.glasses}.png`, AV_HEAD_H) : Promise.resolve(null),
+    underId ? pieceLayer(underId, chosen) : Promise.resolve(null),
   ])
   const hairRgb = cfg.hair ? hexRgb(cfg.hair) : null
   const out = document.createElement("canvas")
@@ -300,14 +304,20 @@ export async function renderAvatar(cfg: AvatarConfig): Promise<HTMLCanvasElement
   // ordre : peau, bas + chaussures, (t-shirt), cou, haut complet, menton, cheveux, barbe, lunettes
   ctx.drawImage(tinted(skinL, NATIVE_BODY, chosen, null), 0, 0)
   if (itemById(cfg.bottom)?.legs) ctx.clearRect(0, 352, AV_W, AV_H - 352) // jambes du mannequin remplacées par celles du bas
-  ctx.drawImage(bottomC, 0, 0)
   const tee = cfg.top === "tee"
+  // sous un haut autre que le t-shirt, seul un torse fin reste (les manches viennent de la pièce)
+  if (!tee) {
+    ctx.clearRect(0, 176, TORSO_X0, 352 - 176)
+    ctx.clearRect(TORSO_X1, 176, AV_W - TORSO_X1, 352 - 176)
+  }
+  ctx.drawImage(bottomC, 0, 0)
   if (tee) ctx.drawImage(topC, 0, 0)
+  else if (underC) ctx.drawImage(underC, 0, 0)
   const faceC = tinted(face, NATIVE_FACE[sil], chosen, null)
   ctx.drawImage(faceC, 0, FACE_SPLIT, AV_W, AV_HEAD_H - FACE_SPLIT, 0, FACE_SPLIT, AV_W, AV_HEAD_H - FACE_SPLIT)
   if (!tee) ctx.drawImage(topC, 0, 0)
   ctx.drawImage(faceC, 0, 0, AV_W, FACE_SPLIT, 0, 0, AV_W, FACE_SPLIT)
-  if (hairL) ctx.drawImage(tinted(hairL, null, null, hairRgb), 0, 0)
+  if (hairL) ctx.drawImage(tinted(hairL, NATIVE_FACE[sil], chosen, hairRgb), 0, 0) // la peau visible dans la coiffure (front, oreilles) suit la teinte
   if (beardL) ctx.drawImage(tinted(beardL, null, null, null), 0, 0) // jamais teintée
   if (glassL) ctx.drawImage(tinted(glassL, null, null, null), 0, 0)
   if (rendered.size > 80) rendered.clear()
