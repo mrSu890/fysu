@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSiteCopy } from "@/lib/siteCopy";
+import IntroReveal from "@/components/IntroReveal";
 
 /* ====================================================================
    CARROUSEL INFINI DE L'ACCUEIL (remplace les deux blocs image + texte)
@@ -127,12 +128,24 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
             tabIndex={i < n * 2 || i >= n * 3 ? -1 : undefined}
             className="group w-[80vw] max-w-[460px] shrink-0 snap-start"
           >
-            <p
-              className="mb-3 text-[13px] uppercase tracking-[0.02em] text-foreground sm:text-sm"
-              style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 200 }}
-            >
-              {s.label}
-            </p>
+            {(() => {
+              const label = (
+                <p
+                  className="text-[13px] uppercase tracking-[0.02em] text-foreground sm:text-sm"
+                  style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 200 }}
+                >
+                  {s.label}
+                </p>
+              );
+              // le titre monte du « sol » comme les autres titres du site (seulement sur les vraies slides, pas les copies du défilement infini)
+              return i >= n * 2 && i < n * 3 ? (
+                <IntroReveal className="mb-3" delay={0.15 + (i - n * 2) * 0.12}>
+                  {label}
+                </IntroReveal>
+              ) : (
+                <div className="mb-3">{label}</div>
+              );
+            })()}
             <div data-hero-image={i === n * 2 ? "" : undefined} className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
               {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(s.image) ? (
                 <video
