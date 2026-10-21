@@ -9,7 +9,6 @@ import Closet from "./Closet"
 import UserWishlist from "./UserWishlist"
 import UserOrders from "./UserOrders"
 import Social from "@/components/Profile/Social"
-import AvatarStudio from "./AvatarStudio"
 import ProfileEditor, { type GalleryAvatar } from "./ProfileEditor"
 import { profileCopy } from "./profileCopy"
 import CountUp from "@/components/CountUp"
@@ -19,7 +18,7 @@ const TABS: Record<"fr" | "en", Record<TabId, string>> = {
   fr: { wardrobe: "Garde-robe", avatar: "Avatar", favorites: "Favoris", orders: "Commandes", friends: "Amis", badges: "Badges" },
   en: { wardrobe: "Wardrobe", avatar: "Avatar", favorites: "Favorites", orders: "Orders", friends: "Friends", badges: "Badges" },
 }
-const TAB_ORDER: TabId[] = ["wardrobe", "avatar", "favorites", "orders", "friends", "badges"]
+const TAB_ORDER: TabId[] = ["wardrobe", "favorites", "orders", "friends", "badges"]
 
 const ONBOARD_KEY = "fysu_profile_onboarding_seen"
 
@@ -172,7 +171,6 @@ export default function ProfileHub({
 
         <div className="pt-10">
           {tab === "wardrobe" && <Closet copy={copy} />}
-          {tab === "avatar" && <AvatarStudio locale={locale} onPhotoUpdated={load} />}
           {tab === "favorites" && <UserWishlist />}
           {tab === "orders" && <UserOrders />}
           {tab === "friends" && data && <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />}
@@ -198,10 +196,6 @@ export default function ProfileHub({
           welcome={welcome}
           fallbackName={name}
           onClose={closeEditor}
-          onOpenAvatar={() => {
-            closeEditor()
-            setTab("avatar")
-          }}
           onSaved={async () => {
             await load()
             closeEditor()

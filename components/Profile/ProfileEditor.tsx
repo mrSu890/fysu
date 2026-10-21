@@ -5,7 +5,6 @@ import { X, Upload, Check } from "lucide-react"
 import { ACCENTS, BIO_MAX, DEFAULT_ACCENT, NAME_MAX, type ProfileData } from "@/lib/profile"
 import type { PCopy } from "./profileCopy"
 import Avatar from "./Avatar"
-import { avatarPortrait, loadAvatar } from "@/lib/avatar"
 
 export type GalleryAvatar = { id: string; url: string; label: string | null }
 
@@ -78,19 +77,6 @@ export default function ProfileEditor({
     }
   }
 
-  /* L'avatar pixel créé dans l'arcade (enregistré sur cet appareil) devient la photo de profil */
-  async function useMyAvatar() {
-    setError(null)
-    setUploading(true)
-    try {
-      await sendBlob(await avatarPortrait(loadAvatar()))
-    } catch (e: any) {
-      setError(e?.message ?? copy.error)
-    } finally {
-      setUploading(false)
-    }
-  }
-
   async function save() {
     setSaving(true)
     setError(null)
@@ -148,14 +134,6 @@ export default function ProfileEditor({
             >
               <Upload className="h-4 w-4" /> {uploading ? "…" : copy.uploadPhoto}
             </button>
-            <button
-              type="button"
-              onClick={useMyAvatar}
-              disabled={uploading}
-              className="inline-flex items-center gap-2 rounded-full border border-foreground/30 px-4 py-2 text-sm disabled:opacity-50"
-            >
-              {uploading ? "…" : copy.useAvatar}
-            </button>
             {avatarUrl && (
               <button
                 type="button"
@@ -170,9 +148,6 @@ export default function ProfileEditor({
             )}
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => pickFile(e.target.files?.[0])} />
           </div>
-          <button type="button" onClick={onOpenAvatar} className="text-sm text-foreground/60 underline underline-offset-2">
-            {copy.createAvatar}
-          </button>
 
           {avatars.length > 0 && (
             <div className="w-full">
