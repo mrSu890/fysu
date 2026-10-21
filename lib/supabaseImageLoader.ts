@@ -14,5 +14,7 @@ export default function supabaseImageLoader({ src, width, quality }: { src: stri
   // seulement les images publiques de notre Supabase, et pas les formats qui ne se redimensionnent pas
   if (!src.includes("supabase.co") || !src.includes(MARK) || /\.(svg|gif|mp4|mov|webm)(\?|$)/i.test(src)) return src
   const base = src.split("?")[0].replace(MARK, RENDER)
-  return `${base}?width=${width}&quality=${quality || 75}`
+  // resize=contain : on garde les proportions d'origine (sinon Supabase recadre la photo). La hauteur est volontairement très grande :
+  // c'est la largeur qui décide de la taille.
+  return `${base}?width=${width}&height=${width * 4}&resize=contain&quality=${quality || 75}`
 }
