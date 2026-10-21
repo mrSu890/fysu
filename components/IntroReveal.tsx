@@ -1,6 +1,7 @@
 "use client"
 
-import { motion, useReducedMotion } from "framer-motion"
+import { useRef } from "react"
+import { motion, useInView, useReducedMotion } from "framer-motion"
 import { usePageVisible } from "@/lib/usePageVisible"
 
 /* ====================================================================
@@ -26,13 +27,16 @@ export default function IntroReveal({
   mask?: boolean // false : fondu + glissement, sans cache (pour les éléments avec une ombre, comme l'interrupteur)
 }) {
   const calm = useReducedMotion()
-  const visible = usePageVisible()
+  const ready = usePageVisible()
+  const holder = useRef<HTMLDivElement>(null)
+  const inView = useInView(holder, { once: true, margin: "0px 0px -8% 0px" })
+  const visible = ready && inView
 
-  if (calm) return <div className={className}>{children}</div>
+  if (calm) return <div ref={holder} className={className}>{children}</div>
 
   if (!mask) {
     return (
-      <div className={className}>
+      <div ref={holder} className={className}>
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={visible ? { opacity: 1, y: 0 } : undefined}
@@ -45,7 +49,7 @@ export default function IntroReveal({
   }
 
   return (
-    <div className={className} style={pad ? { padding: pad, margin: -pad } : undefined}>
+    <div ref={holder} className={className} style={pad ? { padding: pad, margin: -pad } : undefined}>
       <div className="overflow-hidden pb-[0.14em] -mb-[0.14em]">
         <motion.div
           initial={{ y: from === "bottom" ? "115%" : "-115%" }}
