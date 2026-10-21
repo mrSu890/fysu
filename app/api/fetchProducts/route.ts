@@ -2,6 +2,7 @@ import { localize } from "@/lib/translate"
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
+  // TEMPORAIRE : "debug" montre la vraie cause de l'erreur (à retirer une fois réglé)
   const supabase = await supabaseServer();
 
   try {
@@ -19,7 +20,7 @@ export async function GET() {
     if (error) {
       console.error("Erreur Supabase :", error);
       return new Response(
-        JSON.stringify({ error: "Erreur lors de la récupération des produits" }),
+        JSON.stringify({ error: "Erreur lors de la récupération des produits", debug: error.message, code: error.code, hint: error.hint, details: error.details }),
         { status: 500 }
       );
     }
