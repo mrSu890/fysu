@@ -689,6 +689,13 @@ html.mood-anim body *:not(video):not(canvas) {
   transition-delay: 0s !important;
 }
 
+/* Changement d'ambiance : fondu synchrone de toute la page (voir lib/mood.ts, applyMood) */
+html.mood-vt::view-transition-old(root),
+html.mood-vt::view-transition-new(root) {
+  animation-duration: 1.4s;
+  animation-timing-function: ease-in-out;
+}
+
 /* Après-midi : les cases des photos produit sont teintées d'un crème presque identique au fond, à peine plus clair (#f7f4ee), beaucoup moins jaune qu'avant.
    Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
    La pastille de disponibilité prend le même crème. */
