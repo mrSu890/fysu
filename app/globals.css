@@ -13,7 +13,11 @@
   --glass-brightness: 0.85;
   --glass-rim: rgba(255, 255, 255, 0.35);
   --glass-shadow: rgba(0, 0, 0, 0.22);
-
+  /* verre de la barre de navigation (haut / bas) et bande de page : variables pour que tout change en même temps (voir « SYNCHRO DES AMBIANCES ») */
+  --glass-top: color-mix(in srgb, #5f7783 36%, transparent);
+  --glass-bottom: color-mix(in srgb, #5f7783 36%, transparent);
+  --page-bar-bg: #ffffff;
+  --page-bar-ink: #171717;
 }
 
 .dark {
@@ -29,7 +33,10 @@
   --glass-brightness: 1.15;
   --glass-rim: rgba(255, 255, 255, 0.7);
   --glass-shadow: rgba(0, 0, 0, 0.35);
-
+  --glass-top: color-mix(in srgb, #ffffff 34%, transparent);
+  --glass-bottom: color-mix(in srgb, #ffffff 34%, transparent);
+  --page-bar-bg: #2c2d28;
+  --page-bar-ink: #ece9e1;
 }
 
 .bg-product-frame {
@@ -124,6 +131,10 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.12),
     inset 0 0 22px rgba(255, 255, 255, 0.06),
     0 8px 32px var(--glass-shadow);
+}
+
+.navbar-root .liquid-glass {
+  background: linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
 }
 
 .liquid-glass::before {
@@ -226,8 +237,8 @@ img[data-ink="light"] { filter: brightness(0) invert(1) !important; opacity: 0.9
   --toggle-button-btn: #4a4b44;
 }
 
-.dark .collection-bg {
-  background-color: #22231f;
+.collection-bg {
+  background-color: var(--background);
 }
 
 /* Kiban Collector utilise le même mode sombre que le reste du site (sumi olive) */
@@ -245,13 +256,8 @@ img[data-ink="light"] { filter: brightness(0) invert(1) !important; opacity: 0.9
 }
 /* Bande blanche sous l'image de garde */
 .page-bar {
-  background: #ffffff;
-  color: #171717;
-}
-
-.dark .page-bar {
-  background: #2c2d28;
-  color: #ece9e1;
+  background: var(--page-bar-bg);
+  color: var(--page-bar-ink);
 }
 
 /* Écran de chargement : logo noir en mode clair, blanc en mode sombre */
@@ -493,22 +499,60 @@ html.a11y-calm [data-tap], html.a11y-calm [data-tap] * {
 .fysu-wave-2 { animation-delay: 0.12s; }
 .fysu-wave-3 { animation-delay: 0.24s; }
 
-/* ---- Passage clair <-> sombre : fondu lent (activé par ClickFeedback pendant ~1 s) ---- */
-html.theme-fade,
-html.theme-fade *,
-html.theme-fade *::before,
-html.theme-fade *::after {
-  transition-property: background-color, color, border-color, fill, stroke, box-shadow, text-decoration-color !important;
-  transition-duration: 0.9s !important;
-  transition-timing-function: ease-in-out !important;
-  transition-delay: 0s !important;
+/* (le fondu clair <-> sombre est fait par les variables de couleur : voir « SYNCHRO DES AMBIANCES ») */
+/* FIN ÉPURE */
+
+/* ====================================================================
+   SYNCHRO DES AMBIANCES
+   Les couleurs des ambiances sont des variables « typées » : le navigateur les fait glisser d'une valeur à l'autre,
+   toutes ensemble, image par image. Fond, textes, verre de la barre, bande de page… changent donc exactement en même temps
+   et le Liquid Glass garde son flou pendant le changement.
+   Durée : 1,4 s (à changer dans la liste ci-dessous, partout pareil).
+   ==================================================================== */
+@property --background { syntax: "<color>"; inherits: true; initial-value: #FAF9F7; }
+@property --foreground { syntax: "<color>"; inherits: true; initial-value: #171717; }
+@property --menu { syntax: "<color>"; inherits: true; initial-value: #FAF9F7; }
+@property --toggle-button-bg { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --toggle-button-btn { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --navbar-bg { syntax: "<color>"; inherits: true; initial-value: #262626; }
+@property --glass-color { syntax: "<color>"; inherits: true; initial-value: #5f7783; }
+@property --glass-rim { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.35); }
+@property --glass-shadow { syntax: "<color>"; inherits: true; initial-value: rgba(0, 0, 0, 0.22); }
+@property --glass-top { syntax: "<color>"; inherits: true; initial-value: rgba(95, 119, 131, 0.36); }
+@property --glass-bottom { syntax: "<color>"; inherits: true; initial-value: rgba(95, 119, 131, 0.36); }
+@property --page-bar-bg { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --page-bar-ink { syntax: "<color>"; inherits: true; initial-value: #171717; }
+@property --glass-tint { syntax: "<percentage>"; inherits: true; initial-value: 36%; }
+@property --glass-brightness { syntax: "<number>"; inherits: true; initial-value: 0.85; }
+
+html {
+  transition:
+    --background 1.4s ease-in-out,
+    --foreground 1.4s ease-in-out,
+    --menu 1.4s ease-in-out,
+    --toggle-button-bg 1.4s ease-in-out,
+    --toggle-button-btn 1.4s ease-in-out,
+    --navbar-bg 1.4s ease-in-out,
+    --glass-color 1.4s ease-in-out,
+    --glass-rim 1.4s ease-in-out,
+    --glass-shadow 1.4s ease-in-out,
+    --glass-top 1.4s ease-in-out,
+    --glass-bottom 1.4s ease-in-out,
+    --page-bar-bg 1.4s ease-in-out,
+    --page-bar-ink 1.4s ease-in-out,
+    --glass-tint 1.4s ease-in-out,
+    --glass-brightness 1.4s ease-in-out;
+}
+/* le fond du corps suit directement la variable (pas de second fondu par-dessus) */
+html body {
+  transition: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
-    transition-duration: 0.01s !important;
-  }
+  html { transition: none; }
 }
-/* FIN ÉPURE */
+html.a11y-calm {
+  transition: none;
+}
 
 /* ====================================================================
    AMBIANCES (voir lib/mood.ts) : aube, après-midi, coucher de soleil, nuit
@@ -531,16 +575,10 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
   --glass-brightness: 1;
   --glass-rim: rgba(240, 250, 252, 0.65);
   --glass-shadow: rgba(50, 85, 95, 0.18);
-}
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
-  background-color: #e9ebe7;
-}
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #eef1ed;
-  color: #1c2523;
-}
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
-  background: linear-gradient(180deg, rgba(184, 207, 213, 0.56) 0%, rgba(146, 176, 186, 0.6) 100%);
+  --glass-top: rgba(184, 207, 213, 0.56);
+  --glass-bottom: rgba(146, 176, 186, 0.6);
+  --page-bar-bg: #eef1ed;
+  --page-bar-ink: #1c2523;
 }
 /* aube : verre bleu pâle, textes et logo foncés (plus doux que du blanc sur du bleu) */
 html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
@@ -580,12 +618,9 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
   --glass-brightness: 0.9;
   --glass-rim: rgba(238, 244, 225, 0.5);
   --glass-shadow: rgba(40, 55, 35, 0.22);
-}
-html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #f7f3e8;
-}
-html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
-  background: linear-gradient(180deg, rgba(134, 141, 116, 0.7) 0%, rgba(92, 103, 82, 0.8) 100%);
+  --glass-top: rgba(134, 141, 116, 0.7);
+  --glass-bottom: rgba(92, 103, 82, 0.8);
+  --page-bar-bg: #f7f3e8;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
@@ -608,16 +643,10 @@ html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) {
   --glass-brightness: 1.05;
   --glass-rim: rgba(255, 236, 205, 0.55);
   --glass-shadow: rgba(40, 34, 20, 0.32);
-}
-html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
-  background-color: #6b6454;
-}
-html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #5f5a4d;
-  color: #f6f0e2;
-}
-html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
-  background: linear-gradient(180deg, rgba(222, 218, 196, 0.42) 0%, rgba(168, 172, 150, 0.36) 100%);
+  --glass-top: rgba(222, 218, 196, 0.42);
+  --glass-bottom: rgba(168, 172, 150, 0.36);
+  --page-bar-bg: #5f5a4d;
+  --page-bar-ink: #f6f0e2;
 }
 /* le logo et les textes de la barre étaient trop sombres : moins d'opacité */
 html.sunset.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
@@ -641,16 +670,10 @@ html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) {
   --glass-brightness: 1.1;
   --glass-rim: rgba(215, 226, 245, 0.5);
   --glass-shadow: rgba(4, 8, 14, 0.45);
-}
-html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .collection-bg {
-  background-color: #212427;
-}
-html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .page-bar {
-  background: #2a2d30;
-  color: #e8e9e6;
-}
-html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass {
-  background: linear-gradient(180deg, rgba(150, 166, 192, 0.36) 0%, rgba(78, 94, 120, 0.42) 100%);
+  --glass-top: rgba(150, 166, 192, 0.36);
+  --glass-bottom: rgba(78, 94, 120, 0.42);
+  --page-bar-bg: #2a2d30;
+  --page-bar-ink: #e8e9e6;
 }
 /* nuit : textes et logo clairs sur le verre givré */
 html.night.dark:not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
@@ -680,21 +703,6 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) bod
 }
 
 /* Changement d'ambiance en fondu doux (nuit, aube, jour, après-midi) : la classe est posée 2 s par lib/mood.ts */
-html.mood-anim,
-html.mood-anim body,
-html.mood-anim body *:not(video):not(canvas) {
-  transition-property: color, background-color, border-color, fill, stroke, box-shadow !important;
-  transition-duration: 1.8s !important;
-  transition-timing-function: ease-in-out !important;
-  transition-delay: 0s !important;
-}
-
-/* Changement d'ambiance : fondu synchrone de toute la page (voir lib/mood.ts, applyMood) */
-html.mood-vt::view-transition-old(root),
-html.mood-vt::view-transition-new(root) {
-  animation-duration: 1.4s;
-  animation-timing-function: ease-in-out;
-}
 
 /* Après-midi : les cases des photos produit sont teintées d'un crème presque identique au fond, à peine plus clair (#f7f4ee), beaucoup moins jaune qu'avant.
    Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
