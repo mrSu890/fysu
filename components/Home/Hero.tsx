@@ -138,7 +138,7 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
       {/* Téléphone et iPad : l'image reste fixe en haut ; pendant l'intro du logo la partie texte reste en place,
           puis elle glisse par-dessus l'image comme un rideau (voir LogoIntro). Ordinateur : deux colonnes. */}
       {/* IMAGE : moitié haute (téléphone, iPad) ou moitié gauche (ordinateur) */}
-      <div data-hero-image className="relative z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 max-lg:sticky max-lg:top-0 lg:h-full">
+      <div className="relative z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:h-full">
         {slides.map((item, index) => (
           <div
             key={item.media_path + index}
@@ -149,10 +149,12 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
             <Media item={item} alt={`FYSU ${index + 1}`} eager={index === 0} />
           </div>
         ))}
+        {/* toucher l'image mène à Kiban Collector */}
+        <Link href="/kiban-collector" aria-label="Kiban Collector" className="absolute inset-0 z-10" />
       </div>
 
       {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
-      <div className="relative z-10 flex min-h-[50svh] flex-col items-start justify-center bg-background px-7 py-16 text-left sm:px-14 max-lg:sticky max-lg:top-[max(50svh,320px)] lg:min-h-0 lg:px-20">
+      <div className="relative z-10 flex min-h-[50svh] flex-col items-start justify-center bg-background px-7 py-16 text-left sm:px-14 lg:min-h-0 lg:px-20">
         {/* pluie sur le fond de ce bloc (son fond plein cacherait la pluie globale) */}
         <RainFill />
         {/* après l'intro, chaque élément monte du « sol » l'un après l'autre */}

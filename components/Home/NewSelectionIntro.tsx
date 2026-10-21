@@ -14,20 +14,21 @@ import { useSiteCopy } from "@/lib/siteCopy";
 const COPIES = 5; // la liste est répétée pour pouvoir tourner sans fin
 const GAP_LEFT = 14; // petit espace à gauche de l'écran (en pixels)
 
-type Slide = { key: string; label: string; href: string; image: string; kind: string };
+export type Slide = { key: string; label: string; href: string; image: string; kind: string };
 
 const BLOOM_IMAGE = "/images/home-feature.jpeg";
 const BLOOM_LINK = "/collections/when-the-flowers-bloom";
 const FYGRANCES_IMAGE = "/images/Fygrances-hero.JPG";
 const FYGRANCES_LINK = "/fygrances";
 
-const NewSelectionIntro = () => {
+const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] | null }) => {
   const copy = useSiteCopy();
   const scroller = useRef<HTMLDivElement>(null);
 
   // slides réglées dans l'admin (Accueil → Carrousel) ; sinon les deux slides d'origine
-  const [custom, setCustom] = useState<Slide[] | null>(null);
+  const [custom, setCustom] = useState<Slide[] | null>(initialSlides && initialSlides.length ? initialSlides : null);
   useEffect(() => {
+    if (initialSlides && initialSlides.length) return; // déjà lues côté serveur
     let alive = true;
     fetch("/api/collectionPages?carousel=1", { cache: "no-store" })
       .then((r) => r.json())
@@ -112,7 +113,7 @@ const NewSelectionIntro = () => {
   const items = Array.from({ length: COPIES * n }, (_, i) => ({ s: slides[i % n], i }));
 
   return (
-    <section data-no-reveal className="relative mb-28 mt-32 w-full sm:mb-40 sm:mt-48" aria-label="FYSU">
+    <section data-no-reveal className="relative mb-28 mt-28 w-full sm:mb-40 sm:mt-36" aria-label="FYSU">
       <div
         ref={scroller}
         className="flex snap-x snap-mandatory scroll-pl-[14px] gap-[14px] overflow-x-auto overscroll-x-contain px-[14px] pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -132,7 +133,7 @@ const NewSelectionIntro = () => {
             >
               {s.label}
             </p>
-            <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
+            <div data-hero-image={i === n * 2 ? "" : undefined} className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
               {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(s.image) ? (
                 <video
                   src={s.image}
