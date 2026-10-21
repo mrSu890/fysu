@@ -152,15 +152,6 @@ export default function GamesPage() {
           </p>
         </div>
 
-        {/* avatar */}
-        <Link
-          href="/games/avatar"
-          className="arcade-start mt-6 block border px-4 py-4 text-center transition hover:bg-[#39ff88] hover:text-black"
-          style={{ borderColor: GREEN, fontFamily: PIXEL, color: GREEN, fontSize: 13, letterSpacing: "0.08em" }}
-        >
-          ▶ {locale === "fr" ? "MON AVATAR" : "MY AVATAR"}
-        </Link>
-
         {/* jeux */}
         <ul className="mt-8 space-y-8">
           {GAMES.map((g) => (
