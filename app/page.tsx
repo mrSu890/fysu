@@ -1,7 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import HomeHero from "@/components/Home/Hero";
-import LogoIntro from "@/components/Home/LogoIntro";
+import HomeHero, { HomeIntroText } from "@/components/Home/Hero";
 import NewSelectionIntro, { type Slide } from "@/components/Home/NewSelectionIntro";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Metadata } from "next";
@@ -70,14 +69,16 @@ export default async function Home() {
       <Navbar />
       {/* 1. carrousel des collections : c'est la première chose que l'on voit */}
       <NewSelectionIntro initialSlides={carousel} />
-      {/* 2. rangées de produits */}
+      {/* 2. bloc texte FYSU */}
+      <HomeIntroText />
+      {/* 3. rangées de produits */}
       <RecentlyViewed className="mt-20 sm:mt-28" />
       <div className="flex flex-col gap-36 sm:gap-48">
         <HomeSection slug="solos" index={1} initialSection={solos} />
         <HomeSection slug="duos" index={2} initialSection={duos} />
       </div>
-      {/* 3. gros logo rose, puis la grande image (mène à Kiban Collector) */}
-      <LogoIntro />
+      {/* 4. grande image avec le gros logo rose dessus (mène à Kiban Collector) */}
+      <div className="mt-36 sm:mt-48" />
       <HomeHero initialSlides={slides} />
 
       <Footer />
