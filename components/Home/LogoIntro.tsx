@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 
 /* ====================================================================
    GROS LOGO FYSU ROSE (accueil)
-   Posé dans la page, entre les rangées de produits et la grande image : il descend d'en haut
+   Posé sur la grande image de l'accueil (en haut) : il descend d'en haut
    quand il arrive à l'écran. La barre de navigation reste visible tout le temps.
    Couleur : changer PINK ci-dessous.
    ==================================================================== */
@@ -47,8 +47,8 @@ export default function LogoIntro() {
       ref={ref}
       aria-hidden="true"
       data-no-reveal
-      className="relative mx-auto mb-6 mt-36 overflow-hidden sm:mb-8 sm:mt-48"
-      style={{ width: `${(1 - SIDE_MARGIN * 2) * 100}vw`, aspectRatio: `${1 / ASPECT}` }}
+      className="pointer-events-none absolute z-20 overflow-hidden"
+      style={{ left: `${SIDE_MARGIN * 100}vw`, top: 20, width: `${(1 - SIDE_MARGIN * 2) * 100}vw`, aspectRatio: `${1 / ASPECT}` }}
     >
       <div
         className="absolute inset-0"

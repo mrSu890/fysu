@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useLocale } from "next-intl";
+import LogoIntro from "@/components/Home/LogoIntro";
 import ThemeToggle from "@/components/ThemeToggle";
 import IntroReveal from "@/components/IntroReveal";
 import { fixedTitle } from "@/lib/fixedTitles";
@@ -113,12 +114,10 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
     return () => clearTimeout(timer);
   }, [current, count]);
 
-  const intro = INTRO[locale] ?? INTRO.en;
-
   return (
     <section
       data-no-reveal
-      className="relative w-full max-lg:contents lg:grid lg:h-[100svh] lg:grid-cols-2"
+      className="relative w-full"
       onTouchStart={(e) => {
         const t = e.touches[0];
         touchStartRef.current = { x: t.clientX, y: t.clientY };
@@ -135,10 +134,8 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
         }
       }}
     >
-      {/* Téléphone et iPad : l'image reste fixe en haut ; pendant l'intro du logo la partie texte reste en place,
-          puis elle glisse par-dessus l'image comme un rideau (voir LogoIntro). Ordinateur : deux colonnes. */}
-      {/* IMAGE : moitié haute (téléphone, iPad) ou moitié gauche (ordinateur) */}
-      <div className="relative z-0 h-[50svh] min-h-[320px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:h-full">
+      {/* GRANDE IMAGE : le gros logo FYSU rose est posé dessus ; toucher l'image mène à Kiban Collector */}
+      <div className="relative z-0 h-[62svh] min-h-[360px] w-full overflow-hidden bg-neutral-300 dark:bg-neutral-800 lg:h-[100svh]">
         {slides.map((item, index) => (
           <div
             key={item.media_path + index}
@@ -149,48 +146,55 @@ const HomeHero = ({ initialSlides = [] }: { initialSlides?: HeroMedia[] }) => {
             <Media item={item} alt={`FYSU ${index + 1}`} eager={index === 0} />
           </div>
         ))}
-        {/* toucher l'image mène à Kiban Collector */}
         <Link href="/kiban-collector" aria-label="Kiban Collector" className="absolute inset-0 z-10" />
-      </div>
-
-      {/* VIDE + TEXTE : moitié basse (téléphone, iPad) ou moitié droite (ordinateur) */}
-      <div className="relative z-10 flex min-h-[50svh] flex-col items-start justify-center bg-background px-7 py-16 text-left sm:px-14 lg:min-h-0 lg:px-20">
-        {/* pluie sur le fond de ce bloc (son fond plein cacherait la pluie globale) */}
-        <RainFill />
-        {/* après l'intro, chaque élément monte du « sol » l'un après l'autre */}
-        <IntroReveal delay={0.45}>
-          <p className="font-info text-[10px] font-light uppercase tracking-[0.06em] text-foreground/55 sm:text-[11px]">
-            {PRONUNCIATION}
-          </p>
-        </IntroReveal>
-
-        <IntroReveal className="mt-10 sm:mt-12" delay={0.6}>
-          <p className="max-w-[24em] text-[clamp(15px,2vw,18px)] font-light leading-[1.6] tracking-[-0.01em] text-foreground">
-            {intro}
-          </p>
-        </IntroReveal>
-
-        <div className="mt-8 -mb-4 w-full sm:mt-10 [&_div.relative]:!top-0 [&_div.relative]:!justify-start [&_div.relative]:!py-2">
-          <IntroReveal delay={0.75} mask={false}>
-            <ThemeToggle />
-          </IntroReveal>
-        </div>
-
-        <div className="absolute inset-x-0 bottom-6 flex justify-start px-7 sm:bottom-8 sm:px-14">
-          <IntroReveal delay={0.9}>
-            <div className="font-info flex gap-8 text-[11px] font-light uppercase tracking-[0.06em] text-foreground/60">
-              <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
-                {fixedTitle("For him", locale) ?? "For him"}
-              </Link>
-              <Link href={RIGHT_LINK} className="transition-opacity hover:opacity-60">
-                {fixedTitle("For her", locale) ?? "For her"}
-              </Link>
-            </div>
-          </IntroReveal>
-        </div>
+        <LogoIntro />
       </div>
     </section>
   );
 };
 
 export default HomeHero;
+
+/* ====================================================================
+   BLOC TEXTE « FYSU » (prononciation, phrase, interrupteur clair/sombre, For him / For her)
+   Posé juste sous le carrousel du début.
+   ==================================================================== */
+export function HomeIntroText() {
+  const locale = useLocale();
+  const intro = INTRO[locale] ?? INTRO.en;
+
+  return (
+    <section data-no-reveal className="relative w-full bg-background px-7 pb-20 pt-4 text-left sm:px-14 lg:px-20">
+      {/* pluie sur le fond de ce bloc (son fond plein cacherait la pluie globale) */}
+      <RainFill />
+      <IntroReveal delay={0.1}>
+        <p className="font-info text-[10px] font-light uppercase tracking-[0.06em] text-foreground/55 sm:text-[11px]">
+          {PRONUNCIATION}
+        </p>
+      </IntroReveal>
+
+      <IntroReveal className="mt-10 sm:mt-12" delay={0.2}>
+        <p className="max-w-[24em] text-[clamp(15px,2vw,18px)] font-light leading-[1.6] tracking-[-0.01em] text-foreground">
+          {intro}
+        </p>
+      </IntroReveal>
+
+      <div className="mt-8 -mb-4 w-full sm:mt-10 [&_div.relative]:!top-0 [&_div.relative]:!justify-start [&_div.relative]:!py-2">
+        <IntroReveal delay={0.3} mask={false}>
+          <ThemeToggle />
+        </IntroReveal>
+      </div>
+
+      <IntroReveal className="mt-14" delay={0.4}>
+        <div className="font-info flex gap-8 text-[11px] font-light uppercase tracking-[0.06em] text-foreground/60">
+          <Link href={LEFT_LINK} className="transition-opacity hover:opacity-60">
+            {fixedTitle("For him", locale) ?? "For him"}
+          </Link>
+          <Link href={RIGHT_LINK} className="transition-opacity hover:opacity-60">
+            {fixedTitle("For her", locale) ?? "For her"}
+          </Link>
+        </div>
+      </IntroReveal>
+    </section>
+  );
+}
