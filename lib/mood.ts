@@ -99,66 +99,19 @@ function setThemeColor(mood: Mood, keepOwn: boolean) {
   }
 }
 
-let animTimer: number | undefined
-
-const calmMotion = (html: HTMLElement) =>
-  html.classList.contains("a11y-calm") ||
-  html.classList.contains("a11y-focus") ||
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches
-
+// le fondu des ambiances est fait par les variables de couleur de globals.css (voir « SYNCHRO DES AMBIANCES »)
 export function applyMood(mood: Mood) {
   const html = document.documentElement
   const admin = window.location.pathname.startsWith("/admin")
+  html.classList.toggle("dawn", mood === "dawn" && !admin)
+  html.classList.toggle("afternoon", mood === "afternoon" && !admin)
+  html.classList.toggle("sunset", mood === "sunset" && !admin)
+  html.classList.toggle("night", mood === "night" && !admin)
   const dark = mood === "night" || mood === "sunset"
-
-  // les classes à poser (identique à l'état actuel = rien à animer)
-  const target = {
-    dawn: mood === "dawn" && !admin,
-    afternoon: mood === "afternoon" && !admin,
-    sunset: mood === "sunset" && !admin,
-    night: mood === "night" && !admin,
-    dark: isForced(html) ? html.classList.contains("dark") : dark,
-  }
-  const same = (Object.keys(target) as (keyof typeof target)[]).every((k) => html.classList.contains(k) === target[k])
-
-  const run = () => {
-    html.classList.toggle("dawn", target.dawn)
-    html.classList.toggle("afternoon", target.afternoon)
-    html.classList.toggle("sunset", target.sunset)
-    html.classList.toggle("night", target.night)
-    if (!isForced(html)) html.classList.toggle("dark", dark)
-    try {
-      localStorage.setItem("theme", dark ? "dark" : "light")
-    } catch {}
-    setThemeColor(mood, admin || isForced(html))
-    window.dispatchEvent(new Event("theme-change"))
-  }
-
-  if (same) {
-    run()
-    return
-  }
-
-  // Fondu synchrone : le navigateur prend une « photo » de la page avant le changement et la fond avec la page
-  // après (tout change exactement en même temps : fond, textes, verre, photos, barre). Voir « mood-vt » dans globals.css.
-  const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<unknown> } }
-  if (typeof doc.startViewTransition === "function" && !calmMotion(html) && !document.hidden) {
-    window.clearTimeout(animTimer)
-    html.classList.remove("mood-anim")
-    html.classList.add("mood-vt")
-    try {
-      const t = doc.startViewTransition(run)
-      const done = () => html.classList.remove("mood-vt")
-      t.finished.then(done, done)
-      return
-    } catch {
-      html.classList.remove("mood-vt")
-    }
-  }
-
-  // repli (anciens navigateurs) : fondu des couleurs élément par élément
-  html.classList.add("mood-anim")
-  window.clearTimeout(animTimer)
-  animTimer = window.setTimeout(() => html.classList.remove("mood-anim"), 2200)
-  run()
+  if (!isForced(html)) html.classList.toggle("dark", dark)
+  try {
+    localStorage.setItem("theme", dark ? "dark" : "light")
+  } catch {}
+  setThemeColor(mood, admin || isForced(html))
+  window.dispatchEvent(new Event("theme-change"))
 }
