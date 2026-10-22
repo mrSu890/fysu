@@ -153,8 +153,8 @@ const Product = ({
     setCurrentIndex((i) => Math.min(images.length - 1, Math.max(0, i + dir)))
   }
 
-  const arrowClass =
-    "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white/90 backdrop-blur-sm transition hover:bg-black/40 active:scale-90"
+  // zone d'appui large (toute la bande du bord de l'image, sous le coeur) ; la flèche visible reste petite et discrète
+  const arrowClass = "group/arrow absolute bottom-0 top-14 z-10 flex w-16 items-center"
 
   return (
     <div className="relative w-full group" onPointerEnter={() => prefetchProduct(product.slug)} data-href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`}>
@@ -260,22 +260,26 @@ const Product = ({
           <button
             type="button"
             aria-label="Previous image"
-            className={`${arrowClass} left-2`}
+            className={`${arrowClass} left-0 justify-start pl-2`}
             onClick={step(-1)}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <ChevronLeft size={18} />
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/15 text-white/80 backdrop-blur-sm transition group-hover/arrow:bg-black/30 group-active/arrow:scale-90">
+              <ChevronLeft size={14} />
+            </span>
           </button>
         )}
         {showArrows && images.length > 1 && currentIndex < images.length - 1 && (
           <button
             type="button"
             aria-label="Next image"
-            className={`${arrowClass} right-2`}
+            className={`${arrowClass} right-0 justify-end pr-2`}
             onClick={step(1)}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <ChevronRight size={18} />
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/15 text-white/80 backdrop-blur-sm transition group-hover/arrow:bg-black/30 group-active/arrow:scale-90">
+              <ChevronRight size={14} />
+            </span>
           </button>
         )}
       </div>
