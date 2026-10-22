@@ -87,14 +87,48 @@ const THEME_COLORS: Record<Mood, string> = {
   sunset: "#6b6454",
 }
 
+// la barre d'état du téléphone (bande tout en haut) : sa couleur glisse en 1,4 s, en même temps que les couleurs de la page
+let tcCur: [number, number, number] | null = null
+let tcRaf = 0
+const toRgb = (hex: string): [number, number, number] | null => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!m) return null
+  const n = parseInt(m[1], 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+const toHex = (c: [number, number, number]) => "#" + c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")
+
 function setThemeColor(mood: Mood, keepOwn: boolean) {
   if (keepOwn) return
   try {
-    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove())
-    const meta = document.createElement("meta")
-    meta.name = "theme-color"
-    meta.content = THEME_COLORS[mood]
-    document.head.appendChild(meta)
+    const metas = Array.from(document.querySelectorAll('meta[name="theme-color"]')) as HTMLMetaElement[]
+    let meta = metas[0]
+    metas.slice(1).forEach((m) => m.remove())
+    if (!meta) {
+      meta = document.createElement("meta")
+      meta.name = "theme-color"
+      document.head.appendChild(meta)
+    }
+    meta.removeAttribute("media")
+    const to = toRgb(THEME_COLORS[mood])!
+    const from = tcCur ?? toRgb(meta.content) ?? to
+    cancelAnimationFrame(tcRaf)
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (calm || (from[0] === to[0] && from[1] === to[1] && from[2] === to[2])) {
+      tcCur = to
+      meta.content = toHex(to)
+      return
+    }
+    const t0 = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / 1400)
+      const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
+      const cur: [number, number, number] = [0, 1, 2].map((k) => from[k] + (to[k] - from[k]) * e) as [number, number, number]
+      tcCur = cur
+      meta.content = toHex(cur)
+      if (p < 1) tcRaf = requestAnimationFrame(tick)
+    }
+    tcRaf = requestAnimationFrame(tick)
   } catch {
     /* ignore */
   }
