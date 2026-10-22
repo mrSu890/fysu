@@ -12,10 +12,10 @@ import { useEffect, useRef } from "react"
 
 export type IntroMedia = { src: string; video: boolean }
 
-const REVEAL = 800 // dépliage d'une image (ms)
-const STEP = 230 // délai entre deux images qui se superposent (ms)
-const HOLD = 260 // pause avant de grandir
-const GROW = 1600 // croissance jusqu'à la place du hero
+const REVEAL = 650 // dépliage d'une image (ms)
+const GROW_AT = 450 // la boîte commence à grandir (ms)
+const STEP = 240 // délai entre deux images qui se superposent (ms)
+const GROW = 1600 // durée minimale de la croissance jusqu'à la place du hero
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
@@ -79,29 +79,23 @@ export default function HomeIntro({ media, onDone }: { media: IntroMedia[]; onDo
       const tr = targetEl?.getBoundingClientRect()
       const target = tr && tr.width > 0 ? { l: tr.left, t: tr.top, w: tr.width, h: tr.height } : { l: 0, t: 0, w: vw, h: vh * 0.5 }
 
+      // la boîte grandit sans interruption pendant que les images se superposent (comme sur le site de référence)
+      const GROW_DUR = Math.max(GROW, REVEAL_ALL - GROW_AT + 500)
       const tick = (now: number) => {
         const e = now - t0
-        if (e < REVEAL_ALL) {
-          setLayers(e)
-        } else if (e < REVEAL_ALL + HOLD) {
-          setLayers(REVEAL_ALL)
-        } else {
-          setLayers(REVEAL_ALL)
-          const g = Math.min(1, (e - REVEAL_ALL - HOLD) / GROW)
-          const k = easeInOut(g)
-          set(
-            {
-              l: start.l + (target.l - start.l) * k,
-              t: start.t + (target.t - start.t) * k,
-              w: start.w + (target.w - start.w) * k,
-              h: start.h + (target.h - start.h) * k,
-            }
-          )
-          if (g >= 1) {
-            // un dernier battement, puis l'écran disparaît (la vraie image du hero est exactement dessous)
-            window.setTimeout(finish, 60)
-            return
-          }
+        setLayers(e)
+        const g = Math.max(0, Math.min(1, (e - GROW_AT) / GROW_DUR))
+        const k = easeInOut(g)
+        set({
+          l: start.l + (target.l - start.l) * k,
+          t: start.t + (target.t - start.t) * k,
+          w: start.w + (target.w - start.w) * k,
+          h: start.h + (target.h - start.h) * k,
+        })
+        if (g >= 1 && e >= REVEAL_ALL) {
+          // un dernier battement, puis l'écran disparaît (la vraie image du hero est exactement dessous)
+          window.setTimeout(finish, 60)
+          return
         }
         raf = requestAnimationFrame(tick)
       }
