@@ -72,9 +72,10 @@ export default async function Home() {
       {/* 2. bloc texte FYSU */}
       <HomeIntroText />
       {/* 3. rangées de produits */}
-      <RecentlyViewed className="mt-20 sm:mt-28" />
-      <div className="flex flex-col gap-36 sm:gap-48">
+      <div className="mt-20 flex flex-col gap-36 sm:mt-28 sm:gap-48">
         <HomeSection slug="solos" index={1} initialSection={solos} />
+        {/* « Recently viewed » : toujours juste sous la rangée New in */}
+        <RecentlyViewed />
         <HomeSection slug="duos" index={2} initialSection={duos} />
       </div>
       {/* 4. grande image avec le gros logo rose dessus (mène à Kiban Collector) */}
