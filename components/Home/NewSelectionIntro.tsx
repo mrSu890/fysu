@@ -21,7 +21,11 @@ import IntroReveal from "@/components/IntroReveal";
 
 const ANGLE = 24;
 const PERSPECTIVE = 1500;
-const GAP = 40;
+const GAP = 28;
+const STEP = 260; // ouverture : délai entre deux slides qui apparaissent (ms)
+const REVEAL = 520; // ouverture : durée d'apparition d'une slide (ms)
+const HOLD = 250; // ouverture : pause avant que les slides s'écartent (ms)
+const SPREAD = 1100; // ouverture : durée de l'écartement (ms)
 const MIN_PANELS = 6; // l'anneau a toujours au moins 6 panneaux (les slides sont répétées si besoin)
 
 export type Slide = { key: string; label: string; href: string; image: string; kind: string };
@@ -86,18 +90,23 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     cw: 368,
     flat: false,
     suppress: false,
+    spread: 1, // 0 = toutes empilées au milieu, 1 = anneau déployé
+    appear: [] as number[], // apparition de chaque slide pendant l'ouverture (1 = visible)
+    busy: false,
+    pending: false,
   });
 
   const layout = useCallback(() => {
     const s = st.current;
     const steps = s.flat ? 0 : ANGLE;
     const cw = s.cw;
-    const R = steps > 0 ? (cw * 1.1 + GAP) / 2 / Math.tan(rad(steps / 2)) : 0;
+    const R = steps > 0 ? (cw * 1.06 + GAP) / 2 / Math.tan(rad(steps / 2)) : 0;
     for (let i = 0; i < m; i++) {
       const el = itemRefs.current[i];
       if (!el) continue;
       let d = i - s.pos;
       d = ((((d + m / 2) % m) + m) % m) - m / 2; // distance au milieu, entre -m/2 et m/2
+      d *= s.spread;
       let x: number, z: number, a: number;
       if (steps > 0) {
         a = d * steps;
@@ -112,8 +121,12 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
       const op = ad <= 40 ? 1 : ad >= 62 ? 0 : 1 - (ad - 40) / 22;
       el.style.transform = `translate3d(${x.toFixed(2)}px,0,${z.toFixed(2)}px) rotateY(${a.toFixed(2)}deg)`;
       el.style.opacity = String(op);
-      el.style.zIndex = String(100 - Math.round(Math.abs(d) * 10));
-      el.style.pointerEvents = op < 0.05 ? "none" : "auto";
+      const ap = s.appear[i] ?? 1;
+      el.style.clipPath = ap >= 1 ? "" : `inset(0 0 ${((1 - ap) * 100).toFixed(1)}% 0)`;
+      el.style.zIndex = String(s.spread < 1 ? 300 - i : 100 - Math.round(Math.abs(d) * 10));
+      el.style.pointerEvents = s.busy || op < 0.05 ? "none" : "auto";
+      const lbl = el.querySelector("[data-lbl]") as HTMLElement | null;
+      if (lbl) lbl.style.opacity = String(Math.max(0, Math.min(1, (s.spread - 0.4) / 0.6)));
     }
   }, [m]);
 
@@ -164,11 +177,81 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       layout();
     };
+    if (!st.current.pending && !(window as any).__loaderVisualDone && !st.current.flat) {
+      // première arrivée sur l'accueil : l'anneau attend la fin de l'intro (voir plus bas)
+      const html0 = document.documentElement;
+      const calm0 =
+        html0.classList.contains("a11y-calm") ||
+        html0.classList.contains("a11y-focus") ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!calm0) {
+        const s0 = st.current;
+        s0.pending = true;
+        s0.busy = true;
+        s0.spread = 0;
+        s0.appear = Array.from({ length: m }, (_, k) => (k === m - 1 ? 1 : 0));
+      }
+    }
     measure();
     window.addEventListener("resize", measure);
     return () => {
       window.removeEventListener("resize", measure);
       cancelAnimationFrame(st.current.raf);
+    };
+  }, [layout, m]);
+
+  // ouverture : la dernière slide est posée par l'intro, les autres arrivent par-dessus puis s'écartent
+  useEffect(() => {
+    const s = st.current;
+    if (!s.pending) return;
+    let raf = 0;
+    let started = false;
+    const clamp = (v: number) => Math.max(0, Math.min(1, v));
+    const finish = () => {
+      s.spread = 1;
+      s.appear = [];
+      s.busy = false;
+      s.pending = false;
+      layout();
+    };
+    const start = () => {
+      if (started) return;
+      started = true;
+      if (!(window as any).__homeIntroPlayed) {
+        finish();
+        return;
+      }
+      const t0 = performance.now();
+      const tStack = (m - 2) * STEP + REVEAL + HOLD;
+      const tick = (now: number) => {
+        const t = now - t0;
+        for (let i = 0; i < m - 1; i++) {
+          const k = m - 2 - i; // la slide juste avant la dernière arrive la première, la première slide arrive en dernier
+          s.appear[i] = 1 - Math.pow(1 - clamp((t - k * STEP) / REVEAL), 3);
+        }
+        const g = clamp((t - tStack) / SPREAD);
+        s.spread = g < 0.5 ? 4 * g * g * g : 1 - Math.pow(-2 * g + 2, 3) / 2;
+        layout();
+        if (g >= 1) {
+          finish();
+          return;
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    const check = () => {
+      if ((window as any).__loaderVisualDone) start();
+    };
+    check();
+    window.addEventListener("loader-visual-done", check);
+    const poll = window.setInterval(check, 200);
+    const safety = window.setTimeout(start, 14000);
+    return () => {
+      window.removeEventListener("loader-visual-done", check);
+      window.clearInterval(poll);
+      window.clearTimeout(safety);
+      cancelAnimationFrame(raf);
     };
   }, [layout, m]);
 
@@ -179,6 +262,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     const s = st.current;
 
     const down = (e: PointerEvent) => {
+      if (s.busy) return;
       if (e.pointerType === "mouse" && e.button !== 0) return;
       s.dragging = true;
       s.moved = false;
@@ -283,15 +367,18 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
               className="group absolute left-1/2 top-0 block will-change-transform"
               style={{ width: "var(--cw)", marginLeft: "calc(var(--cw) / -2)", opacity: i === 0 ? 1 : 0 }}
             >
-              {real ? (
-                <IntroReveal className="mb-3" delay={0.15 + i * 0.12}>
-                  {label}
-                </IntroReveal>
-              ) : (
-                <div className="mb-3">{label}</div>
-              )}
+              <div data-lbl="">
+                {real ? (
+                  <IntroReveal className="mb-3" delay={0.15 + i * 0.12}>
+                    {label}
+                  </IntroReveal>
+                ) : (
+                  <div className="mb-3">{label}</div>
+                )}
+              </div>
               <div
                 data-hero-image={i === 0 ? "" : undefined}
+                data-intro-image={i === m - 1 ? "" : undefined}
                 className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800"
               >
                 {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(s.image) ? (
