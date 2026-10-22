@@ -543,6 +543,10 @@ html {
     --glass-tint 1.4s ease-in-out,
     --glass-brightness 1.4s ease-in-out;
 }
+/* pendant que le cadran d'ambiance est ouvert : changement immédiat (le fondu sous un verre flou restait bloqué à l'écran) */
+html.mood-instant {
+  transition: none !important;
+}
 /* le fond du corps suit directement la variable (pas de second fondu par-dessus) */
 html body {
   transition: none;
