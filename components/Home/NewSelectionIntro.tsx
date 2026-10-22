@@ -21,7 +21,7 @@ import IntroReveal from "@/components/IntroReveal";
 
 const ANGLE = 24;
 const PERSPECTIVE = 1500;
-const GAP = 14;
+const GAP = 40;
 const MIN_PANELS = 6; // l'anneau a toujours au moins 6 panneaux (les slides sont répétées si besoin)
 
 export type Slide = { key: string; label: string; href: string; image: string; kind: string };
@@ -92,7 +92,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     const s = st.current;
     const steps = s.flat ? 0 : ANGLE;
     const cw = s.cw;
-    const R = steps > 0 ? cw / 2 / Math.tan(rad(steps / 2)) : 0;
+    const R = steps > 0 ? (cw * 1.1 + GAP) / 2 / Math.tan(rad(steps / 2)) : 0;
     for (let i = 0; i < m; i++) {
       const el = itemRefs.current[i];
       if (!el) continue;
@@ -101,7 +101,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
       let x: number, z: number, a: number;
       if (steps > 0) {
         a = d * steps;
-        x = R * Math.sin(rad(a)) * (1 + GAP / cw / 2);
+        x = R * Math.sin(rad(a));
         z = -R * (1 - Math.cos(rad(a)));
       } else {
         a = 0;
