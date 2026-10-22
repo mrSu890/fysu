@@ -22,9 +22,7 @@ import IntroReveal from "@/components/IntroReveal";
 const ANGLE = 24;
 const PERSPECTIVE = 1500;
 const GAP = 28;
-const STEP = 260; // ouverture : délai entre deux slides qui apparaissent (ms)
-const REVEAL = 520; // ouverture : durée d'apparition d'une slide (ms)
-const HOLD = 250; // ouverture : pause avant que les slides s'écartent (ms)
+const HOLD = 150; // ouverture : pause avant que les slides s'écartent (ms)
 const SPREAD = 1100; // ouverture : durée de l'écartement (ms)
 const MIN_PANELS = 6; // l'anneau a toujours au moins 6 panneaux (les slides sont répétées si besoin)
 
@@ -189,7 +187,6 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
         s0.pending = true;
         s0.busy = true;
         s0.spread = 0;
-        s0.appear = Array.from({ length: m }, (_, k) => (k === m - 1 ? 1 : 0));
       }
     }
     measure();
@@ -200,7 +197,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     };
   }, [layout, m]);
 
-  // ouverture : la dernière slide est posée par l'intro, les autres arrivent par-dessus puis s'écartent
+  // ouverture : l'intro a posé la pile d'images au milieu ; une fois en place, les slides s'écartent
   useEffect(() => {
     const s = st.current;
     if (!s.pending) return;
@@ -222,14 +219,9 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
         return;
       }
       const t0 = performance.now();
-      const tStack = (m - 2) * STEP + REVEAL + HOLD;
       const tick = (now: number) => {
         const t = now - t0;
-        for (let i = 0; i < m - 1; i++) {
-          const k = m - 2 - i; // la slide juste avant la dernière arrive la première, la première slide arrive en dernier
-          s.appear[i] = 1 - Math.pow(1 - clamp((t - k * STEP) / REVEAL), 3);
-        }
-        const g = clamp((t - tStack) / SPREAD);
+        const g = clamp((t - HOLD) / SPREAD);
         s.spread = g < 0.5 ? 4 * g * g * g : 1 - Math.pow(-2 * g + 2, 3) / 2;
         layout();
         if (g >= 1) {
@@ -378,7 +370,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
               </div>
               <div
                 data-hero-image={i === 0 ? "" : undefined}
-                data-intro-image={i === m - 1 ? "" : undefined}
+                data-ring-img={i}
                 className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800"
               >
                 {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(s.image) ? (
