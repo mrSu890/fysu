@@ -22,6 +22,8 @@ import IntroReveal from "@/components/IntroReveal";
 const ANGLE = 24;
 const PERSPECTIVE = 1500;
 const GAP = 28;
+const AUTO_MS = 4200; // défilement automatique : une slide toutes les 4,2 s
+const AUTO_IDLE = 7000; // il se met en pause 7 s après un geste du visiteur
 const HOLD = 150; // ouverture : pause avant que les slides s'écartent (ms)
 const SPREAD = 1100; // ouverture : durée de l'écartement (ms)
 const MIN_PANELS = 6; // l'anneau a toujours au moins 6 panneaux (les slides sont répétées si besoin)
@@ -92,6 +94,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     appear: [] as number[], // apparition de chaque slide pendant l'ouverture (1 = visible)
     busy: false,
     pending: false,
+    lastAct: 0,
   });
 
   const layout = useCallback(() => {
@@ -247,6 +250,27 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     };
   }, [layout, m]);
 
+  // défilement automatique : montre que c'est un carrousel (arrêté pendant les gestes, hors écran, onglet caché ou « Moins d'animations »)
+  useEffect(() => {
+    const el = ring.current;
+    if (!el || m < 2) return;
+    const s = st.current;
+    let visible = true;
+    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { threshold: 0.4 });
+    io.observe(el);
+    s.lastAct = performance.now();
+    const id = window.setInterval(() => {
+      if (!visible || document.visibilityState !== "visible") return;
+      if (s.busy || s.dragging || s.flat || s.target !== null) return;
+      if (performance.now() - s.lastAct < AUTO_IDLE - AUTO_MS) return;
+      goTo(Math.round(s.pos) + 1);
+    }, AUTO_MS);
+    return () => {
+      io.disconnect();
+      window.clearInterval(id);
+    };
+  }, [m, goTo]);
+
   // doigt / souris : glisser pour tourner
   useEffect(() => {
     const el = ring.current;
@@ -255,6 +279,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
 
     const down = (e: PointerEvent) => {
       if (s.busy) return;
+      s.lastAct = performance.now();
       if (e.pointerType === "mouse" && e.button !== 0) return;
       s.dragging = true;
       s.moved = false;
@@ -284,6 +309,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
       layout();
     };
     const up = () => {
+      s.lastAct = performance.now();
       if (!s.dragging) return;
       s.dragging = false;
       if (s.moved) {
