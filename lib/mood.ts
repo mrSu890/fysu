@@ -14,7 +14,7 @@
 
 export type Mood = "night" | "dawn" | "day" | "afternoon" | "sunset"
 
-export const MOODS: Mood[] = ["night", "dawn", "day", "afternoon", "sunset"]
+export const MOODS: Mood[] = ["night", "dawn", "day", "afternoon"]
 
 export const MOOD_LABEL: Record<Mood, { fr: string; en: string }> = {
   night: { fr: "Nuit", en: "Night" },
@@ -34,7 +34,7 @@ export function moodAt(minutes: number): Mood {
   if (h < 8) return "dawn"
   if (h < 15) return "day"
   if (h < 18) return "afternoon"
-  return "sunset" // 18 h à 20 h
+  return "night" // 18 h à 20 h : le coucher de soleil (brun) est supprimé, c'est la nuit calme qui prend le relais
 }
 
 export function realMinutes(d: Date = new Date()): number {
@@ -43,7 +43,8 @@ export function realMinutes(d: Date = new Date()): number {
 
 export function readManual(): { mood: Mood; v: number } | null {
   try {
-    const m = localStorage.getItem(KEY_MANUAL) as Mood | null
+    let m = localStorage.getItem(KEY_MANUAL) as Mood | null
+    if ((m as string) === "sunset") m = "night" // ancien choix gardé par un visiteur
     if (!m || !MOODS.includes(m)) return null
     const v = parseFloat(localStorage.getItem(KEY_V) || "")
     return { mood: m, v: Number.isFinite(v) ? v : realMinutes() }
