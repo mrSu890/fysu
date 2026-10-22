@@ -235,12 +235,6 @@ export default function ClockWeather() {
   const [weather, setWeather] = useState<Weather | null>(null)
   const [open, setOpen] = useState(false)
   usePopupClaim("clock-panel", open)
-  // cadran ouvert : les couleurs changent tout de suite, sans fondu (sinon l'écran restait à moitié figé derrière le verre)
-  useEffect(() => {
-    const html = document.documentElement
-    html.classList.toggle("mood-instant", open)
-    return () => html.classList.remove("mood-instant")
-  }, [open])
   // position du soleil choisie à la main (null = on suit l'heure réelle)
   const [manualV, setManualV] = useState<number | null>(null)
   const [mood, setMood] = useState<Mood>("day")
