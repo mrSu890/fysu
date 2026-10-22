@@ -543,6 +543,12 @@ html {
     --glass-tint 1.4s ease-in-out,
     --glass-brightness 1.4s ease-in-out;
 }
+
+/* le fond de TOUTE la page (y compris la bande tout en haut, sous la barre d'état) suit les ambiances :
+   avant, c'était le body qui le peignait par héritage et cette bande restait figée sur la couleur du chargement */
+html {
+  background-color: var(--background);
+}
 /* le fond du corps suit directement la variable (pas de second fondu par-dessus) */
 html body {
   transition: none;
