@@ -154,7 +154,7 @@ const Product = ({
   }
 
   // zone d'appui large (toute la bande du bord de l'image, sous le coeur) ; la flèche visible reste petite et discrète
-  const arrowClass = "group/arrow absolute bottom-0 top-14 z-10 flex w-16 items-center"
+  const arrowClass = "group/arrow absolute bottom-14 top-14 z-10 flex w-16 items-center"
 
   return (
     <div className="relative w-full group" onPointerEnter={() => prefetchProduct(product.slug)} data-href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`}>
