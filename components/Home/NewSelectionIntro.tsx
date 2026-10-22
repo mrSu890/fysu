@@ -22,7 +22,8 @@ import IntroReveal from "@/components/IntroReveal";
 const ANGLE = 24;
 const PERSPECTIVE = 1500;
 const GAP = 28;
-const AUTO_MS = 4200; // défilement automatique : une slide toutes les 4,2 s
+const AUTO_MS = 6500; // défilement automatique : une slide toutes les 6,5 s
+const AUTO_RATE = 0.04; // vitesse du défilement automatique (0,02 = très lent, 0,16 = comme quand on glisse)
 const AUTO_IDLE = 7000; // il se met en pause 7 s après un geste du visiteur
 const HOLD = 150; // ouverture : pause avant que les slides s'écartent (ms)
 const SPREAD = 1100; // ouverture : durée de l'écartement (ms)
@@ -95,6 +96,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     busy: false,
     pending: false,
     lastAct: 0,
+    rate: 0.16, // vitesse de rattrapage vers la slide visée
   });
 
   const layout = useCallback(() => {
@@ -142,7 +144,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
         layout();
         return;
       }
-      s.pos += diff * 0.16;
+      s.pos += diff * s.rate;
       layout();
       s.raf = requestAnimationFrame(loop);
     }
@@ -153,8 +155,9 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
   }, [loop]);
 
   const goTo = useCallback(
-    (index: number) => {
+    (index: number, rate = 0.16) => {
       const s = st.current;
+      s.rate = rate;
       // la plus courte route vers cette slide
       let d = index - s.pos;
       d = ((((d + m / 2) % m) + m) % m) - m / 2;
@@ -263,7 +266,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
       if (!visible || document.visibilityState !== "visible") return;
       if (s.busy || s.dragging || s.flat || s.target !== null) return;
       if (performance.now() - s.lastAct < AUTO_IDLE - AUTO_MS) return;
-      goTo(Math.round(s.pos) + 1);
+      goTo(Math.round(s.pos) + 1, AUTO_RATE);
     }, AUTO_MS);
     return () => {
       io.disconnect();
@@ -316,6 +319,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
         s.suppress = true; // le clic qui suit un glissement ne doit rien ouvrir
         window.setTimeout(() => (s.suppress = false), 60);
         const flick = Math.max(-1.5, Math.min(1.5, s.vel * 260));
+        s.rate = 0.16;
         s.target = Math.round(s.pos + flick);
         kick();
       }
