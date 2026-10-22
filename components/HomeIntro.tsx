@@ -12,14 +12,16 @@ import { useEffect, useRef } from "react"
 
 export type IntroMedia = { src: string; video: boolean }
 
-const REVEAL = 900 // dépliage de l'image (ms)
+const REVEAL = 800 // dépliage d'une image (ms)
+const STEP = 230 // délai entre deux images qui se superposent (ms)
 const HOLD = 260 // pause avant de grandir
 const GROW = 1600 // croissance jusqu'à la place du hero
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
-export default function HomeIntro({ media, onDone }: { media: IntroMedia; onDone: () => void }) {
+export default function HomeIntro({ media, onDone }: { media: IntroMedia[]; onDone: () => void }) {
+  const layers = useRef<(HTMLDivElement | null)[]>([])
   const boxRef = useRef<HTMLDivElement>(null)
   const doneRef = useRef(onDone)
   doneRef.current = onDone
@@ -46,14 +48,24 @@ export default function HomeIntro({ media, onDone }: { media: IntroMedia; onDone
     const h0 = w0 * 1.25
     const start = { l: (vw - w0) / 2, t: (vh - h0) / 2, w: w0, h: h0 }
 
-    const set = (r: { l: number; t: number; w: number; h: number }, reveal: number) => {
+    const L = media.length
+    const REVEAL_ALL = (L - 1) * STEP + REVEAL
+    const clamp = (v: number) => Math.max(0, Math.min(1, v))
+    // chaque image se déplie de haut en bas, l'une après l'autre, par-dessus la précédente
+    const setLayers = (e: number) => {
+      for (let k = 0; k < L; k++) {
+        const el = layers.current[k]
+        if (el) el.style.clipPath = `inset(0 0 ${(1 - easeOut(clamp((e - k * STEP) / REVEAL))) * 100}% 0)`
+      }
+    }
+    const set = (r: { l: number; t: number; w: number; h: number }) => {
       box.style.left = `${r.l}px`
       box.style.top = `${r.t}px`
       box.style.width = `${r.w}px`
       box.style.height = `${r.h}px`
-      box.style.clipPath = `inset(0 0 ${(1 - reveal) * 100}% 0)`
     }
-    set(start, 0)
+    set(start)
+    setLayers(0)
     box.style.visibility = "visible"
 
     // on attend que l'image soit prête (au plus 5 s) pour ne jamais montrer une image à moitié chargée
@@ -69,12 +81,13 @@ export default function HomeIntro({ media, onDone }: { media: IntroMedia; onDone
 
       const tick = (now: number) => {
         const e = now - t0
-        if (e < REVEAL) {
-          set(start, easeOut(e / REVEAL))
-        } else if (e < REVEAL + HOLD) {
-          set(start, 1)
+        if (e < REVEAL_ALL) {
+          setLayers(e)
+        } else if (e < REVEAL_ALL + HOLD) {
+          setLayers(REVEAL_ALL)
         } else {
-          const g = Math.min(1, (e - REVEAL - HOLD) / GROW)
+          setLayers(REVEAL_ALL)
+          const g = Math.min(1, (e - REVEAL_ALL - HOLD) / GROW)
           const k = easeInOut(g)
           set(
             {
@@ -82,8 +95,7 @@ export default function HomeIntro({ media, onDone }: { media: IntroMedia; onDone
               t: start.t + (target.t - start.t) * k,
               w: start.w + (target.w - start.w) * k,
               h: start.h + (target.h - start.h) * k,
-            },
-            1
+            }
           )
           if (g >= 1) {
             // un dernier battement, puis l'écran disparaît (la vraie image du hero est exactement dessous)
@@ -96,27 +108,33 @@ export default function HomeIntro({ media, onDone }: { media: IntroMedia; onDone
       raf = requestAnimationFrame(tick)
     }
 
-    const el = box.querySelector("img, video") as HTMLImageElement | HTMLVideoElement | null
+    // on attend que les images soient prêtes (au plus 5 s) pour ne jamais montrer une image à moitié chargée
     const safety = window.setTimeout(begin, 5000)
-    const ready = () => {
-      window.clearTimeout(safety)
-      begin()
-    }
-    if (el instanceof HTMLImageElement) {
-      if (el.complete && el.naturalWidth > 0) ready()
-      else {
-        el.addEventListener("load", ready, { once: true })
-        el.addEventListener("error", ready, { once: true })
+    const els = Array.from(box.querySelectorAll("img, video")) as (HTMLImageElement | HTMLVideoElement)[]
+    let pending = els.length
+    const one = () => {
+      pending--
+      if (pending <= 0) {
+        window.clearTimeout(safety)
+        begin()
       }
-    } else if (el instanceof HTMLVideoElement) {
-      if (el.readyState >= 2) ready()
-      else {
-        el.addEventListener("loadeddata", ready, { once: true })
-        el.addEventListener("error", ready, { once: true })
-      }
-    } else {
-      ready()
     }
+    if (pending === 0) one()
+    els.forEach((el) => {
+      if (el instanceof HTMLImageElement) {
+        if (el.complete && el.naturalWidth > 0) one()
+        else {
+          el.addEventListener("load", one, { once: true })
+          el.addEventListener("error", one, { once: true })
+        }
+      } else {
+        if (el.readyState >= 2) one()
+        else {
+          el.addEventListener("loadeddata", one, { once: true })
+          el.addEventListener("error", one, { once: true })
+        }
+      }
+    })
 
     // sécurité absolue : l'intro ne bloque jamais le site plus de 12 s
     const hard = window.setTimeout(finish, 12000)
@@ -128,24 +146,23 @@ export default function HomeIntro({ media, onDone }: { media: IntroMedia; onDone
   }, [])
 
   return (
-    <div
-      ref={boxRef}
-      className="fixed overflow-hidden bg-neutral-300 dark:bg-neutral-800"
-      style={{ visibility: "hidden" }}
-    >
-      {media.video ? (
-        <video
-          src={media.src}
-          className="absolute inset-0 h-full w-full object-cover"
-          muted
-          autoPlay
-          loop
-          playsInline
-        />
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={media.src} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
-      )}
+    <div ref={boxRef} className="fixed overflow-hidden" style={{ visibility: "hidden" }}>
+      {media.map((m, k) => (
+        <div
+          key={k}
+          ref={(el) => {
+            layers.current[k] = el
+          }}
+          className="absolute inset-0 bg-neutral-300 dark:bg-neutral-800"
+        >
+          {m.video ? (
+            <video src={m.src} className="absolute inset-0 h-full w-full object-cover" muted autoPlay loop playsInline />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={m.src} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
+          )}
+        </div>
+      ))}
     </div>
   )
 }

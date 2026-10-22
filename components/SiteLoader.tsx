@@ -33,15 +33,26 @@ const finishLoader = () => {
 }
 
 // l'image du hero (déjà dans la page) : sert à l'intro de l'accueil
-function findHeroMedia(): IntroMedia | null {
-  const el = (document.querySelector("[data-intro-image] img, [data-intro-image] video") ||
-    document.querySelector("[data-hero-image] img, [data-hero-image] video")) as
+function findHeroMedia(): IntroMedia[] | null {
+  // les images du carrousel, de la dernière (dessous) à la première (dessus)
+  const nodes = Array.from(document.querySelectorAll("[data-ring-img]")) as HTMLElement[]
+  const list = nodes
+    .sort((a, b) => Number(b.dataset.ringImg) - Number(a.dataset.ringImg))
+    .map((box) => box.querySelector("img, video") as HTMLImageElement | HTMLVideoElement | null)
+    .filter(Boolean)
+    .map((el) => ({
+      src: (el as HTMLImageElement).currentSrc || (el as HTMLImageElement).src,
+      video: el instanceof HTMLVideoElement,
+    }))
+    .filter((m) => m.src)
+  if (list.length) return list
+  const el = document.querySelector("[data-hero-image] img, [data-hero-image] video") as
     | HTMLImageElement
     | HTMLVideoElement
     | null
   if (!el) return null
   const src = (el as HTMLImageElement).currentSrc || (el as HTMLImageElement).src
-  return src ? { src, video: el instanceof HTMLVideoElement } : null
+  return src ? [{ src, video: el instanceof HTMLVideoElement }] : null
 }
 
 export default function SiteLoader() {
@@ -52,7 +63,7 @@ export default function SiteLoader() {
   const [ready, setReady] = useState(false)
   // « intro » = l'image du hero grandit (accueil, première arrivée) ; « classic » = logo + pourcentage
   const [mode, setMode] = useState<"classic" | "intro">("classic")
-  const [media, setMedia] = useState<IntroMedia | null>(null)
+  const [media, setMedia] = useState<IntroMedia[] | null>(null)
 
   // Au démarrage : a-t-on déjà montré le chargement pendant cette visite ?
   useEffect(() => {
