@@ -34,7 +34,8 @@ const finishLoader = () => {
 
 // l'image du hero (déjà dans la page) : sert à l'intro de l'accueil
 function findHeroMedia(): IntroMedia | null {
-  const el = document.querySelector("[data-hero-image] img, [data-hero-image] video") as
+  const el = (document.querySelector("[data-intro-image] img, [data-intro-image] video") ||
+    document.querySelector("[data-hero-image] img, [data-hero-image] video")) as
     | HTMLImageElement
     | HTMLVideoElement
     | null
@@ -79,6 +80,7 @@ export default function SiteLoader() {
       const m = findHeroMedia()
       if (m) {
         setMedia(m)
+        ;(window as any).__homeIntroPlayed = true
         setMode("intro")
       }
       claimPopup("loader", false, true)
