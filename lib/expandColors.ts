@@ -7,29 +7,9 @@ import type { ProductType } from "@/types/product"
    Un toucher sur la carte ouvre la fiche avec cette couleur déjà choisie (?color=).
    ==================================================================== */
 
+// Une seule carte par produit : les couleurs se changent directement sur la carte (pastilles, voir components/Product.tsx)
 export function expandByColor(products: ProductType[]): ProductType[] {
-  const out: ProductType[] = []
-  for (const p of products) {
-    const images = p.product_images ?? []
-    const colors: string[] = []
-    for (const img of images) {
-      const c = (img.color ?? "").toLowerCase()
-      if (c && c !== "lit" && c !== "swatch" && !colors.includes(c)) colors.push(c)
-    }
-    if (colors.length <= 1) {
-      out.push(p)
-      continue
-    }
-    colors.forEach((hex, i) => {
-      const own = images.filter((img) => {
-        const c = (img.color ?? "").toLowerCase()
-        // les images sans couleur reconnue vont sur la première couleur
-        return c === hex || (i === 0 && !colors.includes(c))
-      })
-      out.push({ ...p, product_images: own, variant_color: hex })
-    })
-  }
-  return out
+  return products
 }
 
 export const variantKey = (p: ProductType) => `${p.id}-${p.variant_color ?? ""}`
