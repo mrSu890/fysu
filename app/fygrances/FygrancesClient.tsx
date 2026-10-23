@@ -109,6 +109,7 @@ export default function FygrancesClient({ initialData }: { initialData: Fygrance
   const data = initialData
   const [filters, setFilters] = useState({ gender: "all", sort: "default" })
   const [activeFamily, setActiveFamily] = useState<FamilyId | null>(null)
+  const [vision, setVision] = useState(false) // le texte « vision olfactive » est facultatif : fermé par défaut
 
   useEffect(() => {
     // arrivée depuis une fiche parfum : /fygrances?family=boise
@@ -168,21 +169,43 @@ export default function FygrancesClient({ initialData }: { initialData: Fygrance
         <PageBar trail={[{ label: "FY'grances" }]} filters={filters} setFilters={setFilters} />
       </div>
 
-      {/* ================= MANIFESTE ================= */}
-      <section className="mx-auto w-11/12 max-w-2xl py-20 sm:py-28">
-        <p className="mb-8 text-[11px] uppercase tracking-[0.3em] opacity-60">{copy.eyebrow}</p>
-        <div className="space-y-6 text-base leading-relaxed opacity-90 sm:text-lg">
-          {copy.manifesto.map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
+      {/* ================= MANIFESTE (facultatif : on le déplie si on veut le lire) ================= */}
+      <section className="mx-auto w-11/12 max-w-2xl pt-8 sm:pt-12">
+        <button
+          type="button"
+          onClick={() => setVision((v) => !v)}
+          aria-expanded={vision}
+          className="flex w-full cursor-pointer touch-manipulation items-center justify-between gap-4 py-4 text-left text-[11px] uppercase tracking-[0.3em]"
+          style={{ borderBottom: `1px solid ${LINE}` }}
+        >
+          <span className="opacity-70">{copy.eyebrow}</span>
+          <span aria-hidden="true" className="relative block h-3 w-3 shrink-0 opacity-70">
+            <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 bg-current" />
+            <span
+              className="absolute left-1/2 top-0 block h-full w-px -translate-x-1/2 bg-current transition-transform duration-500"
+              style={{ transform: `translateX(-50%) scaleY(${vision ? 0 : 1})` }}
+            />
+          </span>
+        </button>
+        <div
+          className="grid transition-[grid-template-rows,opacity] duration-700 ease-in-out"
+          style={{ gridTemplateRows: vision ? "1fr" : "0fr", opacity: vision ? 1 : 0 }}
+        >
+          <div className="min-h-0 overflow-hidden" aria-hidden={!vision}>
+            <div className="space-y-6 pb-6 pt-10 text-base leading-relaxed opacity-90 sm:text-lg">
+              {copy.manifesto.map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
+            </div>
+            <p className="pb-10 pt-8 text-3xl font-light leading-tight tracking-tight sm:text-5xl">
+              {copy.closing.map((word, i) => (
+                <span key={i} className="block">
+                  {word}
+                </span>
+              ))}
+            </p>
+          </div>
         </div>
-        <p className="mt-14 text-3xl font-light leading-tight tracking-tight sm:text-5xl">
-          {copy.closing.map((word, i) => (
-            <span key={i} className="block">
-              {word}
-            </span>
-          ))}
-        </p>
       </section>
 
       {/* ================= CHAPITRES ================= */}
