@@ -759,9 +759,17 @@ html.rain.night {
 }
 /* pluie : le léger assombrissement est dans le fond de la page lui-même, et <html> et <body> ont EXACTEMENT la même couleur :
    aucune zone ne peut être plus foncée qu'une autre */
+/* --page-bg = la couleur réelle du fond de la page (celle de l'ambiance, un peu plus sombre quand il pleut) :
+   les fondus (image des collections, haut et bas d'écran) s'arrêtent sur CETTE couleur */
+html {
+  --page-bg: var(--background);
+}
+html.rain {
+  --page-bg: color-mix(in srgb, var(--background) 93%, #181e26);
+}
 html.rain,
 html.rain body {
-  background-color: color-mix(in srgb, var(--background) 93%, #181e26) !important;
+  background-color: var(--page-bg) !important;
 }
 /* pages collections : la barre « chemin / filtres » n'a plus de bande de couleur */
 .page-bar-plain .page-bar {
