@@ -31,10 +31,13 @@ const SWIPE_MIN = 35
 const Product = ({
   product,
   showArrows = false,
+  reveal = false,
 }: {
   product: ProductType
   // true quand la carte est dans une rangée qui défile (flèches, pas de glissement sur l'image)
   showArrows?: boolean
+  // true : nom, prix et couleurs n'apparaissent qu'au toucher (accueil, « récemment vus ») ; false : toujours visibles, très discrets
+  reveal?: boolean
   // (ancien réglage de la rangée, plus utilisé : on le garde pour ne rien casser)
   scrollRef?: React.RefObject<HTMLDivElement | null>
   isFirst?: boolean
@@ -84,22 +87,49 @@ const Product = ({
   const displayedColors = uniqueColors.slice(0, 4)
   const extraCount = uniqueColors.length - displayedColors.length
 
-  const images = product.product_images?.length
-    ? product.product_images.map((i) => i.url)
-    : ["/placeholder.png"]
+  // couleurs qui ont leurs propres photos : on peut passer de l'une à l'autre directement sur la carte
+  const imageColors = useMemo(() => {
+    const out: string[] = []
+    for (const img of product.product_images ?? []) {
+      const c = (img.color ?? "").toLowerCase()
+      if (c && c !== "lit" && c !== "swatch" && !out.includes(c)) out.push(c)
+    }
+    return out
+  }, [product.product_images])
+  const [sel, setSel] = useState<string | null>(product.variant_color ? product.variant_color.toLowerCase() : null)
+  const activeColor = imageColors.length > 1 ? (sel && imageColors.includes(sel) ? sel : imageColors[0]) : null
+  const activeImgs = useMemo(() => {
+    const all = product.product_images ?? []
+    if (!activeColor) return all
+    return all.filter((img) => {
+      const c = (img.color ?? "").toLowerCase()
+      // les images sans couleur reconnue vont sur la première couleur
+      return c === activeColor || (activeColor === imageColors[0] && !imageColors.includes(c))
+    })
+  }, [product.product_images, activeColor, imageColors])
+  const colorQuery = activeColor
+    ? `?color=${encodeURIComponent(activeColor)}`
+    : product.variant_color
+      ? `?color=${encodeURIComponent(product.variant_color)}`
+      : ""
+  const pickColor = (c: string) => {
+    if (c === activeColor || !imageColors.includes(c)) return
+    setSel(c)
+    setCurrentIndex(0)
+  }
+
+  const images = activeImgs.length ? activeImgs.map((i) => i.url) : ["/placeholder.png"]
 
   // photos « allumées » (lampes) : une par image, si elle existe
-  const litImages = product.product_images?.length
-    ? product.product_images.map((i) => i.lit_url ?? null)
-    : [null]
+  const litImages = activeImgs.length ? activeImgs.map((i) => i.lit_url ?? null) : [null]
   const hasLit = litImages.some(Boolean)
 
   // photo portée sur mannequin : apparaît au survol de la carte (ordinateur, première image seulement)
-  const hoverUrl = product.product_images?.find((i) => i.is_hover)?.url ?? null
+  const hoverUrl = activeImgs.find((i) => i.is_hover)?.url ?? null
   const showHover = !!hoverUrl && hoverUrl !== images[0]
 
   const goToProduct = () => {
-    const path = `/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`
+    const path = `/product/${product.slug}${colorQuery}`
     // l'image de la carte est « transportée » jusqu'à la fiche (voir components/ProductHero.tsx) ;
     // pas pour The Wave (qui a son eau) ni quand la carte montre une autre image que la première
     try {
@@ -157,7 +187,7 @@ const Product = ({
   const arrowClass = "group/arrow absolute bottom-14 top-14 z-10 flex w-16 items-center"
 
   return (
-    <div className="relative w-full group" onPointerEnter={() => prefetchProduct(product.slug)} data-href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`}>
+    <div className="relative w-full group" onPointerEnter={() => prefetchProduct(product.slug)} data-href={`/product/${product.slug}${colorQuery}`}>
       {/* Bouton like */}
       <WishlistHeart
         productId={product.id}
@@ -284,56 +314,67 @@ const Product = ({
         )}
       </div>
 
-      {/* Infos produit */}
-      <Link href={`/product/${product.slug}${product.variant_color ? `?color=${encodeURIComponent(product.variant_color)}` : ""}`} className="block w-full">
-        <div
-          className={`mx-2 flex items-start justify-between gap-3 transition-all duration-300 ease-out group-focus-within:translate-y-0 group-focus-within:opacity-100 ${
-            infoRevealed
+      {/* Infos produit : nom et prix sur une ligne, puis les pastilles de couleur (on touche une pastille pour changer de photos) */}
+      <div
+        className={`mx-2 transition-all duration-300 ease-out ${
+          reveal
+            ? infoRevealed
               ? "translate-y-0 opacity-100"
-              : "translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100"
-          }`}
+              : "translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+            : ""
+        }`}
+      >
+        <Link
+          href={`/product/${product.slug}${colorQuery}`}
+          className="flex w-full items-baseline justify-between gap-3"
         >
-          <div className="flex flex-col items-start">
-            <p className="truncate text-xs uppercase tracking-wide transition group-hover:underline">
-              {product.name}
-            </p>
-
-            {product.evocation && (
-              <p className="line-clamp-2 text-[11px] italic text-foreground/60">
-                {product.evocation}
-              </p>
-            )}
-
-            {/* Couleurs */}
-            {uniqueColors.length > 0 && (
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-foreground/60">{t("colors")}</p>
-
-                {displayedColors.map((color) => (
-                  <div
-                    key={color}
-                    title={color}
-                    className="h-3.5 w-3.5 rounded-full"
-                    style={{
-                      backgroundColor: color,
-                      boxShadow:
-                        product.variant_color && product.variant_color.toLowerCase() === color
-                          ? "0 0 0 1.5px var(--background), 0 0 0 2.5px var(--foreground)"
-                          : "inset 0 0 0 1px rgba(128,128,128,0.35)",
-                    }}
-                  />
-                ))}
-
-                {extraCount > 0 && (
-                  <span className="text-xs text-foreground/50">+{extraCount}</span>
-                )}
-              </div>
-            )}
-          </div>
-
+          <p className="truncate text-xs uppercase tracking-wide">{product.name}</p>
           <p className="font-info whitespace-nowrap text-xs">{product.price} EUR</p>
-        </div>
-      </Link>
+        </Link>
+
+        {uniqueColors.length > 1 && (
+          <div className="-ml-1.5 mt-0.5 flex items-center">
+            {displayedColors.map((color) => {
+              const clickable = imageColors.includes(color) && imageColors.length > 1
+              const active = (activeColor ?? product.variant_color?.toLowerCase()) === color
+              const dot = (
+                <span
+                  className="block h-3 w-3 rounded-full"
+                  style={{
+                    backgroundColor: color,
+                    boxShadow: active
+                      ? "0 0 0 1.5px var(--page-bg, var(--background)), 0 0 0 2.5px var(--foreground)"
+                      : "inset 0 0 0 1px rgba(128,128,128,0.35)",
+                  }}
+                />
+              )
+              return clickable ? (
+                <button
+                  key={color}
+                  type="button"
+                  aria-label={color}
+                  aria-pressed={active}
+                  title={color}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    pickColor(color)
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="flex h-7 w-7 cursor-pointer touch-manipulation items-center justify-center"
+                >
+                  {dot}
+                </button>
+              ) : (
+                <span key={color} title={color} className="flex h-7 w-7 items-center justify-center">
+                  {dot}
+                </span>
+              )
+            })}
+            {extraCount > 0 && <span className="ml-1 text-xs text-foreground/50">+{extraCount}</span>}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

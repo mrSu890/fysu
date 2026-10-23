@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react"
 import { useLocale } from "next-intl"
 
-/* Téléphone : passer de 2 produits par ligne à 1 grand produit par ligne (et inversement). Choix gardé. */
+/* Téléphone : 1 grand produit par ligne par défaut ; on peut passer à 2 par ligne (et inversement). Choix gardé. */
 
 const KEY = "fysu-grid-cols"
 
 export function useGridCols(): [1 | 2, (n: 1 | 2) => void] {
-  const [cols, setCols] = useState<1 | 2>(2)
+  const [cols, setCols] = useState<1 | 2>(1) // par défaut : un grand produit par ligne
   useEffect(() => {
     try {
-      if (localStorage.getItem(KEY) === "1") setCols(1)
+      if (localStorage.getItem(KEY) === "2") setCols(2)
     } catch {}
   }, [])
   const set = (n: 1 | 2) => {

@@ -35,7 +35,7 @@ export default function RecentlyViewed({ excludeSlug, className = "" }: { exclud
       >
         {items.map((product) => (
           <div key={product.slug} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px] lg:w-[320px]">
-            <Product showArrows product={product} scrollRef={scrollRef} />
+            <Product showArrows reveal product={product} scrollRef={scrollRef} />
           </div>
         ))}
       </div>
