@@ -103,39 +103,24 @@ export default function CollectionClient({
         {/* ================= DESKTOP ================= */}
         <div className="block">
     
-          {/* HERO : l'image garde son format (paysage, carré ou portrait), pleine largeur depuis le haut de l'écran,
-              et se fond dans la couleur de la page en bas ; le titre se pose sur le fondu (comme Apple Musique) */}
+          {/* HERO */}
           {hasHero && (
-            <div className="relative w-full overflow-hidden">
+            <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
               <Image
                 src={page.hero_image}
                 alt={page.title}
-                width={0}
-                height={0}
-                sizes="100vw"
+                fill
                 priority
-                className="block h-auto max-h-[92svh] w-full object-cover object-center"
+                className="object-cover"
               />
 
-              {/* Fondu vers la couleur de la page (suit les ambiances) */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%]"
-                style={{
-                  background: `linear-gradient(to top,
-                    var(--background) 0%,
-                    color-mix(in srgb, var(--background) 88%, transparent) 16%,
-                    color-mix(in srgb, var(--background) 58%, transparent) 40%,
-                    color-mix(in srgb, var(--background) 26%, transparent) 64%,
-                    color-mix(in srgb, var(--background) 8%, transparent) 84%,
-                    transparent 100%)`,
-                }}
-              />
+              {/* Overlay léger pour lisibilité */}
+              <div className="absolute inset-0 bg-black/20" />
 
               {/* TITLE */}
               <div className="absolute inset-0 flex items-end">
                 <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
-                  <h1 className={`text-foreground font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
+                  <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
                     {page.title}
                   </h1>
                 </div>
@@ -143,15 +128,13 @@ export default function CollectionClient({
             </div>
           )}
 
-          {/* chemin / filtres : sans bande de couleur, sur le fond de la page */}
+          {/* BANDE BLANCHE : chemin / interrupteur / filtres */}
           {hasHero && (
-            <div className="page-bar-plain">
-              <PageBar
-                trail={[{ label: tn("collections") }, { label: page.title }]}
-                filters={products.length > 0 ? filters : undefined}
-                setFilters={products.length > 0 ? setFilters : undefined}
-              />
-            </div>
+            <PageBar
+              trail={[{ label: tn("collections") }, { label: page.title }]}
+              filters={products.length > 0 ? filters : undefined}
+              setFilters={products.length > 0 ? setFilters : undefined}
+            />
           )}
     
           {/* STORIES */}
