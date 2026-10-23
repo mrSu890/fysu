@@ -19,11 +19,11 @@ const STRENGTH = 0.34
 // dégradé « adouci » : la couleur s'estompe progressivement, sans bord visible
 const stops = (dir: "to bottom" | "to top") =>
   `linear-gradient(${dir},
-    color-mix(in srgb, var(--background) ${STRENGTH * 100}%, transparent) 0%,
-    color-mix(in srgb, var(--background) ${STRENGTH * 86}%, transparent) 22%,
-    color-mix(in srgb, var(--background) ${STRENGTH * 58}%, transparent) 46%,
-    color-mix(in srgb, var(--background) ${STRENGTH * 28}%, transparent) 70%,
-    color-mix(in srgb, var(--background) ${STRENGTH * 9}%, transparent) 88%,
+    color-mix(in srgb, var(--page-bg, var(--background)) ${STRENGTH * 100}%, transparent) 0%,
+    color-mix(in srgb, var(--page-bg, var(--background)) ${STRENGTH * 86}%, transparent) 22%,
+    color-mix(in srgb, var(--page-bg, var(--background)) ${STRENGTH * 58}%, transparent) 46%,
+    color-mix(in srgb, var(--page-bg, var(--background)) ${STRENGTH * 28}%, transparent) 70%,
+    color-mix(in srgb, var(--page-bg, var(--background)) ${STRENGTH * 9}%, transparent) 88%,
     transparent 100%)`
 
 const CSS = `
