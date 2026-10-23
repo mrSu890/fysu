@@ -761,6 +761,14 @@ html.rain.night {
 html.rain body {
   background-color: transparent;
 }
+/* pluie : le léger assombrissement est dans le fond de la page lui-même (partout pareil, jamais de zone plus foncée) */
+html.rain {
+  background-color: color-mix(in srgb, var(--background) 93%, #181e26);
+}
+/* pages collections : la barre « chemin / filtres » n'a plus de bande de couleur */
+.page-bar-plain .page-bar {
+  background: transparent;
+}
 html.rain .liquid-glass::after {
   content: "";
   position: absolute;
