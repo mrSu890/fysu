@@ -757,6 +757,10 @@ html.rain.night {
   --rain-fog-a: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22%3E%3Cfilter id=%22f%22 x=%220%22 y=%220%22 width=%22100%25%22 height=%22100%25%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.011%22 numOctaves=%223%22 seed=%224%22 stitchTiles=%22stitch%22 result=%22n%22/%3E%3CfeColorMatrix in=%22n%22 values=%220 0 0 0 0.62  0 0 0 0 0.68  0 0 0 0 0.78  0.6 0 0 0 -0.22%22/%3E%3C/filter%3E%3Crect width=%22400%22 height=%22400%22 filter=%22url%28%23f%29%22/%3E%3C/svg%3E");
   --rain-fog-b: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22%3E%3Cfilter id=%22f%22 x=%220%22 y=%220%22 width=%22100%25%22 height=%22100%25%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.011%22 numOctaves=%223%22 seed=%224%22 stitchTiles=%22stitch%22 result=%22n%22/%3E%3CfeColorMatrix in=%22n%22 values=%220 0 0 0 0.62  0 0 0 0 0.68  0 0 0 0 0.78  2.2 0 0 0 -1.0%22 result=%22m%22/%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 seed=%229%22 stitchTiles=%22stitch%22 result=%22g%22/%3E%3CfeColorMatrix in=%22g%22 values=%220 0 0 0 0.62  0 0 0 0 0.68  0 0 0 0 0.78  1.05 0 0 0 -0.36%22 result=%22gg%22/%3E%3CfeComposite in=%22gg%22 in2=%22m%22 operator=%22in%22/%3E%3C/filter%3E%3Crect width=%22400%22 height=%22400%22 filter=%22url%28%23f%29%22/%3E%3C/svg%3E");
 }
+/* pluie : le corps de la page devient transparent (le fond est déjà peint par <html>) pour que la pluie, placée derrière le contenu, soit visible sur TOUTE la page et pas seulement dans la bande au-dessus du carrousel */
+html.rain body {
+  background-color: transparent;
+}
 html.rain .liquid-glass::after {
   content: "";
   position: absolute;
