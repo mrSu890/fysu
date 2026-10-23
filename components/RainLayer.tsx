@@ -91,10 +91,6 @@ export default function RainLayer() {
 
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
-      <div
-        className="absolute inset-0 transition-opacity duration-[2000ms]"
-        style={{ background: "rgba(24,30,38,0.08)", opacity: on && !hidden ? 1 : 0 }}
-      />
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full transition-opacity duration-[2000ms]" style={{ opacity: on && !hidden ? 1 : 0 }} />
     </div>
   )
