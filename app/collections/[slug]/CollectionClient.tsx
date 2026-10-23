@@ -120,14 +120,14 @@ export default function CollectionClient({
               {/* Fondu vers la couleur de la page (suit les ambiances) */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%]"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%]"
                 style={{
                   background: `linear-gradient(to top,
                     var(--background) 0%,
-                    color-mix(in srgb, var(--background) 94%, transparent) 14%,
-                    color-mix(in srgb, var(--background) 72%, transparent) 32%,
-                    color-mix(in srgb, var(--background) 42%, transparent) 52%,
-                    color-mix(in srgb, var(--background) 16%, transparent) 74%,
+                    color-mix(in srgb, var(--background) 88%, transparent) 16%,
+                    color-mix(in srgb, var(--background) 58%, transparent) 40%,
+                    color-mix(in srgb, var(--background) 26%, transparent) 64%,
+                    color-mix(in srgb, var(--background) 8%, transparent) 84%,
                     transparent 100%)`,
                 }}
               />
@@ -143,13 +143,15 @@ export default function CollectionClient({
             </div>
           )}
 
-          {/* BANDE BLANCHE : chemin / interrupteur / filtres */}
+          {/* chemin / filtres : sans bande de couleur, sur le fond de la page */}
           {hasHero && (
-            <PageBar
-              trail={[{ label: tn("collections") }, { label: page.title }]}
-              filters={products.length > 0 ? filters : undefined}
-              setFilters={products.length > 0 ? setFilters : undefined}
-            />
+            <div className="page-bar-plain">
+              <PageBar
+                trail={[{ label: tn("collections") }, { label: page.title }]}
+                filters={products.length > 0 ? filters : undefined}
+                setFilters={products.length > 0 ? setFilters : undefined}
+              />
+            </div>
           )}
     
           {/* STORIES */}
