@@ -164,7 +164,7 @@ export function HomeIntroText() {
   const intro = INTRO[locale] ?? INTRO.en;
 
   return (
-    <section data-no-reveal className="relative w-full bg-background px-7 pb-20 pt-4 text-left sm:px-14 lg:px-20">
+    <section data-no-reveal className="relative w-full px-7 pb-20 pt-4 text-left sm:px-14 lg:px-20">
       {/* pluie sur le fond de ce bloc (son fond plein cacherait la pluie globale) */}
       <RainFill />
       <IntroReveal delay={0.1}>
