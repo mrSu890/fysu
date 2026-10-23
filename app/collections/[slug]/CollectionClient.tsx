@@ -103,24 +103,39 @@ export default function CollectionClient({
         {/* ================= DESKTOP ================= */}
         <div className="block">
     
-          {/* HERO */}
+          {/* HERO : l'image garde son format (paysage, carré ou portrait), pleine largeur depuis le haut de l'écran,
+              et se fond dans la couleur de la page en bas ; le titre se pose sur le fondu (comme Apple Musique) */}
           {hasHero && (
-            <div className="relative w-full aspect-[4/3] sm:aspect-[8/5] overflow-hidden">
+            <div className="relative w-full overflow-hidden">
               <Image
                 src={page.hero_image}
                 alt={page.title}
-                fill
+                width={0}
+                height={0}
+                sizes="100vw"
                 priority
-                className="object-cover"
+                className="block h-auto max-h-[92svh] w-full object-cover object-center"
               />
 
-              {/* Overlay léger pour lisibilité */}
-              <div className="absolute inset-0 bg-black/20" />
+              {/* Fondu vers la couleur de la page (suit les ambiances) */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%]"
+                style={{
+                  background: `linear-gradient(to top,
+                    var(--background) 0%,
+                    color-mix(in srgb, var(--background) 94%, transparent) 14%,
+                    color-mix(in srgb, var(--background) 72%, transparent) 32%,
+                    color-mix(in srgb, var(--background) 42%, transparent) 52%,
+                    color-mix(in srgb, var(--background) 16%, transparent) 74%,
+                    transparent 100%)`,
+                }}
+              />
 
               {/* TITLE */}
               <div className="absolute inset-0 flex items-end">
                 <div className="pb-4 pl-4 pr-4 sm:pb-10 sm:pl-10 sm:pr-10">
-                  <h1 className={`text-white font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
+                  <h1 className={`text-foreground font-dior font-bold tracking-tight leading-none ${(page.title?.length ?? 0) <= 8 ? "text-5xl sm:text-7xl" : (page.title?.length ?? 0) <= 14 ? "text-4xl sm:text-6xl" : (page.title?.length ?? 0) <= 20 ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
                     {page.title}
                   </h1>
                 </div>
