@@ -140,7 +140,7 @@ export default function HomeIntro({ media, onDone }: { media: IntroMedia[]; onDo
   }, [])
 
   return (
-    <div ref={boxRef} className="fixed overflow-hidden rounded-3xl" style={{ visibility: "hidden", transform: "translateZ(0)" }}>
+    <div ref={boxRef} className="fixed overflow-hidden" style={{ visibility: "hidden" }}>
       {media.map((m, k) => (
         <div
           key={k}
