@@ -1,7 +1,8 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HomeHero, { HomeIntroText } from "@/components/Home/Hero";
-import HomeShowcase, { type Slide } from "@/components/Home/HomeShowcase";
+import HomeStage from "@/components/Home/HomeStage";
+import type { Slide } from "@/components/Home/HomeShowcase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Metadata } from "next";
 import { homeCopy, SITE } from "@/lib/seo";
@@ -96,8 +97,8 @@ export default async function Home() {
   return (
     <>
       <Navbar />
-      {/* 1. vitrine : grand visuel qui tourne, pastilles, produits phares */}
-      <HomeShowcase initialSlides={carousel} slideProducts={slideProducts} />
+      {/* 1. carrousel 3D qui se déploie en sélection (pastilles + produits phares) au premier scroll */}
+      <HomeStage initialSlides={carousel} slideProducts={slideProducts} />
       {/* 2. bloc texte FYSU */}
       <HomeIntroText />
       {/* 3. rangées de produits */}
