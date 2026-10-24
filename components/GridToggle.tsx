@@ -8,10 +8,10 @@ import { useLocale } from "next-intl"
 const KEY = "fysu-grid-cols"
 
 export function useGridCols(): [1 | 2, (n: 1 | 2) => void] {
-  const [cols, setCols] = useState<1 | 2>(1) // par défaut : un grand produit par ligne
+  const [cols, setCols] = useState<1 | 2>(2) // par défaut : deux produits par ligne
   useEffect(() => {
     try {
-      if (localStorage.getItem(KEY) === "2") setCols(2)
+      if (localStorage.getItem(KEY) === "1") setCols(1)
     } catch {}
   }, [])
   const set = (n: 1 | 2) => {
