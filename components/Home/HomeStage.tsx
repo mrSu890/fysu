@@ -20,7 +20,7 @@ const DUR = 1100;
 const RADIUS = 24;
 
 type Phase = "closed" | "opening" | "open" | "closing";
-type Anim = { from: DOMRect; to: DOMRect; r0: number; r1: number; dur: number; done: () => void };
+type Anim = { from: DOMRect; to: DOMRect; r0: number; r1: number; dur: number; start: () => void; done: () => void };
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -53,16 +53,30 @@ export default function HomeStage({
     setPhase(p);
   };
 
+  // écran statique pendant le voyage : plus aucun défilement (doigt, molette, élan de l'iPad), la page reste tout en haut
+  const guard = useRef({
+    block: (e: Event) => e.preventDefault(),
+    reset: () => {
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+    },
+  });
   const lock = (on: boolean) => {
     const h = document.documentElement;
     const b = document.body;
+    const g = guard.current;
     if (on) {
       prevOverflow.current = { h: h.style.overflow, b: b.style.overflow };
       h.style.overflow = "hidden";
       b.style.overflow = "hidden";
+      window.addEventListener("touchmove", g.block, { passive: false });
+      window.addEventListener("wheel", g.block, { passive: false });
+      window.addEventListener("scroll", g.reset);
     } else {
       h.style.overflow = prevOverflow.current.h;
       b.style.overflow = prevOverflow.current.b;
+      window.removeEventListener("touchmove", g.block);
+      window.removeEventListener("wheel", g.block);
+      window.removeEventListener("scroll", g.reset);
     }
   };
 
@@ -91,7 +105,9 @@ export default function HomeStage({
       el.style.borderRadius = `${a.r0 + (a.r1 - a.r0) * k}px`;
     };
     put(0);
+    a.start(); // avant le premier affichage : l'image du carrousel est cachée, seul le calque se voit
     const tick = (now: number) => {
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
       const g = Math.min(1, (now - t0) / a.dur);
       put(ease(g));
       if (g >= 1) a.done();
@@ -135,6 +151,7 @@ export default function HomeStage({
       r0: 0,
       r1: RADIUS,
       dur,
+      start: () => api.hideCenter(true),
       done: () => {
         setCardHidden(false);
         setOv(null);
@@ -194,7 +211,9 @@ export default function HomeStage({
       r0: RADIUS,
       r1: 0,
       dur,
+      start: () => api.hideCenter(true),
       done: () => {
+        api.hideCenter(false);
         setOv(null);
         setP("closed");
         w.style.transition = "";
@@ -265,7 +284,7 @@ export default function HomeStage({
   const closedLook = phase === "closed" || phase === "closing";
   const ringStyle: React.CSSProperties = closedLook
     ? { opacity: 1, visibility: "visible", transition: "opacity 500ms ease 450ms", pointerEvents: phase === "closed" ? "auto" : "none" }
-    : { opacity: 0, visibility: "hidden", transition: "opacity 450ms ease, visibility 0s linear 450ms", pointerEvents: "none" };
+    : { opacity: 0, visibility: "hidden", transition: "opacity 280ms ease, visibility 0s linear 280ms", pointerEvents: "none" };
   const showStyle: React.CSSProperties =
     phase === "closed"
       ? { opacity: 0, visibility: "hidden", transition: "opacity 300ms ease, visibility 0s linear 300ms", pointerEvents: "none" }

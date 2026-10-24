@@ -37,6 +37,7 @@ export type RingApi = {
   centerSlide: () => number;
   snap: () => void;
   focusSlide: (k: number) => void;
+  hideCenter: (on: boolean) => void; // cache l'image du milieu pendant qu'un calque la remplace
   centerMedia: () => { rect: DOMRect; src: string; video: boolean } | null;
 };
 
@@ -196,6 +197,7 @@ const NewSelectionIntro = ({
     if (!apiRef) return;
     const s = st.current;
     const center = () => ((Math.round(s.pos) % m) + m) % m;
+    let hidden: HTMLElement | null = null;
     apiRef.current = {
       busy: () => s.busy || s.pending || s.dragging,
       centerSlide: () => center() % n,
@@ -218,6 +220,19 @@ const NewSelectionIntro = ({
         s.pos = best;
         s.target = null;
         layout();
+      },
+      hideCenter: (on: boolean) => {
+        if (on) {
+          if (hidden) hidden.style.visibility = "";
+          const box = itemRefs.current[center()]?.querySelector("[data-ring-img]") as HTMLElement | null;
+          if (box) {
+            box.style.visibility = "hidden";
+            hidden = box;
+          }
+        } else if (hidden) {
+          hidden.style.visibility = "";
+          hidden = null;
+        }
       },
       centerMedia: () => {
         const box = itemRefs.current[center()]?.querySelector("[data-ring-img]") as HTMLElement | null;
