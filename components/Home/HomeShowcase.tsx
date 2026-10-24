@@ -16,11 +16,15 @@ import type { ProductType } from "@/types/product";
    - dessous : les produits phares de la slide en cours + « Tout voir » vers la page complète
    Les slides, leurs textes et leurs produits se règlent dans l'admin : Accueil (hero) → Carrousel de l'accueil.
 
-   RÉGLAGES : AUTO_MS = temps entre deux slides · AUTO_IDLE = pause après un geste du visiteur
+   Le changement de slide est en 3D (les images pivotent), il suit le doigt quand on glisse.
+   Le défilement automatique ne reprend qu'après AUTO_IDLE ms sans aucun geste.
+   RÉGLAGES : AUTO_MS = temps entre deux slides · AUTO_IDLE = inactivité avant reprise
    ==================================================================== */
 
 const AUTO_MS = 7000;
-const AUTO_IDLE = 14000;
+const AUTO_IDLE = 3500;
+const PERSPECTIVE = 1100; // force de la 3D (plus petit = plus marqué)
+const TURN = 52; // angle de rotation des images (degrés)
 const LINE = "color-mix(in srgb, currentColor 22%, transparent)";
 
 export type Slide = {
@@ -64,17 +68,80 @@ export default function HomeShowcase({
 
   const [active, setActive] = useState(0);
   const root = useRef<HTMLElement>(null);
-  const st = useRef({ nextAt: 0, visible: true, flat: false, dragging: false, startX: 0, startY: 0, suppress: false });
+  const stage = useRef<HTMLDivElement>(null);
+  const panels = useRef<(HTMLDivElement | null)[]>([]);
+  const st = useRef({
+    pos: 0, tgt: 0, rate: 0.1, raf: 0, last: 0,
+    nextAt: 0, visible: true, flat: false, lastAct: 0,
+    dragging: false, startX: 0, startY: 0, startTgt: 0, moved: 0, w: 1,
+  });
 
-  const go = useCallback(
-    (i: number, manual = true) => {
-      setActive(((i % n) + n) % n);
-      st.current.nextAt = performance.now() + (manual ? AUTO_IDLE : AUTO_MS);
+  // place chaque image selon sa distance à la position courante (0 = devant, ±1 = voisines)
+  const apply = useCallback(() => {
+    const p = st.current.pos;
+    for (let i = 0; i < n; i++) {
+      const el = panels.current[i];
+      if (!el) continue;
+      let d = (((i - p) % n) + n) % n;
+      if (d > n / 2) d -= n;
+      const a = Math.abs(d);
+      if (a >= 1) {
+        el.style.visibility = "hidden";
+        continue;
+      }
+      el.style.visibility = "visible";
+      el.style.transform = `translate3d(${d * 100}%,0,${-a * 160}px) rotateY(${-d * TURN}deg)`;
+      el.style.zIndex = String(Math.round((1 - a) * 10));
+    }
+  }, [n]);
+
+  const loop = useCallback(() => {
+    const s = st.current;
+    if (s.raf) return;
+    s.last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(48, now - s.last);
+      s.last = now;
+      if (!s.dragging) {
+        const k = 1 - Math.pow(1 - s.rate, dt / 16);
+        s.pos += (s.tgt - s.pos) * k;
+        if (Math.abs(s.tgt - s.pos) < 0.0015) s.pos = s.tgt;
+      }
+      apply();
+      if (s.dragging || s.pos !== s.tgt) s.raf = requestAnimationFrame(tick);
+      else s.raf = 0;
+    };
+    s.raf = requestAnimationFrame(tick);
+  }, [apply]);
+
+  const goTo = useCallback(
+    (target: number, rate: number) => {
+      const s = st.current;
+      s.tgt = target;
+      s.rate = rate;
+      setActive(((Math.round(target) % n) + n) % n);
+      loop();
     },
-    [n]
+    [n, loop]
   );
 
-  // défilement automatique : seulement quand la page est visible, l'intro finie, et sans « Moins d'animations »
+  // pastille : on prend le chemin le plus court
+  const pick = (i: number) => {
+    const s = st.current;
+    const cur = ((Math.round(s.tgt) % n) + n) % n;
+    let diff = i - cur;
+    if (diff > n / 2) diff -= n;
+    if (diff < -n / 2) diff += n;
+    goTo(Math.round(s.tgt) + diff, 0.1);
+  };
+
+  useEffect(() => {
+    apply();
+    return () => cancelAnimationFrame(st.current.raf);
+  }, [apply]);
+
+  // défilement automatique : seulement page visible, intro finie, « Moins d'animations » éteint,
+  // et uniquement si le visiteur n'a rien touché depuis AUTO_IDLE ms
   useEffect(() => {
     const el = root.current;
     if (!el || n < 2) return;
@@ -87,43 +154,67 @@ export default function HomeShowcase({
     const io = new IntersectionObserver(([e]) => (s.visible = e.isIntersecting), { threshold: 0.35 });
     io.observe(el);
     s.nextAt = performance.now() + AUTO_MS;
+    const act = () => {
+      const now = performance.now();
+      s.lastAct = now;
+      s.nextAt = now + AUTO_IDLE;
+    };
+    const evs = ["pointerdown", "pointermove", "touchstart", "touchmove", "wheel", "keydown"] as const;
+    evs.forEach((e) => window.addEventListener(e, act, { passive: true }));
+    el.addEventListener("scroll", act, { capture: true, passive: true });
     const id = window.setInterval(() => {
       const now = performance.now();
       const ok = s.visible && !s.flat && !s.dragging && document.visibilityState === "visible" && (window as any).__loaderVisualDone;
       if (!ok) {
-        s.nextAt = Math.max(s.nextAt, now + AUTO_MS);
+        s.nextAt = Math.max(s.nextAt, now + AUTO_IDLE);
         return;
       }
-      if (now >= s.nextAt) {
-        setActive((a) => (a + 1) % n);
+      if (now - s.lastAct >= AUTO_IDLE && now >= s.nextAt) {
+        goTo(Math.round(s.tgt) + 1, 0.045);
         s.nextAt = now + AUTO_MS;
       }
-    }, 500);
+    }, 250);
     return () => {
       io.disconnect();
+      evs.forEach((e) => window.removeEventListener(e, act));
+      el.removeEventListener("scroll", act, { capture: true } as any);
       window.clearInterval(id);
     };
-  }, [n]);
+  }, [n, goTo]);
 
-  // glisser sur le grand visuel : slide suivante / précédente
+  // glisser sur le grand visuel : les images suivent le doigt
   const onDown = (e: React.PointerEvent) => {
     const s = st.current;
     s.dragging = true;
     s.startX = e.clientX;
     s.startY = e.clientY;
-    s.suppress = false;
+    s.startTgt = Math.round(s.tgt);
+    s.pos = s.pos; // on repart de la position actuelle
+    s.moved = 0;
+    s.w = stage.current?.getBoundingClientRect().width || 1;
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const s = st.current;
+    if (!s.dragging) return;
+    const dx = e.clientX - s.startX;
+    s.moved = Math.max(s.moved, Math.abs(dx), Math.abs(e.clientY - s.startY));
+    if (Math.abs(dx) > 6) {
+      s.pos = s.startTgt - dx / s.w;
+      s.tgt = s.pos;
+      loop();
+    }
   };
   const onUp = (e: React.PointerEvent) => {
     const s = st.current;
     if (!s.dragging) return;
     s.dragging = false;
     const dx = e.clientX - s.startX;
-    const dy = e.clientY - s.startY;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-      s.suppress = true;
-      window.setTimeout(() => (s.suppress = false), 80);
-      go(active + (dx < 0 ? 1 : -1));
-    }
+    let target = s.startTgt;
+    if (Math.abs(dx) > 36) target = s.startTgt + (dx < 0 ? 1 : -1);
+    goTo(target, 0.12);
   };
 
   const current = slides[active];
@@ -133,22 +224,27 @@ export default function HomeShowcase({
     <section ref={root} data-no-reveal className="mx-auto mb-28 mt-28 w-11/12 max-w-6xl sm:mb-40 sm:mt-36" aria-label="FYSU">
       <style>{`@keyframes hs-fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
 
-      <div className="grid gap-8 md:grid-cols-[minmax(0,460px)_1fr] md:items-center md:gap-14">
-        {/* GRAND VISUEL : les slides sont superposées, celle en cours est visible */}
+      <div className="grid grid-cols-[11fr_9fr] items-center gap-4 sm:gap-8 md:grid-cols-[minmax(0,460px)_1fr] md:gap-14">
+        {/* GRAND VISUEL : les images pivotent en 3D, celle de devant est la slide en cours */}
         <div
+          ref={stage}
           data-hero-image=""
           className="relative aspect-[4/5] w-full select-none overflow-hidden rounded-3xl bg-neutral-200 dark:bg-neutral-800"
-          style={{ touchAction: "pan-y" }}
+          style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate" }}
           onPointerDown={onDown}
+          onPointerMove={onMove}
           onPointerUp={onUp}
-          onPointerCancel={() => (st.current.dragging = false)}
+          onPointerCancel={onUp}
         >
           {slides.map((s, i) => (
             <div
               key={s.key}
+              ref={(el) => {
+                panels.current[i] = el;
+              }}
               data-ring-img={i}
-              className="absolute inset-0 transition-opacity duration-[900ms] ease-in-out"
-              style={{ opacity: i === active ? 1 : 0 }}
+              className="absolute inset-0 overflow-hidden rounded-3xl will-change-transform"
+              style={{ visibility: i === 0 ? "visible" : "hidden", backfaceVisibility: "hidden" }}
               aria-hidden={i !== active}
             >
               {isVideo(s.image) ? (
@@ -163,9 +259,9 @@ export default function HomeShowcase({
             href={current.href}
             draggable={false}
             aria-label={current.label}
-            className="absolute inset-0 z-10"
+            className="absolute inset-0 z-20"
             onClick={(e) => {
-              if (st.current.suppress) e.preventDefault();
+              if (st.current.moved > 8) e.preventDefault();
             }}
           />
         </div>
@@ -180,11 +276,11 @@ export default function HomeShowcase({
                 style={{ gridArea: "1 / 1", opacity: i === active ? 1 : 0, pointerEvents: i === active ? "auto" : "none" }}
                 aria-hidden={i !== active}
               >
-                <p className="font-info text-[11px] uppercase tracking-[0.3em] opacity-60">{String(i + 1).padStart(2, "0")}</p>
-                <h2 className="mt-3 text-3xl font-light leading-tight tracking-tight sm:text-5xl">{s.label}</h2>
+                <p className="font-info text-[10px] uppercase tracking-[0.3em] opacity-60 sm:text-[11px]">{String(i + 1).padStart(2, "0")}</p>
+                <h2 className="mt-2 text-xl font-light leading-tight tracking-tight sm:mt-3 sm:text-3xl md:text-5xl">{s.label}</h2>
                 {s.text && (
-                  <div className="mt-6 border-t pt-6" style={{ borderColor: LINE }}>
-                    <p className="max-w-md whitespace-pre-line text-sm leading-relaxed opacity-80 sm:text-base">{s.text}</p>
+                  <div className="mt-3 border-t pt-3 sm:mt-6 sm:pt-6" style={{ borderColor: LINE }}>
+                    <p className="max-w-md whitespace-pre-line text-[11px] leading-relaxed opacity-80 sm:text-sm md:text-base">{s.text}</p>
                   </div>
                 )}
               </div>
@@ -193,37 +289,29 @@ export default function HomeShowcase({
         </IntroReveal>
       </div>
 
-      {/* PASTILLES = pages du carrousel · TOUT VOIR */}
-      <IntroReveal delay={0.3} className="mt-10 sm:mt-14">
-        <div className="flex items-center justify-between gap-4">
-          <div role="tablist" className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-1">
-            {slides.map((s, i) => {
-              const on = i === active;
-              return (
-                <button
-                  key={s.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={on}
-                  onClick={() => go(i)}
-                  className="shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full px-4 py-2 text-xs transition active:scale-95"
-                  style={
-                    on
-                      ? { background: "var(--foreground)", color: "var(--background)", border: "1px solid transparent" }
-                      : { background: "transparent", color: "inherit", border: `1px solid ${LINE}` }
-                  }
-                >
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
-          <Link
-            href={current.href}
-            className="font-info shrink-0 border-b border-current pb-px text-[11px] uppercase tracking-[0.2em] opacity-80"
-          >
-            {viewAll} →
-          </Link>
+      {/* PASTILLES = pages du carrousel */}
+      <IntroReveal delay={0.3} className="mt-8 sm:mt-12">
+        <div role="tablist" className="flex flex-wrap gap-2">
+          {slides.map((s, i) => {
+            const on = i === active;
+            return (
+              <button
+                key={s.key}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => pick(i)}
+                className="cursor-pointer touch-manipulation whitespace-nowrap rounded-full px-4 py-2 text-xs transition active:scale-95"
+                style={
+                  on
+                    ? { background: "var(--foreground)", color: "var(--background)", border: "1px solid transparent" }
+                    : { background: "transparent", color: "inherit", border: `1px solid ${LINE}` }
+                }
+              >
+                {s.label}
+              </button>
+            );
+          })}
         </div>
       </IntroReveal>
 
@@ -237,6 +325,16 @@ export default function HomeShowcase({
                   <Product showArrows product={product} />
                 </div>
               ))}
+              {/* « Tout voir » : n'apparaît qu'au bout de la sélection */}
+              <div className="w-[160px] flex-shrink-0 snap-start sm:w-[190px] md:w-[220px]">
+                <Link
+                  href={current.href}
+                  className="font-info flex aspect-[3/4] w-full items-center justify-center rounded-3xl text-[11px] uppercase tracking-[0.2em] transition active:scale-95"
+                  style={{ border: `1px solid ${LINE}` }}
+                >
+                  {viewAll} →
+                </Link>
+              </div>
             </div>
           </div>
         </IntroReveal>
