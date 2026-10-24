@@ -36,6 +36,8 @@ export type Slide = {
 
 const VIEW_ALL: Record<string, string> = { fr: "Tout voir", nl: "Alles bekijken", ja: "すべて見る", en: "View all" };
 
+const DISCOVER: Record<string, string> = { fr: "Découvrir", nl: "Ontdekken", ja: "見る", en: "Discover" };
+
 const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
 
 const BLOOM_IMAGE = "/images/home-feature.jpeg";
@@ -52,6 +54,7 @@ export default function HomeShowcase({
 }) {
   const copy = useSiteCopy();
   const locale = useLocale();
+  const discover = DISCOVER[locale.slice(0, 2)] ?? DISCOVER.en;
   const viewAll = VIEW_ALL[locale.slice(0, 2)] ?? VIEW_ALL.en;
 
   const slides: Slide[] =
@@ -236,6 +239,13 @@ export default function HomeShowcase({
                     <p className="max-w-md whitespace-pre-line text-xs leading-relaxed opacity-80 sm:text-sm md:text-base">{s.text}</p>
                   </div>
                 )}
+                <Link
+                  href={s.href}
+                  tabIndex={i === active ? 0 : -1}
+                  className="font-info mt-4 inline-block border-b border-current pb-px text-[10px] uppercase tracking-[0.2em] opacity-55 sm:mt-6 sm:text-[11px]"
+                >
+                  {discover} →
+                </Link>
               </div>
             ))}
           </div>
