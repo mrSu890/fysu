@@ -17,12 +17,9 @@ import type { ProductType } from "@/types/product";
    Les slides, leurs textes et leurs produits se règlent dans l'admin : Accueil (hero) → Carrousel de l'accueil.
 
    Le changement de slide est en 3D (les images pivotent), il suit le doigt quand on glisse.
-   Le défilement automatique ne reprend qu'après AUTO_IDLE ms sans aucun geste.
-   RÉGLAGES : AUTO_MS = temps entre deux slides · AUTO_IDLE = inactivité avant reprise
+   Purement manuel : on glisse sur l'image ou on touche une pastille (pas de défilement automatique).
    ==================================================================== */
 
-const AUTO_MS = 7000;
-const AUTO_IDLE = 3500;
 const PERSPECTIVE = 1100; // force de la 3D (plus petit = plus marqué)
 const TURN = 52; // angle de rotation des images (degrés)
 const LINE = "color-mix(in srgb, currentColor 22%, transparent)";
@@ -72,7 +69,6 @@ export default function HomeShowcase({
   const panels = useRef<(HTMLDivElement | null)[]>([]);
   const st = useRef({
     pos: 0, tgt: 0, rate: 0.1, raf: 0, last: 0,
-    nextAt: 0, visible: true, flat: false, lastAct: 0,
     dragging: false, startX: 0, startY: 0, startTgt: 0, moved: 0, w: 1,
   });
 
@@ -140,48 +136,6 @@ export default function HomeShowcase({
     return () => cancelAnimationFrame(st.current.raf);
   }, [apply]);
 
-  // défilement automatique : seulement page visible, intro finie, « Moins d'animations » éteint,
-  // et uniquement si le visiteur n'a rien touché depuis AUTO_IDLE ms
-  useEffect(() => {
-    const el = root.current;
-    if (!el || n < 2) return;
-    const s = st.current;
-    const html = document.documentElement;
-    s.flat =
-      html.classList.contains("a11y-calm") ||
-      html.classList.contains("a11y-focus") ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const io = new IntersectionObserver(([e]) => (s.visible = e.isIntersecting), { threshold: 0.35 });
-    io.observe(el);
-    s.nextAt = performance.now() + AUTO_MS;
-    const act = () => {
-      const now = performance.now();
-      s.lastAct = now;
-      s.nextAt = now + AUTO_IDLE;
-    };
-    const evs = ["pointerdown", "pointermove", "touchstart", "touchmove", "wheel", "keydown"] as const;
-    evs.forEach((e) => window.addEventListener(e, act, { passive: true }));
-    el.addEventListener("scroll", act, { capture: true, passive: true });
-    const id = window.setInterval(() => {
-      const now = performance.now();
-      const ok = s.visible && !s.flat && !s.dragging && document.visibilityState === "visible" && (window as any).__loaderVisualDone;
-      if (!ok) {
-        s.nextAt = Math.max(s.nextAt, now + AUTO_IDLE);
-        return;
-      }
-      if (now - s.lastAct >= AUTO_IDLE && now >= s.nextAt) {
-        goTo(Math.round(s.tgt) + 1, 0.045);
-        s.nextAt = now + AUTO_MS;
-      }
-    }, 250);
-    return () => {
-      io.disconnect();
-      evs.forEach((e) => window.removeEventListener(e, act));
-      el.removeEventListener("scroll", act, { capture: true } as any);
-      window.clearInterval(id);
-    };
-  }, [n, goTo]);
-
   // glisser sur le grand visuel : les images suivent le doigt
   const onDown = (e: React.PointerEvent) => {
     const s = st.current;
@@ -189,7 +143,6 @@ export default function HomeShowcase({
     s.startX = e.clientX;
     s.startY = e.clientY;
     s.startTgt = Math.round(s.tgt);
-    s.pos = s.pos; // on repart de la position actuelle
     s.moved = 0;
     s.w = stage.current?.getBoundingClientRect().width || 1;
     try {
@@ -280,7 +233,7 @@ export default function HomeShowcase({
                 <h2 className="mt-2 text-xl font-light leading-tight tracking-tight sm:mt-3 sm:text-3xl md:text-5xl">{s.label}</h2>
                 {s.text && (
                   <div className="mt-3 border-t pt-3 sm:mt-6 sm:pt-6" style={{ borderColor: LINE }}>
-                    <p className="max-w-md whitespace-pre-line text-[11px] leading-relaxed opacity-80 sm:text-sm md:text-base">{s.text}</p>
+                    <p className="max-w-md whitespace-pre-line text-xs leading-relaxed opacity-80 sm:text-sm md:text-base">{s.text}</p>
                   </div>
                 )}
               </div>
