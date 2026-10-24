@@ -31,6 +31,15 @@ const MIN_PANELS = 6; // l'anneau a toujours au moins 6 panneaux (les slides son
 
 export type Slide = { key: string; label: string; href: string; image: string; kind: string };
 
+// Pilotage depuis l'extérieur (HomeStage) : ouvrir la sélection / la refermer
+export type RingApi = {
+  busy: () => boolean;
+  centerSlide: () => number;
+  snap: () => void;
+  focusSlide: (k: number) => void;
+  centerMedia: () => { rect: DOMRect; src: string; video: boolean } | null;
+};
+
 const BLOOM_IMAGE = "/images/home-feature.jpeg";
 const BLOOM_LINK = "/collections/when-the-flowers-bloom";
 const FYGRANCES_IMAGE = "/images/Fygrances-hero.JPG";
@@ -38,7 +47,17 @@ const FYGRANCES_LINK = "/fygrances";
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
-const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] | null }) => {
+const NewSelectionIntro = ({
+  initialSlides = null,
+  apiRef,
+  onOpen,
+  paused = false,
+}: {
+  initialSlides?: Slide[] | null;
+  apiRef?: React.MutableRefObject<RingApi | null>;
+  onOpen?: () => void;
+  paused?: boolean;
+}) => {
   const copy = useSiteCopy();
   const ring = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -98,6 +117,11 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     lastAct: 0,
     rate: 0.16, // vitesse de rattrapage vers la slide visée
   });
+
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+  const onOpenRef = useRef(onOpen);
+  onOpenRef.current = onOpen;
 
   const layout = useCallback(() => {
     const s = st.current;
@@ -166,6 +190,51 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     },
     [m, kick]
   );
+
+  // pilotage depuis HomeStage
+  useEffect(() => {
+    if (!apiRef) return;
+    const s = st.current;
+    const center = () => ((Math.round(s.pos) % m) + m) % m;
+    apiRef.current = {
+      busy: () => s.busy || s.pending || s.dragging,
+      centerSlide: () => center() % n,
+      snap: () => {
+        s.pos = Math.round(s.pos);
+        s.target = null;
+        layout();
+      },
+      focusSlide: (k: number) => {
+        let best = Math.round(s.pos);
+        let bestAbs = Infinity;
+        for (let j = k; j < m; j += n) {
+          let d = j - s.pos;
+          d = ((((d + m / 2) % m) + m) % m) - m / 2;
+          if (Math.abs(d) < bestAbs) {
+            bestAbs = Math.abs(d);
+            best = Math.round(s.pos + d);
+          }
+        }
+        s.pos = best;
+        s.target = null;
+        layout();
+      },
+      centerMedia: () => {
+        const box = itemRefs.current[center()]?.querySelector("[data-ring-img]") as HTMLElement | null;
+        if (!box) return null;
+        const el = box.querySelector("img, video") as HTMLImageElement | HTMLVideoElement | null;
+        if (!el) return null;
+        return {
+          rect: box.getBoundingClientRect(),
+          src: (el as HTMLImageElement).currentSrc || (el as HTMLImageElement).src,
+          video: el instanceof HTMLVideoElement,
+        };
+      },
+    };
+    return () => {
+      apiRef.current = null;
+    };
+  }, [apiRef, layout, m, n]);
 
   // taille, mode « calme » et premier affichage
   useEffect(() => {
@@ -263,7 +332,7 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
     io.observe(el);
     s.lastAct = performance.now();
     const id = window.setInterval(() => {
-      if (!visible || document.visibilityState !== "visible") return;
+      if (!visible || pausedRef.current || document.visibilityState !== "visible") return;
       if (s.busy || s.dragging || s.flat || s.target !== null) return;
       if (performance.now() - s.lastAct < AUTO_IDLE - AUTO_MS) return;
       goTo(Math.round(s.pos) + 1, AUTO_RATE);
@@ -340,6 +409,11 @@ const NewSelectionIntro = ({ initialSlides = null }: { initialSlides?: Slide[] |
         e.preventDefault();
         e.stopImmediatePropagation();
         if (!s.suppress) goTo(i);
+      } else if (onOpenRef.current) {
+        // toucher la slide du milieu : la sélection s'ouvre
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onOpenRef.current();
       }
     };
     window.addEventListener("click", click, true);

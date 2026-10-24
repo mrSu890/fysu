@@ -48,9 +48,19 @@ const FYGRANCES_LINK = "/fygrances";
 export default function HomeShowcase({
   initialSlides = null,
   slideProducts = {},
+  openKey = 0,
+  openIndex = 0,
+  cardHidden = false,
+  onClose,
+  onIndex,
 }: {
   initialSlides?: Slide[] | null;
   slideProducts?: Record<string, ProductType[]>;
+  openKey?: number; // change à chaque ouverture
+  openIndex?: number; // slide affichée à l'ouverture
+  cardHidden?: boolean; // pendant le voyage de l'image (c'est un calque qui la montre)
+  onClose?: () => void;
+  onIndex?: (i: number) => void;
 }) {
   const copy = useSiteCopy();
   const locale = useLocale();
@@ -118,10 +128,12 @@ export default function HomeShowcase({
       const s = st.current;
       s.tgt = target;
       s.rate = rate;
-      setActive(((Math.round(target) % n) + n) % n);
+      const idx = ((Math.round(target) % n) + n) % n;
+      setActive(idx);
+      onIndex?.(idx);
       loop();
     },
-    [n, loop]
+    [n, loop, onIndex]
   );
 
   // pastille : on prend le chemin le plus court
@@ -138,6 +150,17 @@ export default function HomeShowcase({
     apply();
     return () => cancelAnimationFrame(st.current.raf);
   }, [apply]);
+
+  // à chaque ouverture : on se place sur la slide qui était au milieu du carrousel
+  useEffect(() => {
+    if (!openKey) return;
+    const s = st.current;
+    s.pos = s.tgt = openIndex;
+    setActive(openIndex);
+    onIndex?.(openIndex);
+    apply();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openKey]);
 
   // glisser sur le grand visuel : les images suivent le doigt
   const onDown = (e: React.PointerEvent) => {
@@ -184,9 +207,9 @@ export default function HomeShowcase({
         {/* GRAND VISUEL : les images pivotent en 3D, celle de devant est la slide en cours */}
         <div
           ref={stage}
-          data-hero-image=""
+          data-card=""
           className="relative aspect-[4/5] w-full select-none overflow-hidden rounded-3xl bg-neutral-200 dark:bg-neutral-800"
-          style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate" }}
+          style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate", visibility: cardHidden ? "hidden" : "visible" }}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
@@ -198,7 +221,6 @@ export default function HomeShowcase({
               ref={(el) => {
                 panels.current[i] = el;
               }}
-              data-ring-img={i}
               className="absolute inset-0 overflow-hidden rounded-3xl will-change-transform"
               style={{ visibility: i === 0 ? "visible" : "hidden", backfaceVisibility: "hidden" }}
               aria-hidden={i !== active}
@@ -211,6 +233,22 @@ export default function HomeShowcase({
               )}
             </div>
           ))}
+          {onClose && (
+            <button
+              type="button"
+              aria-label="Fermer"
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onClick={onClose}
+              className="absolute right-3 top-3 z-30 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white backdrop-blur-md"
+              style={{ background: "rgba(0,0,0,0.28)" }}
+            >
+              <span aria-hidden="true" className="relative block h-3 w-3">
+                <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 rotate-45 bg-current" />
+                <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 -rotate-45 bg-current" />
+              </span>
+            </button>
+          )}
           <Link
             href={current.href}
             draggable={false}
