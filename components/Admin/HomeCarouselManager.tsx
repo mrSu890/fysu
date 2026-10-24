@@ -6,6 +6,7 @@ import { AdminButton, Panel, Skeleton } from "@/components/Admin/ui/kit"
 import { Field, inputClass } from "@/components/Admin/ui/controls"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { EVENTS } from "@/lib/events"
+import ProductPicker, { type PickerProduct } from "@/components/Admin/Pages/ProductPicker"
 import { resizeImage } from "@/lib/imageTools"
 
 /* ====================================================================
@@ -14,7 +15,6 @@ import { resizeImage } from "@/lib/imageTools"
    ==================================================================== */
 
 type Slide = { id: string; label: string; kind: string; href: string; image: string; text?: string; product_ids?: number[] }
-type Prod = { id: number; name: string; thumbnail_url?: string | null }
 
 const DEFAULTS: Slide[] = [
   { id: "bloom", label: "When the flowers bloom", kind: "Collection", href: "/collections/when-the-flowers-bloom", image: "/images/home-feature.jpeg" },
@@ -43,8 +43,7 @@ export default function HomeCarouselManager() {
   const [dirty, setDirty] = useState(false)
   const [usingDefaults, setUsingDefaults] = useState(false)
   const [links, setLinks] = useState<{ label: string; href: string }[]>(FIXED_LINKS)
-  const [products, setProducts] = useState<Prod[]>([])
-  const [search, setSearch] = useState<Record<string, string>>({})
+  const [products, setProducts] = useState<PickerProduct[]>([])
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const targetId = useRef<string | null>(null)
@@ -68,8 +67,8 @@ export default function HomeCarouselManager() {
     // produits disponibles pour la sélection « produits phares »
     ;(async () => {
       try {
-        const list = await api.get<any[]>("/api/fetchProducts")
-        if (Array.isArray(list)) setProducts(list.map((p) => ({ id: Number(p.id), name: String(p.name || "Produit " + p.id), thumbnail_url: p.thumbnail_url ?? null })))
+        const list = await api.get<PickerProduct[]>("/api/fetchProducts")
+        if (Array.isArray(list)) setProducts(list)
       } catch {}
     })()
 
@@ -90,22 +89,6 @@ export default function HomeCarouselManager() {
 
   const change = (id: string, patch: Partial<Slide>) => {
     setSlides((list) => list.map((s) => (s.id === id ? { ...s, ...patch } : s)))
-    setDirty(true)
-  }
-
-  const toggleProduct = (sid: string, pid: number) => {
-    setSlides((list) =>
-      list.map((s) => {
-        if (s.id !== sid) return s
-        const cur = s.product_ids ?? []
-        if (cur.includes(pid)) return { ...s, product_ids: cur.filter((x) => x !== pid) }
-        if (cur.length >= 12) {
-          notify.error("12 produits maximum par slide")
-          return s
-        }
-        return { ...s, product_ids: [...cur, pid] }
-      })
-    )
     setDirty(true)
   }
 
@@ -255,53 +238,12 @@ export default function HomeCarouselManager() {
                     </Field>
                   )}
 
-                  <Field label={`Produits phares sous la slide (${(s.product_ids ?? []).length}/12, dans l'ordre choisi)`}>
-                    <div className="space-y-2">
-                      {(s.product_ids ?? []).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {(s.product_ids ?? []).map((pid) => (
-                            <button
-                              key={pid}
-                              type="button"
-                              onClick={() => toggleProduct(s.id, pid)}
-                              className="rounded-full bg-[#1a1a1a] px-3 py-1 text-[11px] text-white"
-                            >
-                              {products.find((p) => p.id === pid)?.name ?? "Produit " + pid} ✕
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <input
-                        className={inputClass}
-                        value={search[s.id] ?? ""}
-                        onChange={(e) => setSearch((m) => ({ ...m, [s.id]: e.target.value }))}
-                        placeholder="Chercher un produit à ajouter…"
-                      />
-                      {(search[s.id] ?? "").trim() !== "" && (
-                        <div className="max-h-56 overflow-y-auto rounded-xl border border-[#e9e5df] bg-white">
-                          {products
-                            .filter((p) => p.name.toLowerCase().includes((search[s.id] ?? "").trim().toLowerCase()) && !(s.product_ids ?? []).includes(p.id))
-                            .slice(0, 30)
-                            .map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => toggleProduct(s.id, p.id)}
-                                className="flex w-full items-center gap-3 border-b border-[#f0ece5] px-3 py-2 text-left text-sm last:border-0"
-                              >
-                                {p.thumbnail_url ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={p.thumbnail_url} alt="" className="h-9 w-9 rounded-md object-cover" />
-                                ) : (
-                                  <span className="h-9 w-9 rounded-md bg-[#f0ece5]" />
-                                )}
-                                <span className="flex-1">{p.name}</span>
-                                <Plus size={14} />
-                              </button>
-                            ))}
-                        </div>
-                      )}
-                    </div>
+                  <Field label="Produits phares affichés sous la slide (12 maximum)">
+                    <ProductPicker
+                      products={products}
+                      value={s.product_ids ?? []}
+                      onChange={(ids) => change(s.id, { product_ids: ids.slice(0, 12) })}
+                    />
                   </Field>
 
                   <div className="flex flex-wrap items-center gap-2">
