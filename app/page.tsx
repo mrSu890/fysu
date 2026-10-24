@@ -1,11 +1,12 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HomeHero, { HomeIntroText } from "@/components/Home/Hero";
-import NewSelectionIntro, { type Slide } from "@/components/Home/NewSelectionIntro";
+import HomeShowcase, { type Slide } from "@/components/Home/HomeShowcase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Metadata } from "next";
 import { homeCopy, SITE } from "@/lib/seo";
 import { getLocale } from "next-intl/server";
+import { localize } from "@/lib/translate";
 
 import HomeSection from "@/components/Home/HomeSection";
 import RecentlyViewed from "@/components/RecentlyViewed";
@@ -48,10 +49,37 @@ async function getCarouselSlides(): Promise<Slide[] | null> {
       href: String(s.href || "/"),
       image: String(s.image || ""),
       kind: String(s.kind || ""),
+      text: String(s.text || ""),
+      product_ids: Array.isArray(s.product_ids) ? s.product_ids.map(Number).filter((x: number) => Number.isFinite(x)) : [],
     }));
   } catch {
     return null;
   }
+}
+
+// Les produits phares choisis à la main pour chaque slide (dans l'ordre choisi)
+async function getSlideProducts(slides: Slide[] | null): Promise<Record<string, any[]>> {
+  const out: Record<string, any[]> = {};
+  if (!slides) return out;
+  const ids = Array.from(new Set(slides.flatMap((s) => s.product_ids ?? [])));
+  if (ids.length === 0) return out;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .select(`id, name, slug, price, availability, release_date, product_sizes (stock, is_active), categories (name), product_images (*), product_colors!product_colors_product_id_fkey (*)`)
+      .in("id", ids)
+      .eq("is_hidden", false);
+    if (error || !data) return out;
+    const loc: any = await localize(data.map((p: any) => ({ ...p, category: p?.categories?.name ?? null, main_image: p?.product_images?.[0]?.url ?? null })));
+    const byId = new Map<number, any>(loc.map((p: any) => [Number(p.id), p]));
+    for (const s of slides) {
+      const list = (s.product_ids ?? []).map((id) => byId.get(id)).filter(Boolean);
+      if (list.length) out[s.key] = list;
+    }
+  } catch (err) {
+    console.error("slide products:", err);
+  }
+  return out;
 }
 
 // Les deux rangées de l'accueil sont lues côté serveur : produits et prix sont dans le HTML
@@ -63,12 +91,13 @@ async function getSection(slug: string) {
 
 export default async function Home() {
   const [slides, solos, duos, carousel] = await Promise.all([getHeroSlides(), getSection("solos"), getSection("duos"), getCarouselSlides()]);
+  const slideProducts = await getSlideProducts(carousel);
 
   return (
     <>
       <Navbar />
-      {/* 1. carrousel des collections : c'est la première chose que l'on voit */}
-      <NewSelectionIntro initialSlides={carousel} />
+      {/* 1. vitrine : grand visuel qui tourne, pastilles, produits phares */}
+      <HomeShowcase initialSlides={carousel} slideProducts={slideProducts} />
       {/* 2. bloc texte FYSU */}
       <HomeIntroText />
       {/* 3. rangées de produits */}
