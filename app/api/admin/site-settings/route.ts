@@ -17,6 +17,10 @@ function cleanSlides(input: any) {
       kind: String(s?.kind || "").slice(0, 40),
       href: String(s?.href || "/").slice(0, 300),
       image: String(s?.image || "").slice(0, 600),
+      text: String(s?.text || "").slice(0, 400),
+      product_ids: Array.isArray(s?.product_ids)
+        ? s.product_ids.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x)).slice(0, 12)
+        : [],
     }))
     .filter((s) => s.image)
     .slice(0, 20)
