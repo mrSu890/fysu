@@ -53,30 +53,36 @@ export default function HomeStage({
     setPhase(p);
   };
 
-  // écran statique pendant le voyage : plus aucun défilement (doigt, molette, élan de l'iPad), la page reste tout en haut
-  const guard = useRef({
-    block: (e: Event) => e.preventDefault(),
-    reset: () => {
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
-    },
-  });
+  // écran figé pendant le voyage : plus aucun défilement possible (doigt, molette, élan de l'iPad).
+  // On fige la page elle-même (position fixe, tout en haut) : c'est la seule méthode fiable sur iPhone / iPad.
+  const locked = useRef(false);
   const lock = (on: boolean) => {
     const h = document.documentElement;
     const b = document.body;
-    const g = guard.current;
     if (on) {
-      prevOverflow.current = { h: h.style.overflow, b: b.style.overflow };
+      prevOverflow.current = {
+        h: h.style.overflow,
+        b: [b.style.overflow, b.style.position, b.style.top, b.style.left, b.style.right, b.style.width].join("|"),
+      };
       h.style.overflow = "hidden";
       b.style.overflow = "hidden";
-      window.addEventListener("touchmove", g.block, { passive: false });
-      window.addEventListener("wheel", g.block, { passive: false });
-      window.addEventListener("scroll", g.reset);
+      b.style.position = "fixed";
+      b.style.top = "0";
+      b.style.left = "0";
+      b.style.right = "0";
+      b.style.width = "100%";
+      locked.current = true;
     } else {
+      locked.current = false;
+      const [o, p, t, l, r, w] = prevOverflow.current.b.split("|");
       h.style.overflow = prevOverflow.current.h;
-      b.style.overflow = prevOverflow.current.b;
-      window.removeEventListener("touchmove", g.block);
-      window.removeEventListener("wheel", g.block);
-      window.removeEventListener("scroll", g.reset);
+      b.style.overflow = o;
+      b.style.position = p;
+      b.style.top = t;
+      b.style.left = l;
+      b.style.right = r;
+      b.style.width = w;
+      window.scrollTo(0, 0);
     }
   };
 
@@ -125,12 +131,15 @@ export default function HomeStage({
     if (!api || !w || !show || api.busy()) return;
     api.snap();
     if (window.scrollY > 0) window.scrollTo(0, 0);
-    const media = api.centerMedia();
-    const card = show.querySelector("[data-card]") as HTMLElement | null;
-    if (!media || !card) return;
-
     busy.current = true;
     lock(true);
+    const media = api.centerMedia();
+    const card = show.querySelector("[data-card]") as HTMLElement | null;
+    if (!media || !card) {
+      lock(false);
+      busy.current = false;
+      return;
+    }
     const slide = api.centerSlide();
     cur.current = slide;
     setOpenIndex(slide);
@@ -247,6 +256,10 @@ export default function HomeStage({
     let sx = 0;
     let sy = 0;
     const wheel = (e: WheelEvent) => {
+      if (locked.current) {
+        e.preventDefault();
+        return;
+      }
       if (e.deltaY > 8 && Math.abs(e.deltaY) > Math.abs(e.deltaX) && can()) {
         e.preventDefault();
         open();
@@ -256,10 +269,18 @@ export default function HomeStage({
       sx = e.touches[0].clientX;
       sy = e.touches[0].clientY;
     };
+    // cet écouteur existe dès le début du geste : il peut donc empêcher la page de commencer à défiler
     const tm = (e: TouchEvent) => {
+      if (locked.current) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
       const dy = sy - e.touches[0].clientY;
       const dx = Math.abs(sx - e.touches[0].clientX);
-      if (dy > 14 && dy > dx * 1.2 && can()) open();
+      if (dy > 8 && dy > dx * 1.2 && can()) {
+        if (e.cancelable) e.preventDefault();
+        open();
+      }
     };
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -271,7 +292,7 @@ export default function HomeStage({
     };
     window.addEventListener("wheel", wheel, { passive: false });
     window.addEventListener("touchstart", ts, { passive: true });
-    window.addEventListener("touchmove", tm, { passive: true });
+    window.addEventListener("touchmove", tm, { passive: false });
     window.addEventListener("keydown", key);
     return () => {
       window.removeEventListener("wheel", wheel);
