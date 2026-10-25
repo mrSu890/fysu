@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Product from "../Product";
 import { ProductType } from "../../types/product"
 import SectionTitle from "../SectionTitle";
+import Fold from "./Fold";
 
 export default function HomeSection({
   slug,
@@ -53,45 +54,25 @@ export default function HomeSection({
 
   return (
        <section className={`relative top-6 mx-auto w-11/12 sm:mb-24 ${index === 1 ? "mt-20 sm:mt-28" : ""}`}>
-      <div className="relative mb-12 sm:mb-16">
-        {/* nombre de pièces de la sélection, à droite du titre */}
-        <span className="font-info absolute bottom-[3px] right-0 text-[11px] font-light tracking-[0.06em] text-foreground/55 sm:bottom-[6px]">
-          ( {String(products.length).padStart(2, "0")} )
-        </span>
-        <SectionTitle lineAbove className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">{title}</SectionTitle>
-      </div>
-
-      <div
-        ref={scrollRef}
-        data-row-memory={slug}
-        className="
-          flex
-          gap-6
-          overflow-x-auto
-          overflow-y-hidden
-          overscroll-x-contain
-          scroll-smooth
-          snap-x snap-mandatory
-          no-scrollbar
-          pb-2
-        "
+      <Fold
+        label={title}
+        meta={`( ${String(products.length).padStart(2, "0")} )`}
+        header={
+          <SectionTitle lineAbove className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">{title}</SectionTitle>
+        }
       >
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="
-              snap-start
-              flex-shrink-0
-              w-[220px]
-              sm:w-[260px]
-              md:w-[300px]
-              lg:w-[320px]
-            "
-          >
-            <Product showArrows product={product} scrollRef={scrollRef} />
-          </div>
-        ))}
-      </div>
+        <div
+          ref={scrollRef}
+          data-row-memory={slug}
+          className="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth snap-x snap-mandatory no-scrollbar pb-2"
+        >
+          {products.map((product) => (
+            <div key={product.id} className="snap-start flex-shrink-0 w-[220px] sm:w-[260px] md:w-[300px] lg:w-[320px]">
+              <Product showArrows product={product} scrollRef={scrollRef} />
+            </div>
+          ))}
+        </div>
+      </Fold>
     </section>
   );
 }
