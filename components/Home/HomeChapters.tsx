@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import IntroReveal from "@/components/IntroReveal";
+import LogoIntro from "@/components/Home/LogoIntro";
 
 /* ====================================================================
    CHAPITRES PLEIN ÉCRAN (bas de l'accueil, sous les rangées de produits)
-   - téléphone / iPad : une image ou une vidéo (portrait) plein écran, petit titre centré en bas + « Découvrir »
+   - chaque chapitre est un « onglet » plein écran : en scrollant, le suivant monte du bas et se pose PAR-DESSUS le précédent
+   - le gros logo FYSU rose reste fixé en haut pendant tous les chapitres, jusqu'au footer ; la barre de navigation s'efface pendant ce temps
+   - téléphone / iPad : image ou vidéo (portrait) plein écran, petit titre centré en bas + « Découvrir »
    - ordinateur : la moitié de l'écran en image / vidéo, l'autre moitié vide avec un titre minuscule cliquable au milieu
      (l'image change de côté d'un chapitre à l'autre)
-   Le défilement s'arrête en douceur sur chaque chapitre.
    Les chapitres se règlent dans l'admin : Accueil (hero) → Chapitres de l'accueil.
    ==================================================================== */
 
@@ -40,22 +42,41 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
           { id: "about", label: d.about, href: "/about", image: "" },
         ];
 
-  // le scroll « accroche » doucement chaque chapitre (sans jamais forcer)
+  // pendant les chapitres, le gros logo rose remplace la barre de navigation (elle revient en sortant des chapitres)
+  const root = useRef<HTMLElement>(null);
   useEffect(() => {
+    const el = root.current;
+    if (!el) return;
     const html = document.documentElement;
-    const prev = html.style.scrollSnapType;
-    html.style.scrollSnapType = "y proximity";
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      html.classList.toggle("chapters-active", r.top <= 40 && r.bottom > 140);
+    };
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
     return () => {
-      html.style.scrollSnapType = prev;
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+      html.classList.remove("chapters-active");
     };
   }, []);
 
   return (
-    <section aria-label="FYSU">
+    <section ref={root} aria-label="FYSU" className="relative">
+      <style>{`html.chapters-active .navbar-root{transform:translateY(-140%)!important;opacity:0!important;pointer-events:none!important}`}</style>
+      {/* gros logo rose : fixé en haut pendant tous les chapitres */}
+      <div className="sticky top-0 z-30 h-0">
+        <LogoIntro />
+      </div>
       {list.map((c, i) => {
         const flip = i % 2 === 1;
         return (
-          <div key={c.id} className="relative h-[100svh] min-h-[540px] w-full snap-start overflow-hidden lg:grid lg:grid-cols-2">
+          <div
+            key={c.id}
+            className="sticky top-0 h-[100svh] min-h-[540px] w-full overflow-hidden bg-[var(--page-bg,var(--background))] lg:grid lg:grid-cols-2"
+            style={{ zIndex: i + 1 }}
+          >
             {/* image / vidéo */}
             <Link
               href={c.href}

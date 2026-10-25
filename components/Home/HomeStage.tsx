@@ -56,6 +56,7 @@ export default function HomeStage({
   // écran figé pendant le voyage : plus aucun défilement possible (doigt, molette, élan de l'iPad).
   // On fige la page elle-même (position fixe, tout en haut) : c'est la seule méthode fiable sur iPhone / iPad.
   const locked = useRef(false);
+  const syncRef = useRef<() => void>(() => {});
   const lock = (on: boolean) => {
     const h = document.documentElement;
     const b = document.body;
@@ -72,6 +73,7 @@ export default function HomeStage({
       b.style.right = "0";
       b.style.width = "100%";
       locked.current = true;
+      syncRef.current();
     } else {
       locked.current = false;
       const [o, p, t, l, r, w] = prevOverflow.current.b.split("|");
@@ -83,6 +85,7 @@ export default function HomeStage({
       b.style.right = r;
       b.style.width = w;
       window.scrollTo(0, 0);
+      syncRef.current();
     }
   };
 
@@ -290,15 +293,33 @@ export default function HomeStage({
         open();
       }
     };
-    window.addEventListener("wheel", wheel, { passive: false });
+    // Les écouteurs « bloquants » (non passifs) ralentissent le défilement sur iPhone / iPad :
+    // on ne les branche que tout en haut de la page (là où le premier geste ouvre la sélection) et pendant le voyage.
+    let armed = false;
+    const sync = () => {
+      const want = locked.current || (phaseRef.current === "closed" && window.scrollY <= 4);
+      if (want === armed) return;
+      armed = want;
+      if (want) {
+        window.addEventListener("wheel", wheel, { passive: false });
+        window.addEventListener("touchmove", tm, { passive: false });
+      } else {
+        window.removeEventListener("wheel", wheel);
+        window.removeEventListener("touchmove", tm);
+      }
+    };
+    syncRef.current = sync;
     window.addEventListener("touchstart", ts, { passive: true });
-    window.addEventListener("touchmove", tm, { passive: false });
     window.addEventListener("keydown", key);
+    window.addEventListener("scroll", sync, { passive: true });
+    sync();
     return () => {
+      syncRef.current = () => {};
       window.removeEventListener("wheel", wheel);
-      window.removeEventListener("touchstart", ts);
       window.removeEventListener("touchmove", tm);
+      window.removeEventListener("touchstart", ts);
       window.removeEventListener("keydown", key);
+      window.removeEventListener("scroll", sync);
     };
   }, [open]);
 
