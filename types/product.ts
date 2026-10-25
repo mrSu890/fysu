@@ -6,6 +6,8 @@ export type ProductImage = {
   lit_url?: string | null;
   // photo portée sur mannequin : s'affiche au survol de la carte (ordinateur)
   is_hover?: boolean | null;
+  // photo portée : pour qui (men / women) ; vide = pour tous
+  worn_for?: string | null;
 };
 
 export type ProductColor = {
