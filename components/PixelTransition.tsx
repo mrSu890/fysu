@@ -2,8 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import PixelGrid, { type PixelMode } from "@/components/PixelGrid"
+import { type PixelMode } from "@/components/PixelGrid"
 import WaterGrid from "@/components/WaterGrid"
+import GlassGrid from "@/components/GlassGrid"
 
 /* ====================================================================
    TRANSITION EN PIXELS ENTRE LES PAGES
@@ -289,7 +290,7 @@ export default function PixelTransition() {
             setPhase("idle")
           }
         }
-        return kind === "water" ? <WaterGrid mode={phase} onDone={onDone} /> : <PixelGrid mode={phase} onDone={onDone} />
+        return kind === "water" ? <WaterGrid mode={phase} onDone={onDone} /> : <GlassGrid mode={phase} onDone={onDone} />
       })()}
     </div>
   )
