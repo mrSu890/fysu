@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HomeHero, { HomeIntroText } from "@/components/Home/Hero";
+import HomeChapters, { type Chapter } from "@/components/Home/HomeChapters";
 import HomeStage from "@/components/Home/HomeStage";
 import type { Slide } from "@/components/Home/HomeShowcase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -58,6 +59,22 @@ async function getCarouselSlides(): Promise<Slide[] | null> {
   }
 }
 
+// Les chapitres plein écran du bas de l'accueil (réglés dans l'admin) ; sinon Musique, Arcade, À propos
+async function getChapters(): Promise<Chapter[] | null> {
+  try {
+    const { data } = await supabaseAdmin.from("site_settings").select("value").eq("key", "home_chapters").maybeSingle();
+    if (!Array.isArray(data?.value) || data!.value.length === 0) return null;
+    return (data!.value as any[]).map((s, i) => ({
+      id: String(s.id || i),
+      label: String(s.label || ""),
+      href: String(s.href || "/"),
+      image: String(s.image || ""),
+    }));
+  } catch {
+    return null;
+  }
+}
+
 // Les produits phares choisis à la main pour chaque slide (dans l'ordre choisi)
 async function getSlideProducts(slides: Slide[] | null): Promise<Record<string, any[]>> {
   const out: Record<string, any[]> = {};
@@ -91,7 +108,7 @@ async function getSection(slug: string) {
 }
 
 export default async function Home() {
-  const [slides, solos, duos, carousel] = await Promise.all([getHeroSlides(), getSection("solos"), getSection("duos"), getCarouselSlides()]);
+  const [slides, solos, duos, carousel, chapters] = await Promise.all([getHeroSlides(), getSection("solos"), getSection("duos"), getCarouselSlides(), getChapters()]);
   const slideProducts = await getSlideProducts(carousel);
 
   return (
@@ -102,14 +119,15 @@ export default async function Home() {
       {/* 2. bloc texte FYSU */}
       <HomeIntroText />
       {/* 3. rangées de produits */}
-      <div className="mt-20 flex flex-col gap-36 sm:mt-28 sm:gap-48">
+      <div className="mt-20 flex flex-col gap-24 sm:mt-28 sm:gap-36">
         <HomeSection slug="solos" index={1} initialSection={solos} />
         {/* « Recently viewed » : toujours juste sous la rangée New in */}
         <RecentlyViewed />
         <HomeSection slug="duos" index={2} initialSection={duos} />
       </div>
-      {/* 4. grande image avec le gros logo rose dessus (mène à Kiban Collector) */}
-      <div className="mt-36 sm:mt-48" />
+      {/* 4. chapitres plein écran (Musique, Arcade, À propos…) puis la grande image avec le gros logo rose (mène à Kiban Collector) */}
+      <div className="mt-32 sm:mt-44" />
+      <HomeChapters chapters={chapters} />
       <HomeHero initialSlides={slides} />
 
       <Footer />
