@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
+import { Award, Check, Heart, Link2, LogOut, Package, Pencil, Shirt, User, Users } from "lucide-react"
 import { DEFAULT_ACCENT, type ProfileData } from "@/lib/profile"
 import Avatar from "./Avatar"
 import Badges, { type Reward } from "./Badges"
@@ -9,6 +10,7 @@ import Closet from "./Closet"
 import UserWishlist from "./UserWishlist"
 import UserOrders from "./UserOrders"
 import Social from "@/components/Profile/Social"
+import AvatarStudio from "./AvatarStudio"
 import ProfileEditor, { type GalleryAvatar } from "./ProfileEditor"
 import { profileCopy } from "./profileCopy"
 import CountUp from "@/components/CountUp"
@@ -18,7 +20,10 @@ const TABS: Record<"fr" | "en", Record<TabId, string>> = {
   fr: { wardrobe: "Garde-robe", avatar: "Avatar", favorites: "Favoris", orders: "Commandes", friends: "Amis", badges: "Badges" },
   en: { wardrobe: "Wardrobe", avatar: "Avatar", favorites: "Favorites", orders: "Orders", friends: "Friends", badges: "Badges" },
 }
-const TAB_ORDER: TabId[] = ["wardrobe", "favorites", "orders", "friends", "badges"]
+const TAB_ORDER: TabId[] = ["wardrobe", "avatar", "favorites", "orders", "friends", "badges"]
+// un onglet = une icône (le nom apparaît à côté de l'icône de l'onglet ouvert)
+const TAB_ICON: Record<TabId, typeof Shirt> = { wardrobe: Shirt, avatar: User, favorites: Heart, orders: Package, friends: Users, badges: Award }
+const STAT_ICON = [Package, Shirt, Heart]
 
 const ONBOARD_KEY = "fysu_profile_onboarding_seen"
 
@@ -101,7 +106,7 @@ export default function ProfileHub({
     ? new Date(profile.created_at).toLocaleDateString(locale, { month: "long", year: "numeric" })
     : null
   const labels = TABS[locale === "fr" ? "fr" : "en"]
-  const link = "text-[11px] font-light uppercase tracking-[0.18em] underline-offset-[6px] hover:underline disabled:opacity-40"
+  const iconBtn = "flex h-11 w-11 cursor-pointer touch-manipulation items-center justify-center rounded-full border border-foreground/25 transition active:scale-95 hover:border-foreground/60 disabled:opacity-40"
 
   return (
     <>
@@ -130,47 +135,73 @@ export default function ProfileHub({
             [data?.stats.orders ?? 0, copy.stats.orders],
             [data?.stats.pieces ?? 0, copy.stats.pieces],
             [data?.stats.wishlist ?? 0, copy.stats.favorites],
-          ].map(([n, label], i) => (
-            <div key={String(label)} className={`py-5 ${i > 0 ? "border-l border-foreground/15 pl-5" : ""}`}>
-              <p className="text-3xl font-light leading-none"><CountUp value={Number(n)} opacity={1} /></p>
-              <p className="mt-2 text-[10px] font-light uppercase tracking-[0.18em] text-foreground/55">{label}</p>
-            </div>
-          ))}
+          ].map(([n, label], i) => {
+            const Icon = STAT_ICON[i]
+            return (
+              <div key={String(label)} className={`py-5 ${i > 0 ? "border-l border-foreground/15 pl-5" : ""}`} title={String(label)}>
+                <p className="text-3xl font-light leading-none"><CountUp value={Number(n)} opacity={1} /></p>
+                <Icon className="mt-3 h-4 w-4 text-foreground/55" strokeWidth={1.3} aria-hidden="true" />
+                <span className="sr-only">{label}</span>
+              </div>
+            )
+          })}
         </div>
 
-        {/* ACTIONS */}
-        <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
-          <button type="button" onClick={() => setEditing(true)} disabled={!data} className={link}>
-            {copy.editProfile}
+        {/* ACTIONS : trois icônes (le nom s'affiche en touchant longuement / au survol) */}
+        <div className="mt-6 flex items-center gap-3">
+          <button type="button" onClick={() => setEditing(true)} disabled={!data} className={iconBtn} aria-label={copy.editProfile} title={copy.editProfile}>
+            <Pencil className="h-[18px] w-[18px]" strokeWidth={1.3} />
           </button>
           {profile?.username && (
-            <button type="button" onClick={() => copyLink(profile.username!)} className={link}>
-              {linkCopied ? copy.linkCopied : copy.copyLink}
+            <button
+              type="button"
+              onClick={() => copyLink(profile.username!)}
+              className={iconBtn}
+              aria-label={linkCopied ? copy.linkCopied : copy.copyLink}
+              title={linkCopied ? copy.linkCopied : copy.copyLink}
+            >
+              {linkCopied ? <Check className="h-[18px] w-[18px]" strokeWidth={1.3} /> : <Link2 className="h-[18px] w-[18px]" strokeWidth={1.3} />}
             </button>
           )}
-          <button type="button" onClick={onLogout} disabled={loggingOut} className={link + " text-foreground/45"}>
-            {loggingOut ? t("signingOut") : t("signOut")}
+          <button
+            type="button"
+            onClick={onLogout}
+            disabled={loggingOut}
+            className={iconBtn + " text-foreground/55"}
+            aria-label={loggingOut ? t("signingOut") : t("signOut")}
+            title={loggingOut ? t("signingOut") : t("signOut")}
+          >
+            <LogOut className="h-[18px] w-[18px]" strokeWidth={1.3} />
           </button>
         </div>
 
-        {/* ONGLETS */}
-        <nav className="mt-16 flex gap-8 overflow-x-auto border-b border-foreground/15 sm:gap-12">
-          {TAB_ORDER.map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              className={`-mb-px shrink-0 border-b py-4 text-[11px] uppercase tracking-[0.2em] transition ${
-                tab === id ? "border-foreground font-normal" : "border-transparent font-light text-foreground/50 hover:text-foreground"
-              }`}
-            >
-              {labels[id]}
-            </button>
-          ))}
+        {/* ONGLETS : des icônes ; l'onglet ouvert affiche aussi son nom */}
+        <nav className="no-scrollbar mt-14 flex gap-2 overflow-x-auto border-b border-foreground/15 sm:gap-4">
+          {TAB_ORDER.map((id) => {
+            const Icon = TAB_ICON[id]
+            const on = tab === id
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTab(id)}
+                aria-label={labels[id]}
+                title={labels[id]}
+                aria-current={on ? "page" : undefined}
+                className={`-mb-px flex shrink-0 cursor-pointer touch-manipulation items-center gap-2.5 border-b px-3.5 py-4 transition ${
+                  on ? "border-foreground" : "border-transparent text-foreground/45 hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-5 w-5" strokeWidth={1.3} />
+                {on && <span className="text-[11px] font-light uppercase tracking-[0.2em]">{labels[id]}</span>}
+              </button>
+            )
+          })}
         </nav>
 
         <div className="pt-10">
           {tab === "wardrobe" && <Closet copy={copy} />}
+          {tab === "avatar" && <AvatarStudio locale={locale} onPhotoUpdated={load} />}
           {tab === "favorites" && <UserWishlist />}
           {tab === "orders" && <UserOrders />}
           {tab === "friends" && data && <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />}
@@ -196,6 +227,10 @@ export default function ProfileHub({
           welcome={welcome}
           fallbackName={name}
           onClose={closeEditor}
+          onOpenAvatar={() => {
+            closeEditor()
+            setTab("avatar")
+          }}
           onSaved={async () => {
             await load()
             closeEditor()

@@ -81,9 +81,11 @@ export default function ShareButton({ productId, slug }: { productId: number; sl
       <button
         type="button"
         onClick={openModal}
-        className="inline-flex w-fit items-center gap-2 text-xs uppercase tracking-[0.18em] opacity-70 transition hover:opacity-100"
+        aria-label={c.shareButton}
+        title={c.shareButton}
+        className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-foreground/25 opacity-80 transition active:scale-95 hover:opacity-100"
       >
-        <Share2 className="h-4 w-4" /> {c.shareButton}
+        <Share2 className="h-[18px] w-[18px]" strokeWidth={1.3} />
       </button>
 
       {open && mounted && createPortal(

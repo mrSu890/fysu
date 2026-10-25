@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { Check, Plus, UserMinus, X } from "lucide-react"
 import Avatar from "./Avatar"
 import { socialCopy } from "./socialCopy"
 
@@ -99,9 +100,11 @@ export default function Social({
     await post({ action: "react", id: item.id, reaction: next })
   }
 
-  const ghost = "border border-foreground/40 px-4 py-2 text-[11px] font-light uppercase tracking-[0.18em]"
-  const solid = "bg-foreground text-background px-4 py-2 text-[11px] font-light uppercase tracking-[0.18em]"
-  const linkBtn = "text-xs font-light text-foreground/55 underline underline-offset-4"
+  // boutons ronds avec une icône (le nom reste dans l'info-bulle et pour les lecteurs d'écran)
+  const ghost = "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-foreground/40 transition active:scale-95"
+  const solid = "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-foreground text-background transition active:scale-95"
+  const linkBtn = "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-foreground/20 text-foreground/55 transition active:scale-95 hover:text-foreground"
+  const ic = { className: "h-4 w-4", strokeWidth: 1.5 }
   const label = "text-[10px] font-light uppercase tracking-[0.2em] text-foreground/50"
   const nameOf = (p: Person) => p.display_name || p.username
 
@@ -146,15 +149,15 @@ export default function Social({
                   {results.map((u) => (
                     <Row key={u.username} p={u}>
                       {u.relation === "none" && (
-                        <button className={solid} onClick={() => act("request", u.username)}>
-                          {c.add}
+                        <button className={solid} onClick={() => act("request", u.username)} aria-label={c.add} title={c.add}>
+                          <Plus {...ic} />
                         </button>
                       )}
-                      {u.relation === "outgoing" && <span className="text-xs font-light text-foreground/50">{c.requested}</span>}
-                      {u.relation === "friends" && <span className="text-xs font-light text-foreground/50">{c.alreadyFriends}</span>}
+                      {u.relation === "outgoing" && <span title={c.requested} aria-label={c.requested} className="flex h-9 w-9 items-center justify-center text-foreground/45"><Check {...ic} /></span>}
+                      {u.relation === "friends" && <span title={c.alreadyFriends} aria-label={c.alreadyFriends} className="flex h-9 w-9 items-center justify-center text-foreground/45"><Check {...ic} /></span>}
                       {u.relation === "incoming" && (
-                        <button className={solid} onClick={() => act("accept", u.username)}>
-                          {c.accept}
+                        <button className={solid} onClick={() => act("accept", u.username)} aria-label={c.accept} title={c.accept}>
+                          <Check {...ic} />
                         </button>
                       )}
                     </Row>
@@ -168,11 +171,11 @@ export default function Social({
                   <div className="mt-2 divide-y divide-foreground/15">
                     {incoming.map((p) => (
                       <Row key={p.username} p={p}>
-                        <button className={solid} onClick={() => act("accept", p.username)}>
-                          {c.accept}
+                        <button className={solid} onClick={() => act("accept", p.username)} aria-label={c.accept} title={c.accept}>
+                          <Check {...ic} />
                         </button>
-                        <button className={ghost} onClick={() => act("decline", p.username)}>
-                          {c.decline}
+                        <button className={ghost} onClick={() => act("decline", p.username)} aria-label={c.decline} title={c.decline}>
+                          <X {...ic} />
                         </button>
                       </Row>
                     ))}
@@ -186,8 +189,8 @@ export default function Social({
                   <div className="mt-2 divide-y divide-foreground/15">
                     {outgoing.map((p) => (
                       <Row key={p.username} p={p}>
-                        <button className={linkBtn} onClick={() => act("cancel", p.username)}>
-                          {c.cancel}
+                        <button className={linkBtn} onClick={() => act("cancel", p.username)} aria-label={c.cancel} title={c.cancel}>
+                          <X {...ic} />
                         </button>
                       </Row>
                     ))}
@@ -203,8 +206,8 @@ export default function Social({
                 <div className="divide-y divide-foreground/15 border-y border-foreground/15">
                   {friends.map((p) => (
                     <Row key={p.username} p={p}>
-                      <button className={linkBtn} onClick={() => act("remove", p.username)}>
-                        {c.remove}
+                      <button className={linkBtn} onClick={() => act("remove", p.username)} aria-label={c.remove} title={c.remove}>
+                        <UserMinus {...ic} />
                       </button>
                     </Row>
                   ))}

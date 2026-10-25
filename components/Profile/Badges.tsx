@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Check, Copy } from "lucide-react"
 import { BADGES } from "@/lib/badges"
 import type { PCopy } from "./profileCopy"
 
@@ -116,8 +117,14 @@ export default function Badges({
                       </p>
                       <div className="mt-2 flex items-center justify-between gap-3">
                         <span className="font-mono text-sm tracking-[0.12em]">{reward.code}</span>
-                        <button type="button" onClick={() => copyCode(reward.code!)} className="text-xs font-light underline underline-offset-4">
-                          {copied === reward.code ? copy.copied : copy.copy}
+                        <button
+                          type="button"
+                          onClick={() => copyCode(reward.code!)}
+                          aria-label={copied === reward.code ? copy.copied : copy.copy}
+                          title={copied === reward.code ? copy.copied : copy.copy}
+                          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-foreground/25 transition active:scale-95"
+                        >
+                          {copied === reward.code ? <Check className="h-4 w-4" strokeWidth={1.5} /> : <Copy className="h-4 w-4" strokeWidth={1.5} />}
                         </button>
                       </div>
                     </div>
