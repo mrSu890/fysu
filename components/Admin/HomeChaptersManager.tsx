@@ -13,7 +13,7 @@ import { resizeImage } from "@/lib/imageTools"
    et choisir vers quelle page chacune mène. (Enregistré dans « site_settings », clé home_chapters.)
    ==================================================================== */
 
-type Slide = { id: string; label: string; href: string; image: string }
+type Slide = { id: string; label: string; href: string; image: string; color?: string }
 
 const DEFAULTS: Slide[] = [
   { id: "music", label: "Music", href: "/music", image: "" },
@@ -195,6 +195,22 @@ export default function HomeChaptersManager() {
                 <div className="space-y-3">
                   <Field label="Titre du chapitre">
                     <input className={inputClass} value={s.label} onChange={(e) => change(s.id, { label: e.target.value })} placeholder="Ex : FY'grances" />
+                  </Field>
+
+                  <Field label="Couleur du gros logo FYSU pendant ce chapitre" hint="Laisse « Auto » : noir pour Musique, bleu ciel pour Arcade, rose pour les autres">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={s.color || "#e8b5b2"}
+                        onChange={(e) => change(s.id, { color: e.target.value })}
+                        className="h-9 w-14 cursor-pointer rounded-lg border border-[#e9e5df] bg-white p-1"
+                      />
+                      {s.color ? (
+                        <AdminButton onClick={() => change(s.id, { color: "" })}>Remettre Auto</AdminButton>
+                      ) : (
+                        <span className="text-xs text-[#7a756d]">Auto</span>
+                      )}
+                    </div>
                   </Field>
 
                   <Field label="Mène vers la page">
