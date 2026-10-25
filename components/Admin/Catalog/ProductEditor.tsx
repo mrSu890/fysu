@@ -200,6 +200,8 @@ export default function ProductEditor({ id }: { id: string }) {
   const [litMap, setLitMap] = useState<Record<string, string>>({})
   // photo portée sur mannequin (survol de la carte) : une par couleur
   const [hoverSet, setHoverSet] = useState<string[]>([])
+  // pour qui est la photo portée : "men" / "women" ; absent = pour tous
+  const [wornFor, setWornFor] = useState<Record<string, string>>({})
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
   // image en cours de recadrage
@@ -208,8 +210,8 @@ export default function ProductEditor({ id }: { id: string }) {
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
   const snapshot = useMemo(
-    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, related }),
-    [form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, related]
+    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, wornFor, related }),
+    [form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, wornFor, related]
   )
   const dirty = !loading && saved !== "" && snapshot !== saved
 
@@ -259,6 +261,10 @@ export default function ProductEditor({ id }: { id: string }) {
       }
 
       const nextHover: string[] = (imageRows as any[]).filter((img) => img.is_hover).map((img) => img.url)
+      const nextWorn: Record<string, string> = {}
+      for (const img of imageRows as any[]) {
+        if (img.is_hover && (img.worn_for === "men" || img.worn_for === "women")) nextWorn[img.url] = img.worn_for
+      }
 
       let nextColors: ColorState[]
 
@@ -315,6 +321,7 @@ export default function ProductEditor({ id }: { id: string }) {
       setSizeChart(cleanSizeGuide(p.size_guide))
       setLitMap(nextLit)
       setHoverSet(nextHover)
+      setWornFor(nextWorn)
       setRelated(nextRelated)
       setCategories(cats)
       setAllProducts(list.products)
@@ -327,6 +334,7 @@ export default function ProductEditor({ id }: { id: string }) {
           sizeChart: cleanSizeGuide(p.size_guide),
           litMap: nextLit,
           hoverSet: nextHover,
+          wornFor: nextWorn,
           related: nextRelated,
         })
       )
@@ -704,6 +712,7 @@ export default function ProductEditor({ id }: { id: string }) {
         // lampes seulement (la colonne lit_url de product_images doit exister dans Supabase)
         ...(form.product_type === "lamp" ? { lit_images: litMap } : {}),
         hover_images: hoverSet.filter((u) => colors.some((c) => c.images.includes(u))),
+        worn_for: wornFor,
         colors: colors.map((c) => ({
           id: c.id,
           name: c.name.trim(),
@@ -1280,25 +1289,51 @@ export default function ProductEditor({ id }: { id: string }) {
                             <Trash2 size={14} />
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          aria-pressed={hoverSet.includes(url)}
-                          onClick={() =>
-                            setHoverSet((cur) => {
-                              if (cur.includes(url)) return cur.filter((u) => u !== url)
-                              // une seule photo « au survol » par couleur
-                              const sameColor = new Set(c.images)
-                              return [...cur.filter((u) => !sameColor.has(u)), url]
-                            })
-                          }
-                          className={`mt-2 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full text-xs ring-1 ${
-                            hoverSet.includes(url)
-                              ? "bg-[#171717] text-white ring-[#171717]"
-                              : "bg-white text-[#3d3a35] ring-[#e0dbd3] hover:bg-[#faf8f5]"
-                          }`}
-                        >
-                          {hoverSet.includes(url) ? "✓ Photo portée (survol)" : "Photo portée (survol)"}
-                        </button>
+                        {/* photo portée sur mannequin : pour tous, pour lui ou pour elle (une de chaque par couleur) */}
+                        <div className="mt-2 flex items-center gap-1.5">
+                          {([
+                            ["any", "Portée · tous"],
+                            ["men", "Homme"],
+                            ["women", "Femme"],
+                          ] as const).map(([who, label]) => {
+                            const on = hoverSet.includes(url) && (wornFor[url] ?? "any") === who
+                            return (
+                              <button
+                                key={who}
+                                type="button"
+                                aria-pressed={on}
+                                onClick={() => {
+                                  const sameColor = new Set(c.images)
+                                  const kindOf = (u: string) => wornFor[u] ?? "any"
+                                  if (on) {
+                                    setHoverSet((cur) => cur.filter((u) => u !== url))
+                                    setWornFor((cur) => {
+                                      const n = { ...cur }
+                                      delete n[url]
+                                      return n
+                                    })
+                                    return
+                                  }
+                                  // une seule photo de chaque sorte par couleur
+                                  const drop = (u: string) => u === url || (sameColor.has(u) && kindOf(u) === who)
+                                  setHoverSet((cur) => [...cur.filter((u) => !drop(u)), url])
+                                  setWornFor((cur) => {
+                                    const n: Record<string, string> = {}
+                                    for (const [u, g] of Object.entries(cur) as [string, string][]) if (!(sameColor.has(u) && g === who) && u !== url) n[u] = g
+                                    if (who !== "any") n[url] = who
+                                    return n
+                                  })
+                                }}
+                                className={`flex h-8 flex-1 cursor-pointer items-center justify-center rounded-full text-[11px] ring-1 ${
+                                  on ? "bg-[#171717] text-white ring-[#171717]" : "bg-white text-[#3d3a35] ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                                }`}
+                              >
+                                {on ? "✓ " : ""}
+                                {label}
+                              </button>
+                            )
+                          })}
+                        </div>
                         {form.product_type === "lamp" && (
                           <div className="mt-2 flex items-center gap-2 rounded-xl bg-white p-1.5 ring-1 ring-[#e0dbd3]">
                             {litMap[url] ? (
