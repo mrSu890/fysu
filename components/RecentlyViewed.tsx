@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useLocale } from "next-intl"
 import Product from "@/components/Product"
 import SectionTitle from "@/components/SectionTitle"
+import Fold from "@/components/Home/Fold"
 import { readRecent } from "@/lib/recentlyViewed"
 import type { ProductType } from "@/types/product"
 
@@ -23,22 +24,27 @@ export default function RecentlyViewed({ excludeSlug, className = "" }: { exclud
 
   return (
     <section className={`relative mx-auto w-11/12 ${className}`}>
-      <div className="relative mb-12 sm:mb-16">
-        <SectionTitle lineAbove className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">
-          {fr ? "Récemment consulté" : "Recently viewed"}
-        </SectionTitle>
-      </div>
-
-      <div
-        ref={scrollRef}
-        className="no-scrollbar flex gap-6 snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth pb-2"
+      <Fold
+        defaultOpen={false}
+        label={fr ? "Récemment consulté" : "Recently viewed"}
+        meta={`( ${String(items.length).padStart(2, "0")} )`}
+        header={
+          <SectionTitle lineAbove className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">
+            {fr ? "Récemment consulté" : "Recently viewed"}
+          </SectionTitle>
+        }
       >
-        {items.map((product) => (
-          <div key={product.slug} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px] lg:w-[320px]">
-            <Product showArrows reveal product={product} scrollRef={scrollRef} />
-          </div>
-        ))}
-      </div>
+        <div
+          ref={scrollRef}
+          className="no-scrollbar flex gap-6 snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth pb-2"
+        >
+          {items.map((product) => (
+            <div key={product.slug} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px] lg:w-[320px]">
+              <Product showArrows reveal product={product} scrollRef={scrollRef} />
+            </div>
+          ))}
+        </div>
+      </Fold>
     </section>
   )
 }
