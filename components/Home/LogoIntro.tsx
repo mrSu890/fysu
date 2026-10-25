@@ -14,7 +14,7 @@ const LOGO_MASK = "/images/fysu-light.png" // seule la forme du logo compte
 const ASPECT = 359 / 1195 // hauteur / largeur de l'image du logo
 const SIDE_MARGIN = 0.03 // marge gauche/droite (3 % de la largeur)
 
-export default function LogoIntro({ color = PINK }: { color?: string }) {
+export default function LogoIntro({ color = PINK, onClick }: { color?: string; onClick?: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
 
@@ -45,9 +45,12 @@ export default function LogoIntro({ color = PINK }: { color?: string }) {
   return (
     <div
       ref={ref}
-      aria-hidden="true"
+      aria-hidden={onClick ? undefined : "true"}
+      aria-label={onClick ? "Haut de la page" : undefined}
+      role={onClick ? "button" : undefined}
+      onClick={onClick}
       data-no-reveal
-      className="pointer-events-none absolute z-20 overflow-hidden"
+      className={`absolute z-20 overflow-hidden ${onClick ? "pointer-events-auto cursor-pointer" : "pointer-events-none"}`}
       style={{ left: `${SIDE_MARGIN * 100}vw`, top: 20, width: `${(1 - SIDE_MARGIN * 2) * 100}vw`, aspectRatio: `${1 / ASPECT}` }}
     >
       <div

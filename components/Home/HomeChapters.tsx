@@ -60,6 +60,7 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
   const root = useRef<HTMLElement>(null);
   const [idx, setIdx] = useState(0);
   const idxRef = useRef(0);
+  const topRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const el = root.current;
@@ -193,6 +194,24 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
       });
     }
 
+    // toucher le gros logo : retour très rapide tout en haut de la page (là où est la barre de navigation)
+    topRef.current = () => {
+      const from = st.locked ? st.top : window.scrollY;
+      if (st.locked) {
+        st.locked = false;
+        arm(false);
+        unlockBody();
+        jump(from);
+      }
+      st.cool = performance.now() + 1500;
+      animate(calm() ? 1 : 450, (k) => jump(from * (1 - k)), () => {
+        st.lastY = window.scrollY;
+        st.cool = performance.now() + 300;
+        idxRef.current = 0;
+        setIdx(0);
+      });
+    };
+
     const onScroll = () => {
       const y = window.scrollY;
       const dir = y > st.lastY ? 1 : y < st.lastY ? -1 : 0;
@@ -255,12 +274,12 @@ html.a11y-calm .hc-panel,html.a11y-focus .hc-panel{transition:none!important}`}<
                   <img src={c.image} alt="" loading="eager" draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />
                 ))}
               {/* voile léger sous le texte (téléphone / iPad) */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/50 to-transparent lg:hidden" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/25 to-transparent lg:hidden" />
             </Link>
 
             {/* titre minuscule + Découvrir */}
             <div
-              className={`pointer-events-none absolute inset-x-0 bottom-0 flex justify-center text-white lg:pointer-events-auto lg:static lg:items-center lg:text-foreground ${flip ? "lg:order-1" : ""}`}
+              className={`pointer-events-none absolute inset-x-0 bottom-0 flex justify-center text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)] lg:drop-shadow-none lg:pointer-events-auto lg:static lg:items-center lg:text-foreground ${flip ? "lg:order-1" : ""}`}
               style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.75rem)" }}
             >
               <Link href={c.href} tabIndex={i === idx ? 0 : -1} className="group pointer-events-auto block text-center">
@@ -289,7 +308,7 @@ html.a11y-calm .hc-panel,html.a11y-focus .hc-panel{transition:none!important}`}<
       </div>
 
       {/* gros logo : fixé en haut pendant tous les chapitres, il change de couleur en douceur */}
-      <LogoIntro color={idx < count ? logoColor(list[idx]) : "#ffffff"} />
+      <LogoIntro color={idx < count ? logoColor(list[idx]) : "#ffffff"} onClick={() => topRef.current()} />
     </section>
   );
 }
