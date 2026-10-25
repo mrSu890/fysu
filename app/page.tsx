@@ -1,5 +1,4 @@
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { HomeIntroText } from "@/components/Home/Hero";
 import HomeChapters, { type Chapter } from "@/components/Home/HomeChapters";
 import HomeStage from "@/components/Home/HomeStage";
@@ -52,6 +51,7 @@ async function getChapters(): Promise<Chapter[] | null> {
       label: String(s.label || ""),
       href: String(s.href || "/"),
       image: String(s.image || ""),
+      color: String(s.color || ""),
     }));
   } catch {
     return null;
@@ -112,7 +112,6 @@ export default async function Home() {
       <div className="mt-36 sm:mt-48" />
       <HomeChapters chapters={chapters} />
 
-      <Footer />
     </>
   );
 }
