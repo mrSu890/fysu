@@ -165,6 +165,7 @@ export async function POST(
           color: image.color,
           ...(image.lit_url ? { lit_url: image.lit_url } : {}),
           ...((image as { is_hover?: boolean | null }).is_hover ? { is_hover: true } : {}),
+          ...((image as { worn_for?: string | null }).worn_for ? { worn_for: (image as { worn_for?: string | null }).worn_for } : {}),
         })) ?? [];
 
     if (images.length) {
