@@ -126,7 +126,9 @@ async function preLaunchGate(req: NextRequest, res: NextResponse): Promise<NextR
   // Pas d'accès : la page d'attente s'affiche à la place de la page demandée (l'adresse ne change pas)
   const out = NextResponse.rewrite(new URL("/password", req.url))
   res.cookies.getAll().forEach((c) => out.cookies.set(c))
-  out.headers.set("X-Robots-Tag", "noindex, nofollow")
+  // Google peut indexer l'accueil (la page d'attente, titre « FYSU ») pour que le site reste visible dans ses résultats ;
+  // toutes les autres pages restent cachées (noindex) tant que le site n'est pas ouvert
+  out.headers.set("X-Robots-Tag", pathname === "/" ? "index, follow" : "noindex, nofollow")
   out.headers.set("Cache-Control", "no-store")
   return out
 }
