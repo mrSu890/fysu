@@ -2,9 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { type PixelMode } from "@/components/PixelGrid"
+import PixelGrid, { type PixelMode } from "@/components/PixelGrid"
 import WaterGrid from "@/components/WaterGrid"
-import GlassGrid, { glassStore, takeSnapshot } from "@/components/GlassGrid"
 
 /* ====================================================================
    TRANSITION EN PIXELS ENTRE LES PAGES
@@ -75,10 +74,6 @@ export default function PixelTransition() {
   const [phase, setPhase] = useState<"idle" | PixelMode>("idle")
   const [kind, setKind] = useState<Kind>("pixel")
   const busyRef = useRef(false)
-  const kindRef = useRef<Kind>("pixel")
-  kindRef.current = kind
-  // « photo » de la page prise dès que le doigt se pose sur un lien (pour que le verre démarre sans attendre)
-  const preRef = useRef<{ t: number; y: number; path: string; p: Promise<HTMLCanvasElement | null> } | null>(null)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
   if (typeof window !== "undefined" && phase !== "idle") (window as any).__pxActiveUntil = Date.now() + 1800
@@ -92,58 +87,7 @@ export default function PixelTransition() {
     const covering = phase === "in" || phase === "solid"
     ;(window as any).__pxCovering = covering
     if (!covering) window.dispatchEvent(new Event("pixel-reveal"))
-    if (phase === "idle") {
-      // on libère les « photos » de la page
-      glassStore.old = null
-      glassStore.next = null
-    }
   }, [phase])
-
-  // 0c. photo de la page dès que le doigt se pose sur un lien (annulée si on fait défiler)
-  useEffect(() => {
-    let timer = 0
-    let sx = 0
-    let sy = 0
-    const cancel = () => window.clearTimeout(timer)
-    const down = (e: Event) => {
-      cancel()
-      if (phaseRef.current !== "idle" || busyRef.current || isCalm() || !(window as any).__loaderVisualDone) return
-      const el = (e.target as Element | null)?.closest?.("a[href], [data-href]") as HTMLElement | null
-      if (!el || el.hasAttribute("data-hero-link")) return
-      let url: URL
-      try {
-        url = new URL(el.getAttribute("href") ?? el.getAttribute("data-href") ?? "", window.location.href)
-      } catch {
-        return
-      }
-      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return
-      if (isPixelExcluded(url.pathname) || isPixelExcluded(window.location.pathname)) return
-      if (quickKind(url.pathname) === "water") return
-      const pt = e as PointerEvent
-      sx = pt.clientX
-      sy = pt.clientY
-      timer = window.setTimeout(() => {
-        preRef.current = { t: Date.now(), y: window.scrollY, path: window.location.pathname, p: takeSnapshot() }
-      }, 70)
-    }
-    const move = (e: Event) => {
-      const pt = e as PointerEvent
-      if (Math.abs(pt.clientX - sx) > 8 || Math.abs(pt.clientY - sy) > 8) cancel()
-    }
-    document.addEventListener("pointerdown", down, { passive: true, capture: true })
-    document.addEventListener("pointermove", move, { passive: true, capture: true })
-    document.addEventListener("pointercancel", cancel, { passive: true, capture: true })
-    document.addEventListener("touchmove", cancel, { passive: true, capture: true })
-    window.addEventListener("scroll", cancel, { passive: true })
-    return () => {
-      cancel()
-      document.removeEventListener("pointerdown", down, true)
-      document.removeEventListener("pointermove", move, true)
-      document.removeEventListener("pointercancel", cancel, true)
-      document.removeEventListener("touchmove", cancel, true)
-      window.removeEventListener("scroll", cancel)
-    }
-  }, [])
 
   // 0. on compte les requêtes réseau en cours (la page attend ses données avant de se montrer)
   useEffect(() => {
@@ -194,29 +138,11 @@ export default function PixelTransition() {
       if (phaseRef.current !== "idle" || busyRef.current) return false
 
       const dest = url.pathname + url.search + url.hash
-      const go = (k: Kind) => {
+      const start = (k: Kind) => {
         busyRef.current = false
         destRef.current = dest
         setKind(k)
         setPhase("in")
-      }
-      const start = (k: Kind) => {
-        if (k !== "pixel") {
-          glassStore.old = null
-          glassStore.next = null
-          go(k)
-          return
-        }
-        // le verre montre d'abord la page actuelle : on en prend la « photo » (déjà prête si le doigt a touché le lien)
-        busyRef.current = true
-        const pre = preRef.current
-        preRef.current = null
-        const usable = !!pre && Date.now() - pre.t < 4000 && pre.y === window.scrollY && pre.path === window.location.pathname
-        ;(usable ? pre!.p : takeSnapshot()).then((c) => {
-          glassStore.old = c
-          glassStore.next = null
-          go(k)
-        })
       }
 
       const quick = quickKind(url.pathname)
@@ -331,15 +257,7 @@ export default function PixelTransition() {
         window.clearInterval(poll)
         observer.disconnect()
         // un dernier battement pour laisser la page se dessiner
-        window.setTimeout(() => {
-          // verre : on photographie aussi la nouvelle page pour la montrer à travers les carreaux
-          if (kindRef.current === "pixel" && glassStore.old) {
-            takeSnapshot().then((c) => {
-              glassStore.next = c
-              setPhase("out")
-            })
-          } else setPhase("out")
-        }, 120)
+        window.setTimeout(() => setPhase("out"), 120)
       }
     }, 80)
 
@@ -371,7 +289,7 @@ export default function PixelTransition() {
             setPhase("idle")
           }
         }
-        return kind === "water" ? <WaterGrid mode={phase} onDone={onDone} /> : <GlassGrid mode={phase} onDone={onDone} />
+        return kind === "water" ? <WaterGrid mode={phase} onDone={onDone} /> : <PixelGrid mode={phase} onDone={onDone} />
       })()}
     </div>
   )
