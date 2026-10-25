@@ -43,8 +43,8 @@ const Footer: React.FC = () => {
       {/* Présentation des FY'grances (image + texte + bouton) */}
       <FygrancesIntro />
 
-      {/* Page d'accueil : « Explore The Universe » juste au-dessus de l'anthurium */}
-      {pathname === "/" && <HomeTiles />}
+      {/* « Explore The Universe » : sur les pages For him, For her, collections et FY'grances (plus sur l'accueil, où le pied de page est le dernier chapitre) */}
+      {["/for-him", "/for-her", "/fygrances"].some((p) => pathname === p || pathname?.startsWith(p + "/")) || pathname?.startsWith("/collections/") ? <HomeTiles /> : null}
 
       {/* L'anthurium est retiré (en attendant une nouvelle photo). Ancienne image : /images/anthurium-v3.png */}
 
