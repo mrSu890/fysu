@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import HomeHero, { HomeIntroText } from "@/components/Home/Hero";
+import { HomeIntroText } from "@/components/Home/Hero";
 import HomeChapters, { type Chapter } from "@/components/Home/HomeChapters";
 import HomeStage from "@/components/Home/HomeStage";
 import type { Slide } from "@/components/Home/HomeShowcase";
@@ -22,23 +22,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // Les images du hero sont lues côté serveur : elles sont déjà dans la page à l'arrivée
 export const dynamic = "force-dynamic";
-
-async function getHeroSlides() {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("hero_slider")
-      .select("media_path, media_type")
-      .order("order");
-    if (error) {
-      console.error("hero_slider:", error.message);
-      return [];
-    }
-    return (data ?? []) as { media_path: string; media_type?: "image" | "video" }[];
-  } catch (err) {
-    console.error("hero_slider:", err);
-    return [];
-  }
-}
 
 // Les slides du carrousel de l'accueil (réglées dans l'admin) : lues côté serveur pour que la première image soit connue dès l'arrivée
 async function getCarouselSlides(): Promise<Slide[] | null> {
@@ -108,7 +91,7 @@ async function getSection(slug: string) {
 }
 
 export default async function Home() {
-  const [slides, solos, duos, carousel, chapters] = await Promise.all([getHeroSlides(), getSection("solos"), getSection("duos"), getCarouselSlides(), getChapters()]);
+  const [solos, duos, carousel, chapters] = await Promise.all([getSection("solos"), getSection("duos"), getCarouselSlides(), getChapters()]);
   const slideProducts = await getSlideProducts(carousel);
 
   return (
@@ -119,16 +102,15 @@ export default async function Home() {
       {/* 2. bloc texte FYSU */}
       <HomeIntroText />
       {/* 3. rangées de produits */}
-      <div className="mt-20 flex flex-col gap-24 sm:mt-28 sm:gap-36">
+      <div className="mt-20 flex flex-col gap-36 sm:mt-28 sm:gap-48">
         <HomeSection slug="solos" index={1} initialSection={solos} />
         {/* « Recently viewed » : toujours juste sous la rangée New in */}
         <RecentlyViewed />
         <HomeSection slug="duos" index={2} initialSection={duos} />
       </div>
-      {/* 4. chapitres plein écran (Musique, Arcade, À propos…) puis la grande image avec le gros logo rose (mène à Kiban Collector) */}
-      <div className="mt-32 sm:mt-44" />
+      {/* 4. chapitres plein écran (Musique, Arcade, À propos…) qui se superposent, avec le gros logo rose fixé en haut */}
+      <div className="mt-36 sm:mt-48" />
       <HomeChapters chapters={chapters} />
-      <HomeHero initialSlides={slides} />
 
       <Footer />
     </>
