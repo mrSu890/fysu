@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 import { useSiteCopy } from "@/lib/siteCopy";
 import Product from "@/components/Product";
+import ViewToggle from "@/components/ViewToggle";
 import IntroReveal from "@/components/IntroReveal";
 import type { ProductType } from "@/types/product";
 
@@ -320,6 +321,10 @@ export default function HomeShowcase({
       {products.length > 0 && (
         <IntroReveal delay={0.4} className="mt-8">
           <div key={current.key} style={{ animation: "hs-fade 0.6s ease both" }}>
+            {/* vue à plat / modèle (et homme / femme), valable pour tout le site */}
+            <div className="mb-3 flex justify-end">
+              <ViewToggle />
+            </div>
             <div className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2">
               {products.map((product) => (
                 <div key={product.id} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px]">
