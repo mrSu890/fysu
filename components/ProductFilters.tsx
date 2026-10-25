@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { SlidersHorizontal, X } from "lucide-react"
 import { useTranslations } from "next-intl"
+import ViewToggle from "@/components/ViewToggle"
 
 /* ====================================================================
    FILTRES
@@ -77,7 +78,8 @@ export default function ProductFilters({
   return (
     <>
       {/* BOUTON */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
+        <ViewToggle />
         <button
           type="button"
           onClick={() => setOpen(true)}

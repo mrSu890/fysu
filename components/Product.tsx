@@ -17,6 +17,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { useLamp } from "@/lib/lamp"
 import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/lib/availability"
 import { lowStockCount, lowStockText } from "@/lib/lowStock"
+import { useViewMode } from "@/components/ViewToggle"
 
 /* ====================================================================
    CARTE PRODUIT
@@ -59,6 +60,7 @@ const Product = ({
   const [infoRevealed, setInfoRevealed] = useState(false)
   const hideInfoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [viewMode] = useViewMode()
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const swipedRef = useRef(false)
   const boxRef = useRef<HTMLDivElement | null>(null)
@@ -98,7 +100,7 @@ const Product = ({
   }, [product.product_images])
   const [sel, setSel] = useState<string | null>(product.variant_color ? product.variant_color.toLowerCase() : null)
   const activeColor = imageColors.length > 1 ? (sel && imageColors.includes(sel) ? sel : imageColors[0]) : null
-  const activeImgs = useMemo(() => {
+  const activeImgsBase = useMemo(() => {
     const all = product.product_images ?? []
     if (!activeColor) return all
     return all.filter((img) => {
@@ -107,6 +109,13 @@ const Product = ({
       return c === activeColor || (activeColor === imageColors[0] && !imageColors.includes(c))
     })
   }, [product.product_images, activeColor, imageColors])
+  // vue « modèle » : la photo portée (celle marquée « survol » dans l'admin) passe en premier, quand elle existe
+  const activeImgs = useMemo(() => {
+    if (viewMode !== "model") return activeImgsBase
+    const worn = activeImgsBase.find((i) => i.is_hover)
+    return worn ? [worn, ...activeImgsBase.filter((i) => i !== worn)] : activeImgsBase
+  }, [activeImgsBase, viewMode])
+  useEffect(() => setCurrentIndex(0), [viewMode])
   const colorQuery = activeColor
     ? `?color=${encodeURIComponent(activeColor)}`
     : product.variant_color
