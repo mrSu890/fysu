@@ -198,6 +198,8 @@ export default function HomeShowcase({
   };
 
   const current = slides[active];
+  // Womenswear / Menswear : la slide décide du genre du modèle (pas de choix homme / femme)
+  const slideWho: "men" | "women" | null = /for-her/.test(current.href) ? "women" : /for-him/.test(current.href) ? "men" : null;
   const products = slideProducts[current.key] ?? [];
 
   return (
@@ -323,12 +325,12 @@ export default function HomeShowcase({
           <div key={current.key} style={{ animation: "hs-fade 0.6s ease both" }}>
             {/* vue à plat / modèle (et homme / femme), valable pour tout le site */}
             <div className="mb-3 flex justify-end">
-              <ViewToggle />
+              <ViewToggle fixedWho={slideWho} />
             </div>
             <div className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2">
               {products.map((product) => (
                 <div key={product.id} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px]">
-                  <Product showArrows product={product} />
+                  <Product showArrows product={product} forceWho={slideWho} />
                 </div>
               ))}
               {/* « Tout voir » : n'apparaît qu'au bout de la sélection */}
