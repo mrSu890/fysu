@@ -257,8 +257,7 @@ export default function QuickAdd({ product }: { product: ProductType }) {
                           type="button"
                           onClick={addNow}
                           disabled={!ready}
-                          className="font-info mt-5 w-full cursor-pointer rounded-full py-3 text-[11px] font-light uppercase tracking-[0.12em] transition active:scale-[0.98] disabled:cursor-default disabled:opacity-45"
-                          style={{ background: "var(--menu)", color: "var(--background)" }}
+                          className="font-info mt-5 w-full cursor-pointer rounded-full bg-white py-3 text-[11px] font-normal uppercase tracking-[0.12em] text-black transition active:scale-[0.98] disabled:cursor-default disabled:opacity-60"
                         >
                           {label}
                         </button>
