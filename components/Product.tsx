@@ -17,7 +17,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { useLamp } from "@/lib/lamp"
 import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/lib/availability"
 import { lowStockCount, lowStockText } from "@/lib/lowStock"
-import { useViewMode } from "@/components/ViewToggle"
+import { pageWho, useViewMode, useWho } from "@/components/ViewToggle"
 
 /* ====================================================================
    CARTE PRODUIT
@@ -61,6 +61,8 @@ const Product = ({
   const hideInfoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [viewMode] = useViewMode()
+  const [visitorWho] = useWho()
+  const pathnameNow = usePathname()
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const swipedRef = useRef(false)
   const boxRef = useRef<HTMLDivElement | null>(null)
@@ -110,11 +112,20 @@ const Product = ({
     })
   }, [product.product_images, activeColor, imageColors])
   // vue « modèle » : la photo portée (celle marquée « survol » dans l'admin) passe en premier, quand elle existe
+  // quelle photo portée ? le genre du produit décide ; sinon la page (For him / For her) ; sinon le choix du visiteur
+  const ownGender = product.gender === "men" || product.gender === "women" ? product.gender : null
+  const wanted = ownGender ?? pageWho(pathnameNow) ?? visitorWho
+  const wornImg = useMemo(() => {
+    const worn = activeImgsBase.filter((i) => i.is_hover)
+    const exact = worn.find((i) => i.worn_for === wanted)
+    const any = worn.find((i) => !i.worn_for)
+    // produit unisexe : jamais la photo de l'autre genre (il reste à plat plutôt qu'une femme sur « For him »)
+    return exact ?? any ?? (ownGender ? worn[0] : null) ?? null
+  }, [activeImgsBase, wanted, ownGender])
   const activeImgs = useMemo(() => {
-    if (viewMode !== "model") return activeImgsBase
-    const worn = activeImgsBase.find((i) => i.is_hover)
-    return worn ? [worn, ...activeImgsBase.filter((i) => i !== worn)] : activeImgsBase
-  }, [activeImgsBase, viewMode])
+    if (viewMode !== "model" || !wornImg) return activeImgsBase
+    return [wornImg, ...activeImgsBase.filter((i) => i !== wornImg)]
+  }, [activeImgsBase, viewMode, wornImg])
   useEffect(() => setCurrentIndex(0), [viewMode])
   const colorQuery = activeColor
     ? `?color=${encodeURIComponent(activeColor)}`
@@ -134,7 +145,7 @@ const Product = ({
   const hasLit = litImages.some(Boolean)
 
   // photo portée sur mannequin : apparaît au survol de la carte (ordinateur, première image seulement)
-  const hoverUrl = activeImgs.find((i) => i.is_hover)?.url ?? null
+  const hoverUrl = wornImg?.url ?? null
   const showHover = !!hoverUrl && hoverUrl !== images[0]
 
   const goToProduct = () => {
