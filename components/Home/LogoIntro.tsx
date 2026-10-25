@@ -9,12 +9,12 @@ import { useEffect, useRef, useState } from "react"
    Couleur : changer PINK ci-dessous.
    ==================================================================== */
 
-const PINK = "#e8b5b2" // ← la couleur du grand logo (modifiable ici)
+export const PINK = "#e8b5b2" // ← la couleur du grand logo (modifiable ici)
 const LOGO_MASK = "/images/fysu-light.png" // seule la forme du logo compte
 const ASPECT = 359 / 1195 // hauteur / largeur de l'image du logo
 const SIDE_MARGIN = 0.03 // marge gauche/droite (3 % de la largeur)
 
-export default function LogoIntro() {
+export default function LogoIntro({ color = PINK }: { color?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
 
@@ -53,7 +53,7 @@ export default function LogoIntro() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundColor: PINK,
+          backgroundColor: color,
           WebkitMaskImage: `url(${LOGO_MASK})`,
           maskImage: `url(${LOGO_MASK})`,
           WebkitMaskSize: "100% 100%",
@@ -61,7 +61,7 @@ export default function LogoIntro() {
           WebkitMaskRepeat: "no-repeat",
           maskRepeat: "no-repeat",
           transform: shown ? "translateY(0)" : "translateY(-115%)",
-          transition: shown ? "transform 1.1s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+          transition: shown ? "transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), background-color 760ms ease" : "background-color 760ms ease",
         }}
       />
     </div>

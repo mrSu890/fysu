@@ -3,15 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
-import LogoIntro from "@/components/Home/LogoIntro";
+import LogoIntro, { PINK } from "@/components/Home/LogoIntro";
+import FooterPanel from "@/components/Home/FooterPanel";
 
 /* ====================================================================
    CHAPITRES PLEIN ÉCRAN (bas de l'accueil, sous les rangées de produits) : pages qui se tournent
    - en arrivant, la page se cale sur les chapitres et se FIGE : plus de défilement classique
    - un coup sec du doigt vers le haut (ou molette / flèche bas) : le chapitre suivant monte du bas et se colle par-dessus
    - un coup vers le bas : on revient au chapitre précédent
-   - dernier chapitre + coup vers le haut : on sort vers le footer ; premier chapitre + coup vers le bas : on remonte aux rangées
-   - le gros logo FYSU rose reste fixé en haut pendant tous les chapitres ; la barre de navigation s'efface pendant ce temps
+   - le pied de page vert est le dernier chapitre (le gros logo y devient blanc et remplace le petit logo) ; premier chapitre + coup vers le bas : on remonte aux rangées
+   - le gros logo FYSU reste fixé en haut pendant tous les chapitres et change de couleur (voir logoColor) ; la barre de navigation s'efface pendant ce temps
    - téléphone / iPad : image ou vidéo (portrait) plein écran, petit titre centré en bas + « Découvrir »
    - ordinateur : la moitié de l'écran en image / vidéo, l'autre moitié vide avec un titre minuscule cliquable au milieu
    Les chapitres se règlent dans l'admin : Accueil (hero) → Chapitres de l'accueil.
@@ -24,7 +25,12 @@ const SWIPE = 34;
 const ENTER = 620; // durée du calage sur les chapitres
 const EXIT = 650; // durée de la sortie vers le footer / les rangées
 
-export type Chapter = { id: string; label: string; href: string; image: string };
+export type Chapter = { id: string; label: string; href: string; image: string; color?: string };
+
+// couleur du gros logo pendant chaque chapitre (réglable dans l'admin) : noir pour Musique, bleu ciel pour Arcade, rose sinon ; blanc sur le pied de page
+const INK = "#141414";
+const SKY = "#8ec5ea";
+const logoColor = (c: Chapter) => (c.color && /^#[0-9a-f]{6}$/i.test(c.color) ? c.color : c.id === "music" ? INK : c.id === "arcade" ? SKY : PINK);
 
 const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
 
@@ -49,7 +55,7 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
           { id: "arcade", label: d.arcade, href: "/games", image: "" },
           { id: "about", label: d.about, href: "/about", image: "" },
         ];
-  const count = list.length;
+  const count = list.length; // les chapitres ; le pied de page est le chapitre numéro `count`
 
   const root = useRef<HTMLElement>(null);
   const [idx, setIdx] = useState(0);
@@ -100,7 +106,7 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
     const turn = (dir: 1 | -1) => {
       if (!st.locked || performance.now() < st.until) return;
       const n = idxRef.current + dir;
-      if (n >= count) return leave(1);
+      if (n > count) return; // rien après le pied de page
       if (n < 0) return leave(-1);
       idxRef.current = n;
       setIdx(n);
@@ -129,6 +135,8 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
       }
     };
     const key = (e: KeyboardEvent) => {
+      const tg = e.target as HTMLElement | null;
+      if (tg && /^(input|textarea|select)$/i.test(tg.tagName)) return; // on peut écrire dans le champ e-mail
       if (["ArrowDown", "PageDown", " "].includes(e.key)) {
         e.preventDefault();
         turn(1);
@@ -267,8 +275,21 @@ html.a11y-calm .hc-panel,html.a11y-focus .hc-panel{transition:none!important}`}<
         );
       })}
 
-      {/* gros logo rose : fixé en haut pendant tous les chapitres */}
-      <LogoIntro />
+      {/* pied de page : le dernier chapitre */}
+      <div
+        className="hc-panel absolute inset-0 overflow-hidden will-change-transform"
+        style={{
+          zIndex: count + 1,
+          transform: count <= idx ? "translateY(0)" : "translateY(100%)",
+          transition: `transform ${TURN}ms cubic-bezier(0.7, 0, 0.2, 1)`,
+        }}
+        aria-hidden={idx !== count}
+      >
+        <FooterPanel />
+      </div>
+
+      {/* gros logo : fixé en haut pendant tous les chapitres, il change de couleur en douceur */}
+      <LogoIntro color={idx < count ? logoColor(list[idx]) : "#ffffff"} />
     </section>
   );
 }
