@@ -33,6 +33,7 @@ const Product = ({
   product,
   showArrows = false,
   reveal = false,
+  forceWho = null,
 }: {
   product: ProductType
   // true quand la carte est dans une rangée qui défile (flèches, pas de glissement sur l'image)
@@ -42,6 +43,8 @@ const Product = ({
   // (ancien réglage de la rangée, plus utilisé : on le garde pour ne rien casser)
   scrollRef?: React.RefObject<HTMLDivElement | null>
   isFirst?: boolean
+  // pour qui est la photo portée quand la page ne le dit pas (ex. carrousel Womenswear / Menswear de l'accueil)
+  forceWho?: "men" | "women" | null
 }) => {
   const t = useTranslations("Product")
   const [lit] = useLamp() // lampes : allumées / éteintes
@@ -114,7 +117,7 @@ const Product = ({
   // vue « modèle » : la photo portée (celle marquée « survol » dans l'admin) passe en premier, quand elle existe
   // quelle photo portée ? le genre du produit décide ; sinon la page (For him / For her) ; sinon le choix du visiteur
   const ownGender = product.gender === "men" || product.gender === "women" ? product.gender : null
-  const wanted = ownGender ?? pageWho(pathnameNow) ?? visitorWho
+  const wanted = ownGender ?? forceWho ?? pageWho(pathnameNow) ?? visitorWho
   const wornImg = useMemo(() => {
     const worn = activeImgsBase.filter((i) => i.is_hover)
     const exact = worn.find((i) => i.worn_for === wanted)

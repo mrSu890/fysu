@@ -81,12 +81,12 @@ export function pageWho(pathname: string | null | undefined): Who | null {
   return null
 }
 
-export default function ViewToggle() {
+export default function ViewToggle({ fixedWho }: { fixedWho?: Who | null }) {
   const fr = useLocale().startsWith("fr")
   const pathname = usePathname()
   const [m, setMode] = useViewMode()
   const [w, setWho] = useWho()
-  const fixed = pageWho(pathname)
+  const fixed = fixedWho ?? pageWho(pathname)
 
   const btn = (key: string, label: string, Icon: typeof Shirt, on: boolean, click: () => void) => (
     <button
