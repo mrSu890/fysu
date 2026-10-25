@@ -48,6 +48,7 @@ type ProductUpdatePayload = {
   size_guide_image_url?: string | null;
   lit_images?: Record<string, string> | null;
   hover_images?: string[] | null;
+  worn_for?: Record<string, string> | null;
   size_guide?: unknown;
   colors?: ColorInput[];
   info_blocks?: ProductInfoBlockInput[];
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
       size_guide_image_url,
       lit_images,
       hover_images,
+      worn_for,
       size_guide,
       colors,
       info_blocks,
@@ -346,6 +348,8 @@ export async function POST(req: Request) {
           ...(lit_images?.[url] ? { lit_url: lit_images[url] } : {}),
           // photo portée (survol) : colonne is_hover de product_images
           ...(hover_images?.includes(url) ? { is_hover: true } : {}),
+          // pour qui est la photo portée (men / women) : colonne worn_for de product_images
+          ...(hover_images?.includes(url) && worn_for?.[url] ? { worn_for: worn_for[url] } : {}),
         }))
     );
 
@@ -355,9 +359,11 @@ export async function POST(req: Request) {
         .insert(formattedImages);
 
       if (error) {
-        const hint = /is_hover/.test(error.message)
-          ? "La colonne « is_hover » manque dans la table product_images (voir la ligne SQL à lancer dans Supabase)."
-          : error.message;
+        const hint = /worn_for/.test(error.message)
+          ? "La colonne « worn_for » manque dans la table product_images (ligne SQL à lancer dans Supabase)."
+          : /is_hover/.test(error.message)
+            ? "La colonne « is_hover » manque dans la table product_images (voir la ligne SQL à lancer dans Supabase)."
+            : error.message;
         return NextResponse.json(
           { error: hint },
           { status: 500 }
