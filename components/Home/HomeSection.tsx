@@ -5,6 +5,7 @@ import Product from "../Product";
 import { ProductType } from "../../types/product"
 import SectionTitle from "../SectionTitle";
 import Fold from "./Fold";
+import ViewToggle from "../ViewToggle";
 
 export default function HomeSection({
   slug,
@@ -61,6 +62,10 @@ export default function HomeSection({
           <SectionTitle lineAbove className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">{title}</SectionTitle>
         }
       >
+        {/* vue à plat / modèle (et homme / femme), valable pour tout le site */}
+        <div className="mb-3 flex justify-end">
+          <ViewToggle />
+        </div>
         <div
           ref={scrollRef}
           data-row-memory={slug}
