@@ -5,6 +5,7 @@ import { useLocale } from "next-intl"
 import Product from "@/components/Product"
 import SectionTitle from "@/components/SectionTitle"
 import Fold from "@/components/Home/Fold"
+import ViewToggle from "@/components/ViewToggle"
 import { readRecent } from "@/lib/recentlyViewed"
 import type { ProductType } from "@/types/product"
 
@@ -34,6 +35,9 @@ export default function RecentlyViewed({ excludeSlug, className = "" }: { exclud
           </SectionTitle>
         }
       >
+        <div className="mb-3 flex justify-end">
+          <ViewToggle />
+        </div>
         <div
           ref={scrollRef}
           className="no-scrollbar flex gap-6 snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth pb-2"

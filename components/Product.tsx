@@ -126,9 +126,11 @@ const Product = ({
     return exact ?? any ?? (ownGender ? worn[0] : null) ?? null
   }, [activeImgsBase, wanted, ownGender])
   const activeImgs = useMemo(() => {
-    if (viewMode !== "model" || !wornImg) return activeImgsBase
-    return [wornImg, ...activeImgsBase.filter((i) => i !== wornImg)]
-  }, [activeImgsBase, viewMode, wornImg])
+    // on ne montre jamais, en défilant, la photo portée de l'autre genre (un homme sur « For her »…)
+    const visible = activeImgsBase.filter((i) => !i.worn_for || i.worn_for === wanted)
+    if (viewMode !== "model" || !wornImg) return visible
+    return [wornImg, ...visible.filter((i) => i !== wornImg)]
+  }, [activeImgsBase, viewMode, wornImg, wanted])
   useEffect(() => setCurrentIndex(0), [viewMode])
   const colorQuery = activeColor
     ? `?color=${encodeURIComponent(activeColor)}`
