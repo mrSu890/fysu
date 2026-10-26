@@ -17,11 +17,13 @@ export function rememberProduct(p: ProductType) {
       availability: p.availability ?? null,
       release_date: p.release_date ?? null,
       brand: p.brand ?? null,
+      gender: p.gender ?? null,
       product_images: (p.product_images ?? []).slice(0, 8).map((i) => ({
         id: i.id,
         url: i.url,
         color: i.color,
         is_hover: i.is_hover ?? null,
+        worn_for: i.worn_for ?? null,
       })),
     }
     const list = readRecent().filter((x) => x.slug !== p.slug)
