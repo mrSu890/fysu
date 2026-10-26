@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Copy, Crop, ExternalLink, ImagePlus, Plus, RefreshCw, Trash2, Upload } from "lucide-react"
+import { ArrowLeft, ArrowRight, Copy, Crop, ExternalLink, ImagePlus, Plus, RefreshCw, Trash2, Upload } from "lucide-react"
 import { AdminButton, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
@@ -563,6 +563,19 @@ export default function ProductEditor({ id }: { id: string }) {
   const removeImage = (ci: number, imgIndex: number) =>
     setColors((cur) =>
       cur.map((c, i) => (i === ci ? { ...c, images: c.images.filter((_, j) => j !== imgIndex) } : c))
+    )
+
+  // change la place d'une photo dans sa couleur (la première est la photo principale)
+  const shiftImage = (ci: number, imgIndex: number, dir: -1 | 1) =>
+    setColors((cur) =>
+      cur.map((c, i) => {
+        if (i !== ci) return c
+        const to = imgIndex + dir
+        if (to < 0 || to >= c.images.length) return c
+        const next = [...c.images]
+        ;[next[imgIndex], next[to]] = [next[to], next[imgIndex]]
+        return { ...c, images: next }
+      })
     )
 
   const moveImage = (ci: number, imgIndex: number, to: number) => {
@@ -1253,6 +1266,29 @@ export default function ProductEditor({ id }: { id: string }) {
                             <span className="absolute left-2 top-2 rounded-full bg-[#171717] px-2 py-0.5 text-[10px] text-white">
                               Principale
                             </span>
+                          )}
+                          {/* changer la place de la photo */}
+                          {ii > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => shiftImage(ci, ii, -1)}
+                              aria-label="Avancer la photo"
+                              title="Avancer la photo"
+                              className="absolute bottom-2 left-2 flex h-9 w-9 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-white/90 text-[#171717] shadow ring-1 ring-black/5 active:scale-90"
+                            >
+                              <ArrowLeft size={16} />
+                            </button>
+                          )}
+                          {ii < c.images.length - 1 && (
+                            <button
+                              type="button"
+                              onClick={() => shiftImage(ci, ii, 1)}
+                              aria-label="Reculer la photo"
+                              title="Reculer la photo"
+                              className="absolute bottom-2 right-2 flex h-9 w-9 cursor-pointer touch-manipulation items-center justify-center rounded-full bg-white/90 text-[#171717] shadow ring-1 ring-black/5 active:scale-90"
+                            >
+                              <ArrowRight size={16} />
+                            </button>
                           )}
                         </div>
                         <div className="mt-2 flex items-center gap-1.5">
