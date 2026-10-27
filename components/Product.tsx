@@ -119,15 +119,23 @@ const Product = ({
   const ownGender = product.gender === "men" || product.gender === "women" ? product.gender : null
   const wanted = ownGender ?? forceWho ?? pageWho(pathnameNow) ?? visitorWho
   const wornImg = useMemo(() => {
-    const worn = activeImgsBase.filter((i) => i.is_hover)
-    const exact = worn.find((i) => i.worn_for === wanted)
-    const any = worn.find((i) => !i.worn_for)
-    // produit unisexe : jamais la photo de l'autre genre (il reste à plat plutôt qu'une femme sur « For him »)
-    return exact ?? any ?? (ownGender ? worn[0] : null) ?? null
+    // la photo portée « principale » du bon genre d'abord, puis n'importe quelle photo portée de ce genre,
+    // puis les photos portées pour tous ; jamais la photo de l'autre genre (il reste à plat plutôt qu'une femme sur « For him »)
+    const isAny = (i: (typeof activeImgsBase)[number]) => i.worn_for === "any" || (!i.worn_for && !!i.is_hover)
+    const exact = activeImgsBase.filter((i) => i.worn_for === wanted)
+    const any = activeImgsBase.filter(isAny)
+    return (
+      exact.find((i) => i.is_hover) ??
+      exact[0] ??
+      any.find((i) => i.is_hover) ??
+      any[0] ??
+      (ownGender ? activeImgsBase.find((i) => i.is_hover) : null) ??
+      null
+    )
   }, [activeImgsBase, wanted, ownGender])
   const activeImgs = useMemo(() => {
     // on ne montre jamais, en défilant, la photo portée de l'autre genre (un homme sur « For her »…)
-    const visible = activeImgsBase.filter((i) => !i.worn_for || i.worn_for === wanted)
+    const visible = activeImgsBase.filter((i) => !i.worn_for || i.worn_for === "any" || i.worn_for === wanted)
     if (viewMode !== "model" || !wornImg) return visible
     return [wornImg, ...visible.filter((i) => i !== wornImg)]
   }, [activeImgsBase, viewMode, wornImg, wanted])
