@@ -279,8 +279,12 @@ html.a11y-calm .hc-panel,html.a11y-focus .hc-panel{transition:none!important}`}<
 
             {/* titre minuscule + Découvrir */}
             <div
-              className={`pointer-events-none absolute inset-x-0 bottom-0 flex justify-center text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)] lg:drop-shadow-none lg:pointer-events-auto lg:static lg:items-center lg:text-foreground ${flip ? "lg:order-1" : ""}`}
-              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.75rem)" }}
+              className={`pointer-events-none absolute inset-x-0 bottom-0 flex justify-center text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)] lg:drop-shadow-none lg:pointer-events-auto lg:static lg:items-center lg:pt-[var(--logo-pad)] lg:text-foreground ${flip ? "lg:order-1" : ""}`}
+              style={{
+                paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.75rem)",
+                // ordinateur : le gros logo prend le haut de l'écran, le texte se centre dans la place qui reste
+                ["--logo-pad" as string]: "calc(20px + 28.3vw + 2.5rem)",
+              }}
             >
               <Link href={c.href} tabIndex={i === idx ? 0 : -1} className="group pointer-events-auto block text-center">
                 <span className="font-info block text-[10px] tracking-[0.3em] opacity-60">{String(i + 1).padStart(2, "0")}</span>
