@@ -198,9 +198,9 @@ export default function ProductEditor({ id }: { id: string }) {
   const [sizeChart, setSizeChart] = useState<SizeGuide | null>(null)
   // lampes : photo « allumée » de chaque image (clé = adresse de l'image éteinte)
   const [litMap, setLitMap] = useState<Record<string, string>>({})
-  // photo portée sur mannequin (survol de la carte) : une par couleur
+  // photos portées sur mannequin : hoverSet = la photo portée PRINCIPALE (une par sorte et par couleur)
   const [hoverSet, setHoverSet] = useState<string[]>([])
-  // pour qui est la photo portée : "men" / "women" ; absent = pour tous
+  // photos portées : pour qui ("men" / "women" / "any" = tous) ; absent = photo à plat
   const [wornFor, setWornFor] = useState<Record<string, string>>({})
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
@@ -263,7 +263,8 @@ export default function ProductEditor({ id }: { id: string }) {
       const nextHover: string[] = (imageRows as any[]).filter((img) => img.is_hover).map((img) => img.url)
       const nextWorn: Record<string, string> = {}
       for (const img of imageRows as any[]) {
-        if (img.is_hover && (img.worn_for === "men" || img.worn_for === "women")) nextWorn[img.url] = img.worn_for
+        if (img.worn_for === "men" || img.worn_for === "women" || img.worn_for === "any") nextWorn[img.url] = img.worn_for
+        else if (img.is_hover) nextWorn[img.url] = "any" // anciennes photos portées : pour tous
       }
 
       let nextColors: ColorState[]
@@ -1325,51 +1326,61 @@ export default function ProductEditor({ id }: { id: string }) {
                             <Trash2 size={14} />
                           </button>
                         </div>
-                        {/* photo portée sur mannequin : pour tous, pour lui ou pour elle (une de chaque par couleur) */}
-                        <div className="mt-2 flex items-center gap-1.5">
+                        {/* photo à plat ou portée sur mannequin (pour lui / pour elle / pour tous) ; plusieurs photos possibles */}
+                        <div className="mt-2 flex items-center gap-1">
                           {([
-                            ["any", "Portée · tous"],
+                            ["flat", "À plat"],
                             ["men", "Homme"],
                             ["women", "Femme"],
-                          ] as const).map(([who, label]) => {
-                            const on = hoverSet.includes(url) && (wornFor[url] ?? "any") === who
+                            ["any", "Tous"],
+                          ] as const).map(([kind, label]) => {
+                            const cur = wornFor[url] ?? "flat"
+                            const on = cur === kind
                             return (
                               <button
-                                key={who}
+                                key={kind}
                                 type="button"
                                 aria-pressed={on}
                                 onClick={() => {
-                                  const sameColor = new Set(c.images)
-                                  const kindOf = (u: string) => wornFor[u] ?? "any"
-                                  if (on) {
-                                    setHoverSet((cur) => cur.filter((u) => u !== url))
-                                    setWornFor((cur) => {
-                                      const n = { ...cur }
-                                      delete n[url]
-                                      return n
-                                    })
-                                    return
-                                  }
-                                  // une seule photo de chaque sorte par couleur
-                                  const drop = (u: string) => u === url || (sameColor.has(u) && kindOf(u) === who)
-                                  setHoverSet((cur) => [...cur.filter((u) => !drop(u)), url])
-                                  setWornFor((cur) => {
-                                    const n: Record<string, string> = {}
-                                    for (const [u, g] of Object.entries(cur) as [string, string][]) if (!(sameColor.has(u) && g === who) && u !== url) n[u] = g
-                                    if (who !== "any") n[url] = who
+                                  if (on) return
+                                  setWornFor((m) => {
+                                    const n = { ...m }
+                                    if (kind === "flat") delete n[url]
+                                    else n[url] = kind
                                     return n
                                   })
+                                  // changer de sorte retire l'étoile « principale » (à remettre si besoin)
+                                  setHoverSet((h) => h.filter((u) => u !== url))
                                 }}
                                 className={`flex h-8 flex-1 cursor-pointer items-center justify-center rounded-full text-[11px] ring-1 ${
                                   on ? "bg-[#171717] text-white ring-[#171717]" : "bg-white text-[#3d3a35] ring-[#e0dbd3] hover:bg-[#faf8f5]"
                                 }`}
                               >
-                                {on ? "✓ " : ""}
                                 {label}
                               </button>
                             )
                           })}
                         </div>
+                        {wornFor[url] && (
+                          <button
+                            type="button"
+                            aria-pressed={hoverSet.includes(url)}
+                            onClick={() => {
+                              const kind = wornFor[url]
+                              const sameColor = new Set(c.images)
+                              setHoverSet((h) => {
+                                if (h.includes(url)) return h.filter((u) => u !== url)
+                                // une seule principale par sorte et par couleur
+                                return [...h.filter((u) => !(sameColor.has(u) && wornFor[u] === kind)), url]
+                              })
+                            }}
+                            className={`mt-1.5 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full text-[11px] ring-1 ${
+                              hoverSet.includes(url) ? "bg-[#171717] text-white ring-[#171717]" : "bg-white text-[#3d3a35] ring-[#e0dbd3] hover:bg-[#faf8f5]"
+                            }`}
+                          >
+                            {hoverSet.includes(url) ? "★ Portée principale" : "☆ Choisir comme principale"}
+                          </button>
+                        )}
                         {form.product_type === "lamp" && (
                           <div className="mt-2 flex items-center gap-2 rounded-xl bg-white p-1.5 ring-1 ring-[#e0dbd3]">
                             {litMap[url] ? (
