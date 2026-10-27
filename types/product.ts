@@ -6,7 +6,7 @@ export type ProductImage = {
   lit_url?: string | null;
   // photo portée sur mannequin : s'affiche au survol de la carte (ordinateur)
   is_hover?: boolean | null;
-  // photo portée : pour qui (men / women) ; vide = pour tous
+  // photo portée sur mannequin : pour qui (men / women / any = tous) ; vide = photo à plat. is_hover = la photo portée principale
   worn_for?: string | null;
 };
 
