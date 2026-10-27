@@ -161,7 +161,15 @@ const Product = ({
   const hoverUrl = wornImg?.url ?? null
   const showHover = !!hoverUrl && hoverUrl !== images[0]
 
+  // la fiche produit saura de quel côté on vient (For her → pas de photos d'homme)
+  const rememberWho = () => {
+    try {
+      sessionStorage.setItem("fysu-who", wanted)
+    } catch {}
+  }
+
   const goToProduct = () => {
+    rememberWho()
     const path = `/product/${product.slug}${colorQuery}`
     // l'image de la carte est « transportée » jusqu'à la fiche (voir components/ProductHero.tsx) ;
     // pas pour The Wave (qui a son eau) ni quand la carte montre une autre image que la première
@@ -180,6 +188,7 @@ const Product = ({
 
   // Tactile : les infos apparaissent quand le doigt se pose, puis se recachent un peu après
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    rememberWho()
     prefetchProduct(product.slug)
     swipeStart.current = { x: e.clientX, y: e.clientY }
     if (e.pointerType === "touch" || e.pointerType === "pen") {
