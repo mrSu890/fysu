@@ -349,7 +349,7 @@ export async function POST(req: Request) {
           // photo portée (survol) : colonne is_hover de product_images
           ...(hover_images?.includes(url) ? { is_hover: true } : {}),
           // pour qui est la photo portée (men / women) : colonne worn_for de product_images
-          ...(hover_images?.includes(url) && worn_for?.[url] ? { worn_for: worn_for[url] } : {}),
+          ...(worn_for?.[url] ? { worn_for: worn_for[url] } : {}),
         }))
     );
 
