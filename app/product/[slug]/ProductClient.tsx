@@ -150,15 +150,29 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
     )
   }, [colorList, colorParam, stockByColor])
 
+  // d'où vient le visiteur ? (For her → photos de femme seulement ; For him → photos d'homme seulement)
+  const [ctxWho, setCtxWho] = useState<string | null>(null)
+  useEffect(() => {
+    try {
+      setCtxWho(sessionStorage.getItem("fysu-who"))
+    } catch {}
+  }, [])
+
   const filteredImages = useMemo(() => {
     if (!product) return []
-    if (!selectedColor) return product.product_images
+    const who = product.gender === "men" || product.gender === "women" ? product.gender : ctxWho
+    // on retire les photos portées de l'autre genre (sauf s'il ne resterait rien)
+    const pick = (list: typeof product.product_images) => {
+      const ok = list.filter((img) => !img.worn_for || img.worn_for === "any" || !who || img.worn_for === who)
+      return ok.length > 0 ? ok : list
+    }
+    if (!selectedColor) return pick(product.product_images)
 
     const matching = product.product_images.filter(
       (img) => img.color && img.color.toLowerCase() === selectedColor.hex.toLowerCase()
     )
-    return matching.length > 0 ? matching : product.product_images
-  }, [product, selectedColor])
+    return pick(matching.length > 0 ? matching : product.product_images)
+  }, [product, selectedColor, ctxWho])
 
   // tailles de la couleur choisie (une ligne de stock = une couleur + une taille)
   const sizesForColor: ProductSize[] = useMemo(() => {
