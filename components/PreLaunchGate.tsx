@@ -224,6 +224,10 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
       })
       if (res.ok) {
         setLeaving(true)
+        // l'écran de chargement et l'animation d'ouverture du carrousel doivent se jouer sur le vrai accueil
+        try {
+          sessionStorage.removeItem("fysu:loader:seen")
+        } catch {}
         window.setTimeout(() => window.location.reload(), 650)
         return
       }

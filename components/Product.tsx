@@ -119,17 +119,12 @@ const Product = ({
   const ownGender = product.gender === "men" || product.gender === "women" ? product.gender : null
   const wanted = ownGender ?? forceWho ?? pageWho(pathnameNow) ?? visitorWho
   const wornImg = useMemo(() => {
-    // la photo portée « principale » du bon genre d'abord, puis n'importe quelle photo portée de ce genre,
-    // puis les photos portées pour tous ; jamais la photo de l'autre genre (il reste à plat plutôt qu'une femme sur « For him »)
-    const isAny = (i: (typeof activeImgsBase)[number]) => i.worn_for === "any" || (!i.worn_for && !!i.is_hover)
-    const exact = activeImgsBase.filter((i) => i.worn_for === wanted)
-    const any = activeImgsBase.filter(isAny)
+    // seule la photo portée PRINCIPALE (étoile dans l'admin) sert de première photo en vue modèle :
+    // celle du bon genre, sinon celle « pour tous » ; jamais la photo de l'autre genre
+    const principal = activeImgsBase.filter((i) => i.is_hover)
     return (
-      exact.find((i) => i.is_hover) ??
-      exact[0] ??
-      any.find((i) => i.is_hover) ??
-      any[0] ??
-      (ownGender ? activeImgsBase.find((i) => i.is_hover) : null) ??
+      principal.find((i) => i.worn_for === wanted) ??
+      principal.find((i) => !i.worn_for || i.worn_for === "any") ??
       null
     )
   }, [activeImgsBase, wanted, ownGender])

@@ -36,7 +36,7 @@ export default function RecentlyViewed({ excludeSlug, className = "" }: { exclud
         }
       >
         <div className="mb-3 flex justify-end">
-          <ViewToggle />
+          <ViewToggle products={items} />
         </div>
         <div
           ref={scrollRef}

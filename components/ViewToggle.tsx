@@ -81,12 +81,18 @@ export function pageWho(pathname: string | null | undefined): Who | null {
   return null
 }
 
-export default function ViewToggle({ fixedWho }: { fixedWho?: Who | null }) {
+// les produits affichés ont-ils des photos portées ? (sinon le choix n'a aucun sens : parfums, bougies…)
+const hasWorn = (list: any[]) =>
+  list.some((p) => (p?.product_images ?? []).some((i: any) => i?.is_hover || i?.worn_for));
+
+export default function ViewToggle({ fixedWho, products }: { fixedWho?: Who | null; products?: any[] }) {
   const fr = useLocale().startsWith("fr")
   const pathname = usePathname()
   const [m, setMode] = useViewMode()
   const [w, setWho] = useWho()
   const fixed = fixedWho ?? pageWho(pathname)
+  if (pathname?.startsWith("/fygrances")) return null
+  if (products && !hasWorn(products)) return null
 
   const btn = (key: string, label: string, Icon: typeof Shirt, on: boolean, click: () => void) => (
     <button
