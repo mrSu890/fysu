@@ -163,11 +163,12 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
 
     // ----- entrer : la page se cale sur les chapitres, puis se fige
     const enter = () => {
-      if (st.locked) return;
+      if (st.locked || (window as any).__stageBusy) return;
       const r = el.getBoundingClientRect();
       const y0 = window.scrollY;
       const target = y0 + r.top;
       st.locked = true;
+      (window as any).__chaptersLocked = true;
       st.top = y0;
       st.until = performance.now() + (calm() ? 1 : ENTER) + 120;
       lockBody(y0);
@@ -184,6 +185,7 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
       if (!st.locked) return;
       const y = st.top;
       st.locked = false;
+      (window as any).__chaptersLocked = false;
       st.cool = performance.now() + (calm() ? 1 : EXIT) + 500;
       arm(false);
       unlockBody();
@@ -199,6 +201,7 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
       const from = st.locked ? st.top : window.scrollY;
       if (st.locked) {
         st.locked = false;
+        (window as any).__chaptersLocked = false;
         arm(false);
         unlockBody();
         jump(from);
@@ -230,6 +233,7 @@ export default function HomeChapters({ chapters }: { chapters?: Chapter[] | null
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
+      (window as any).__chaptersLocked = false;
       if (st.locked) {
         arm(false);
         unlockBody();

@@ -73,9 +73,11 @@ export default function HomeStage({
       b.style.right = "0";
       b.style.width = "100%";
       locked.current = true;
+      (window as any).__stageBusy = true;
       syncRef.current();
     } else {
       locked.current = false;
+      (window as any).__stageBusy = false;
       const [o, p, t, l, r, w] = prevOverflow.current.b.split("|");
       h.style.overflow = prevOverflow.current.h;
       b.style.overflow = o;
@@ -84,7 +86,8 @@ export default function HomeStage({
       b.style.left = l;
       b.style.right = r;
       b.style.width = w;
-      window.scrollTo(0, 0);
+      // (les chapitres du bas ont leur propre blocage : on ne ramène jamais la page en haut pendant qu'ils sont figés)
+      if (!(window as any).__chaptersLocked) window.scrollTo(0, 0);
       syncRef.current();
     }
   };
@@ -127,7 +130,7 @@ export default function HomeStage({
   }, [ov]);
 
   const open = useCallback(() => {
-    if (busy.current || phaseRef.current !== "closed") return;
+    if (busy.current || phaseRef.current !== "closed" || (window as any).__chaptersLocked) return;
     const api = ringApi.current;
     const w = wrap.current;
     const show = showLayer.current;
@@ -255,7 +258,8 @@ export default function HomeStage({
 
   // premier geste vers le bas, tout en haut de la page : la sélection s'ouvre
   useEffect(() => {
-    const can = () => phaseRef.current === "closed" && !busy.current && window.scrollY <= 4 && !!(window as any).__loaderVisualDone;
+    const can = () =>
+      phaseRef.current === "closed" && !busy.current && window.scrollY <= 4 && !!(window as any).__loaderVisualDone && !(window as any).__chaptersLocked;
     let sx = 0;
     let sy = 0;
     const wheel = (e: WheelEvent) => {
@@ -297,7 +301,7 @@ export default function HomeStage({
     // on ne les branche que tout en haut de la page (là où le premier geste ouvre la sélection) et pendant le voyage.
     let armed = false;
     const sync = () => {
-      const want = locked.current || (phaseRef.current === "closed" && window.scrollY <= 4);
+      const want = locked.current || (phaseRef.current === "closed" && window.scrollY <= 4 && !(window as any).__chaptersLocked);
       if (want === armed) return;
       armed = want;
       if (want) {

@@ -64,7 +64,7 @@ export default function HomeSection({
       >
         {/* vue à plat / modèle (et homme / femme), valable pour tout le site */}
         <div className="mb-3 flex justify-end">
-          <ViewToggle />
+          <ViewToggle products={products} />
         </div>
         <div
           ref={scrollRef}

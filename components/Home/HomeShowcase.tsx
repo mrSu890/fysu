@@ -325,7 +325,7 @@ export default function HomeShowcase({
           <div key={current.key} style={{ animation: "hs-fade 0.6s ease both" }}>
             {/* vue à plat / modèle (et homme / femme), valable pour tout le site */}
             <div className="mb-3 flex justify-end">
-              <ViewToggle fixedWho={slideWho} />
+              <ViewToggle fixedWho={slideWho} products={products} />
             </div>
             <div className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2">
               {products.map((product) => (
