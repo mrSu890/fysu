@@ -58,6 +58,14 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
   const searchParams = useSearchParams()
   const router = useRouter()
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const galleryRef = useRef<HTMLDivElement | null>(null)
+  const [galleryIdx, setGalleryIdx] = useState(0)
+  const onGalleryScroll = () => {
+    const el = galleryRef.current
+    if (!el || !el.firstElementChild) return
+    const w = (el.firstElementChild as HTMLElement).offsetWidth + 8
+    setGalleryIdx(Math.max(0, Math.round(el.scrollLeft / w)))
+  }
 
   const [product, setProduct] = useState<ProductType | null>(initialProduct)
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null)
@@ -239,7 +247,6 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
 
   if (!product) return notFound()
 
-  const mainImage = filteredImages[0]?.url
   // lampes : chaque image peut avoir sa photo « allumée » ; un seul bouton les fait toutes passer de l'une à l'autre
   // (pas de recadrage : les deux photos gardent le même cadre)
   const hasLit = filteredImages.some((img) => Boolean((img as { lit_url?: string | null }).lit_url))
@@ -268,7 +275,6 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
       )}
     </>
   )
-  const otherImages = filteredImages.slice(1)
 
   function formatText(text?: string | null) {
     if (!text) return ""
@@ -358,64 +364,40 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
       <div className="grid md:grid-cols-2 gap-12 lg:gap-24 items-start">
   
         {/* ================= IMAGES ================= */}
-        <div
-          className="
-                        space-y-3
-            sm:h-auto
-            h-[66vh]
-            overflow-y-scroll
-            sm:overflow-visible
-            no-scrollbar
-          "
-        >
-
-          {/* Grande image principale */}
-          {mainImage && (
-            <div
-              data-hero-target
-              className="
-                relative w-full aspect-[3/4] overflow-hidden bg-foreground/[0.06]
-              "
-            >
-              {renderPhoto(filteredImages[0], { priority: true })}
-              {hasLit && (
-                <div className="absolute bottom-3 right-3 z-10">
-                  <LampSwitch glass />
-                </div>
-              )}
+        {/* téléphone : défilement horizontal, la photo suivante dépasse sur le bord ; ordinateur : photos en colonne */}
+        <div className="relative">
+          <div
+            ref={galleryRef}
+            onScroll={onGalleryScroll}
+            className="no-scrollbar -mx-0 flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain sm:snap-none sm:flex-col sm:gap-3 sm:overflow-visible"
+          >
+            {filteredImages.map((img, i) => (
+              <div
+                key={img.id}
+                {...(i === 0 ? { "data-hero-target": true } : {})}
+                className="relative aspect-[3/4] w-[88%] shrink-0 snap-start overflow-hidden bg-foreground/[0.06] sm:w-full"
+              >
+                {renderPhoto(img, { priority: i < 2 })}
+              </div>
+            ))}
+          </div>
+          {hasLit && (
+            <div className="pointer-events-none absolute right-3 top-3 z-10 sm:hidden">
+              <div className="pointer-events-auto"><LampSwitch glass /></div>
             </div>
           )}
-
-          {/* Autres images */}
-          {otherImages.length > 0 && (
-            <div>
-              {/* DESKTOP */}
-                            <div className="hidden sm:flex sm:flex-col gap-3">
-                {otherImages.map((img) => (
-                  <div
-                    key={img.id}
-                    className="relative aspect-[3/4] overflow-hidden bg-foreground/[0.06]"
-                  >
-                    {renderPhoto(img, {})}
-                  </div>
-                ))}
-              </div>
-
-              {/* MOBILE */}
-              <div className="sm:hidden flex flex-col gap-3">
-                {otherImages.map((img) => (
-                  <div
-                    key={img.id}
-                    className="relative aspect-[3/4] overflow-hidden bg-foreground/[0.06]"
-                  >
-                    {renderPhoto(img, {})}
-                  </div>
-                ))}
-              </div>
+          {hasLit && (
+            <div className="absolute bottom-3 right-3 z-10 hidden sm:block">
+              <LampSwitch glass />
             </div>
+          )}
+          {filteredImages.length > 1 && (
+            <p className="font-info mt-3 text-center text-[11px] font-light tracking-[0.12em] opacity-60 sm:hidden">
+              {galleryIdx + 1} / {filteredImages.length}
+            </p>
           )}
         </div>
-  
+
         {/* ================= INFO ================= */}
         <div className="space-y-12 sticky top-24 lg:top-[14vh] self-start w-11/12 mx-auto lg:pr-8">
   
