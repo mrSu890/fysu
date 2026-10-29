@@ -118,6 +118,9 @@ const Product = ({
   // quelle photo portée ? le genre du produit décide ; sinon la page (For him / For her) ; sinon le choix du visiteur
   const ownGender = product.gender === "men" || product.gender === "women" ? product.gender : null
   const wanted = ownGender ?? forceWho ?? pageWho(pathnameNow) ?? visitorWho
+  // page neutre en vue à plat : on ne trie pas par genre (sinon on ne voit que les photos d'homme par défaut)
+  const neutral = !ownGender && !forceWho && !pageWho(pathnameNow)
+  const filterWho = neutral && viewMode !== "model" ? null : wanted
   const wornImg = useMemo(() => {
     // seule la photo portée PRINCIPALE (étoile dans l'admin) sert de première photo en vue modèle :
     // celle du bon genre, sinon celle « pour tous » ; jamais la photo de l'autre genre
@@ -130,10 +133,10 @@ const Product = ({
   }, [activeImgsBase, wanted, ownGender])
   const activeImgs = useMemo(() => {
     // on ne montre jamais, en défilant, la photo portée de l'autre genre (un homme sur « For her »…)
-    const visible = activeImgsBase.filter((i) => !i.worn_for || i.worn_for === "any" || i.worn_for === wanted)
+    const visible = activeImgsBase.filter((i) => !filterWho || !i.worn_for || i.worn_for === "any" || i.worn_for === filterWho)
     if (viewMode !== "model" || !wornImg) return visible
     return [wornImg, ...visible.filter((i) => i !== wornImg)]
-  }, [activeImgsBase, viewMode, wornImg, wanted])
+  }, [activeImgsBase, viewMode, wornImg, filterWho])
   useEffect(() => setCurrentIndex(0), [viewMode])
   const colorQuery = activeColor
     ? `?color=${encodeURIComponent(activeColor)}`
@@ -159,7 +162,8 @@ const Product = ({
   // la fiche produit saura de quel côté on vient (For her → pas de photos d'homme)
   const rememberWho = () => {
     try {
-      sessionStorage.setItem("fysu-who", wanted)
+      if (filterWho) sessionStorage.setItem("fysu-who", filterWho)
+      else sessionStorage.removeItem("fysu-who")
     } catch {}
   }
 
