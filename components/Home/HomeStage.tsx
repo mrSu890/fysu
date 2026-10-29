@@ -164,7 +164,7 @@ export default function HomeStage({
       from: media.rect,
       to: card.getBoundingClientRect(),
       r0: 0,
-      r1: RADIUS,
+      r1: 0,
       dur,
       start: () => api.hideCenter(true),
       done: () => {
@@ -223,7 +223,7 @@ export default function HomeStage({
     pending.current = {
       from: card.getBoundingClientRect(),
       to: media.rect,
-      r0: RADIUS,
+      r0: 0,
       r1: 0,
       dur,
       start: () => api.hideCenter(true),
