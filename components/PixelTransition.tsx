@@ -111,7 +111,11 @@ export default function PixelTransition() {
       if (!el) return
       try {
         const url = new URL(el.getAttribute("href") ?? el.getAttribute("data-href") ?? "", window.location.href)
-        if (url.origin === window.location.origin) lookupBrand(url.pathname)
+        if (url.origin === window.location.origin) {
+          lookupBrand(url.pathname)
+          // la page elle-même (code + écran de chargement) est préparée d'avance
+          if (!isPixelExcluded(url.pathname) && url.pathname !== window.location.pathname) router.prefetch(url.pathname + url.search)
+        }
       } catch {}
     }
     document.addEventListener("pointerover", prefetch, { passive: true })

@@ -67,6 +67,33 @@ const Product = ({
   const [visitorWho] = useWho()
   const pathnameNow = usePathname()
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
+  const cardRef = useRef<HTMLDivElement | null>(null)
+  // la carte est restée un instant bien visible à l'écran : on prépare déjà sa fiche (données + page)
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el || typeof IntersectionObserver === "undefined") return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (timer) clearTimeout(timer)
+        timer = null
+        if (!entry.isIntersecting) return
+        timer = setTimeout(() => {
+          prefetchProduct(product.slug)
+          try {
+            router.prefetch(`/product/${product.slug}`)
+          } catch {}
+        }, 400)
+      },
+      { threshold: 0.6 }
+    )
+    io.observe(el)
+    return () => {
+      if (timer) clearTimeout(timer)
+      io.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.slug])
   const swipedRef = useRef(false)
   const boxRef = useRef<HTMLDivElement | null>(null)
 
@@ -228,7 +255,7 @@ const Product = ({
   const arrowClass = "group/arrow absolute bottom-14 top-14 z-10 flex w-16 items-center"
 
   return (
-    <div className="relative w-full group" onPointerEnter={() => prefetchProduct(product.slug)} data-href={`/product/${product.slug}${colorQuery}`}>
+    <div ref={cardRef} className="relative w-full group" onPointerEnter={() => prefetchProduct(product.slug)} data-href={`/product/${product.slug}${colorQuery}`}>
       {/* Bouton like */}
       <WishlistHeart
         productId={product.id}
