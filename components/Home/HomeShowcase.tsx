@@ -211,7 +211,7 @@ export default function HomeShowcase({
         <div
           ref={stage}
           data-card=""
-          className="relative aspect-[4/5] w-full select-none overflow-hidden rounded-3xl bg-neutral-200 dark:bg-neutral-800"
+          className="relative aspect-[4/5] w-full select-none overflow-hidden bg-neutral-200 dark:bg-neutral-800"
           style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate", visibility: cardHidden ? "hidden" : "visible" }}
           onPointerDown={onDown}
           onPointerMove={onMove}
@@ -224,7 +224,7 @@ export default function HomeShowcase({
               ref={(el) => {
                 panels.current[i] = el;
               }}
-              className="absolute inset-0 overflow-hidden rounded-3xl will-change-transform"
+              className="absolute inset-0 overflow-hidden will-change-transform"
               style={{ visibility: i === 0 ? "visible" : "hidden", backfaceVisibility: "hidden" }}
               aria-hidden={i !== active}
             >
@@ -243,10 +243,10 @@ export default function HomeShowcase({
               onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => e.stopPropagation()}
               onClick={onClose}
-              className="absolute right-3 top-3 z-30 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white backdrop-blur-md"
-              style={{ background: "rgba(0,0,0,0.28)" }}
+              className="absolute right-1 top-1 z-30 flex h-9 w-9 cursor-pointer items-center justify-center text-white opacity-80 transition-opacity hover:opacity-100"
+              style={{ filter: "drop-shadow(0 0 3px rgba(0,0,0,0.45))" }}
             >
-              <span aria-hidden="true" className="relative block h-3 w-3">
+              <span aria-hidden="true" className="relative block h-2.5 w-2.5">
                 <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 rotate-45 bg-current" />
                 <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 -rotate-45 bg-current" />
               </span>
