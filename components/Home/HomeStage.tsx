@@ -18,6 +18,8 @@ import type { ProductType } from "@/types/product";
 
 const DUR = 1100;
 const RADIUS = 24;
+// ouverture automatique au scroll : désactivée (on ouvre en touchant l'image du milieu)
+const AUTO_OPEN = false;
 
 type Phase = "closed" | "opening" | "open" | "closing";
 type Anim = { from: DOMRect; to: DOMRect; r0: number; r1: number; dur: number; start: () => void; done: () => void };
@@ -267,7 +269,7 @@ export default function HomeStage({
         e.preventDefault();
         return;
       }
-      if (e.deltaY > 8 && Math.abs(e.deltaY) > Math.abs(e.deltaX) && can()) {
+      if (AUTO_OPEN && e.deltaY > 8 && Math.abs(e.deltaY) > Math.abs(e.deltaX) && can()) {
         e.preventDefault();
         open();
       }
@@ -284,7 +286,7 @@ export default function HomeStage({
       }
       const dy = sy - e.touches[0].clientY;
       const dx = Math.abs(sx - e.touches[0].clientX);
-      if (dy > 8 && dy > dx * 1.2 && can()) {
+      if (AUTO_OPEN && dy > 8 && dy > dx * 1.2 && can()) {
         if (e.cancelable) e.preventDefault();
         open();
       }
@@ -292,7 +294,7 @@ export default function HomeStage({
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && /^(input|textarea|select)$/i.test(t.tagName)) return;
-      if (["ArrowDown", "PageDown", " "].includes(e.key) && can()) {
+      if (AUTO_OPEN && ["ArrowDown", "PageDown", " "].includes(e.key) && can()) {
         e.preventDefault();
         open();
       }
@@ -301,7 +303,7 @@ export default function HomeStage({
     // on ne les branche que tout en haut de la page (là où le premier geste ouvre la sélection) et pendant le voyage.
     let armed = false;
     const sync = () => {
-      const want = locked.current || (phaseRef.current === "closed" && window.scrollY <= 4 && !(window as any).__chaptersLocked);
+      const want = locked.current || (AUTO_OPEN && phaseRef.current === "closed" && window.scrollY <= 4 && !(window as any).__chaptersLocked);
       if (want === armed) return;
       armed = want;
       if (want) {
@@ -365,7 +367,7 @@ export default function HomeStage({
 
       {/* l'image qui voyage */}
       {ov && (
-        <div ref={ovRef} className="pointer-events-none fixed z-40 overflow-hidden bg-neutral-300 dark:bg-neutral-800" style={{ left: 0, top: 0, width: 0, height: 0 }}>
+        <div ref={ovRef} className="pointer-events-none fixed z-40 overflow-hidden" style={{ left: 0, top: 0, width: 0, height: 0, willChange: "left, top, width, height" }}>
           {ov.video ? (
             <video src={ov.src} muted loop autoPlay playsInline className="absolute inset-0 h-full w-full object-cover object-center" />
           ) : (

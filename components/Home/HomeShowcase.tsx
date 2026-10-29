@@ -211,8 +211,8 @@ export default function HomeShowcase({
         <div
           ref={stage}
           data-card=""
-          className="relative aspect-[4/5] w-full select-none overflow-hidden bg-neutral-200 dark:bg-neutral-800"
-          style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate", visibility: cardHidden ? "hidden" : "visible" }}
+          className="relative aspect-[4/5] w-full select-none overflow-hidden"
+          style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate", opacity: cardHidden ? 0 : 1 }}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
