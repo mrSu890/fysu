@@ -18,6 +18,7 @@ import { claimPopup, releasePopup } from "@/lib/popups"
 
 type Box = { top: number; left: number; width: number; height: number }
 type Job = { src: string; from: Box; path: string; radius: number }
+type Back = { src: string; from: Box; slug: string; path: string }
 
 const isCalm = () => {
   const html = document.documentElement
@@ -39,6 +40,149 @@ export default function ProductHero() {
   const jobRef = useRef<Job | null>(null)
   const leavingRef = useRef(false)
   jobRef.current = job
+
+  /* ---------- RETOUR : de la fiche produit à la carte (l'image repart vers sa place dans la liste) ---------- */
+  const [back, setBack] = useState<Back | null>(null)
+  const [backFlying, setBackFlying] = useState(false)
+  const [backLeaving, setBackLeaving] = useState(false)
+  const backImgRef = useRef<HTMLImageElement | null>(null)
+  const backRef = useRef<Back | null>(null)
+  backRef.current = back
+  const pathRef = useRef(pathname)
+  useEffect(() => {
+    pathRef.current = pathname
+  }, [pathname])
+
+  const finishBack = useCallback(() => {
+    ;(window as any).__heroActive = false
+    releasePopup("hero")
+    setBackLeaving(true)
+    window.setTimeout(() => {
+      setBack(null)
+      setBackFlying(false)
+      setBackLeaving(false)
+    }, 280)
+  }, [])
+
+  // retour arrière (bouton, geste du bord de l'écran) depuis une fiche : on capte la grande image avant que la page change
+  useEffect(() => {
+    const onPop = () => {
+      try {
+        const m = pathRef.current.match(/^\/product\/([^/?#]+)/)
+        if (!m || jobRef.current || backRef.current) return
+        const to = window.location.pathname
+        if (to.startsWith("/product/") || to.startsWith("/admin")) return
+        if (isCalm() || !(window as any).__loaderVisualDone) return
+        if (document.documentElement.getAttribute("data-brand")) return
+        const el = document.querySelector("[data-hero-target]") as HTMLElement | null
+        const img = el?.querySelector("img") as HTMLImageElement | null
+        if (!el || !img || !img.currentSrc) return
+        const r = el.getBoundingClientRect()
+        if (r.width < 40 || r.height < 40 || r.bottom <= 0 || r.top >= window.innerHeight) return
+        ;(window as any).__heroActive = true
+        claimPopup("hero", false, true)
+        setBackLeaving(false)
+        setBackFlying(false)
+        setBack({ src: img.currentSrc, from: { top: r.top, left: r.left, width: r.width, height: r.height }, slug: m[1], path: to })
+      } catch {}
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
+
+  // la liste est affichée : on retrouve la carte, puis l'image glisse jusqu'à elle
+  useEffect(() => {
+    if (!back || pathname !== back.path) return
+    let raf = 0
+    let flyingNow = false
+    let t0 = 0
+    let last = ""
+    let stable = 0
+    let doneAt = 0
+    let box: HTMLElement | null = null
+    let endRadius = 16
+    const started = Date.now()
+    const DURATION = 800
+    const ease = (t: number) => 1 - Math.pow(1 - t, 4)
+    const find = (): HTMLElement | null => {
+      const want = `/product/${back.slug}`
+      const cards = Array.from(document.querySelectorAll("[data-href]")) as HTMLElement[]
+      for (const c of cards) {
+        const h = c.getAttribute("data-href") ?? ""
+        if (h === want || h.startsWith(`${want}?`)) {
+          const b = c.querySelector("[data-card-box]") as HTMLElement | null
+          if (b) return b
+        }
+      }
+      return null
+    }
+    const restore = () => {
+      if (box) box.style.opacity = ""
+    }
+    const tick = () => {
+      const now = performance.now()
+      if (Date.now() - started > 3000 && !flyingNow) {
+        finishBack()
+        return
+      }
+      if (!flyingNow) {
+        box = find()
+        if (box) {
+          const r = box.getBoundingClientRect()
+          const key = `${Math.round(r.top)}|${Math.round(r.left)}|${Math.round(r.width)}|${Math.round(r.height)}`
+          if (r.width > 0 && key === last) stable++
+          else stable = 0
+          last = key
+          if (stable >= 4) {
+            // la carte n'est pas à l'écran (défilement perdu…) : simple fondu
+            if (r.bottom <= 0 || r.top >= window.innerHeight) {
+              finishBack()
+              return
+            }
+            endRadius = parseFloat(getComputedStyle(box).borderTopLeftRadius) || 16
+            box.style.opacity = "0"
+            flyingNow = true
+            t0 = now
+            setBackFlying(true)
+          }
+        }
+      } else if (backImgRef.current && box) {
+        const p = Math.min(1, (now - t0) / DURATION)
+        const e = ease(p)
+        const f = back.from
+        const t = box.getBoundingClientRect()
+        const el = backImgRef.current
+        el.style.top = `${f.top + (t.top - f.top) * e}px`
+        el.style.left = `${f.left + (t.left - f.left) * e}px`
+        el.style.width = `${f.width + (t.width - f.width) * e}px`
+        el.style.height = `${f.height + (t.height - f.height) * e}px`
+        el.style.borderRadius = `${endRadius * e}px`
+        if (p >= 1) {
+          if (!doneAt) {
+            doneAt = now
+            box.style.opacity = ""
+          }
+          if (now - doneAt > 120) {
+            finishBack()
+            return
+          }
+        }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(raf)
+      restore()
+    }
+  }, [back, pathname, finishBack])
+
+  // sécurité
+  useEffect(() => {
+    if (!back) return
+    const t = window.setTimeout(finishBack, 6000)
+    return () => window.clearTimeout(t)
+  }, [back, finishBack])
 
   // fin nette : l'image copiée s'efface en douceur (jamais de disparition brutale)
   const finish = useCallback(() => {
@@ -195,10 +339,39 @@ export default function ProductHero() {
     return () => window.clearTimeout(t)
   }, [job, finish])
 
-  if (!job) return null
+  const backLayer = back ? (
+    <>
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[44] bg-background"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: !backFlying && !backLeaving ? 1 : 0 }}
+        transition={{ duration: backFlying ? 0.45 : 0.15, ease: "easeOut", delay: backFlying ? 0.12 : 0 }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={backImgRef}
+        src={back.src}
+        alt=""
+        draggable={false}
+        className="pointer-events-none fixed z-[45] object-cover"
+        style={{
+          opacity: backLeaving ? 0 : 1,
+          transition: "opacity 0.28s ease",
+          top: back.from.top,
+          left: back.from.left,
+          width: back.from.width,
+          height: back.from.height,
+        }}
+      />
+    </>
+  ) : null
+
+  if (!job) return backLayer
 
   return (
     <>
+      {backLayer}
       {/* le reste de la page s'efface (le fond reprend l'écran) puis se révèle une fois l'image arrivée */}
       <motion.div
         aria-hidden="true"

@@ -16,6 +16,41 @@ import WaterGrid from "@/components/WaterGrid"
    ou si l'appareil demande moins de mouvement.
    ==================================================================== */
 
+// true = l'ancien rideau de carrés pour les changements de page ; false = fondu rapide (par défaut)
+const USE_PIXELS = false
+
+// rideau en fondu : apparaît en ~0,16 s, reste le temps du chargement, se retire en ~0,26 s
+function FadeCurtain({ mode, onDone }: { mode: PixelMode; onDone?: () => void }) {
+  const [shown, setShown] = useState(mode !== "in")
+  const doneRef = useRef(onDone)
+  doneRef.current = onDone
+  useEffect(() => {
+    if (mode === "in") {
+      const r = requestAnimationFrame(() => setShown(true))
+      const t = window.setTimeout(() => doneRef.current?.(), 190)
+      return () => {
+        cancelAnimationFrame(r)
+        window.clearTimeout(t)
+      }
+    }
+    if (mode === "out") {
+      setShown(false)
+      const t = window.setTimeout(() => doneRef.current?.(), 290)
+      return () => window.clearTimeout(t)
+    }
+    setShown(true)
+  }, [mode])
+  return (
+    <div
+      className="absolute inset-0 bg-background"
+      style={{
+        opacity: shown ? 1 : 0,
+        transition: mode === "in" ? "opacity 160ms ease-out" : mode === "out" ? "opacity 260ms ease-in" : "none",
+      }}
+    />
+  )
+}
+
 export const PIXEL_EXCLUDED = ["/admin"]
 
 export const isPixelExcluded = (pathname: string) =>
@@ -293,7 +328,13 @@ export default function PixelTransition() {
             setPhase("idle")
           }
         }
-        return kind === "water" ? <WaterGrid mode={phase} onDone={onDone} /> : <PixelGrid mode={phase} onDone={onDone} />
+        return kind === "water" ? (
+          <WaterGrid mode={phase} onDone={onDone} />
+        ) : USE_PIXELS ? (
+          <PixelGrid mode={phase} onDone={onDone} />
+        ) : (
+          <FadeCurtain mode={phase} onDone={onDone} />
+        )
       })()}
     </div>
   )
