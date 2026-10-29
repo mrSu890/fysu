@@ -12,8 +12,8 @@ import { SITE, SITE_NAME } from "@/lib/seo"
 import { getBrandId } from "@/lib/brands"
 import type { ProductType } from "@/types/product"
 
-// Lu à chaque visite : prix, stock et textes toujours à jour (jamais figés au moment du build)
-export const dynamic = "force-dynamic"
+// Page gardée 60 s côté serveur (ouverture quasi instantanée) ; le stock et le prix sont ensuite relus à jour dans le navigateur
+export const revalidate = 60
 
 /* ====================================================================
    FICHE PRODUIT (rendue côté serveur)

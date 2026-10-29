@@ -100,8 +100,15 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
       }
     }
 
-    // le serveur a déjà envoyé le produit dans la page : pas besoin de le redemander
-    if (slug && !initialProduct) fetchProduct()
+    if (!slug) return
+    if (!initialProduct) {
+      fetchProduct()
+      return
+    }
+    // le serveur a déjà envoyé le produit (gardé 60 s) : on relit en douce la version à jour (stock, prix)
+    fetchProductCached(slug)
+      .then((data) => setProduct(data))
+      .catch(() => {})
   }, [slug, initialProduct])
 
 
