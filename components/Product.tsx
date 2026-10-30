@@ -240,18 +240,8 @@ const Product = ({
     }
   }
 
-  const handlePointerEnd = (e?: React.PointerEvent<HTMLDivElement>) => {
-    // page fixe : un glissement horizontal change d'image (sans ouvrir la fiche)
-    const start = swipeStart.current
+  const handlePointerEnd = (_e?: React.PointerEvent<HTMLDivElement>) => {
     swipeStart.current = null
-    if (false && e && start && images.length > 1 && e.type === "pointerup") {
-      const dx = e.clientX - start.x
-      const dy = e.clientY - start.y
-      if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.2) {
-        swipedRef.current = true
-        setCurrentIndex((i) => Math.min(images.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1))))
-      }
-    }
     if (hideInfoTimeoutRef.current) clearTimeout(hideInfoTimeoutRef.current)
     hideInfoTimeoutRef.current = setTimeout(() => {
       setInfoRevealed(false)
