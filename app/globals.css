@@ -832,3 +832,18 @@ html[data-popup] [data-fab] {
   color: #fff;
   mix-blend-mode: difference;
 }
+
+/* ====================================================================
+   PHOTOS PROTÉGÉES : pas de menu « Enregistrer l'image » au appui long (iPhone / iPad / Android),
+   pas de glisser-déposer de l'image. (La capture d'écran, elle, ne peut pas être bloquée.)
+   ==================================================================== */
+img,
+video,
+canvas,
+a:has(img),
+a:has(video) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
