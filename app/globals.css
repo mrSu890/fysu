@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FAF9F7;
+  --background: #FCFBF9;
   --foreground: #171717;
-  --menu: #FAF9F7;
+  --menu: #FCFBF9;
 
   --toggle-button-bg: #ffffff;
   --toggle-button-btn: #ffffff;
@@ -509,9 +509,9 @@ html.a11y-calm [data-tap], html.a11y-calm [data-tap] * {
    et le Liquid Glass garde son flou pendant le changement.
    Durée : 1,4 s (à changer dans la liste ci-dessous, partout pareil).
    ==================================================================== */
-@property --background { syntax: "<color>"; inherits: true; initial-value: #FAF9F7; }
+@property --background { syntax: "<color>"; inherits: true; initial-value: #FCFBF9; }
 @property --foreground { syntax: "<color>"; inherits: true; initial-value: #171717; }
-@property --menu { syntax: "<color>"; inherits: true; initial-value: #FAF9F7; }
+@property --menu { syntax: "<color>"; inherits: true; initial-value: #FCFBF9; }
 @property --toggle-button-bg { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
 @property --toggle-button-btn { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
 @property --navbar-bg { syntax: "<color>"; inherits: true; initial-value: #262626; }
@@ -597,11 +597,11 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-
 }
 
 /* aube : les photos produits prennent un léger filtre bleuté (comme l'après-midi prend un filtre crème) */
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\].cursor-pointer.rounded-2xl {
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) [data-card-box] {
   background-color: #f5f7f6 !important;
   isolation: isolate;
 }
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\].cursor-pointer.rounded-2xl::after {
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) [data-card-box]::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -610,14 +610,14 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-
   background-color: #f5f7f6;
   mix-blend-mode: multiply;
 }
-html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .aspect-\[3\/4\].cursor-pointer.rounded-2xl span.bg-white\/90 {
+html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) [data-card-box] span.bg-white\/90 {
   background-color: #f5f7f6 !important;
 }
 
 /* ---- APRÈS-MIDI : crème chaud, verre vert forêt en dégradé, texte blanc ---- */
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
-  --background: #f3eee1;
-  --menu: #f7f4ea;
+  --background: #dad9d5;
+  --menu: #e6e5e1;
   --navbar-bg: #4f5a47;
   --glass-color: #646e5a;
   --glass-tint: 56%;
@@ -626,7 +626,7 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
   --glass-shadow: rgba(40, 55, 35, 0.22);
   --glass-top: rgba(134, 141, 116, 0.7);
   --glass-bottom: rgba(92, 103, 82, 0.8);
-  --page-bar-bg: #f7f3e8;
+  --page-bar-bg: #d4d3cf;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
@@ -705,7 +705,7 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has
   background-color: #fbfcfb;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has([data-hero-target]) .aspect-\[3\/4\]:not(.cursor-pointer)::after {
-  background-color: #fcfaf4;
+  background-color: #efeeeb;
 }
 
 /* Changement d'ambiance en fondu doux (nuit, aube, jour, après-midi) : la classe est posée 2 s par lib/mood.ts */
@@ -713,21 +713,21 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) bod
 /* Après-midi : les cases des photos produit sont teintées d'un crème presque identique au fond, à peine plus clair (#f7f4ee), beaucoup moins jaune qu'avant.
    Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
    La pastille de disponibilité prend le même crème. */
-html.afternoon:not(.dark) .aspect-\[3\/4\].cursor-pointer.rounded-2xl {
-  background-color: #f8f4ea !important;
+html.afternoon:not(.dark) [data-card-box] {
+  background-color: #e4e3df !important;
   isolation: isolate;
 }
-html.afternoon:not(.dark) .aspect-\[3\/4\].cursor-pointer.rounded-2xl::after {
+html.afternoon:not(.dark) [data-card-box]::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-color: #f8f4ea;
+  background-color: #e4e3df;
   mix-blend-mode: multiply;
 }
-html.afternoon:not(.dark) .aspect-\[3\/4\].cursor-pointer.rounded-2xl span.bg-white\/90 {
-  background-color: #f8f4ea !important;
+html.afternoon:not(.dark) [data-card-box] span.bg-white\/90 {
+  background-color: #e4e3df !important;
 }
 
 /* Transport de l'image (carte -> fiche produit) : la vraie image reste cachée pendant que la copie arrive (components/ProductHero.tsx) */
