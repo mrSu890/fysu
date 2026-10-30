@@ -74,16 +74,30 @@ export default function ProductHero() {
         if (to.startsWith("/product/") || to.startsWith("/admin")) return
         if (isCalm() || !(window as any).__loaderVisualDone) return
         if (document.documentElement.getAttribute("data-brand")) return
-        const el = document.querySelector("[data-hero-target]") as HTMLElement | null
+        // l'image de la fiche la plus visible à l'écran (pas forcément la première : on a pu défiler)
+        const slides = Array.from(document.querySelectorAll("[data-hero-slide]")) as HTMLElement[]
+        let el: HTMLElement | null = null
+        let bestA = 0
+        for (const sl of slides) {
+          const b = sl.getBoundingClientRect()
+          const vw = Math.max(0, Math.min(b.right, window.innerWidth) - Math.max(b.left, 0))
+          const vh = Math.max(0, Math.min(b.bottom, window.innerHeight) - Math.max(b.top, 0))
+          if (vw * vh > bestA) {
+            bestA = vw * vh
+            el = sl
+          }
+        }
         const img = el?.querySelector("img") as HTMLImageElement | null
-        if (!el || !img || !img.currentSrc) return
-        const r = el.getBoundingClientRect()
-        if (r.width < 40 || r.height < 40 || r.bottom <= 0 || r.top >= window.innerHeight) return
+        if (!el || !img || !img.currentSrc || bestA < 4000) return
+        const rr = el.getBoundingClientRect()
+        const left = Math.max(rr.left, 0)
+        const top = Math.max(rr.top, 0)
+        const r = { top, left, width: Math.min(rr.right, window.innerWidth) - left, height: Math.min(rr.bottom, window.innerHeight) - top }
         ;(window as any).__heroActive = true
         claimPopup("hero", false, true)
         setBackLeaving(false)
         setBackFlying(false)
-        setBack({ src: img.currentSrc, from: { top: r.top, left: r.left, width: r.width, height: r.height }, slug: m[1], path: to })
+        setBack({ src: img.currentSrc, from: r, slug: m[1], path: to })
       } catch {}
     }
     window.addEventListener("popstate", onPop)
@@ -100,6 +114,7 @@ export default function ProductHero() {
     let stable = 0
     let doneAt = 0
     let box: HTMLElement | null = null
+    let scrolled = false
     let endRadius = 16
     const started = Date.now()
     const DURATION = 800
@@ -134,8 +149,19 @@ export default function ProductHero() {
           else stable = 0
           last = key
           if (stable >= 4) {
-            // la carte n'est pas à l'écran (défilement perdu…) : simple fondu
-            if (r.bottom <= 0 || r.top >= window.innerHeight) {
+            // la carte n'est pas à l'écran (liste ou rangée défilée) : on la ramène au centre, puis l'image la rejoint
+            const off = r.bottom <= 0 || r.top >= window.innerHeight || r.right <= 0 || r.left >= window.innerWidth
+            if (off && !scrolled) {
+              scrolled = true
+              try {
+                box.scrollIntoView({ block: "center", inline: "center", behavior: "instant" as ScrollBehavior })
+              } catch {}
+              stable = 0
+              last = ""
+              raf = requestAnimationFrame(tick)
+              return
+            }
+            if (off) {
               finishBack()
               return
             }
@@ -191,6 +217,9 @@ export default function ProductHero() {
     document.documentElement.classList.remove("hero-running")
     ;(window as any).__heroActive = false
     releasePopup("hero")
+    window.setTimeout(() => {
+      delete (window as any).__fysuHeroSrc
+    }, 400)
     setLeaving(true)
     window.setTimeout(() => {
       setJob(null)
@@ -210,6 +239,7 @@ export default function ProductHero() {
         const r = el.getBoundingClientRect()
         if (r.width < 40 || r.height < 40) return false
         const radius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
+        ;(window as any).__fysuHeroSrc = src
         ;(window as any).__heroActive = true
         claimPopup("hero", false, true)
         document.documentElement.classList.add("hero-running")
@@ -229,26 +259,41 @@ export default function ProductHero() {
     }
   }, [router, finish])
 
-  // la fiche produit est affichée : on attend sa grande image, puis l'image « vole » vers elle.
-  // Pendant le vol, on suit la vraie place de l'image de la fiche à chaque image affichée (pas une mesure
-  // prise une fois pour toutes) : si la page bouge encore un peu, l'arrivée tombe pile, sans recadrage.
+  // Le vol ne dépend plus du chargement de la page : l'image part tout de suite vers l'endroit où sera la grande photo
+  // (ou vers l'emplacement réservé par l'écran de chargement), puis se cale sur la vraie photo dès qu'elle est là.
+  // On suit la vraie place à chaque image affichée : l'arrivée tombe pile, sans recadrage.
   useEffect(() => {
-    if (!job || pathname !== job.path) return
+    if (!job) return
     let raf = 0
     let stable = 0
     let last = ""
     let t0 = 0
     let flyingNow = false
+    let usingPred = false
+    let realSeen = false
     let doneAt = 0
-    let clipEl: HTMLElement | null | undefined
-    const started = Date.now()
-    const DURATION = 900
-    // la fiche s'ouvre toujours tout en haut (sinon l'animation attendait un défilement qui ne vient jamais)
-    if (window.scrollY > 0) window.scrollTo(0, 0)
+    let dur = 900
     let seenAt = 0
+    let startBox: Box = job.from
+    let curBox: Box = job.from
+    let clipEl: HTMLElement | null = null
+    let clipFor: HTMLElement | null = null
+    const started = Date.now()
+    window.scrollTo(0, 0)
     const ease = (t: number) => 1 - Math.pow(1 - t, 4)
-    // le plus proche parent qui découpe son contenu (zone de défilement de la fiche sur téléphone, par exemple) :
-    // la vraie image y est coupée, donc la copie doit l'être aussi, sinon elle « se recadre » d'un coup à l'arrivée
+    // emplacement prévu de la grande photo (mêmes mesures que la fiche), utilisé tant que la vraie page n'est pas là
+    const predict = (): Box => {
+      const vw = window.innerWidth
+      if (vw < 640) {
+        const w = vw * 0.88
+        return { top: 108, left: 0, width: w, height: (w * 4) / 3 }
+      }
+      const cont = Math.min(1152, vw)
+      const gap = vw >= 1024 ? 96 : 48
+      const w = vw >= 768 ? (cont - gap) / 2 : cont
+      return { top: 144, left: (vw - cont) / 2, width: w, height: (w * 4) / 3 }
+    }
+    // le plus proche parent qui découpe son contenu : la copie doit être découpée pareil, sinon elle « se recadre » à l'arrivée
     const findClip = (target: HTMLElement): HTMLElement | null => {
       let a = target.parentElement
       while (a && a !== document.body && a !== document.documentElement) {
@@ -258,67 +303,91 @@ export default function ProductHero() {
       }
       return null
     }
-    const live = (): { r: DOMRect; el: HTMLElement } | null => {
-      const el = document.querySelector("[data-hero-target]") as HTMLElement | null
-      if (!el) return null
-      return { r: el.getBoundingClientRect(), el }
-    }
     const tick = () => {
       const now = performance.now()
-      if (Date.now() - started > 8000) {
+      const elapsed = Date.now() - started
+      if (elapsed > 9000) {
         finish()
         return
       }
-      const l = live()
-      if (!flyingNow) {
-        const img = l?.el.querySelector("img") as HTMLImageElement | null
-        if (l && !seenAt) seenAt = Date.now()
-        // on n'attend pas indéfiniment le chargement de l'image : au bout de 700 ms elle est simplement posée par-dessus
-        const imgReady = !!img && (img.complete || Date.now() - seenAt > 700)
-        if (window.scrollY > 2) window.scrollTo(0, 0)
-        if (l && img && imgReady) {
-          const r = l.r
-          const key = `${Math.round(r.top)}|${Math.round(r.left)}|${Math.round(r.width)}|${Math.round(r.height)}`
-          if (r.width > 0 && key === last) stable++
-          else stable = 0
-          last = key
-          if (stable >= 2) {
-            flyingNow = true
-            t0 = now
-            setFlying(true)
+      const onPath = pathRef.current === job.path
+      const el = onPath ? (document.querySelector("[data-hero-target]") as HTMLElement | null) : null
+      let target: Box | null = null
+      let real = false
+      let endRadius = 0
+      if (el) {
+        if (!flyingNow && window.scrollY > 2) window.scrollTo(0, 0)
+        const img = el.querySelector("img") as HTMLImageElement | null
+        if (!seenAt) seenAt = Date.now()
+        const ready = !!img && (img.complete || Date.now() - seenAt > 700)
+        const r = el.getBoundingClientRect()
+        const key = `${Math.round(r.top)}|${Math.round(r.left)}|${Math.round(r.width)}|${Math.round(r.height)}`
+        if (r.width > 0 && key === last) stable++
+        else stable = 0
+        last = key
+        if (ready && r.width > 0 && (stable >= 2 || realSeen)) {
+          real = true
+          target = { top: r.top, left: r.left, width: r.width, height: r.height }
+          endRadius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
+          if (el !== clipFor) {
+            clipFor = el
+            clipEl = findClip(el)
           }
         }
-        if (Date.now() - started > 3200 && !flyingNow) {
-          finish()
-          return
+      }
+      if (real) {
+        if (!flyingNow) {
+          flyingNow = true
+          startBox = job.from
+          t0 = now
+          dur = 900
+          setFlying(true)
+        } else if (usingPred) {
+          startBox = curBox
+          t0 = now
+          dur = 450
+          doneAt = 0
         }
-      } else if (imgRef.current && l) {
-        const p = Math.min(1, (now - t0) / DURATION)
+        usingPred = false
+        realSeen = true
+      } else if (!realSeen && elapsed > 350) {
+        // la page tarde : l'image grandit déjà vers sa place sans attendre
+        target = predict()
+        if (!flyingNow) {
+          flyingNow = true
+          usingPred = true
+          startBox = job.from
+          t0 = now
+          dur = 900
+          setFlying(true)
+        }
+      }
+      const node = imgRef.current
+      if (flyingNow && node && target) {
+        const p = Math.min(1, (now - t0) / dur)
         const e = ease(p)
-        const f = job.from
-        const t = l.r
-        const el = imgRef.current
-        if (clipEl === undefined) clipEl = findClip(l.el)
-        const top = f.top + (t.top - f.top) * e
-        const left = f.left + (t.left - f.left) * e
-        const width = f.width + (t.width - f.width) * e
-        const height = f.height + (t.height - f.height) * e
-        // arrondi : celui de la carte au départ, celui de l'image de la fiche à l'arrivée
-        const endRadius = parseFloat(getComputedStyle(l.el).borderTopLeftRadius) || 0
-        el.style.top = `${top}px`
-        el.style.left = `${left}px`
-        el.style.width = `${width}px`
-        el.style.height = `${height}px`
-        el.style.borderRadius = `${job.radius + (endRadius - job.radius) * e}px`
-        if (clipEl) {
+        const f = startBox
+        const top = f.top + (target.top - f.top) * e
+        const left = f.left + (target.left - f.left) * e
+        const width = f.width + (target.width - f.width) * e
+        const height = f.height + (target.height - f.height) * e
+        curBox = { top, left, width, height }
+        node.style.top = `${top}px`
+        node.style.left = `${left}px`
+        node.style.width = `${width}px`
+        node.style.height = `${height}px`
+        node.style.borderRadius = `${job.radius + (endRadius - job.radius) * e}px`
+        if (real && clipEl) {
           const c = clipEl.getBoundingClientRect()
           const it = Math.max(0, c.top - top) * e
           const ib = Math.max(0, top + height - c.bottom) * e
           const il = Math.max(0, c.left - left) * e
           const ir = Math.max(0, left + width - c.right) * e
-          el.style.clipPath = `inset(${it}px ${ir}px ${ib}px ${il}px)`
+          node.style.clipPath = `inset(${it}px ${ir}px ${ib}px ${il}px)`
+        } else if (!real) {
+          node.style.clipPath = ""
         }
-        if (p >= 1) {
+        if (p >= 1 && real) {
           if (!doneAt) doneAt = now
           if (now - doneAt > 600) {
             finish()
@@ -330,12 +399,12 @@ export default function ProductHero() {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [job, pathname, finish])
+  }, [job, finish])
 
   // sécurité générale
   useEffect(() => {
     if (!job) return
-    const t = window.setTimeout(finish, 6500)
+    const t = window.setTimeout(finish, 9500)
     return () => window.clearTimeout(t)
   }, [job, finish])
 

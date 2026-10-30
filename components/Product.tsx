@@ -212,12 +212,12 @@ const Product = ({
     rememberWho()
     const path = `/product/${product.slug}${colorQuery}`
     // l'image de la carte est « transportée » jusqu'à la fiche (voir components/ProductHero.tsx) ;
-    // pas pour The Wave (qui a son eau) ni quand la carte montre une autre image que la première
+    // pas pour The Wave (qui a son eau) ; si la carte montre une autre image que la première, la fiche la place en premier
     try {
       const hero = (window as unknown as { __fysuHero?: (el: HTMLElement | null, p: string, src: string | null) => boolean }).__fysuHero
       const imgs = boxRef.current?.querySelectorAll("img[data-base]")
       const shown = imgs?.[currentIndex] as HTMLImageElement | undefined
-      if (hero && currentIndex === 0 && product.brand !== "thewave" && !(lit && hasLit) && shown?.currentSrc) {
+      if (hero && product.brand !== "thewave" && !(lit && hasLit) && shown?.currentSrc) {
         if (hero(boxRef.current, path, shown.currentSrc)) return
       }
     } catch {}
