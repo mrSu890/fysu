@@ -99,6 +99,34 @@ export async function GET(
       .map((s: any) => s.suggested)
       .filter((p: any) => p && !p.is_hidden) ?? []
 
+  /* ================= COMPLÉTER LE LOOK ================= */
+
+  const lookIds: number[] = Array.isArray(product.look_ids)
+    ? product.look_ids.map((x: unknown) => Number(x)).filter((x: number) => Number.isFinite(x))
+    : []
+  let look_products: any[] = []
+  if (lookIds.length) {
+    const { data: lookData } = await supabaseAdmin
+      .from("products")
+      .select(`
+        id,
+        is_hidden,
+        name,
+        slug,
+        price,
+        availability,
+        release_date,
+        gender,
+        brand,
+        product_sizes (id, size, stock, is_active, display_order, color_id),
+        product_images (id, url, color, is_hover, worn_for),
+        product_colors!product_colors_product_id_fkey (*)
+      `)
+      .in("id", lookIds)
+    const byId = new Map<number, any>((lookData ?? []).map((p: any) => [Number(p.id), p]))
+    look_products = lookIds.map((id) => byId.get(id)).filter((p) => p && !p.is_hidden)
+  }
+
   /* ================= MARQUE ================= */
 
   // Un produit rangé dans la page The Wave / Kiban Collector prend automatiquement son style,
@@ -129,7 +157,8 @@ export async function GET(
       product_sizes: sizes,
       product_colors: colors,
       product_info_blocks: info_blocks,
-      product_suggestions: suggested_products
+      product_suggestions: suggested_products,
+      look_products
     }),
     { status: 200 }
   )
