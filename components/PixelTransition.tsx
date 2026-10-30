@@ -124,6 +124,20 @@ export default function PixelTransition() {
     if (!covering) window.dispatchEvent(new Event("pixel-reveal"))
   }, [phase])
 
+  // photos protégées : pas de menu « enregistrer l'image » (appui long, clic droit) ni de glisser-déposer
+  useEffect(() => {
+    const block = (e: Event) => {
+      const el = e.target as Element | null
+      if (el?.closest?.("img, video, canvas, picture") && !el.closest("input, textarea, [contenteditable]")) e.preventDefault()
+    }
+    document.addEventListener("contextmenu", block)
+    document.addEventListener("dragstart", block)
+    return () => {
+      document.removeEventListener("contextmenu", block)
+      document.removeEventListener("dragstart", block)
+    }
+  }, [])
+
   // 0. on compte les requêtes réseau en cours (la page attend ses données avant de se montrer)
   useEffect(() => {
     const w = window as any
