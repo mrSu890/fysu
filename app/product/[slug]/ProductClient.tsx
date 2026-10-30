@@ -22,6 +22,7 @@ import AddToCartButton from "@/components/ui/AddToCartButton"
 import AvailabilityBlock from "@/components/Product/AvailabilityBlock"
 import SizeNotify from "@/components/Product/SizeNotify"
 import ShareButton from "@/components/Profile/ShareButton"
+import CompleteLook from "@/components/Product/CompleteLook"
 import ProductInfoBlocks, { isPackagingBlock } from "@/components/Product/ProductInfoBlocks"
 import PackagingDrawer, { packagingLabel } from "@/components/Product/PackagingDrawer"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
@@ -59,12 +60,13 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
   const router = useRouter()
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const galleryRef = useRef<HTMLDivElement | null>(null)
-  const [galleryIdx, setGalleryIdx] = useState(0)
+  const [galleryProgress, setGalleryProgress] = useState(0)
+  const [bottomTab, setBottomTab] = useState<"reco" | "recent">("reco")
   const onGalleryScroll = () => {
     const el = galleryRef.current
     if (!el || !el.firstElementChild) return
-    const w = (el.firstElementChild as HTMLElement).offsetWidth + 8
-    setGalleryIdx(Math.max(0, Math.round(el.scrollLeft / w)))
+    const max = el.scrollWidth - el.clientWidth
+    setGalleryProgress(max > 0 ? Math.max(0, Math.min(1, el.scrollLeft / max)) : 0)
   }
 
   const [product, setProduct] = useState<ProductType | null>(initialProduct)
@@ -399,9 +401,15 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
             </div>
           )}
           {filteredImages.length > 1 && (
-            <p className="font-info mt-3 text-center text-[11px] font-light tracking-[0.12em] opacity-60 sm:hidden">
-              {galleryIdx + 1} / {filteredImages.length}
-            </p>
+            <div className="mt-4 h-px w-full bg-foreground/15 sm:hidden" aria-hidden="true">
+              <div
+                className="h-full bg-foreground/70"
+                style={{
+                  width: `${100 / filteredImages.length}%`,
+                  transform: `translateX(${galleryProgress * (filteredImages.length - 1) * 100}%)`,
+                }}
+              />
+            </div>
           )}
         </div>
 
@@ -445,7 +453,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
           </div>
 
           {/* Description : une phrase par ligne, une ligne vide = un temps de pause */}
-          <div className="max-w-md border-t border-foreground/50 pt-8 text-[15px] font-light tracking-[-0.01em] opacity-75">
+          <div className="max-w-md border-t border-foreground/50 pt-8 text-[13px] font-light tracking-[-0.01em] opacity-75">
             {formatText(product.description)
               .split("\n")
               .map((line, i) =>
@@ -674,32 +682,53 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
         </div>
       </div>
 
-      {product.product_info_blocks?.length > 0 && (
-        <ProductInfoBlocks blocks={product.product_info_blocks} />
+      {(product.look_products?.length ?? 0) > 0 ? (
+        <CompleteLook products={product.look_products!} />
+      ) : (
+        product.product_info_blocks?.length > 0 && <ProductInfoBlocks blocks={product.product_info_blocks} />
       )}
   
-      {/* ================= SUGGESTIONS ================= */}
-  
-      {product.product_suggestions?.length > 0 && (
-        <section className="mt-32 w-11/12 mx-auto sm:mt-48">
-          <h2 className="mb-12 text-start text-3xl font-bold tracking-tight sm:mb-16 sm:text-5xl">
-            {t("youMayAlsoLike")}
-          </h2>
-
-          <div ref={scrollRef} className="flex gap-8 overflow-x-auto overflow-y-hidden no-scrollbar overscroll-x-contain touch-pan-x">
-            {product.product_suggestions.map((p) => (
-              <div key={p.id} className="flex-shrink-0 w-[280px]">
-                <Product showArrows product={p} scrollRef={scrollRef} />
+      {/* ================= EN BAS : recommandations / récemment consultés (au choix) ================= */}
+      {(() => {
+        const hasSug = product.product_suggestions?.length > 0
+        const tab = hasSug ? bottomTab : "recent"
+        const tabBtn = (id: "reco" | "recent", label: string) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setBottomTab(id)}
+            aria-pressed={tab === id}
+            className={`font-info cursor-pointer pb-1 text-[11px] font-light uppercase tracking-[0.12em] transition-opacity ${
+              tab === id ? "border-b border-current opacity-100" : "opacity-45"
+            }`}
+          >
+            {label}
+          </button>
+        )
+        return (
+          <div className="mt-24 sm:mt-40">
+            {hasSug && (
+              <div className="mx-auto mb-6 flex w-11/12 gap-8">
+                {tabBtn("reco", locale.startsWith("fr") ? "Recommandations" : "Recommended")}
+                {tabBtn("recent", locale.startsWith("fr") ? "Récemment consulté" : "Recently viewed")}
               </div>
-            ))}
+            )}
+            {tab === "reco" ? (
+              <section className="mx-auto w-11/12">
+                <div ref={scrollRef} className="flex gap-8 overflow-x-auto overflow-y-hidden no-scrollbar overscroll-x-contain touch-pan-x">
+                  {product.product_suggestions.map((p) => (
+                    <div key={p.id} className="flex-shrink-0 w-[280px]">
+                      <Product showArrows product={p} scrollRef={scrollRef} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <RecentlyViewed bare excludeSlug={product.slug} />
+            )}
           </div>
-        </section>
-      )}
-
-      {/* sans suggestions : les produits déjà consultés prennent la place */}
-      {!(product.product_suggestions?.length > 0) && (
-        <RecentlyViewed excludeSlug={product.slug} className="mt-32 sm:mt-48" />
-      )}
+        )
+      })()}
     </div>
     {canBuy && !colorSoldOut && !buyVisible && (
       <div
