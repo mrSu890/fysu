@@ -27,8 +27,8 @@ const GAME_TEXT: Record<string, Record<string, GameText>> = {
     fr: { tag: "Rentre une bille à chaque coup. Un seul raté et c'est fini.", hint: ["Tire en arrière n'importe où", "et relâche pour tirer"] },
   },
   "fysu-hoops": {
-    en: { tag: "Score as many baskets in a row as you can. Miss once and it's over.", hint: ["Drag back from the ball", "and release to throw"] },
-    fr: { tag: "Enchaîne les paniers. Un seul raté et c'est fini.", hint: ["Tire la balle en arrière", "et relâche pour lancer"] },
+    en: { tag: "Score as many baskets in a row as you can. A clean swish is worth 2. Miss once and it's over.", hint: ["Swipe up from anywhere", "and release to shoot"] },
+    fr: { tag: "Enchaîne les paniers. Un swish (sans toucher l'anneau) vaut 2 points. Un seul raté et c'est fini.", hint: ["Glisse vers le haut", "et relâche pour tirer"] },
   },
   "fysu-crossing": {
     en: { tag: "Cross the highways. The cars don't brake.", hint: ["Tap to go forward", "swipe to go sideways"] },
