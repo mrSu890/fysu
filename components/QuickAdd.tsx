@@ -41,7 +41,7 @@ const copy = (locale: string) =>
         loading: "Loading…",
       }
 
-export default function QuickAdd({ product }: { product: ProductType }) {
+export default function QuickAdd({ product, inline = false }: { product: ProductType; inline?: boolean }) {
   const locale = useLocale()
   const c = copy(locale)
   const { addToCartWithFeedback, setIsCartOpen } = useCart()
@@ -122,15 +122,25 @@ export default function QuickAdd({ product }: { product: ProductType }) {
   const ready = !!finalSize && !needColor
 
   return (
-    <div {...stop} className="absolute bottom-3 right-3 z-20">
-      <button
-        type="button"
-        aria-label={c.aria}
-        onClick={openIt}
-        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/85 text-[18px] font-light leading-none text-black backdrop-blur-sm transition active:scale-90 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100"
-      >
-        +
-      </button>
+    <div {...stop} className={inline ? "w-full" : "absolute bottom-3 right-3 z-20"}>
+      {inline ? (
+        <button
+          type="button"
+          onClick={openIt}
+          className="font-info w-full cursor-pointer bg-foreground py-3 text-[10px] uppercase tracking-[0.14em] text-background transition active:opacity-80"
+        >
+          {c.add}
+        </button>
+      ) : (
+        <button
+          type="button"
+          aria-label={c.aria}
+          onClick={openIt}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/85 text-[18px] font-light leading-none text-black backdrop-blur-sm transition active:scale-90 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100"
+        >
+          +
+        </button>
+      )}
 
       {mounted &&
         createPortal(

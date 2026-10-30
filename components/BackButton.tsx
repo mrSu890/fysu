@@ -53,13 +53,10 @@ export default function BackButton() {
         }
       }}
       data-fab
-      className="liquid-glass absolute left-4 top-[116px] z-[35] flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition active:scale-90 sm:left-6"
-      style={{
-        color: "var(--menu)",
-        background: "color-mix(in srgb, var(--navbar-bg) 78%, transparent)",
-      }}
+      className="absolute left-3 top-[112px] z-[35] flex h-8 w-8 cursor-pointer items-center justify-center transition active:scale-90 sm:left-5"
+      style={{ color: "var(--foreground)", opacity: 0.5, filter: "drop-shadow(0 0 2px color-mix(in srgb, var(--background) 70%, transparent))" }}
     >
-      <ArrowLeft size={16} strokeWidth={1.5} />
+      <ArrowLeft size={15} strokeWidth={1.4} />
     </button>
   )
 }

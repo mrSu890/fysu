@@ -12,7 +12,15 @@ import type { ProductType } from "@/types/product"
 /* Rangée « Récemment consulté » : les produits que le visiteur a vus, même style que les rangées de l'accueil.
    N'apparaît pas tant qu'il n'a rien consulté. */
 
-export default function RecentlyViewed({ excludeSlug, className = "" }: { excludeSlug?: string; className?: string }) {
+export default function RecentlyViewed({
+  excludeSlug,
+  className = "",
+  bare = false,
+}: {
+  excludeSlug?: string
+  className?: string
+  bare?: boolean // sans titre ni pli : juste la rangée (utilisé sous les onglets de la fiche produit)
+}) {
   const fr = useLocale().startsWith("fr")
   const [items, setItems] = useState<ProductType[]>([])
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -21,7 +29,33 @@ export default function RecentlyViewed({ excludeSlug, className = "" }: { exclud
     setItems(readRecent(excludeSlug).slice(0, 6))
   }, [excludeSlug])
 
-  if (items.length === 0) return null
+  if (items.length === 0) {
+    return bare ? (
+      <p className="font-info w-11/12 mx-auto text-[11px] font-light uppercase tracking-[0.12em] opacity-50">
+        {fr ? "Rien consulté pour l'instant" : "Nothing viewed yet"}
+      </p>
+    ) : null
+  }
+
+  if (bare) {
+    return (
+      <div className={`relative mx-auto w-11/12 ${className}`}>
+        <div className="mb-3 flex justify-end">
+          <ViewToggle products={items} />
+        </div>
+        <div
+          ref={scrollRef}
+          className="no-scrollbar flex gap-6 snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth pb-2"
+        >
+          {items.map((product) => (
+            <div key={product.slug} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px] lg:w-[320px]">
+              <Product showArrows reveal product={product} scrollRef={scrollRef} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <section className={`relative mx-auto w-11/12 ${className}`}>
