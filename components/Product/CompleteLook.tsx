@@ -3,6 +3,8 @@
 import { useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { prefetchProduct } from "@/lib/productCache"
 import { useFormatter, useLocale } from "next-intl"
 import QuickAdd from "@/components/QuickAdd"
 import { getEffectiveAvailability } from "@/lib/availability"
@@ -19,7 +21,23 @@ export default function CompleteLook({ products }: { products: ProductType[] }) 
   const format = useFormatter()
   const track = useRef<HTMLDivElement | null>(null)
   const [progress, setProgress] = useState(0)
+  const router = useRouter()
   const n = products.length
+
+  // la photo touchée voyage jusqu'à la fiche (comme sur les cartes des rangées) ; sinon navigation normale
+  const open = (e: React.MouseEvent<HTMLAnchorElement>, p: ProductType, path: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    try {
+      const box = (e.currentTarget as HTMLElement).querySelector("[data-card-box]") as HTMLElement | null
+      const img = box?.querySelector("img") as HTMLImageElement | null
+      const shown = img?.currentSrc || img?.src
+      const w = window as unknown as { __fysuHero?: (el: HTMLElement | null, p: string, src: string | null) => boolean }
+      if (w.__fysuHero && box && shown && p.brand !== "thewave" && w.__fysuHero(box, path, shown)) return
+    } catch {}
+    const handled = (window as unknown as { __fysuNavigate?: (p: string) => boolean }).__fysuNavigate?.(path)
+    if (!handled) router.push(path)
+  }
 
   const onScroll = () => {
     const el = track.current
@@ -42,9 +60,9 @@ export default function CompleteLook({ products }: { products: ProductType[] }) 
           const src = (imgs.find((i) => !i.worn_for) ?? imgs[0])?.url
           const buyable = getEffectiveAvailability(p as any) === "available"
           return (
-            <div key={p.id} className="w-full flex-shrink-0 snap-start snap-always">
-              <Link href={`/product/${p.slug}`} draggable={false} className="block">
-                <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
+            <div key={p.id} data-href={`/product/${p.slug}`} className="w-full flex-shrink-0 snap-start snap-always" onPointerDown={() => prefetchProduct(p.slug)}>
+              <Link href={`/product/${p.slug}`} data-hero-link="" onClick={(e) => open(e, p, `/product/${p.slug}`)} draggable={false} className="block">
+                <div data-card-box="" className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
                   {src && <Image src={src} alt={p.name} fill draggable={false} sizes="(max-width: 768px) 92vw, 448px" className="object-cover" />}
                 </div>
               </Link>
