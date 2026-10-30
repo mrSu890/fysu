@@ -53,6 +53,7 @@ type ProductUpdatePayload = {
   colors?: ColorInput[];
   info_blocks?: ProductInfoBlockInput[];
   suggested_product_ids?: number[];
+  look_ids?: number[];
 };
 
 const HEX_RE = /^#[0-9a-f]{6}$/;
@@ -86,7 +87,8 @@ export async function POST(req: Request) {
       size_guide,
       colors,
       info_blocks,
-      suggested_product_ids
+      suggested_product_ids,
+      look_ids
     } = body;
 
     if (!id) {
@@ -153,6 +155,7 @@ export async function POST(req: Request) {
         shipping,
         size_guide_image_url,
         size_guide: size_guide === undefined ? undefined : cleanSizeGuide(size_guide),
+        look_ids: Array.isArray(look_ids) ? look_ids.map((x) => Number(x)).filter((x) => Number.isFinite(x)) : undefined,
       })
       .eq("id", id);
 
