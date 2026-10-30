@@ -53,11 +53,15 @@ const NewSelectionIntro = ({
   apiRef,
   onOpen,
   paused = false,
+  onCenter,
+  tight = false,
 }: {
   initialSlides?: Slide[] | null;
   apiRef?: React.MutableRefObject<RingApi | null>;
   onOpen?: () => void;
   paused?: boolean;
+  onCenter?: (slide: Slide) => void; // appelé quand la slide du milieu change
+  tight?: boolean; // moins d'espace sous le carrousel (quand quelque chose suit juste dessous)
 }) => {
   const copy = useSiteCopy();
   const ring = useRef<HTMLDivElement>(null);
@@ -92,6 +96,8 @@ const NewSelectionIntro = ({
     { key: "bloom", label: copy.bloomTitle, href: BLOOM_LINK, image: BLOOM_IMAGE, kind: "Collection" },
     { key: "fygrances", label: "FY'grances", href: FYGRANCES_LINK, image: FYGRANCES_IMAGE, kind: "Fragrance" },
   ];
+  const slidesRef = useRef(slides);
+  slidesRef.current = slides;
   const n = slides.length;
   const m = n * Math.max(1, Math.ceil(MIN_PANELS / n)); // nombre de panneaux sur l'anneau
   const items = Array.from({ length: m }, (_, i) => ({ s: slides[i % n], i }));
@@ -123,9 +129,19 @@ const NewSelectionIntro = ({
   pausedRef.current = paused;
   const onOpenRef = useRef(onOpen);
   onOpenRef.current = onOpen;
+  const onCenterRef = useRef(onCenter);
+  onCenterRef.current = onCenter;
+  const lastCenter = useRef(-1);
 
   const layout = useCallback(() => {
     const s = st.current;
+    // la slide du milieu a changé ? on prévient (pour afficher ses produits dessous)
+    const c = (((Math.round(s.pos) % m) + m) % m) % slidesRef.current.length;
+    if (c !== lastCenter.current) {
+      lastCenter.current = c;
+      const sl = slidesRef.current[c];
+      if (sl) onCenterRef.current?.(sl);
+    }
     const steps = s.flat ? 0 : ANGLE;
     const cw = s.cw;
     const R = steps > 0 ? (cw * 1.06 + GAP) / 2 / Math.tan(rad(steps / 2)) : 0;
@@ -443,7 +459,7 @@ const NewSelectionIntro = ({
   }, [layout, kick, goTo, m]);
 
   return (
-    <section data-no-reveal className="relative mb-28 mt-28 w-full sm:mb-40 sm:mt-36" aria-label="FYSU">
+    <section data-no-reveal className={`relative mt-28 w-full sm:mt-36 ${tight ? "mb-6 sm:mb-8" : "mb-28 sm:mb-40"}`} aria-label="FYSU">
       <div
         ref={ring}
         className="relative mx-auto w-full select-none overflow-hidden"

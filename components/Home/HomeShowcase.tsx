@@ -48,7 +48,7 @@ const FYGRANCES_IMAGE = "/images/Fygrances-hero.JPG";
 const FYGRANCES_LINK = "/fygrances";
 
 // petite vignette produit (sans nom ni prix) : l'image seule, qui voyage vers la fiche au toucher
-function Tile({ product, who }: { product: ProductType; who: "men" | "women" | null }) {
+export function Tile({ product, who }: { product: ProductType; who: "men" | "women" | null }) {
   const router = useRouter();
   const box = useRef<HTMLDivElement>(null);
   const imgs = ((product as any).product_images ?? []) as { url: string; worn_for?: string | null }[];
