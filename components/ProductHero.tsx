@@ -139,7 +139,7 @@ export default function ProductHero() {
               finishBack()
               return
             }
-            endRadius = parseFloat(getComputedStyle(box).borderTopLeftRadius) || 16
+            endRadius = parseFloat(getComputedStyle(box).borderTopLeftRadius) || 0
             box.style.opacity = "0"
             flyingNow = true
             t0 = now

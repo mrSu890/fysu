@@ -266,7 +266,7 @@ const Product = ({
       <div
         ref={boxRef}
         data-card-box=""
-        className="relative mb-4 aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-2xl bg-neutral-100"
+        className="relative mb-4 aspect-[3/4] w-full cursor-pointer overflow-hidden bg-neutral-100"
         style={showArrows ? undefined : { touchAction: "pan-y" }}
         onClick={() => {
           if (swipedRef.current) {
