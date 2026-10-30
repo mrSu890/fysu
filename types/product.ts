@@ -78,6 +78,10 @@ export type ProductType = {
 
   product_suggestions: ProductType[];
 
+  // « Compléter le look » : produits choisis dans l'admin (ids) et leurs données (lues par l'API)
+  look_ids?: number[] | null;
+  look_products?: ProductType[];
+
   product_info_blocks: InfoBloc[];
 
   // carte « une couleur » dans les rangées (voir lib/expandColors.ts)
