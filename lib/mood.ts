@@ -82,8 +82,8 @@ const isForced = (html: HTMLElement) =>
 const THEME_COLORS: Record<Mood, string> = {
   night: "#212427",
   dawn: "#e9ebe7",
-  day: "#faf9f7",
-  afternoon: "#f7f3e8",
+  day: "#fcfbf9",
+  afternoon: "#dad9d5",
   sunset: "#6b6454",
 }
 
