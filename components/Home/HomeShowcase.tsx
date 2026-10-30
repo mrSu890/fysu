@@ -72,7 +72,7 @@ export function Tile({ product, who }: { product: ProductType; who: "men" | "wom
   };
   return (
     <div data-href={path} onPointerEnter={() => prefetchProduct(product.slug)} onPointerDown={() => prefetchProduct(product.slug)}>
-      <Link href={path} onClick={go} aria-label={product.name} draggable={false} className="block">
+      <Link href={path} onClick={go} data-hero-link="" aria-label={product.name} draggable={false} className="block">
         <div ref={box} data-card-box="" className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 transition active:scale-[0.98]">
           {src && <Image src={src} alt="" fill draggable={false} sizes="(max-width: 768px) 30vw, 170px" className="object-cover" />}
         </div>
