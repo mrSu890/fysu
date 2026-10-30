@@ -14,6 +14,7 @@ import { Collapse } from "antd"
 import { useCart } from "@/context/CartContext"
 import { fetchProductCached } from "@/lib/productCache"
 import RecentlyViewed from "@/components/RecentlyViewed"
+import ViewToggle from "@/components/ViewToggle"
 import { rememberProduct } from "@/lib/recentlyViewed"
 import DeliveryNote from "@/components/Product/DeliveryNote"
 import "@/lib/useScrollRestore"
@@ -69,6 +70,18 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
     setGalleryProgress(max > 0 ? Math.max(0, Math.min(1, el.scrollLeft / max)) : 0)
   }
 
+  // photo touchée sur la carte (si ce n'était pas la première) : elle passe en premier sur la fiche, pour que l'image qui voyage y atterrisse
+  const [heroUrl] = useState<string | null>(() => {
+    try {
+      const src = typeof window !== "undefined" ? (window as unknown as { __fysuHeroSrc?: string }).__fysuHeroSrc : null
+      if (!src) return null
+      const u = new URL(src, window.location.origin)
+      const raw = u.pathname.startsWith("/_next/image") ? u.searchParams.get("url") : src
+      return raw ? decodeURIComponent(raw) : null
+    } catch {
+      return null
+    }
+  })
   const [product, setProduct] = useState<ProductType | null>(initialProduct)
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null)
   const [selectedSizeLabel, setSelectedSizeLabel] = useState<string | null>(null)
@@ -183,13 +196,22 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
       const ok = list.filter((img) => !img.worn_for || img.worn_for === "any" || !who || img.worn_for === who)
       return ok.length > 0 ? ok : list
     }
-    if (!selectedColor) return pick(product.product_images)
-
-    const matching = product.product_images.filter(
-      (img) => img.color && img.color.toLowerCase() === selectedColor.hex.toLowerCase()
-    )
-    return pick(matching.length > 0 ? matching : product.product_images)
-  }, [product, selectedColor, ctxWho])
+    let list: typeof product.product_images
+    if (!selectedColor) list = pick(product.product_images)
+    else {
+      const matching = product.product_images.filter(
+        (img) => img.color && img.color.toLowerCase() === selectedColor.hex.toLowerCase()
+      )
+      list = pick(matching.length > 0 ? matching : product.product_images)
+    }
+    // la photo touchée sur la carte devient la première
+    if (heroUrl) {
+      const same = (u: string) => u === heroUrl || heroUrl.endsWith(u) || u.endsWith(heroUrl)
+      const i = list.findIndex((img) => same(img.url))
+      if (i > 0) list = [list[i], ...list.slice(0, i), ...list.slice(i + 1)]
+    }
+    return list
+  }, [product, selectedColor, ctxWho, heroUrl])
 
   // tailles de la couleur choisie (une ligne de stock = une couleur + une taille)
   const sizesForColor: ProductSize[] = useMemo(() => {
@@ -383,6 +405,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
             {filteredImages.map((img, i) => (
               <div
                 key={img.id}
+                data-hero-slide=""
                 {...(i === 0 ? { "data-hero-target": true } : {})}
                 className="relative aspect-[3/4] w-[88%] shrink-0 snap-start overflow-hidden bg-foreground/[0.06] sm:w-full"
               >
@@ -428,7 +451,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
 
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-[28px] font-extrabold leading-none tracking-[-0.045em] sm:text-[44px]">
+              <h1 className="font-info text-[13px] font-normal uppercase leading-snug tracking-[0.08em] sm:text-sm">
                 {product.name}
               </h1>
               <WishlistHeart productId={product.id} size={24} className="-mr-1.5 -mt-1 shrink-0" />
@@ -714,11 +737,17 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
               </div>
             )}
             {tab === "reco" ? (
-              <section className="mx-auto w-11/12">
-                <div ref={scrollRef} className="flex gap-8 overflow-x-auto overflow-y-hidden no-scrollbar overscroll-x-contain touch-pan-x">
+              <section className="relative mx-auto w-11/12">
+                <div className="mb-3 flex justify-end">
+                  <ViewToggle products={product.product_suggestions} />
+                </div>
+                <div
+                  ref={scrollRef}
+                  className="no-scrollbar flex gap-6 snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth pb-2"
+                >
                   {product.product_suggestions.map((p) => (
-                    <div key={p.id} className="flex-shrink-0 w-[280px]">
-                      <Product showArrows product={p} scrollRef={scrollRef} />
+                    <div key={p.id} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px] lg:w-[320px]">
+                      <Product showArrows reveal product={p} scrollRef={scrollRef} />
                     </div>
                   ))}
                 </div>
