@@ -66,6 +66,7 @@ const TABS = [
   { id: "colors", label: "Couleurs & stock" },
   { id: "info", label: "Infos produit" },
   { id: "related", label: "Recommandations" },
+  { id: "look", label: "Complète le look" },
 ] as const
 type TabId = (typeof TABS)[number]["id"]
 
@@ -204,14 +205,16 @@ export default function ProductEditor({ id }: { id: string }) {
   const [wornFor, setWornFor] = useState<Record<string, string>>({})
   const [related, setRelated] = useState<number[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
+  const [look, setLook] = useState<number[]>([])
+  const [lookQuery, setLookQuery] = useState("")
   // image en cours de recadrage
   const [editingImage, setEditingImage] = useState<{ ci: number; ii: number } | null>(null)
 
   // Instantané des données enregistrées : sert à savoir s'il y a des modifications
   const [saved, setSaved] = useState("")
   const snapshot = useMemo(
-    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, wornFor, related }),
-    [form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, wornFor, related]
+    () => JSON.stringify({ form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, wornFor, related, look }),
+    [form, colors, infoBlocks, sizeGuide, sizeChart, litMap, hoverSet, wornFor, related, look]
   )
   const dirty = !loading && saved !== "" && snapshot !== saved
 
@@ -310,6 +313,7 @@ export default function ProductEditor({ id }: { id: string }) {
         content: b.content ?? "",
       }))
 
+      const nextLook: number[] = Array.isArray(p.look_ids) ? p.look_ids.map(Number).filter(Number.isFinite) : []
       const nextRelated: number[] = ((p.product_suggestions ?? []) as any[])
         .filter(Boolean)
         .map((s) => s.id)
@@ -324,6 +328,7 @@ export default function ProductEditor({ id }: { id: string }) {
       setHoverSet(nextHover)
       setWornFor(nextWorn)
       setRelated(nextRelated)
+      setLook(nextLook)
       setCategories(cats)
       setAllProducts(list.products)
       setSaved(
@@ -337,6 +342,7 @@ export default function ProductEditor({ id }: { id: string }) {
           hoverSet: nextHover,
           wornFor: nextWorn,
           related: nextRelated,
+          look: nextLook,
         })
       )
       setLoadError(null)
@@ -742,6 +748,7 @@ export default function ProductEditor({ id }: { id: string }) {
         })),
         info_blocks: infoBlocks,
         suggested_product_ids: related,
+        look_ids: look,
       })
       notify.success("Produit enregistré")
       await load()
@@ -811,6 +818,15 @@ export default function ProductEditor({ id }: { id: string }) {
       !related.includes(p.id) &&
       p.name.toLowerCase().includes(relatedQuery.trim().toLowerCase())
   )
+  const lookCandidates = allProducts.filter(
+    (p) =>
+      p.id !== productId &&
+      !look.includes(p.id) &&
+      p.name.toLowerCase().includes(lookQuery.trim().toLowerCase())
+  )
+  const lookSelected = look
+    .map((rid) => allProducts.find((p) => p.id === rid))
+    .filter(Boolean) as ListProduct[]
   const relatedSelected = related
     .map((rid) => allProducts.find((p) => p.id === rid))
     .filter(Boolean) as ListProduct[]
@@ -1737,6 +1753,101 @@ export default function ProductEditor({ id }: { id: string }) {
                 </button>
               ))}
               {relatedCandidates.length === 0 && (
+                <p className="px-2 py-3 text-sm text-[#9a948a]">Aucun résultat.</p>
+              )}
+            </div>
+          </div>
+        </Panel>
+      )}
+
+      {/* ===== COMPLÈTE LE LOOK ===== */}
+      {tab === "look" && (
+        <Panel
+          title="Compléter le look"
+          description="Affichés tout en bas de la fiche produit (à la place des infos produit), un par un, sans nom ni prix de collection : image, nom, prix et « Ajouter au panier ». Dans cet ordre."
+        >
+          <div className="space-y-2">
+            {lookSelected.length === 0 && (
+              <p className="text-sm text-[#7a756d]">Aucun produit pour compléter le look.</p>
+            )}
+            {lookSelected.map((p, i) => (
+              <div key={p.id} className="flex items-center gap-3 rounded-2xl bg-[#faf8f5] p-2 pr-3 ring-1 ring-[#eee9e1]">
+                {p.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.thumbnail} alt="" className="h-12 w-9 rounded-lg object-cover" />
+                ) : (
+                  <div className="h-12 w-9 rounded-lg bg-[#f0ece5]" />
+                )}
+                <p className="min-w-0 flex-1 truncate text-sm">{p.name}</p>
+                <button
+                  type="button"
+                  disabled={i === 0}
+                  onClick={() =>
+                    setLook((cur) => {
+                      const n = [...cur]
+                      ;[n[i - 1], n[i]] = [n[i], n[i - 1]]
+                      return n
+                    })
+                  }
+                  className="cursor-pointer px-1 text-xs text-[#7a756d] disabled:opacity-25"
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  disabled={i === lookSelected.length - 1}
+                  onClick={() =>
+                    setLook((cur) => {
+                      const n = [...cur]
+                      ;[n[i + 1], n[i]] = [n[i], n[i + 1]]
+                      return n
+                    })
+                  }
+                  className="cursor-pointer px-1 text-xs text-[#7a756d] disabled:opacity-25"
+                >
+                  ▼
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLook((cur) => cur.filter((x) => x !== p.id))}
+                  aria-label="Retirer"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#9b1c1c] hover:bg-[#fdeeee]"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <p className="mb-2 flex items-center gap-2 text-xs font-medium text-[#3d3a35]">
+              <ImagePlus size={14} /> Ajouter un produit
+            </p>
+            <input
+              className={INPUT}
+              placeholder="Rechercher…"
+              value={lookQuery}
+              onChange={(e) => setLookQuery(e.target.value)}
+            />
+            <div className="mt-3 max-h-72 space-y-1 overflow-y-auto">
+              {lookCandidates.slice(0, 30).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setLook((cur) => [...cur, p.id])}
+                  className="flex w-full cursor-pointer items-center gap-3 rounded-2xl p-2 text-left hover:bg-[#faf8f5]"
+                >
+                  {p.thumbnail ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.thumbnail} alt="" className="h-12 w-9 rounded-lg object-cover" />
+                  ) : (
+                    <div className="h-12 w-9 rounded-lg bg-[#f0ece5]" />
+                  )}
+                  <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
+                  <Plus size={15} className="text-[#7a756d]" />
+                </button>
+              ))}
+              {lookCandidates.length === 0 && (
                 <p className="px-2 py-3 text-sm text-[#9a948a]">Aucun résultat.</p>
               )}
             </div>
