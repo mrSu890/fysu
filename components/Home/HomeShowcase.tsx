@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { prefetchProduct } from "@/lib/productCache";
 import { useLocale } from "next-intl";
 import { useSiteCopy } from "@/lib/siteCopy";
-import Product from "@/components/Product";
-import ViewToggle from "@/components/ViewToggle";
 import IntroReveal from "@/components/IntroReveal";
 import type { ProductType } from "@/types/product";
 
@@ -45,6 +46,39 @@ const BLOOM_IMAGE = "/images/home-feature.jpeg";
 const BLOOM_LINK = "/collections/when-the-flowers-bloom";
 const FYGRANCES_IMAGE = "/images/Fygrances-hero.JPG";
 const FYGRANCES_LINK = "/fygrances";
+
+// petite vignette produit (sans nom ni prix) : l'image seule, qui voyage vers la fiche au toucher
+function Tile({ product, who }: { product: ProductType; who: "men" | "women" | null }) {
+  const router = useRouter();
+  const box = useRef<HTMLDivElement>(null);
+  const imgs = ((product as any).product_images ?? []) as { url: string; worn_for?: string | null }[];
+  const src = (imgs.find((i) => !i.worn_for) ?? imgs[0])?.url;
+  const path = `/product/${product.slug}`;
+  const go = (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    try {
+      if (who) sessionStorage.setItem("fysu-who", who);
+      else sessionStorage.removeItem("fysu-who");
+    } catch {}
+    try {
+      const w = window as any;
+      const el = box.current?.querySelector("img") as HTMLImageElement | null;
+      if (w.__fysuHero && el?.currentSrc && product.brand !== "thewave" && w.__fysuHero(box.current, path, el.currentSrc)) return;
+    } catch {}
+    const handled = (window as any).__fysuNavigate?.(path);
+    if (!handled) router.push(path);
+  };
+  return (
+    <div data-href={path} onPointerEnter={() => prefetchProduct(product.slug)} onPointerDown={() => prefetchProduct(product.slug)}>
+      <Link href={path} onClick={go} aria-label={product.name} draggable={false} className="block">
+        <div ref={box} data-card-box="" className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 transition active:scale-[0.98]">
+          {src && <Image src={src} alt="" fill draggable={false} sizes="(max-width: 768px) 30vw, 170px" className="object-cover" />}
+        </div>
+      </Link>
+    </div>
+  );
+}
 
 export default function HomeShowcase({
   initialSlides = null,
@@ -203,147 +237,88 @@ export default function HomeShowcase({
   const products = slideProducts[current.key] ?? [];
 
   return (
-    <section ref={root} data-no-reveal className="mx-auto mb-28 mt-28 w-11/12 max-w-6xl sm:mb-40 sm:mt-36" aria-label="FYSU">
+    <section ref={root} data-no-reveal className="mx-auto mb-28 mt-28 w-11/12 max-w-xl sm:mb-40 sm:mt-36" aria-label="FYSU">
       <style>{`@keyframes hs-fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
 
-      <div className="grid grid-cols-[11fr_9fr] items-center gap-4 sm:gap-8 md:grid-cols-[minmax(0,460px)_1fr] md:gap-14">
-        {/* GRAND VISUEL : les images pivotent en 3D, celle de devant est la slide en cours */}
-        <div
-          ref={stage}
-          data-card=""
-          className="relative aspect-[4/5] w-full select-none overflow-hidden"
-          style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate", opacity: cardHidden ? 0 : 1 }}
-          onPointerDown={onDown}
-          onPointerMove={onMove}
-          onPointerUp={onUp}
-          onPointerCancel={onUp}
-        >
+      {/* GRAND VISUEL : les images pivotent en 3D, celle de devant est la slide en cours */}
+      <div
+        ref={stage}
+        data-card=""
+        className="relative aspect-[4/5] w-full select-none overflow-hidden"
+        style={{ touchAction: "pan-y", perspective: PERSPECTIVE, isolation: "isolate", opacity: cardHidden ? 0 : 1 }}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+      >
+        {slides.map((s, i) => (
+          <div
+            key={s.key}
+            ref={(el) => {
+              panels.current[i] = el;
+            }}
+            className="absolute inset-0 overflow-hidden will-change-transform"
+            style={{ visibility: i === 0 ? "visible" : "hidden", backfaceVisibility: "hidden" }}
+            aria-hidden={i !== active}
+          >
+            {isVideo(s.image) ? (
+              <video src={s.image} muted loop autoPlay playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover object-center" />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={s.image} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />
+            )}
+          </div>
+        ))}
+        {onClose && (
+          <button
+            type="button"
+            aria-label="Fermer"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onClick={onClose}
+            className="absolute right-1 top-1 z-30 flex h-9 w-9 cursor-pointer items-center justify-center text-white opacity-80 transition-opacity hover:opacity-100"
+            style={{ filter: "drop-shadow(0 0 3px rgba(0,0,0,0.45))" }}
+          >
+            <span aria-hidden="true" className="relative block h-2.5 w-2.5">
+              <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 rotate-45 bg-current" />
+              <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 -rotate-45 bg-current" />
+            </span>
+          </button>
+        )}
+        <Link
+          href={current.href}
+          draggable={false}
+          aria-label={current.label}
+          className="absolute inset-0 z-20"
+          onClick={(e) => {
+            if (st.current.moved > 8) e.preventDefault();
+          }}
+        />
+      </div>
+
+      {/* TITRE de la slide en cours (tous empilés dans la même case : pas de saut de hauteur) */}
+      <IntroReveal delay={0.2}>
+        <div className="mt-4 grid">
           {slides.map((s, i) => (
             <div
               key={s.key}
-              ref={(el) => {
-                panels.current[i] = el;
-              }}
-              className="absolute inset-0 overflow-hidden will-change-transform"
-              style={{ visibility: i === 0 ? "visible" : "hidden", backfaceVisibility: "hidden" }}
+              className="transition-opacity duration-[700ms] ease-in-out"
+              style={{ gridArea: "1 / 1", opacity: i === active ? 1 : 0, pointerEvents: i === active ? "auto" : "none" }}
               aria-hidden={i !== active}
             >
-              {isVideo(s.image) ? (
-                <video src={s.image} muted loop autoPlay playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover object-center" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={s.image} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />
-              )}
+              <h2 className="text-xl font-light leading-tight tracking-tight sm:text-2xl">{s.label}</h2>
             </div>
           ))}
-          {onClose && (
-            <button
-              type="button"
-              aria-label="Fermer"
-              onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => e.stopPropagation()}
-              onClick={onClose}
-              className="absolute right-1 top-1 z-30 flex h-9 w-9 cursor-pointer items-center justify-center text-white opacity-80 transition-opacity hover:opacity-100"
-              style={{ filter: "drop-shadow(0 0 3px rgba(0,0,0,0.45))" }}
-            >
-              <span aria-hidden="true" className="relative block h-2.5 w-2.5">
-                <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 rotate-45 bg-current" />
-                <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 -rotate-45 bg-current" />
-              </span>
-            </button>
-          )}
-          <Link
-            href={current.href}
-            draggable={false}
-            aria-label={current.label}
-            className="absolute inset-0 z-20"
-            onClick={(e) => {
-              if (st.current.moved > 8) e.preventDefault();
-            }}
-          />
-        </div>
-
-        {/* TITRE + TEXTE : tous empilés dans la même case (pas de saut de hauteur), celui en cours est visible */}
-        <IntroReveal delay={0.2}>
-          <div className="grid">
-            {slides.map((s, i) => (
-              <div
-                key={s.key}
-                className="transition-opacity duration-[700ms] ease-in-out"
-                style={{ gridArea: "1 / 1", opacity: i === active ? 1 : 0, pointerEvents: i === active ? "auto" : "none" }}
-                aria-hidden={i !== active}
-              >
-                <p className="font-info text-[10px] uppercase tracking-[0.3em] opacity-60 sm:text-[11px]">{String(i + 1).padStart(2, "0")}</p>
-                <h2 className="mt-2 text-xl font-light leading-tight tracking-tight sm:mt-3 sm:text-3xl md:text-5xl">{s.label}</h2>
-                {s.text && (
-                  <div className="mt-3 border-t pt-3 sm:mt-6 sm:pt-6" style={{ borderColor: LINE }}>
-                    <p className="max-w-md whitespace-pre-line text-xs leading-relaxed opacity-80 sm:text-sm md:text-base">{s.text}</p>
-                  </div>
-                )}
-                <Link
-                  href={s.href}
-                  tabIndex={i === active ? 0 : -1}
-                  className="font-info mt-4 inline-block border-b border-current pb-px text-[10px] uppercase tracking-[0.2em] opacity-55 sm:mt-6 sm:text-[11px]"
-                >
-                  {discover} →
-                </Link>
-              </div>
-            ))}
-          </div>
-        </IntroReveal>
-      </div>
-
-      {/* PASTILLES = pages du carrousel */}
-      <IntroReveal delay={0.3} className="mt-8 sm:mt-12">
-        <div role="tablist" className="flex flex-wrap gap-2">
-          {slides.map((s, i) => {
-            const on = i === active;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => pick(i)}
-                className="cursor-pointer touch-manipulation whitespace-nowrap rounded-full px-4 py-2 text-xs transition active:scale-95"
-                style={
-                  on
-                    ? { background: "var(--foreground)", color: "var(--background)", border: "1px solid transparent" }
-                    : { background: "transparent", color: "inherit", border: `1px solid ${LINE}` }
-                }
-              >
-                {s.label}
-              </button>
-            );
-          })}
         </div>
       </IntroReveal>
 
-      {/* PRODUITS PHARES de la slide en cours */}
+      {/* TROIS PRODUITS choisis dans l'admin pour la slide en cours : l'image seule, sans nom ni prix */}
       {products.length > 0 && (
-        <IntroReveal delay={0.4} className="mt-8">
-          <div key={current.key} style={{ animation: "hs-fade 0.6s ease both" }}>
-            {/* vue à plat / modèle (et homme / femme), valable pour tout le site */}
-            <div className="mb-3 flex justify-end">
-              <ViewToggle fixedWho={slideWho} products={products} />
-            </div>
-            <div className="no-scrollbar flex touch-pan-x snap-x snap-mandatory gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-2">
-              {products.map((product) => (
-                <div key={product.id} className="w-[220px] flex-shrink-0 snap-start sm:w-[260px] md:w-[300px]">
-                  <Product showArrows product={product} forceWho={slideWho} />
-                </div>
-              ))}
-              {/* « Tout voir » : n'apparaît qu'au bout de la sélection */}
-              <div className="w-[160px] flex-shrink-0 snap-start sm:w-[190px] md:w-[220px]">
-                <Link
-                  href={current.href}
-                  className="font-info flex aspect-[3/4] w-full items-center justify-center text-[11px] uppercase tracking-[0.2em] transition active:scale-95"
-                  style={{ border: `1px solid ${LINE}` }}
-                >
-                  {viewAll} →
-                </Link>
-              </div>
-            </div>
+        <IntroReveal delay={0.3} className="mt-5">
+          <div key={current.key} className="grid grid-cols-3 gap-2" style={{ animation: "hs-fade 0.6s ease both" }}>
+            {products.slice(0, 3).map((product) => (
+              <Tile key={product.id} product={product} who={slideWho} />
+            ))}
           </div>
         </IntroReveal>
       )}
