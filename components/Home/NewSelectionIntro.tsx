@@ -462,7 +462,7 @@ const NewSelectionIntro = ({
     <section data-no-reveal className={`relative mt-28 w-full sm:mt-36 ${tight ? "mb-6 sm:mb-8" : "mb-28 sm:mb-40"}`} aria-label="FYSU">
       <div
         ref={ring}
-        className="relative mx-auto w-full select-none overflow-hidden [--cw:min(90vw,520px)] md:[--cw:min(44vh,400px)]"
+        className="relative mx-auto w-full select-none overflow-hidden [--cw:min(90vw,520px)] md:max-w-[var(--cw)] md:[--cw:min(60vw,640px)]"
         style={{
           height: "calc(var(--cw) * 1.25 + 3rem)",
           perspective: `${PERSPECTIVE}px`,
