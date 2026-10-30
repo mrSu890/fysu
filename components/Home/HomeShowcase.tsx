@@ -64,7 +64,8 @@ export function Tile({ product, who }: { product: ProductType; who: "men" | "wom
     try {
       const w = window as any;
       const el = box.current?.querySelector("img") as HTMLImageElement | null;
-      if (w.__fysuHero && el?.currentSrc && product.brand !== "thewave" && w.__fysuHero(box.current, path, el.currentSrc)) return;
+      const shown = el?.currentSrc || el?.src;
+      if (w.__fysuHero && shown && product.brand !== "thewave" && w.__fysuHero(box.current, path, shown)) return;
     } catch {}
     const handled = (window as any).__fysuNavigate?.(path);
     if (!handled) router.push(path);
