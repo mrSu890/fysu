@@ -337,7 +337,7 @@ export default function HomeShowcase({
               <div className="w-[160px] flex-shrink-0 snap-start sm:w-[190px] md:w-[220px]">
                 <Link
                   href={current.href}
-                  className="font-info flex aspect-[3/4] w-full items-center justify-center rounded-3xl text-[11px] uppercase tracking-[0.2em] transition active:scale-95"
+                  className="font-info flex aspect-[3/4] w-full items-center justify-center text-[11px] uppercase tracking-[0.2em] transition active:scale-95"
                   style={{ border: `1px solid ${LINE}` }}
                 >
                   {viewAll} →
