@@ -310,7 +310,8 @@ export default function ProductHero() {
         finish()
         return
       }
-      const onPath = pathRef.current === job.path
+      // l'adresse de la carte peut porter une couleur (?color=…) : on compare seulement le chemin
+      const onPath = pathRef.current === job.path.split("?")[0]
       const el = onPath ? (document.querySelector("[data-hero-target]") as HTMLElement | null) : null
       let target: Box | null = null
       let real = false
@@ -387,7 +388,7 @@ export default function ProductHero() {
         } else if (!real) {
           node.style.clipPath = ""
         }
-        if (p >= 1 && real) {
+        if (p >= 1 && (real || elapsed > 2500)) {
           if (!doneAt) doneAt = now
           if (now - doneAt > 600) {
             finish()
