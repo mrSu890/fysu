@@ -95,6 +95,20 @@ const Product = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.slug])
   const swipedRef = useRef(false)
+  // grilles (sans flèches) : les photos suivent le doigt et s'arrêtent net sur chaque photo (défilement natif)
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const onTrackScroll = () => {
+    const el = trackRef.current
+    if (!el || !el.clientWidth) return
+    const i = Math.round(el.scrollLeft / el.clientWidth)
+    setCurrentIndex((c) => (c === i ? c : i))
+  }
+  useEffect(() => {
+    if (showArrows) return
+    const el = trackRef.current
+    if (!el || !el.clientWidth) return
+    if (Math.round(el.scrollLeft / el.clientWidth) !== currentIndex) el.scrollTo({ left: currentIndex * el.clientWidth, behavior: "auto" })
+  }, [currentIndex, showArrows])
   const boxRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -230,7 +244,7 @@ const Product = ({
     // page fixe : un glissement horizontal change d'image (sans ouvrir la fiche)
     const start = swipeStart.current
     swipeStart.current = null
-    if (!showArrows && e && start && images.length > 1 && e.type === "pointerup") {
+    if (false && e && start && images.length > 1 && e.type === "pointerup") {
       const dx = e.clientX - start.x
       const dy = e.clientY - start.y
       if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.2) {
@@ -267,8 +281,7 @@ const Product = ({
         ref={boxRef}
         data-card-box=""
         className="relative mb-4 aspect-[3/4] w-full cursor-pointer overflow-hidden bg-neutral-100"
-        style={showArrows ? undefined : { touchAction: "pan-y" }}
-        onClick={() => {
+                onClick={() => {
           if (swipedRef.current) {
             swipedRef.current = false
             return
@@ -312,14 +325,20 @@ const Product = ({
         )}
 
         <div
-          className="flex h-full w-full"
-          style={{
-            transform: `translateX(-${currentIndex * 100}%)`,
-            transition: "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
-          }}
+          ref={showArrows ? undefined : trackRef}
+          onScroll={showArrows ? undefined : onTrackScroll}
+          className={showArrows ? "flex h-full w-full" : "no-scrollbar flex h-full w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain"}
+          style={
+            showArrows
+              ? {
+                  transform: `translateX(-${currentIndex * 100}%)`,
+                  transition: "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+                }
+              : undefined
+          }
         >
           {images.map((src, index) => (
-            <div key={index} className="relative h-full w-full flex-shrink-0">
+            <div key={index} className={`relative h-full w-full flex-shrink-0 ${showArrows ? "" : "snap-start snap-always"}`}>
               <Image
                 src={src}
                 alt={`${product.name}-${index}`}
