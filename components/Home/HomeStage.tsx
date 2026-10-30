@@ -27,7 +27,7 @@ export default function HomeStage({
     <>
       <NewSelectionIntro initialSlides={initialSlides} onCenter={setCur} tight={list.length > 0} />
       {list.length > 0 && (
-        <div className="mx-auto mb-28 w-[min(80vw,460px)] sm:mb-40">
+        <div className="mx-auto mb-28 w-[min(90vw,520px)] sm:mb-40">
           <div key={cur?.key} className="grid grid-cols-3 gap-2" style={{ animation: "hs-fade 0.5s ease both" }}>
             {list.slice(0, 3).map((product) => (
               <Tile key={product.id} product={product} who={who} />

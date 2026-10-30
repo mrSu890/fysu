@@ -464,7 +464,7 @@ const NewSelectionIntro = ({
         ref={ring}
         className="relative mx-auto w-full select-none overflow-hidden"
         style={{
-          ["--cw" as any]: "min(80vw, 460px)",
+          ["--cw" as any]: "min(90vw, 520px)",
           height: "calc(var(--cw) * 1.25 + 3rem)",
           perspective: `${PERSPECTIVE}px`,
           touchAction: "pan-y",
