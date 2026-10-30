@@ -48,6 +48,13 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: monospace;
+  /* textes un peu plus petits sur tout le site (les titres text-xl et plus, et les mini textes text-xs ou en px, ne bougent pas) */
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.4rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5rem;
 }
 
 /* Typographie : style épuré, scandinave, proche d'Helvetica */
