@@ -20,6 +20,20 @@ type Box = { top: number; left: number; width: number; height: number }
 type Job = { src: string; from: Box; path: string; radius: number }
 type Back = { src: string; from: Box; slug: string; path: string }
 
+// courbe « ressort amorti » (comme les feuilles de l'iPhone) : démarre vite, se pose sans rebond
+const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number) => {
+  let a = t
+  for (let i = 0; i < 6; i++) {
+    const x = 3 * (1 - a) * (1 - a) * a * x1 + 3 * (1 - a) * a * a * x2 + a * a * a
+    const dx = 3 * (1 - a) * (1 - a) * x1 + 6 * (1 - a) * a * (x2 - x1) + 3 * a * a * (1 - x2)
+    if (Math.abs(dx) < 1e-6) break
+    a -= (x - t) / dx
+  }
+  a = Math.max(0, Math.min(1, a))
+  return 3 * (1 - a) * (1 - a) * a * y1 + 3 * (1 - a) * a * a * y2 + a * a * a
+}
+const ease = bezier(0.32, 0.72, 0, 1)
+
 const isCalm = () => {
   const html = document.documentElement
   return (
@@ -117,8 +131,7 @@ export default function ProductHero() {
     let scrolled = false
     let endRadius = 16
     const started = Date.now()
-    const DURATION = 800
-    const ease = (t: number) => 1 - Math.pow(1 - t, 4)
+    const DURATION = 520
     const find = (): HTMLElement | null => {
       const want = `/product/${back.slug}`
       const cards = Array.from(document.querySelectorAll("[data-href]")) as HTMLElement[]
@@ -197,7 +210,13 @@ export default function ProductHero() {
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
+    // un nouveau toucher pendant le vol : on n'attend pas, l'image s'efface en douceur et la page répond tout de suite
+    const interrupt = () => finishBack()
+    window.addEventListener("pointerdown", interrupt, { passive: true })
+    window.addEventListener("wheel", interrupt, { passive: true })
     return () => {
+      window.removeEventListener("pointerdown", interrupt)
+      window.removeEventListener("wheel", interrupt)
       cancelAnimationFrame(raf)
       restore()
     }
@@ -272,7 +291,7 @@ export default function ProductHero() {
     let usingPred = false
     let realSeen = false
     let doneAt = 0
-    let dur = 900
+    let dur = 560
     let seenAt = 0
     let startBox: Box = job.from
     let curBox: Box = job.from
@@ -280,7 +299,6 @@ export default function ProductHero() {
     let clipFor: HTMLElement | null = null
     const started = Date.now()
     window.scrollTo(0, 0)
-    const ease = (t: number) => 1 - Math.pow(1 - t, 4)
     // emplacement prévu de la grande photo (mêmes mesures que la fiche), utilisé tant que la vraie page n'est pas là
     const predict = (): Box => {
       const vw = window.innerWidth
@@ -341,12 +359,12 @@ export default function ProductHero() {
           flyingNow = true
           startBox = job.from
           t0 = now
-          dur = 900
+          dur = 560
           setFlying(true)
         } else if (usingPred) {
           startBox = curBox
           t0 = now
-          dur = 450
+          dur = 340
           doneAt = 0
         }
         usingPred = false
@@ -359,7 +377,7 @@ export default function ProductHero() {
           usingPred = true
           startBox = job.from
           t0 = now
-          dur = 900
+          dur = 560
           setFlying(true)
         }
       }
@@ -390,7 +408,7 @@ export default function ProductHero() {
         }
         if (p >= 1 && (real || elapsed > 2500)) {
           if (!doneAt) doneAt = now
-          if (now - doneAt > 600) {
+          if (now - doneAt > 250) {
             finish()
             return
           }
@@ -399,7 +417,15 @@ export default function ProductHero() {
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
+    // un nouveau toucher pendant le vol : l'image s'efface en douceur, rien ne bloque
+    const interrupt = () => finish()
+    window.addEventListener("pointerdown", interrupt, { passive: true })
+    window.addEventListener("wheel", interrupt, { passive: true })
+    return () => {
+      window.removeEventListener("pointerdown", interrupt)
+      window.removeEventListener("wheel", interrupt)
+      cancelAnimationFrame(raf)
+    }
   }, [job, finish])
 
   // sécurité générale
@@ -416,7 +442,7 @@ export default function ProductHero() {
         className="pointer-events-none fixed inset-0 z-[44] bg-background"
         initial={{ opacity: 0 }}
         animate={{ opacity: !backFlying && !backLeaving ? 1 : 0 }}
-        transition={{ duration: backFlying ? 0.45 : 0.15, ease: "easeOut", delay: backFlying ? 0.12 : 0 }}
+        transition={{ duration: backFlying ? 0.35 : 0.15, ease: "easeOut", delay: backFlying ? 0.08 : 0 }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -448,7 +474,7 @@ export default function ProductHero() {
         className="pointer-events-none fixed inset-0 z-[44] bg-background"
         initial={{ opacity: 0 }}
         animate={{ opacity: bg && !flying && !leaving ? 1 : 0 }}
-        transition={{ duration: flying ? 0.6 : 0.35, ease: "easeOut", delay: flying ? 0.45 : 0 }}
+        transition={{ duration: flying ? 0.4 : 0.3, ease: "easeOut", delay: flying ? 0.28 : 0 }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
