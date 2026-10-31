@@ -18,7 +18,7 @@ import { claimPopup, releasePopup } from "@/lib/popups"
 
 type Box = { top: number; left: number; width: number; height: number }
 type Job = { src: string; from: Box; path: string; radius: number }
-type Back = { src: string; from: Box; slug: string; path: string }
+type Back = { src: string; from: Box; slug: string; path: string; kind: "product" | "music"; crop: number; top: number }
 
 // courbe « ressort amorti » (comme les feuilles de l'iPhone) : démarre vite, se pose sans rebond
 const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number) => {
@@ -48,7 +48,8 @@ export default function ProductHero() {
   const pathname = usePathname()
   const [job, setJob] = useState<Job | null>(null)
   const [flying, setFlying] = useState(false)
-  const imgRef = useRef<HTMLImageElement | null>(null)
+  const imgRef = useRef<HTMLDivElement | null>(null)
+  const innerRef = useRef<HTMLImageElement | null>(null)
   const [bg, setBg] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const jobRef = useRef<Job | null>(null)
@@ -59,7 +60,8 @@ export default function ProductHero() {
   const [back, setBack] = useState<Back | null>(null)
   const [backFlying, setBackFlying] = useState(false)
   const [backLeaving, setBackLeaving] = useState(false)
-  const backImgRef = useRef<HTMLImageElement | null>(null)
+  const backImgRef = useRef<HTMLDivElement | null>(null)
+  const backInnerRef = useRef<HTMLImageElement | null>(null)
   const backRef = useRef<Back | null>(null)
   backRef.current = back
   const pathRef = useRef(pathname)
@@ -82,14 +84,15 @@ export default function ProductHero() {
   useEffect(() => {
     const onPop = () => {
       try {
-        const m = pathRef.current.match(/^\/product\/([^/?#]+)/)
+        const m = pathRef.current.match(/^\/product\/([^/?#]+)/) ?? pathRef.current.match(/^\/music\/([^/?#]+)/)
+        const kind: "product" | "music" = pathRef.current.startsWith("/music/") ? "music" : "product"
         if (!m || jobRef.current || backRef.current) return
         const to = window.location.pathname
-        if (to.startsWith("/product/") || to.startsWith("/admin")) return
+        if (to.startsWith("/product/") || to.startsWith("/music/") || to.startsWith("/admin")) return
         if (isCalm() || !(window as any).__loaderVisualDone) return
         if (document.documentElement.getAttribute("data-brand")) return
         // l'image de la fiche la plus visible à l'écran (pas forcément la première : on a pu défiler)
-        const slides = Array.from(document.querySelectorAll("[data-hero-slide]")) as HTMLElement[]
+        const slides = Array.from(document.querySelectorAll(kind === "music" ? "[data-hero-target]" : "[data-hero-slide]")) as HTMLElement[]
         let el: HTMLElement | null = null
         let bestA = 0
         for (const sl of slides) {
@@ -111,7 +114,7 @@ export default function ProductHero() {
         claimPopup("hero", false, true)
         setBackLeaving(false)
         setBackFlying(false)
-        setBack({ src: img.currentSrc, from: r, slug: m[1], path: to })
+        setBack({ src: img.currentSrc, from: r, slug: m[1], path: to, kind, crop: parseFloat(el.dataset.heroCrop || "0") || 0, top: el.dataset.heroPos === "top" ? 1 : 0 })
       } catch {}
     }
     window.addEventListener("popstate", onPop)
@@ -133,6 +136,7 @@ export default function ProductHero() {
     const started = Date.now()
     const DURATION = 520
     const find = (): HTMLElement | null => {
+      if (back.kind === "music") return document.querySelector(`a[href="/music/${back.slug}"] [data-hero-box]`) as HTMLElement | null
       const want = `/product/${back.slug}`
       const cards = Array.from(document.querySelectorAll("[data-href]")) as HTMLElement[]
       for (const c of cards) {
@@ -196,6 +200,14 @@ export default function ProductHero() {
         el.style.width = `${f.width + (t.width - f.width) * e}px`
         el.style.height = `${f.height + (t.height - f.height) * e}px`
         el.style.borderRadius = `${endRadius * e}px`
+        const inner = backInnerRef.current
+        if (inner) {
+          // la photo de la fiche est recadrée (haut coupé, calée en haut) : on revient au cadrage de la carte en glissant
+          const cr = back.crop * (1 - e)
+          inner.style.top = `${-cr}%`
+          inner.style.height = `${100 + cr}%`
+          inner.style.objectPosition = `50% ${50 - 50 * back.top * (1 - e)}%`
+        }
         if (p >= 1) {
           if (!doneAt) {
             doneAt = now
@@ -294,6 +306,9 @@ export default function ProductHero() {
     let dur = 560
     let seenAt = 0
     let startBox: Box = job.from
+    let tFirst = 0
+    let tCrop = 0
+    let tTop = 0
     let curBox: Box = job.from
     let clipEl: HTMLElement | null = null
     let clipFor: HTMLElement | null = null
@@ -346,6 +361,8 @@ export default function ProductHero() {
         last = key
         if (ready && r.width > 0 && (stable >= 2 || realSeen)) {
           real = true
+          tCrop = parseFloat(el.dataset.heroCrop || "0") || 0
+          tTop = el.dataset.heroPos === "top" ? 1 : 0
           target = { top: r.top, left: r.left, width: r.width, height: r.height }
           endRadius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
           if (el !== clipFor) {
@@ -359,6 +376,7 @@ export default function ProductHero() {
           flyingNow = true
           startBox = job.from
           t0 = now
+          tFirst = now
           dur = 560
           setFlying(true)
         } else if (usingPred) {
@@ -369,14 +387,17 @@ export default function ProductHero() {
         }
         usingPred = false
         realSeen = true
-      } else if (!realSeen && elapsed > 350) {
-        // la page tarde : l'image grandit déjà vers sa place sans attendre
+      } else if (!realSeen && elapsed > 350 && job.path.startsWith("/product/")) {
+        // la page tarde : l'image grandit déjà vers sa place sans attendre (fiches produit seulement)
         target = predict()
+        tCrop = 1.8
+        tTop = 1
         if (!flyingNow) {
           flyingNow = true
           usingPred = true
           startBox = job.from
           t0 = now
+          tFirst = now
           dur = 560
           setFlying(true)
         }
@@ -396,6 +417,15 @@ export default function ProductHero() {
         node.style.width = `${width}px`
         node.style.height = `${height}px`
         node.style.borderRadius = `${job.radius + (endRadius - job.radius) * e}px`
+        const inner = innerRef.current
+        if (inner) {
+          // cadrage de la photo : celui de la carte au départ, celui de la fiche (haut coupé, calée en haut) à l'arrivée
+          const es = ease(Math.min(1, (now - tFirst) / 560))
+          const cr = tCrop * es
+          inner.style.top = `${-cr}%`
+          inner.style.height = `${100 + cr}%`
+          inner.style.objectPosition = `50% ${50 - 50 * tTop * es}%`
+        }
         if (real && clipEl) {
           const c = clipEl.getBoundingClientRect()
           const it = Math.max(0, c.top - top) * e
@@ -444,13 +474,10 @@ export default function ProductHero() {
         animate={{ opacity: !backFlying && !backLeaving ? 1 : 0 }}
         transition={{ duration: backFlying ? 0.35 : 0.15, ease: "easeOut", delay: backFlying ? 0.08 : 0 }}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <div
         ref={backImgRef}
-        src={back.src}
-        alt=""
-        draggable={false}
-        className="pointer-events-none fixed z-[45] object-cover"
+        aria-hidden="true"
+        className="pointer-events-none fixed z-[45] overflow-hidden"
         style={{
           opacity: backLeaving ? 0 : 1,
           transition: "opacity 0.28s ease",
@@ -459,7 +486,17 @@ export default function ProductHero() {
           width: back.from.width,
           height: back.from.height,
         }}
-      />
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={backInnerRef}
+          src={back.src}
+          alt=""
+          draggable={false}
+          className="absolute left-0 w-full object-cover"
+          style={{ top: `${-back.crop}%`, height: `${100 + back.crop}%`, objectPosition: `50% ${50 - 50 * back.top}%` }}
+        />
+      </div>
     </>
   ) : null
 
@@ -476,13 +513,10 @@ export default function ProductHero() {
         animate={{ opacity: bg && !flying && !leaving ? 1 : 0 }}
         transition={{ duration: flying ? 0.4 : 0.3, ease: "easeOut", delay: flying ? 0.28 : 0 }}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <div
         ref={imgRef}
-        src={job.src}
-        alt=""
-        draggable={false}
-        className="pointer-events-none fixed z-[45] object-cover"
+        aria-hidden="true"
+        className="pointer-events-none fixed z-[45] overflow-hidden"
         style={{
           opacity: leaving ? 0 : 1,
           transition: "opacity 0.28s ease",
@@ -492,7 +526,10 @@ export default function ProductHero() {
           height: job.from.height,
           borderRadius: job.radius,
         }}
-      />
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img ref={innerRef} src={job.src} alt="" draggable={false} className="absolute left-0 top-0 h-full w-full object-cover" />
+      </div>
     </>
   )
 }

@@ -407,6 +407,8 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
               <div
                 key={img.id}
                 data-hero-slide=""
+                data-hero-pos="top"
+                data-hero-crop={hasLit ? "0" : "1.8"}
                 {...(i === 0 ? { "data-hero-target": true } : {})}
                 className="relative aspect-[3/4] w-[88%] shrink-0 snap-start overflow-hidden bg-foreground/[0.06] sm:w-full"
               >
