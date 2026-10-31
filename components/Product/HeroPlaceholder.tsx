@@ -19,7 +19,7 @@ export default function HeroPlaceholder() {
         <div className="grid items-start gap-12 md:grid-cols-2 lg:gap-24">
           <div className="relative">
             <div className="flex gap-2 overflow-hidden sm:flex-col sm:gap-3">
-              <div data-hero-target="" className="relative aspect-[3/4] w-[88%] shrink-0 overflow-hidden bg-foreground/[0.06] sm:w-full">
+              <div data-hero-target="" data-hero-pos="top" data-hero-crop="1.8" className="relative aspect-[3/4] w-[88%] shrink-0 overflow-hidden bg-foreground/[0.06] sm:w-full">
                 {src && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover object-top" />
