@@ -53,7 +53,7 @@ export default function BackButton() {
         }
       }}
       data-fab
-      className="absolute left-3 top-[112px] z-[35] flex h-8 w-8 cursor-pointer items-center justify-center transition active:scale-90 sm:left-5"
+      className="absolute left-3 top-[112px] z-[35] flex h-8 w-8 cursor-pointer items-center justify-center transition before:absolute before:-inset-1.5 before:content-[''] active:scale-90 sm:left-5"
       style={{ color: "var(--foreground)", opacity: 0.5, filter: "drop-shadow(0 0 2px color-mix(in srgb, var(--background) 70%, transparent))" }}
     >
       <ArrowLeft size={15} strokeWidth={1.4} />

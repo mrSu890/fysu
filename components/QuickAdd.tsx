@@ -127,7 +127,7 @@ export default function QuickAdd({ product, inline = false }: { product: Product
         <button
           type="button"
           onClick={openIt}
-          className="font-info w-full cursor-pointer bg-foreground py-3 text-[10px] uppercase tracking-[0.14em] text-background transition active:opacity-80"
+          className="font-info w-full cursor-pointer bg-foreground py-3 text-[11px] uppercase tracking-[0.14em] text-background transition active:scale-[0.98] active:opacity-80"
         >
           {c.add}
         </button>

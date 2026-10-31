@@ -15,6 +15,7 @@ import { useCart } from "@/context/CartContext"
 import { fetchProductCached } from "@/lib/productCache"
 import RecentlyViewed from "@/components/RecentlyViewed"
 import ViewToggle from "@/components/ViewToggle"
+import HeroPlaceholder from "@/components/Product/HeroPlaceholder"
 import { rememberProduct } from "@/lib/recentlyViewed"
 import DeliveryNote from "@/components/Product/DeliveryNote"
 import "@/lib/useScrollRestore"
@@ -274,7 +275,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
 
   /* ================= STATES ================= */
 
-    if (loading) return <div className="w-screen h-screen bg-background" />
+    if (loading) return <HeroPlaceholder />
 
   if (!product) return notFound()
 
@@ -443,7 +444,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
             <Link
               href={brand.path}
               style={{ color: "inherit" }}
-              className="block text-[10px] font-light uppercase tracking-[0.3em] opacity-50 hover:opacity-100 transition"
+              className="block text-[11px] font-light uppercase tracking-[0.3em] opacity-60 hover:opacity-100 transition"
             >
               ← {colorCopy.backTo} {brand.label}
             </Link>
@@ -483,7 +484,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
                 line.trim() === "" ? (
                   <div key={i} className="h-6" aria-hidden />
                 ) : (
-                  <p key={i} className="leading-[2]">
+                  <p key={i} className="leading-[1.75]">
                     {line}
                   </p>
                 )
@@ -496,7 +497,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
               style={{ color: "inherit", borderTop: "1px solid color-mix(in srgb, currentColor 15%, transparent)", borderBottom: "1px solid color-mix(in srgb, currentColor 15%, transparent)" }}
               className="block py-4 transition hover:opacity-70"
             >
-              <span className="block text-[10px] font-light uppercase tracking-[0.3em] opacity-50">{familyLabel}</span>
+              <span className="block text-[11px] font-light uppercase tracking-[0.3em] opacity-60">{familyLabel}</span>
               <span className="mt-1 block text-lg font-light tracking-tight">{family.name}</span>
               <span className="mt-0.5 block text-xs opacity-70">{family.line}</span>
             </Link>
@@ -575,7 +576,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
                         min-w-[48px]
                         font-info px-4 py-2
                         text-sm
-                        border rounded-none
+                        border rounded-none active:scale-[0.97]
                         transition-all duration-200
                         ${
                           isOut
@@ -638,7 +639,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
             </div>
           )}
   
-                    <div ref={buyRef} data-ink-root className="relative liquid-glass flex flex-col gap-4 p-4 rounded-2xl">
+                    <div ref={buyRef} data-ink-root className="relative flex flex-col gap-4">
             {canBuy && colorSoldOut ? (
               <div className="w-full space-y-3">
                 <div
@@ -721,8 +722,8 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
             type="button"
             onClick={() => setBottomTab(id)}
             aria-pressed={tab === id}
-            className={`font-info cursor-pointer pb-1 text-[11px] font-light uppercase tracking-[0.12em] transition-opacity ${
-              tab === id ? "border-b border-current opacity-100" : "opacity-45"
+            className={`font-info cursor-pointer py-2 text-[11px] font-light uppercase tracking-[0.12em] transition active:scale-[0.97] ${
+              tab === id ? "border-b border-current opacity-100" : "opacity-60"
             }`}
           >
             {label}

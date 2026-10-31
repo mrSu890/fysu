@@ -78,7 +78,7 @@ export default function CompleteLook({ products }: { products: ProductType[] }) 
                 ) : (
                   <Link
                     href={`/product/${p.slug}`}
-                    className="font-info block w-full border border-foreground/25 py-3 text-center text-[10px] uppercase tracking-[0.14em]"
+                    className="font-info block w-full border border-foreground/25 py-3 text-center text-[11px] uppercase tracking-[0.14em]"
                   >
                     {fr ? "Voir la fiche" : "View details"}
                   </Link>
