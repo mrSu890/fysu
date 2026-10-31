@@ -133,32 +133,32 @@ export default function MusicAlbumClient({ initialAlbum }: { initialAlbum: Album
             <nav className="sticky top-[76px] z-30 -mx-1 mb-8 flex flex-wrap items-center gap-2 px-1 py-2 text-sm">
               <Link
                 href="/music"
-                className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 font-medium text-[#171717] shadow-lg transition active:scale-95"
+                className="font-info flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[11px] uppercase tracking-[0.12em] text-[#171717] transition active:scale-95"
               >
-                <ArrowLeft size={16} /> {copy.allAlbums}
+                <ArrowLeft size={14} strokeWidth={1.5} /> {copy.allAlbums}
               </Link>
               {(album.collections ?? []).map((c) => (
                 <Link
                   key={c.slug}
                   href={c.href}
-                  className="flex items-center gap-2 rounded-full border border-current/30 bg-black/20 px-4 py-2.5 backdrop-blur-md transition active:scale-95"
+                  className="font-info flex items-center gap-2 rounded-full border border-current/25 bg-black/15 px-4 py-2.5 text-[11px] uppercase tracking-[0.12em] backdrop-blur-md transition active:scale-95"
                 >
-                  <ArrowLeft size={16} /> {c.title}
+                  <ArrowLeft size={14} strokeWidth={1.5} /> {c.title}
                 </Link>
               ))}
               {(album.collections ?? []).length === 0 && brand.path && (
                 <Link
                   href={brand.path}
-                  className="flex items-center gap-2 rounded-full border border-current/30 bg-black/20 px-4 py-2.5 backdrop-blur-md transition active:scale-95"
+                  className="font-info flex items-center gap-2 rounded-full border border-current/25 bg-black/15 px-4 py-2.5 text-[11px] uppercase tracking-[0.12em] backdrop-blur-md transition active:scale-95"
                 >
-                  <ArrowLeft size={16} /> {brand.label}
+                  <ArrowLeft size={14} strokeWidth={1.5} /> {brand.label}
                 </Link>
               )}
             </nav>
 
             {/* ================= EN-TÊTE ================= */}
             <header className="flex flex-col items-center text-center sm:flex-row sm:items-end sm:gap-7 sm:text-left">
-              <div data-hero-target className="h-44 w-44 shrink-0 overflow-hidden rounded-2xl bg-current/10 shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:h-52 sm:w-52">
+              <div data-hero-target className="h-52 w-52 shrink-0 overflow-hidden rounded-[6px] bg-current/10 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)] sm:h-60 sm:w-60">
                 {album.cover_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={album.cover_url} alt={album.title} className="h-full w-full object-cover" />
@@ -170,16 +170,16 @@ export default function MusicAlbumClient({ initialAlbum }: { initialAlbum: Album
               </div>
 
               <div className="mt-5 min-w-0 sm:mt-0 sm:pb-1">
-                <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+                <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.04em] sm:text-[40px]">
                   {album.title}
                 </h1>
-                {album.artist && <p className="mt-1 text-base opacity-85">{album.artist}</p>}
+                {album.artist && <p className="font-info mt-2 text-[12px] font-light uppercase tracking-[0.16em] opacity-80">{album.artist}</p>}
                 {album.description && (
-                  <p className="mt-3 max-w-md text-sm leading-relaxed opacity-75">
+                  <p className="mt-4 max-w-md text-[13px] font-light leading-[1.7] opacity-75">
                     {album.description}
                   </p>
                 )}
-                <p className="mt-3 text-xs uppercase tracking-[0.14em] opacity-60">
+                <p className="font-info mt-4 text-[11px] font-light uppercase tracking-[0.14em] opacity-60">
                   {copy.tracks(tracks.length, minutes)}
                 </p>
               </div>
@@ -191,15 +191,15 @@ export default function MusicAlbumClient({ initialAlbum }: { initialAlbum: Album
                 <button
                   type="button"
                   onClick={onPlayAll}
-                  className="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-white text-base font-medium text-[#171717] shadow-lg transition active:scale-[0.98]"
+                  className="font-info flex h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-white text-[12px] uppercase tracking-[0.16em] text-[#171717] transition active:scale-[0.98]"
                 >
                   {isCurrentAlbum && player.playing ? (
                     <>
-                      <Pause size={20} fill="currentColor" /> {copy.pause}
+                      <Pause size={16} fill="currentColor" /> {copy.pause}
                     </>
                   ) : (
                     <>
-                      <Play size={20} fill="currentColor" /> {copy.play}
+                      <Play size={16} fill="currentColor" /> {copy.play}
                     </>
                   )}
                 </button>
@@ -208,15 +208,15 @@ export default function MusicAlbumClient({ initialAlbum }: { initialAlbum: Album
                   onClick={() => albumInfo && player.playAlbum(albumInfo, tracks, 0, true)}
                   aria-label={copy.shuffle}
                   title={copy.shuffle}
-                  className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-current/15 transition active:scale-95"
+                  className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-current/25 transition active:scale-95"
                 >
-                  <Shuffle size={20} />
+                  <Shuffle size={17} strokeWidth={1.5} />
                 </button>
               </div>
             )}
 
             {/* ================= LISTE DES TITRES ================= */}
-            <ol className="mt-8" style={{ borderTop: `1px solid ${LINE}` }}>
+            <ol className="mt-10" style={{ borderTop: `1px solid ${LINE}` }}>
               {tracks.map((track, i) => {
                 const active = isCurrentAlbum && player.current?.id === track.id
                 return (
@@ -224,13 +224,13 @@ export default function MusicAlbumClient({ initialAlbum }: { initialAlbum: Album
                     <button
                       type="button"
                       onClick={() => onRow(i)}
-                      className="flex w-full cursor-pointer items-center gap-3 py-3 text-left"
+                      className="flex w-full cursor-pointer items-center gap-4 py-3.5 text-left transition-opacity active:opacity-60"
                     >
-                      <span className="flex w-6 shrink-0 justify-center text-xs tabular-nums opacity-60">
+                      <span className="font-info flex w-6 shrink-0 justify-center text-[11px] font-light tabular-nums opacity-60">
                         {active ? <Equalizer playing={player.playing} /> : i + 1}
                       </span>
 
-                      <span className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-current/10">
+                      <span className="h-11 w-11 shrink-0 overflow-hidden rounded-[3px] bg-current/10">
                         {album.cover_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={album.cover_url} alt="" className="h-full w-full object-cover" />
@@ -242,21 +242,21 @@ export default function MusicAlbumClient({ initialAlbum }: { initialAlbum: Album
                       </span>
 
                       <span className="min-w-0 flex-1 leading-tight">
-                        <span className={`block truncate text-[15px] ${active ? "font-semibold" : ""}`}>
+                        <span className={`block truncate text-[14px] tracking-[-0.01em] ${active ? "font-semibold" : "font-normal"}`}>
                           {track.title}
                         </span>
-                        <span className="mt-0.5 block truncate text-[13px] opacity-65">
+                        <span className="font-info mt-1 block truncate text-[11px] font-light uppercase tracking-[0.1em] opacity-60">
                           {track.artist || album.artist}
                         </span>
                       </span>
 
-                      <span className="shrink-0 text-xs tabular-nums opacity-60">
+                      <span className="font-info shrink-0 text-[11px] font-light tabular-nums opacity-60">
                         {formatTime(track.duration_seconds)}
                       </span>
                     </button>
 
                     {openInfo === track.id && track.info && (
-                      <p className="pb-4 pl-[84px] pr-2 text-[13px] leading-relaxed opacity-75">
+                      <p className="pb-4 pl-[100px] pr-2 text-[13px] font-light leading-[1.7] opacity-75">
                         {track.info}
                       </p>
                     )}
