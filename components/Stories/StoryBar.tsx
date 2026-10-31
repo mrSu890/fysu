@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { claimPopup, releasePopup } from "@/lib/popups";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
 type StoryItem = {
   id: string;
@@ -292,24 +293,33 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   return (
     <>
       {/* STORY CIRCLES */}
-      <div className="w-full flex justify-center gap-5 overflow-x-auto py-4 relative top-10">
+      <div className="relative top-10 flex w-full justify-center gap-6 overflow-x-auto py-4">
         {stories.map((story) => (
           <motion.div
             key={story.id}
-            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
             onClick={() => openStory(story)}
-            className="flex flex-col items-center cursor-pointer"
+            className="flex cursor-pointer flex-col items-center"
           >
-            <div className="h-[68px] w-[68px] rounded-full border border-foreground/25 p-[4px]">
-              <div
-                data-story-cover={story.id}
-                className="w-full h-full rounded-full bg-cover bg-center"
+            <div className="relative h-[84px] w-[84px]">
+              {/* anneau fin + petit arc qui tourne lentement */}
+              <span aria-hidden className="absolute inset-0 rounded-full" style={{ border: "1px solid color-mix(in srgb, var(--foreground) 20%, transparent)" }} />
+              <span
+                aria-hidden
+                className="fysu-story-arc absolute inset-0 rounded-full"
                 style={{
-                  backgroundImage: `url(${story.cover_url})`,
+                  background: "conic-gradient(from 0deg, var(--foreground) 0deg 60deg, transparent 60deg 360deg)",
+                  WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1.5px))",
+                  mask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1.5px))",
                 }}
               />
+              <div
+                data-story-cover={story.id}
+                className="absolute inset-[6px] rounded-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${story.cover_url})` }}
+              />
             </div>
-            <span className="mt-2 max-w-[92px] truncate text-center text-[11px] tracking-wide opacity-80">
+            <span className="font-info mt-3 max-w-[96px] truncate text-center text-[11px] font-light uppercase tracking-[0.12em] opacity-80">
               {story.title}
             </span>
           </motion.div>
@@ -317,7 +327,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
       </div>
 
       {/* STORY PLEIN ÉCRAN */}
-      <style>{`@keyframes fysu-story-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}`}</style>
+      <style>{`@keyframes fysu-story-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}@keyframes fysu-story-spin{to{transform:rotate(360deg)}}.fysu-story-arc{animation:fysu-story-spin 9s linear infinite}@media (prefers-reduced-motion: reduce){.fysu-story-arc{animation:none}}`}</style>
       {mounted &&
         createPortal(
       <AnimatePresence>
@@ -431,7 +441,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                 style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
               >
                 {activeStory.story_items.map((item, index) => (
-                  <div key={index} className="h-[3px] flex-1 overflow-hidden rounded bg-white/35">
+                  <div key={index} className="h-[2px] flex-1 overflow-hidden rounded-full bg-white/30">
                     {index < currentIndex && <div className="h-full w-full bg-white" />}
                     {index === currentIndex && (
                       <div
@@ -455,10 +465,10 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
               >
                 <div className="pointer-events-none flex items-center gap-2.5 text-white">
                   <span
-                    className="h-8 w-8 rounded-full bg-cover bg-center"
+                    className="h-7 w-7 rounded-full bg-cover bg-center ring-1 ring-white/40"
                     style={{ backgroundImage: `url(${activeStory.cover_url})` }}
                   />
-                  <span className="text-sm font-medium drop-shadow">{activeStory.title}</span>
+                  <span className="font-info text-[12px] font-light uppercase tracking-[0.16em] drop-shadow">{activeStory.title}</span>
                 </div>
                 <button
                   type="button"
@@ -470,9 +480,9 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-2xl leading-none text-white"
+                  className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white"
                 >
-                  ✕
+                  <X size={22} strokeWidth={1.4} />
                 </button>
               </div>
 
