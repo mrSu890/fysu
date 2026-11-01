@@ -1,7 +1,7 @@
 /* Hors-ligne pour les jeux d'arcade FYSU.
    Ne touche à RIEN d'autre sur le site : seules la page du jeu, ses images
    et les fichiers du site demandés par cette page sont gardés en mémoire. */
-const CACHE = "fysu-games-v7"
+const CACHE = "fysu-games-v8"
 const GAME_PAGE = /^\/games\/[a-z-]+$/
 
 self.addEventListener("install", () => self.skipWaiting())

@@ -54,7 +54,8 @@ export const SKINS: Record<string, Partial<Record<SkinKind, SkinItem[]>>> = {
   "fysu-pool": { bg: poolFelts, ball: poolBalls },
 }
 
-export const skinKey = (slug: string, kind: SkinKind) => `fysu-skin-${slug}-${kind}`
+// le décor du basket a une nouvelle clé : le nouveau terrain devient le décor de tout le monde, chacun peut ensuite en changer
+export const skinKey = (slug: string, kind: SkinKind) => `fysu-skin-${slug}-${kind}${slug === "fysu-hoops" && kind === "bg" ? "-v2" : ""}`
 
 export function skinItem(slug: string, kind: SkinKind, id: string): SkinItem | undefined {
   return SKINS[slug]?.[kind]?.find((s) => s.id === id)
