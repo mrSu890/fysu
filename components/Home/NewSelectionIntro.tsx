@@ -98,6 +98,23 @@ const NewSelectionIntro = ({
   ];
   const slidesRef = useRef(slides);
   slidesRef.current = slides;
+
+  // toutes les images du carrousel sont chargées ET décodées dès l'arrivée : une slide qui entre dans le champ
+  // ne montre plus le fond gris qui clignote pendant que son image se prépare
+  const preloaded = useRef<HTMLImageElement[]>([]);
+  const imageKey = slides.map((sl) => sl.image).join("|");
+  useEffect(() => {
+    const list: HTMLImageElement[] = [];
+    for (const url of imageKey.split("|")) {
+      if (!url || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)) continue;
+      const im = new Image();
+      im.decoding = "async";
+      im.src = url;
+      im.decode?.().catch(() => {});
+      list.push(im); // on les garde en mémoire : le navigateur ne les jette pas
+    }
+    preloaded.current = list;
+  }, [imageKey]);
   const n = slides.length;
   const m = n * Math.max(1, Math.ceil(MIN_PANELS / n)); // nombre de panneaux sur l'anneau
   const items = Array.from({ length: m }, (_, i) => ({ s: slides[i % n], i }));
@@ -523,6 +540,7 @@ const NewSelectionIntro = ({
                     src={s.image}
                     alt=""
                     draggable={false}
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-cover object-center"
                   />
                 )}
