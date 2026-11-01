@@ -72,19 +72,9 @@ const OLD_GLASSES: Record<number, number> = { 1: 6, 2: 6, 3: 7, 4: 6 }
    (donc la garder sur l'avatar, dans le profil, dans les jeux) que ce qu'on possède. */
 export type Item = { id: string; slot: Slot; name: { fr: string; en: string }; base?: boolean; legs?: boolean; under?: string }
 export const ITEMS: Item[] = [
+  // On repart de zéro : seulement les deux pièces de base. Les autres vêtements reviendront un par un, redessinés proprement.
   { id: "tee", slot: "top", base: true, name: { fr: "T-shirt blanc", en: "White tee" } },
-  { id: "chemise", slot: "top", name: { fr: "Chemise bleue", en: "Blue shirt" } },
-  { id: "chemisecol", slot: "top", name: { fr: "Chemise col bateau", en: "Boat-neck shirt" } },
-  { id: "blazer", slot: "top", name: { fr: "Blazer, chemise et cravate", en: "Blazer, shirt and tie" } },
-  { id: "denim", slot: "top", name: { fr: "Veste denim noire", en: "Black denim jacket" } },
-  { id: "sable", slot: "top", name: { fr: "Veste sable", en: "Sand jacket" } },
-  { id: "manteau", slot: "top", name: { fr: "Manteau long noir", en: "Long black coat" } },
-  { id: "doudoune", slot: "top", name: { fr: "Doudoune grise", en: "Grey puffer" } },
-  { id: "capuche", slot: "top", under: "tee", name: { fr: "Veste courte à capuche", en: "Cropped hooded jacket" } },
   { id: "noir", slot: "bottom", base: true, name: { fr: "Pantalon noir, baskets", en: "Black trousers, sneakers" } },
-  { id: "sakura", slot: "bottom", name: { fr: "Pantalon sakura, baskets", en: "Sakura trousers, sneakers" } },
-  { id: "jupe", slot: "bottom", name: { fr: "Jupe longue, bottines", en: "Long skirt, heeled boots" } },
-  { id: "short", slot: "bottom", legs: true, name: { fr: "Short, bottes hautes", en: "Shorts, tall boots" } },
 ]
 export const itemsOf = (slot: Slot) => ITEMS.filter((i) => i.slot === slot)
 const itemById = (id: string | null | undefined) => ITEMS.find((i) => i.id === id)
