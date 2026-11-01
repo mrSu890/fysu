@@ -40,7 +40,6 @@ const poolFelts: SkinItem[] = [
 export const SKINS: Record<string, Partial<Record<SkinKind, SkinItem[]>>> = {
   "fysu-hoops": {
     bg: [
-      { id: "court", name: { fr: "Terrain de quartier", en: "Street court" }, image: "/games-hoops-court.jpg", need: 0 },
       { id: "night", name: { fr: "Salle de nuit", en: "Night gym" }, need: 0 },
       { id: "tokyo", name: { fr: "Tokyo", en: "Tokyo" }, image: "/games-bg-tokyo.jpg", need: 3 },
       { id: "paris", name: { fr: "Paris", en: "Paris" }, image: "/games-bg-paris.jpg", need: 6 },
@@ -54,8 +53,7 @@ export const SKINS: Record<string, Partial<Record<SkinKind, SkinItem[]>>> = {
   "fysu-pool": { bg: poolFelts, ball: poolBalls },
 }
 
-// le décor du basket a une nouvelle clé : le nouveau terrain devient le décor de tout le monde, chacun peut ensuite en changer
-export const skinKey = (slug: string, kind: SkinKind) => `fysu-skin-${slug}-${kind}${slug === "fysu-hoops" && kind === "bg" ? "-v2" : ""}`
+export const skinKey = (slug: string, kind: SkinKind) => `fysu-skin-${slug}-${kind}`
 
 export function skinItem(slug: string, kind: SkinKind, id: string): SkinItem | undefined {
   return SKINS[slug]?.[kind]?.find((s) => s.id === id)
