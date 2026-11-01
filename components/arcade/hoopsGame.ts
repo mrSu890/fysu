@@ -39,6 +39,64 @@ export const makeHoops: ArcadeMaker = ({ c, W, H, end, skin }) => {
 
   const HOR = H * 0.46 // ligne d'horizon à l'écran
 
+  /* ---------- sprites (panier, balle) ---------- */
+  const load = (src: string) => {
+    const im = new Image()
+    im.src = src
+    return im
+  }
+  const postImg = load("/games-hoops-post.png")
+  const ballImg = load("/games-hoops-ball.png")
+  const ok = (im: HTMLImageElement) => im.complete && im.naturalWidth > 0
+  // repères du panneau dans l'image d'origine (324 × 568) : bas du panneau, haut du mât, etc.
+  const SP = { w: 324, boardBot: 198, aBot: 250, bTop: 245, cTop: 300, h: 568 }
+
+  /* ---------- le vent dans les feuilles (terrain de quartier) ----------
+     Le décor est copié une fois à la résolution de l'écran ; les carreaux qui contiennent du
+     feuillage sont redessinés légèrement décalés, au rythme d'une brise qui passe. */
+  const TILE = 10
+  let wind: { src: string; cv: HTMLCanvasElement; sc: number; tiles: { x: number; y: number; a: number }[] } | null = null
+  function buildWind(bg: HTMLImageElement, src: string) {
+    const sc = Math.max(1, Math.round(c.getTransform().a))
+    const cv = document.createElement("canvas")
+    cv.width = W * sc
+    cv.height = H * sc
+    const x = cv.getContext("2d")!
+    const s = Math.max(cv.width / bg.naturalWidth, cv.height / bg.naturalHeight)
+    x.drawImage(bg, (cv.width - bg.naturalWidth * s) / 2, (cv.height - bg.naturalHeight * s) / 2, bg.naturalWidth * s, bg.naturalHeight * s)
+    const tiles: { x: number; y: number; a: number }[] = []
+    let data: ImageData | null = null
+    try {
+      data = x.getImageData(0, 0, cv.width, cv.height)
+    } catch {}
+    if (data) {
+      const T = TILE * sc
+      for (let ty = 0; ty < H / TILE; ty++) {
+        for (let tx = 0; tx < W / TILE; tx++) {
+          let leaf = 0
+          let n = 0
+          for (let yy = 0; yy < T; yy += 2) {
+            for (let xx = 0; xx < T; xx += 2) {
+              const i = ((ty * T + yy) * cv.width + tx * T + xx) * 4
+              const r = data.data[i]
+              const g = data.data[i + 1]
+              const b = data.data[i + 2]
+              n++
+              if (g > b + 45 && g > r - 25) leaf++ // feuille verte ou jaune
+            }
+          }
+          if (n && leaf / n > 0.14) {
+            const y = ty * TILE
+            tiles.push({ x: tx * TILE, y, a: y < H * 0.34 ? 3.4 : y < H * 0.52 ? 2.2 : 1.5 }) // la couronne de l'arbre bouge plus que les buissons
+          }
+        }
+      }
+    }
+    wind = { src, cv, sc, tiles }
+  }
+  // feuilles emportées par le vent
+  const leaves = Array.from({ length: 14 }, (_, i) => ({ x: rand(0, W * 0.5), y: rand(H * 0.05, H * 0.5), ph: i * 1.3, s: rand(0.7, 1.4), col: ["#e8e23a", "#c9d63a", "#8fb83a"][i % 3] }))
+
   let score = 0
   let made = 0 // paniers marqués = niveau
   let streak = 0 // swish d'affilée
@@ -242,6 +300,10 @@ export const makeHoops: ArcadeMaker = ({ c, W, H, end, skin }) => {
 
   function drawFloor() {
     const bg = bgImage()
+    if (bg && skin.bg === "court") {
+      drawCourt(bg)
+      return
+    }
     if (bg) {
       c.drawImage(bg, 0, 0, W, H)
       c.fillStyle = "rgba(0,0,0,.18)"
@@ -300,6 +362,32 @@ export const makeHoops: ArcadeMaker = ({ c, W, H, end, skin }) => {
     c.fillRect(0, HOR - 2, W, 3)
   }
 
+  function drawCourt(bg: HTMLImageElement) {
+    if (!wind || wind.src !== bg.src) buildWind(bg, bg.src)
+    const w = wind!
+    c.drawImage(w.cv, 0, 0, W, H)
+    const gust = 0.65 + 0.35 * Math.sin(t * 0.35) + 0.25 * Math.sin(t * 0.9 + 1)
+    const sc = w.sc
+    for (const tl of w.tiles) {
+      const ph = t * 1.9 + tl.x * 0.012 + tl.y * 0.018
+      const ox = (Math.sin(ph) * 0.65 + Math.sin(t * 3.1 + tl.y * 0.03 + tl.x * 0.02) * 0.35) * tl.a * gust
+      const oy = Math.sin(t * 2.3 + tl.x * 0.025) * tl.a * 0.35 * gust
+      c.drawImage(w.cv, (tl.x - 1) * sc, (tl.y - 1) * sc, (TILE + 2) * sc, (TILE + 2) * sc, tl.x - 1 + ox, tl.y - 1 + oy, TILE + 2, TILE + 2)
+    }
+    // quelques feuilles qui s'envolent de l'arbre
+    for (const l of leaves) {
+      l.x += (28 + 40 * gust) * l.s * (1 / 60)
+      l.y += (6 + 10 * Math.sin(t * 2 + l.ph)) * (1 / 60) + 0.12
+      if (l.x > W + 10 || l.y > H * 0.8) {
+        l.x = rand(-20, W * 0.3)
+        l.y = rand(H * 0.04, H * 0.34)
+      }
+      c.fillStyle = l.col
+      const sz = Math.round(2 + l.s * 1.5)
+      c.fillRect(Math.round(l.x), Math.round(l.y + Math.sin(t * 4 + l.ph) * 3), sz + (Math.sin(t * 6 + l.ph) > 0 ? 1 : 0), sz)
+    }
+  }
+
   // l'anneau vu en perspective (points d'un cercle)
   function rimPoints() {
     const pts: { x: number; y: number; back: boolean }[] = []
@@ -313,28 +401,40 @@ export const makeHoops: ArcadeMaker = ({ c, W, H, end, skin }) => {
 
   function drawBoard() {
     const bz = boardZ()
+    if (ok(postImg)) {
+      const iw = postImg.naturalWidth
+      const u = iw / SP.w // l'image est peut-être réduite : tout est proportionnel
+      const k = proj(hx, 0, bz + 0.05).k
+      const s = k / (SP.w / 1.9) // pixels d'écran par pixel d'origine (le panneau fait 1,9 m)
+      const cx = proj(hx, 0, bz + 0.05).x
+      const yBoard = proj(hx, HY - 0.15, bz + 0.05).y // bas du panneau
+      const yGround = proj(hx, 0, bz + 0.05).y
+      const dw = SP.w * s
+      const x0 = cx - dw / 2
+      c.save()
+      c.imageSmoothingEnabled = false
+      // ombre au sol
+      c.fillStyle = "rgba(0,0,0,.28)"
+      c.beginPath()
+      c.ellipse(cx, yGround, 0.5 * k, 0.12 * k, 0, 0, Math.PI * 2)
+      c.fill()
+      // haut : panneau + début du mât
+      const aTop = yBoard - SP.boardBot * s
+      const aBot = yBoard + (SP.aBot - SP.boardBot) * s
+      c.drawImage(postImg, 0, 0, iw, SP.aBot * u, x0, aTop, dw, aBot - aTop)
+      // bas : mât avec protection bleue et socle, posé sur le sol
+      const cTop = yGround - (SP.h - SP.cTop) * s
+      c.drawImage(postImg, 0, SP.cTop * u, iw, (SP.h - SP.cTop) * u, x0, cTop, dw, yGround - cTop)
+      // milieu : un bout de mât étiré
+      if (cTop > aBot) c.drawImage(postImg, 0, SP.bTop * u, iw, (SP.cTop - SP.bTop) * u, x0, aBot - 0.5, dw, cTop - aBot + 1)
+      c.restore()
+      return
+    }
+    // (repli sans image)
     const a = proj(hx - 0.95, HY + 1.0, bz)
     const b = proj(hx + 0.95, HY - 0.15, bz)
-    // mât
-    const m0 = proj(hx, 0, bz + 0.5)
-    const m1 = proj(hx, HY - 0.15, bz + 0.1)
-    c.strokeStyle = "rgba(180,185,205,.8)"
-    c.lineWidth = Math.max(3, 0.12 * m0.k)
-    c.beginPath()
-    c.moveTo(m0.x, m0.y)
-    c.lineTo(m1.x, m1.y)
-    c.stroke()
     c.fillStyle = "rgba(255,255,255,.88)"
     c.fillRect(a.x, a.y, b.x - a.x, b.y - a.y)
-    c.strokeStyle = onFire() ? NEON.orange : NEON.pink
-    c.lineWidth = 3
-    c.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y)
-    // carré du panneau
-    const s0 = proj(hx - 0.3, HY + 0.45, bz)
-    const s1 = proj(hx + 0.3, HY + 0.02, bz)
-    c.strokeStyle = "rgba(255,61,154,.8)"
-    c.lineWidth = 2
-    c.strokeRect(s0.x, s0.y, s1.x - s0.x, s1.y - s0.y)
   }
 
   function drawRimBack(pts: ReturnType<typeof rimPoints>) {
@@ -441,6 +541,15 @@ export const makeHoops: ArcadeMaker = ({ c, W, H, end, skin }) => {
     c.beginPath()
     c.ellipse(sh.x, sh.y, r * 1.1, r * 0.3, 0, 0, Math.PI * 2)
     c.fill()
+    if (skin.ball === "classic" && ok(ballImg)) {
+      c.save()
+      c.translate(p.x, p.y)
+      c.rotate(spin * 0.3)
+      c.imageSmoothingEnabled = false
+      c.drawImage(ballImg, -r, -r, r * 2, r * 2)
+      c.restore()
+      return
+    }
     c.save()
     c.translate(p.x, p.y)
     c.rotate(spin * 0.3)
