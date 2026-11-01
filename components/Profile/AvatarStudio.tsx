@@ -260,6 +260,7 @@ export default function AvatarStudio({ locale, onPhotoUpdated }: { locale: strin
           </div>
         </Section>
 
+        {GLASSES.length > 0 && (
         <Section n="05" title={t.glasses}>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
             <Tile on={cfg.glasses === null} onClick={() => update({ ...cfg, glasses: null })} label={t.none}>
@@ -272,8 +273,9 @@ export default function AvatarStudio({ locale, onPhotoUpdated }: { locale: strin
             ))}
           </div>
         </Section>
+        )}
 
-        <Section n="06" title={t.skin}>
+        <Section n="05" title={t.skin}>
           <div className="flex flex-wrap gap-3">
             {SKIN_PRESETS.map((c) => (
               <Swatch key={c ?? "orig"} color={c} active={cfg.skin === c} onClick={() => update({ ...cfg, skin: c })} label={c ?? t.orig} />
@@ -287,7 +289,7 @@ export default function AvatarStudio({ locale, onPhotoUpdated }: { locale: strin
           </div>
         </Section>
 
-        <Section n="07" title={t.hair}>
+        <Section n="06" title={t.hair}>
           <div className="flex flex-wrap gap-3">
             {HAIR_PRESETS.map((c) => (
               <Swatch key={c ?? "orig"} color={c} active={cfg.hair === c} onClick={() => update({ ...cfg, hair: c })} label={c ?? t.orig} />

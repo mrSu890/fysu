@@ -58,12 +58,8 @@ export const HAIR_STYLES: Named[] = [
   { id: 24, name: { fr: "Chignon bouclé", en: "Curly bun" } },
 ]
 
-export const GLASSES: Named[] = [
-  { id: 6, name: { fr: "Fines", en: "Wire" } },
-  { id: 5, name: { fr: "Œil de chat", en: "Cat-eye" } },
-  { id: 7, name: { fr: "Solaires", en: "Shades" } },
-]
-const OLD_GLASSES: Record<number, number> = { 1: 6, 2: 6, 3: 7, 4: 6 }
+// lunettes retirées pour l'instant (les dessins restent dans /public, on les remettra une fois redessinés)
+export const GLASSES: Named[] = []
 
 /* ---------- garde-robe ----------
    Chaque pièce est un calque (games-av-it-<id>.png), sauf les pièces de base
@@ -122,7 +118,7 @@ const NATIVE_FACE: Record<Silhouette, [number, number, number]> = { a: [253, 173
 const NATIVE_BODY: [number, number, number] = [253, 179, 131]
 
 /* Par défaut : silhouette B, cheveux longs, lunettes. */
-export const DEFAULT_AVATAR: AvatarConfig = { sil: "b", top: "tee", bottom: "noir", style: 13, beard: null, glasses: 6, skin: null, hair: null }
+export const DEFAULT_AVATAR: AvatarConfig = { sil: "b", top: "tee", bottom: "noir", style: 13, beard: null, glasses: null, skin: null, hair: null }
 const KEY = "fysu-avatar"
 
 const OLD_STYLE: Record<number, number> = { 12: 13, 20: 16, 10: 8 }
@@ -141,7 +137,7 @@ export function loadAvatar(): AvatarConfig {
           bottom: typeof c.bottom === "string" ? c.bottom : "noir",
           style: c.style,
           beard: BEARDS.some((b) => b.id === c.beard) ? c.beard : null,
-          glasses: GLASSES.some((g) => g.id === c.glasses) ? c.glasses : OLD_GLASSES[c.glasses] ?? (c.glasses === true ? 6 : null),
+          glasses: GLASSES.some((g) => g.id === c.glasses) ? c.glasses : null,
           skin,
           hair,
         })
@@ -154,7 +150,7 @@ export function loadAvatar(): AvatarConfig {
           sil: head < 12 ? "a" : "b",
           style: OLD_STYLE[head] ?? head,
           beard: head >= 8 && head <= 11 ? head : null,
-          glasses: head === 0 || head === 12 ? 6 : null,
+          glasses: null,
           skin,
           hair,
         }
@@ -212,9 +208,9 @@ function tinted(l: Layer, native: [number, number, number] | null, skin: [number
   const ctx = out.getContext("2d")!
   const d = new ImageData(new Uint8ClampedArray(l.color.data), w, hh)
   const m = l.mask.data
-  const kr = skin && native ? skin[0] / native[0] : 1
-  const kg = skin && native ? skin[1] / native[1] : 1
-  const kb = skin && native ? skin[2] / native[2] : 1
+  // teinte de peau : on garde les ombres et les lumières du dessin (luminosité relative à la peau d'origine)
+  // mais la couleur vient uniquement de la peau choisie ; plus de reflets orangés sur les peaux foncées
+  const nativeLum = native ? 0.2126 * native[0] + 0.7152 * native[1] + 0.0722 * native[2] : 1
   const doSkin = !!skin && !!native
   for (let i = 0; i < d.data.length; i += 4) {
     if (hair && m[i] > 0) {
@@ -223,9 +219,11 @@ function tinted(l: Layer, native: [number, number, number] | null, skin: [number
       d.data[i + 1] = Math.min(255, hair[1] * k)
       d.data[i + 2] = Math.min(255, hair[2] * k)
     } else if (doSkin && m[i + 1] > 0) {
-      d.data[i] = Math.min(255, d.data[i] * kr)
-      d.data[i + 1] = Math.min(255, d.data[i + 1] * kg)
-      d.data[i + 2] = Math.min(255, d.data[i + 2] * kb)
+      const a = Math.min(1, m[i + 1] / 128)
+      const shade = (0.2126 * d.data[i] + 0.7152 * d.data[i + 1] + 0.0722 * d.data[i + 2]) / nativeLum
+      d.data[i] = d.data[i] * (1 - a) + Math.min(255, skin![0] * shade) * a
+      d.data[i + 1] = d.data[i + 1] * (1 - a) + Math.min(255, skin![1] * shade) * a
+      d.data[i + 2] = d.data[i + 2] * (1 - a) + Math.min(255, skin![2] * shade) * a
     }
   }
   ctx.putImageData(d, 0, 0)
