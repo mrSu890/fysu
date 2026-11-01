@@ -40,6 +40,21 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy, skin, u
     cv.height = AH * dpr
     c.setTransform(dpr, 0, 0, dpr, 0, 0)
 
+    // la taille d'affichage garde toujours les proportions du jeu (pas d'image étirée)
+    const holder = cv.parentElement
+    const fit = () => {
+      if (!holder) return
+      const k = Math.min(holder.clientWidth / AW, holder.clientHeight / AH)
+      if (k > 0) {
+        cv.style.width = `${AW * k}px`
+        cv.style.height = `${AH * k}px`
+      }
+    }
+    fit()
+    const ro = holder && typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null
+    if (holder) ro?.observe(holder)
+    window.addEventListener("resize", fit)
+
     let alive = true
     let raf = 0
     let last = 0
@@ -170,6 +185,8 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy, skin, u
     raf = requestAnimationFrame(loop)
     return () => {
       alive = false
+      ro?.disconnect()
+      window.removeEventListener("resize", fit)
       cancelAnimationFrame(raf)
       cv.removeEventListener("pointerdown", onDown)
       cv.removeEventListener("pointermove", onMove)
@@ -184,7 +201,7 @@ export default function ArcadeCanvas({ make, title, hint, bestKey, copy, skin, u
     <canvas
       ref={ref}
       className="block touch-none select-none"
-      style={{ height: "100%", maxWidth: "100%", aspectRatio: `${AW} / ${AH}`, background: "#000" }}
+      style={{ width: "100%", aspectRatio: `${AW} / ${AH}`, background: "#000" }}
     />
   )
 }
