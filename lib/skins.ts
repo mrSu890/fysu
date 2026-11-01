@@ -40,6 +40,7 @@ const poolFelts: SkinItem[] = [
 export const SKINS: Record<string, Partial<Record<SkinKind, SkinItem[]>>> = {
   "fysu-hoops": {
     bg: [
+      { id: "court", name: { fr: "Terrain de quartier", en: "Street court" }, image: "/games-hoops-court.jpg", need: 0 },
       { id: "night", name: { fr: "Salle de nuit", en: "Night gym" }, need: 0 },
       { id: "tokyo", name: { fr: "Tokyo", en: "Tokyo" }, image: "/games-bg-tokyo.jpg", need: 3 },
       { id: "paris", name: { fr: "Paris", en: "Paris" }, image: "/games-bg-paris.jpg", need: 6 },
