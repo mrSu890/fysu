@@ -1,8 +1,9 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useCallback, useEffect, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { Award, Check, Heart, Link2, LogOut, Package, Pencil, Shirt, User, Users } from "lucide-react"
+import { Award, Check, Heart, Link2, LogOut, Package, Pencil, Shirt, Store, User, Users } from "lucide-react"
 import { DEFAULT_ACCENT, type ProfileData } from "@/lib/profile"
 import Avatar from "./Avatar"
 import Badges, { type Reward } from "./Badges"
@@ -15,14 +16,16 @@ import ProfileEditor, { type GalleryAvatar } from "./ProfileEditor"
 import { profileCopy } from "./profileCopy"
 import CountUp from "@/components/CountUp"
 
-type TabId = "wardrobe" | "avatar" | "favorites" | "orders" | "friends" | "badges"
+const BoutiqueScene = dynamic(() => import("@/components/Rpg/BoutiqueScene"), { ssr: false })
+
+type TabId = "wardrobe" | "avatar" | "boutique" | "favorites" | "orders" | "friends" | "badges"
 const TABS: Record<"fr" | "en", Record<TabId, string>> = {
-  fr: { wardrobe: "Garde-robe", avatar: "Avatar", favorites: "Favoris", orders: "Commandes", friends: "Amis", badges: "Badges" },
-  en: { wardrobe: "Wardrobe", avatar: "Avatar", favorites: "Favorites", orders: "Orders", friends: "Friends", badges: "Badges" },
+  fr: { wardrobe: "Garde-robe", avatar: "Avatar", boutique: "Boutique", favorites: "Favoris", orders: "Commandes", friends: "Amis", badges: "Badges" },
+  en: { wardrobe: "Wardrobe", avatar: "Avatar", boutique: "Boutique", favorites: "Favorites", orders: "Orders", friends: "Friends", badges: "Badges" },
 }
-const TAB_ORDER: TabId[] = ["wardrobe", "avatar", "favorites", "orders", "friends", "badges"]
+const TAB_ORDER: TabId[] = ["wardrobe", "avatar", "boutique", "favorites", "orders", "friends", "badges"]
 // un onglet = une icône (le nom apparaît à côté de l'icône de l'onglet ouvert)
-const TAB_ICON: Record<TabId, typeof Shirt> = { wardrobe: Shirt, avatar: User, favorites: Heart, orders: Package, friends: Users, badges: Award }
+const TAB_ICON: Record<TabId, typeof Shirt> = { wardrobe: Shirt, avatar: User, boutique: Store, favorites: Heart, orders: Package, friends: Users, badges: Award }
 const STAT_ICON = [Package, Shirt, Heart]
 
 const ONBOARD_KEY = "fysu_profile_onboarding_seen"
@@ -202,6 +205,7 @@ export default function ProfileHub({
         <div className="pt-10">
           {tab === "wardrobe" && <Closet copy={copy} />}
           {tab === "avatar" && <AvatarStudio locale={locale} onPhotoUpdated={load} />}
+          {tab === "boutique" && <BoutiqueScene locale={locale} />}
           {tab === "favorites" && <UserWishlist />}
           {tab === "orders" && <UserOrders />}
           {tab === "friends" && data && <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />}
