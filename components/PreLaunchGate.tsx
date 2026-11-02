@@ -97,7 +97,7 @@ const GATE_CSS = `
 @media (prefers-reduced-motion:reduce){.gate-video{display:none!important}}
 @keyframes gate-in{from{opacity:0}to{opacity:1}}
 @keyframes gate-out{to{opacity:0}}
-.gate-field{width:100%;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.38);border-radius:999px;padding:13px 52px 13px 20px;color:#fff;font-size:14px;outline:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.gate-field{width:100%;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.38);border-radius:999px;padding:13px 52px 13px 20px;color:#fff;font-size:16px;outline:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .gate-field::placeholder{color:rgba(255,255,255,0.8)}
 .gate-field:focus{border-color:rgba(255,255,255,0.75)}
 .gate-go{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,0.9);color:#2a2f2a;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;transition:opacity .2s}
@@ -304,7 +304,13 @@ export default function PreLaunchGate({ openAt }: { openAt: string }) {
       </a>
 
       {/* Champs */}
-      <main className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center px-6 pb-8">
+      <main
+        className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center px-6 pb-8"
+        onBlur={() => {
+          // après le clavier, l'iPhone peut laisser la page décalée : on la remet droite
+          window.scrollTo(0, 0)
+        }}
+      >
         <div className="w-full max-w-[330px]">
           <form onSubmit={submitPassword} className="relative">
             <input
