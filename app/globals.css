@@ -623,8 +623,8 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) [data-ca
 
 /* ---- APRÈS-MIDI : crème chaud, verre vert forêt en dégradé, texte blanc ---- */
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
-  --background: #dad9d5;
-  --menu: #e6e5e1;
+  --background: #e8e7e3;
+  --menu: #f0efeb;
   --navbar-bg: #4f5a47;
   --glass-color: #646e5a;
   --glass-tint: 56%;
@@ -633,7 +633,7 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) {
   --glass-shadow: rgba(40, 55, 35, 0.22);
   --glass-top: rgba(134, 141, 116, 0.7);
   --glass-bottom: rgba(92, 103, 82, 0.8);
-  --page-bar-bg: #d4d3cf;
+  --page-bar-bg: #e3e2de;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass,
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) .navbar-root .liquid-glass * {
@@ -712,7 +712,7 @@ html.dawn:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has
   background-color: #fbfcfb;
 }
 html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) body:has([data-hero-target]) .aspect-\[3\/4\]:not(.cursor-pointer)::after {
-  background-color: #efeeeb;
+  background-color: #f7f6f3;
 }
 
 /* Changement d'ambiance en fondu doux (nuit, aube, jour, après-midi) : la classe est posée 2 s par lib/mood.ts */
@@ -721,7 +721,7 @@ html.afternoon:not(.dark):not(.event-page):not(.wave-page):not(.arcade-page) bod
    Un voile « multiply » posé sur la case transforme le blanc des photos en ce crème ; les couleurs ne bougent presque pas.
    La pastille de disponibilité prend le même crème. */
 html.afternoon:not(.dark) [data-card-box] {
-  background-color: #e4e3df !important;
+  background-color: #efeeea !important;
   isolation: isolate;
 }
 html.afternoon:not(.dark) [data-card-box]::after {
@@ -730,11 +730,11 @@ html.afternoon:not(.dark) [data-card-box]::after {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-color: #e4e3df;
+  background-color: #efeeea;
   mix-blend-mode: multiply;
 }
 html.afternoon:not(.dark) [data-card-box] span.bg-white\/90 {
-  background-color: #e4e3df !important;
+  background-color: #efeeea !important;
 }
 
 /* Transport de l'image (carte -> fiche produit) : la vraie image reste cachée pendant que la copie arrive (components/ProductHero.tsx) */
