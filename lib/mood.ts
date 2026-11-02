@@ -83,7 +83,7 @@ const THEME_COLORS: Record<Mood, string> = {
   night: "#212427",
   dawn: "#e9ebe7",
   day: "#fcfbf9",
-  afternoon: "#dad9d5",
+  afternoon: "#e8e7e3",
   sunset: "#6b6454",
 }
 
