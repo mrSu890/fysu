@@ -134,7 +134,7 @@ export default function ProductHero() {
     let scrolled = false
     let endRadius = 16
     const started = Date.now()
-    const DURATION = 520
+    const DURATION = 740
     const find = (): HTMLElement | null => {
       if (back.kind === "music") return document.querySelector(`a[href="/music/${back.slug}"] [data-hero-box]`) as HTMLElement | null
       const want = `/product/${back.slug}`
@@ -279,6 +279,14 @@ export default function ProductHero() {
         setJob({ src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius })
         requestAnimationFrame(() => setBg(true))
         router.push(path)
+        // filet de sécurité : si la page ne change pas, on relance la navigation (jamais besoin de toucher deux fois)
+        const target = path.split("?")[0]
+        window.setTimeout(() => {
+          if (window.location.pathname !== target) router.push(path)
+        }, 1300)
+        window.setTimeout(() => {
+          if (window.location.pathname !== target) window.location.assign(path)
+        }, 3600)
         return true
       } catch {
         finish()
@@ -303,7 +311,7 @@ export default function ProductHero() {
     let usingPred = false
     let realSeen = false
     let doneAt = 0
-    let dur = 560
+    let dur = 800
     let seenAt = 0
     let startBox: Box = job.from
     let tFirst = 0
@@ -377,7 +385,7 @@ export default function ProductHero() {
           startBox = job.from
           t0 = now
           tFirst = now
-          dur = 560
+          dur = 800
           setFlying(true)
         } else if (usingPred) {
           startBox = curBox
@@ -398,7 +406,7 @@ export default function ProductHero() {
           startBox = job.from
           t0 = now
           tFirst = now
-          dur = 560
+          dur = 800
           setFlying(true)
         }
       }
@@ -420,7 +428,7 @@ export default function ProductHero() {
         const inner = innerRef.current
         if (inner) {
           // cadrage de la photo : celui de la carte au départ, celui de la fiche (haut coupé, calée en haut) à l'arrivée
-          const es = ease(Math.min(1, (now - tFirst) / 560))
+          const es = ease(Math.min(1, (now - tFirst) / 800))
           const cr = tCrop * es
           inner.style.top = `${-cr}%`
           inner.style.height = `${100 + cr}%`

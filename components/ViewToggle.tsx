@@ -37,6 +37,7 @@ function save(key: string, v: string) {
 }
 
 export function useViewMode(): [ViewMode, (m: ViewMode) => void] {
+  const pathname = usePathname()
   const [m, setM] = useState<ViewMode>("flat")
   useEffect(() => {
     load()
@@ -45,6 +46,8 @@ export function useViewMode(): [ViewMode, (m: ViewMode) => void] {
     window.addEventListener(EVENT, on)
     return () => window.removeEventListener(EVENT, on)
   }, [])
+  // Kiban Collector : toujours à plat, sans choix
+  if (pathname?.startsWith("/kiban-collector")) return ["flat", () => {}]
   return [
     m,
     (next) => {
@@ -91,7 +94,7 @@ export default function ViewToggle({ fixedWho, products }: { fixedWho?: Who | nu
   const [m, setMode] = useViewMode()
   const [w, setWho] = useWho()
   const fixed = fixedWho ?? pageWho(pathname)
-  if (pathname?.startsWith("/fygrances")) return null
+  if (pathname?.startsWith("/fygrances") || pathname?.startsWith("/kiban-collector")) return null
   if (products && !hasWorn(products)) return null
 
   const btn = (key: string, label: string, Icon: typeof Shirt, on: boolean, click: () => void) => (
