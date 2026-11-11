@@ -23,7 +23,8 @@ const TABS: Record<"fr" | "en", Record<TabId, string>> = {
   fr: { wardrobe: "Garde-robe", avatar: "Avatar", boutique: "Boutique", favorites: "Favoris", orders: "Commandes", friends: "Amis", badges: "Badges" },
   en: { wardrobe: "Wardrobe", avatar: "Avatar", boutique: "Boutique", favorites: "Favorites", orders: "Orders", friends: "Friends", badges: "Badges" },
 }
-const TAB_ORDER: TabId[] = ["wardrobe", "avatar", "boutique", "favorites", "orders", "friends", "badges"]
+// Avatar et Boutique (RPG) sont cachés pour l'instant : on les remet en ajoutant "avatar", "boutique" ici
+const TAB_ORDER: TabId[] = ["wardrobe", "favorites", "orders", "friends", "badges"]
 // un onglet = une icône (le nom apparaît à côté de l'icône de l'onglet ouvert)
 const TAB_ICON: Record<TabId, typeof Shirt> = { wardrobe: Shirt, avatar: User, boutique: Store, favorites: Heart, orders: Package, friends: Users, badges: Award }
 const STAT_ICON = [Package, Shirt, Heart]
@@ -231,10 +232,6 @@ export default function ProfileHub({
           welcome={welcome}
           fallbackName={name}
           onClose={closeEditor}
-          onOpenAvatar={() => {
-            closeEditor()
-            setTab("avatar")
-          }}
           onSaved={async () => {
             await load()
             closeEditor()
