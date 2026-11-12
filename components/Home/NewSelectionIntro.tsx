@@ -55,12 +55,14 @@ const NewSelectionIntro = ({
   paused = false,
   onCenter,
   tight = false,
+  onSettled,
 }: {
   initialSlides?: Slide[] | null;
   apiRef?: React.MutableRefObject<RingApi | null>;
   onOpen?: () => void;
   paused?: boolean;
   onCenter?: (slide: Slide) => void; // appelé quand la slide du milieu change
+  onSettled?: () => void; // appelé quand l'ouverture (les slides qui s'écartent) est terminée
   tight?: boolean; // moins d'espace sous le carrousel (quand quelque chose suit juste dessous)
 }) => {
   const copy = useSiteCopy();
@@ -144,6 +146,8 @@ const NewSelectionIntro = ({
 
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+  const onSettledRef = useRef(onSettled);
+  onSettledRef.current = onSettled;
   const onOpenRef = useRef(onOpen);
   onOpenRef.current = onOpen;
   const onCenterRef = useRef(onCenter);
@@ -323,7 +327,10 @@ const NewSelectionIntro = ({
   // ouverture : l'intro a posé la pile d'images au milieu ; une fois en place, les slides s'écartent
   useEffect(() => {
     const s = st.current;
-    if (!s.pending) return;
+    if (!s.pending) {
+      onSettledRef.current?.();
+      return;
+    }
     let raf = 0;
     let started = false;
     const clamp = (v: number) => Math.max(0, Math.min(1, v));
@@ -333,6 +340,7 @@ const NewSelectionIntro = ({
       s.busy = false;
       s.pending = false;
       layout();
+      window.setTimeout(() => onSettledRef.current?.(), 650);
     };
     const start = () => {
       if (started) return;

@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import { HomeIntroText } from "@/components/Home/Hero";
-import HomeChapters, { type Chapter } from "@/components/Home/HomeChapters";
+import UniverseList, { type Universe } from "@/components/Home/UniverseList";
+import FooterPanel from "@/components/Home/FooterPanel";
 import HomeStage from "@/components/Home/HomeStage";
 import type { Slide } from "@/components/Home/HomeShowcase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -41,8 +42,8 @@ async function getCarouselSlides(): Promise<Slide[] | null> {
   }
 }
 
-// Les chapitres plein écran du bas de l'accueil (réglés dans l'admin) ; sinon Musique, Arcade, À propos
-async function getChapters(): Promise<Chapter[] | null> {
+// Les lignes de « Discover the universe » (réglées dans l'admin, clé home_chapters) ; sinon Kiban, FY'grances, Musique, Arcade, À propos
+async function getChapters(): Promise<Universe[] | null> {
   try {
     const { data } = await supabaseAdmin.from("site_settings").select("value").eq("key", "home_chapters").maybeSingle();
     if (!Array.isArray(data?.value) || data!.value.length === 0) return null;
@@ -51,7 +52,7 @@ async function getChapters(): Promise<Chapter[] | null> {
       label: String(s.label || ""),
       href: String(s.href || "/"),
       image: String(s.image || ""),
-      color: String(s.color || ""),
+      text: String(s.text || ""),
     }));
   } catch {
     return null;
@@ -108,9 +109,10 @@ export default async function Home() {
         <RecentlyViewed />
         <HomeSection slug="duos" index={2} initialSection={duos} />
       </div>
-      {/* 4. chapitres plein écran (Musique, Arcade, À propos…) qui se superposent, avec le gros logo rose fixé en haut */}
+      {/* 4. « Discover the universe » : liste qui se déplie en carte, puis pied de page */}
       <div className="mt-36 sm:mt-48" />
-      <HomeChapters chapters={chapters} />
+      <UniverseList items={chapters} />
+      <FooterPanel />
 
     </>
   );

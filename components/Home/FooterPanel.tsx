@@ -5,15 +5,14 @@ import { useTranslations } from "next-intl";
 import HelpLink from "@/components/HelpLink";
 
 /* ====================================================================
-   PIED DE PAGE DE L'ACCUEIL : le dernier « chapitre » (vert, plein écran)
-   Le gros logo FYSU (blanc) est posé par-dessus, en haut : il remplace le petit logo du pied de page.
+   PIED DE PAGE DE L'ACCUEIL (vert), sous « Discover the universe »
    ==================================================================== */
 export default function FooterPanel() {
   const t = useTranslations("Footer");
   return (
     <footer
-      className="font-dior flex h-full w-full flex-col justify-end bg-[#154733] px-6 text-sm text-white md:text-base"
-      style={{ paddingTop: "calc(28.2vw + 2.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2rem)" }}
+      className="font-dior flex w-full flex-col justify-end bg-[#154733] px-6 pt-16 text-sm text-white md:text-base"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2rem)" }}
     >
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-8 md:grid-cols-2 md:gap-16">
         <div>

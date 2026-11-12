@@ -9,11 +9,11 @@ import { EVENTS } from "@/lib/events"
 import { resizeImage } from "@/lib/imageTools"
 
 /* ====================================================================
-   CHAPITRES DE L'ACCUEIL : ajouter, modifier, supprimer, ordonner les slides
+   « DISCOVER THE UNIVERSE » (bas de l'accueil) : ajouter, modifier, supprimer, ordonner les slides
    et choisir vers quelle page chacune mène. (Enregistré dans « site_settings », clé home_chapters.)
    ==================================================================== */
 
-type Slide = { id: string; label: string; href: string; image: string; color?: string }
+type Slide = { id: string; label: string; href: string; image: string; text?: string }
 
 const DEFAULTS: Slide[] = [
   { id: "music", label: "Music", href: "/music", image: "" },
@@ -188,29 +188,17 @@ export default function HomeChaptersManager() {
                     <img src={s.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   ) : null}
                   <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/55 py-1.5 text-[11px] text-white">
-                    <ImagePlus size={12} /> {uploadingId === s.id ? "Envoi…" : s.image ? "Changer" : "Photo ou vidéo (portrait)"}
+                    <ImagePlus size={12} /> {uploadingId === s.id ? "Envoi…" : s.image ? "Changer" : "Photo ou vidéo"}
                   </span>
                 </button>
 
                 <div className="space-y-3">
-                  <Field label="Titre du chapitre">
+                  <Field label="Titre de la ligne">
                     <input className={inputClass} value={s.label} onChange={(e) => change(s.id, { label: e.target.value })} placeholder="Ex : FY'grances" />
                   </Field>
 
-                  <Field label="Couleur du gros logo FYSU pendant ce chapitre" hint="Laisse « Auto » : noir pour Musique, bleu ciel pour Arcade, rose pour les autres">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={s.color || "#e8b5b2"}
-                        onChange={(e) => change(s.id, { color: e.target.value })}
-                        className="h-9 w-14 cursor-pointer rounded-lg border border-[#e9e5df] bg-white p-1"
-                      />
-                      {s.color ? (
-                        <AdminButton onClick={() => change(s.id, { color: "" })}>Remettre Auto</AdminButton>
-                      ) : (
-                        <span className="text-xs text-[#7a756d]">Auto</span>
-                      )}
-                    </div>
+                  <Field label="Texte court" hint="Affiché à côté du titre dans la liste, et dans la carte dépliée">
+                    <input className={inputClass} value={s.text ?? ""} maxLength={200} onChange={(e) => change(s.id, { text: e.target.value })} placeholder="Ex : Les parfums de la maison" />
                   </Field>
 
                   <Field label="Mène vers la page">
