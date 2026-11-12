@@ -102,6 +102,14 @@ export default function HomeStage({
   };
   useEffect(() => () => window.clearTimeout(animTimer.current), []);
 
+  const [line, setLine] = useState(false); // le trait sous « discover » se dessine au toucher
+  const go = (s: Slide) => {
+    setLine(true);
+    window.setTimeout(() => {
+      open(s);
+      setLine(false);
+    }, calm() ? 0 : 380);
+  };
   const open = (s: Slide) => {
     try {
       const handled = (window as any).__fysuNavigate?.(s.href);
@@ -135,8 +143,8 @@ export default function HomeStage({
             />
           </div>
         ) : (
-          <div className="mx-auto w-[90vw] max-w-[1080px] pb-24 pt-28 sm:pt-32">
-            <div className="flex gap-2.5 md:gap-8" style={{ ["--tw" as string]: "clamp(44px, 12vw, 64px)" }}>
+          <div className="mx-auto w-[90vw] max-w-[1080px] pb-32 pt-32 sm:pt-36">
+            <div className="flex gap-4 md:gap-12" style={{ ["--tw" as string]: "clamp(44px, 12vw, 64px)" }}>
               {/* colonne de vignettes */}
               <div className="flex w-[var(--tw)] shrink-0 flex-col gap-2 self-start">
                 {slides.map((s, i) =>
@@ -152,14 +160,14 @@ export default function HomeStage({
                 )}
               </div>
 
-              <div className="grid min-w-0 flex-1 grid-cols-1 gap-y-6 md:grid-cols-[minmax(150px,230px)_minmax(0,1fr)] md:gap-x-8 md:gap-y-3">
+              <div className="grid min-w-0 flex-1 grid-cols-1 gap-y-8 md:grid-cols-[minmax(150px,230px)_minmax(0,1fr)] md:gap-x-10 md:gap-y-6">
                 {/* grande image */}
                 <div className="order-1 md:order-none md:col-start-2 md:row-start-1">
                   <div
                     ref={(el) => {
                       slots.current["main"] = el;
                     }}
-                    className="ml-auto aspect-[4/5] w-full md:max-w-[440px]"
+                    className="ml-auto aspect-[4/5] w-[84%] md:w-full md:max-w-[380px]"
                   />
                 </div>
 
@@ -172,18 +180,20 @@ export default function HomeStage({
                       animate={{ opacity: 1, y: 0, transition: { delay: 0.35, duration: 0.4, ease: "easeOut" } }}
                       exit={{ opacity: 0, transition: { duration: 0.15 } }}
                     >
-                      <p className="font-info text-[10px] uppercase tracking-[0.28em] text-foreground/50">
-                        {String((active ?? 0) + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
-                      </p>
-                      <h2 className="mt-3 text-[24px] font-light leading-[1.05] tracking-tight text-foreground md:text-[28px]">{cur!.label}</h2>
-                      {cur!.kind && <p className="font-info mt-2 text-[11px] uppercase tracking-[0.18em] text-foreground/55">{cur!.kind}</p>}
-                      {cur!.text && <p className="mt-4 max-w-[34ch] text-[13px] font-light leading-relaxed text-foreground/70">{cur!.text}</p>}
+                      <h2 className="text-[19px] font-light leading-[1.1] tracking-tight text-foreground md:text-[22px]">{cur!.label}</h2>
+                      {cur!.kind && <p className="font-info mt-2.5 text-[9.5px] uppercase tracking-[0.22em] text-foreground/45">{cur!.kind}</p>}
+                      {cur!.text && <p className="mt-5 max-w-[34ch] text-[12px] font-light leading-[1.7] text-foreground/60">{cur!.text}</p>}
                       <button
                         type="button"
-                        onClick={() => open(cur!)}
-                        className="font-info mt-5 cursor-pointer border-b border-foreground pb-px text-[11px] uppercase tracking-[0.2em] text-foreground transition-opacity hover:opacity-60"
+                        onClick={() => go(cur!)}
+                        className="font-info mt-6 cursor-pointer text-[12px] lowercase tracking-[0.08em] text-foreground/55 transition-colors hover:text-foreground"
                       >
-                        {VIEW[lang] ?? VIEW.en} →
+                        <span
+                          className="bg-gradient-to-r from-current to-current bg-no-repeat pb-[3px] transition-[background-size] duration-500 ease-out"
+                          style={{ backgroundImage: "linear-gradient(currentColor, currentColor)", backgroundPosition: "left bottom", backgroundSize: line ? "100% 1px" : "0% 1px" }}
+                        >
+                          {VIEW[lang] ?? VIEW.en} →
+                        </span>
                       </button>
                     </motion.div>
                   </AnimatePresence>
@@ -195,7 +205,7 @@ export default function HomeStage({
                     {products.length > 0 && (
                       <motion.div
                         key={cur!.key}
-                        className="grid grid-cols-3 gap-2 md:ml-auto md:max-w-[440px]"
+                        className="ml-auto grid w-[84%] grid-cols-3 gap-3 md:w-full md:max-w-[380px]"
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0, transition: { delay: 0.45, duration: 0.45, ease: "easeOut" } }}
                         exit={{ opacity: 0, transition: { duration: 0.15 } }}
