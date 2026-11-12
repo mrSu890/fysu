@@ -279,13 +279,15 @@ export default function ProductHero() {
         setJob({ src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius })
         requestAnimationFrame(() => setBg(true))
         router.push(path)
-        // filet de sécurité : si la page ne change pas, on relance la navigation (jamais besoin de toucher deux fois)
+        // filet de sécurité : si on est TOUJOURS sur la page de départ, on relance la navigation.
+        // Si l'utilisateur est arrivé puis reparti (retour), on ne touche plus à rien.
         const target = path.split("?")[0]
+        const from = window.location.pathname
         window.setTimeout(() => {
-          if (window.location.pathname !== target) router.push(path)
+          if (window.location.pathname === from && from !== target) router.push(path)
         }, 1300)
         window.setTimeout(() => {
-          if (window.location.pathname !== target) window.location.assign(path)
+          if (window.location.pathname === from && from !== target) window.location.assign(path)
         }, 3600)
         return true
       } catch {
