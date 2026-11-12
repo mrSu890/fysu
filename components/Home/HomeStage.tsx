@@ -1,19 +1,36 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import NewSelectionIntro from "@/components/Home/NewSelectionIntro";
-import FeaturedShowcase, { type FeaturedItem } from "@/components/Home/FeaturedShowcase";
-import type { Slide } from "@/components/Home/HomeShowcase";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import { AnimatePresence, motion } from "framer-motion";
+import { useSiteCopy } from "@/lib/siteCopy";
+import { Tile, type Slide } from "@/components/Home/HomeShowcase";
 import type { ProductType } from "@/types/product";
 
 /* ====================================================================
-   HAUT DE L'ACCUEIL
-   1. au chargement : le carrousel 3D s'ouvre (les images s'écartent comme avant)
-   2. puis il laisse la place à la sélection : grande image, miniatures sur le côté, nom et texte (voir FeaturedShowcase)
-   Les pièces viennent de l'admin (Accueil → Carrousel → produits de chaque slide) ; une slide sans produit s'affiche elle-même.
+   HAUT DE L'ACCUEIL : LA PILE QUI S'OUVRE
+   - au début : les images du carrousel sont EMPILÉES au milieu de l'écran, toutes de la même taille (celle de l'écran de chargement)
+   - toucher la première : elle se déploie vers la droite avec son texte et ses trois produits phares dessous ;
+     les autres glissent à gauche en une colonne de vignettes
+   - toucher une vignette : la slide ouverte se replie dans la colonne, celle touchée prend sa place (mouvement continu)
+   - toucher la grande image ouvre sa page ; toucher un produit ouvre sa fiche
+   Les angles sont droits partout. Les slides et leurs produits se règlent dans l'admin (Accueil → Carrousel).
+   RÉGLAGES : MOVE = durée du déplacement des images (ms)
    ==================================================================== */
 
-const MAX_ITEMS = 10;
+const MOVE = 850;
+const CURVE = "cubic-bezier(0.32, 0.72, 0, 1)";
+
+const BLOOM_IMAGE = "/images/home-feature.jpeg";
+const BLOOM_LINK = "/collections/when-the-flowers-bloom";
+const FYGRANCES_IMAGE = "/images/Fygrances-hero.JPG";
+const FYGRANCES_LINK = "/fygrances";
+
+const VIEW: Record<string, string> = { fr: "Découvrir", nl: "Ontdekken", ja: "見る", en: "Discover" };
+
+type Rect = { l: number; t: number; w: number; h: number };
+const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
 
 export default function HomeStage({
   initialSlides = null,
@@ -22,86 +39,221 @@ export default function HomeStage({
   initialSlides?: Slide[] | null;
   slideProducts?: Record<string, ProductType[]>;
 }) {
-  const items = useMemo<FeaturedItem[]>(() => {
-    const out: FeaturedItem[] = [];
-    const seen = new Set<number>();
-    for (const s of initialSlides ?? []) {
-      const who: "men" | "women" | null = /for-her/.test(s.href) ? "women" : /for-him/.test(s.href) ? "men" : null;
-      const list = slideProducts[s.key] ?? [];
-      if (list.length === 0) {
-        if (s.image && !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(s.image)) out.push({ key: `s-${s.key}`, title: s.label, sub: s.kind, text: (s as any).text ?? "", image: s.image, href: s.href });
-        continue;
-      }
-      for (const p of list) {
-        if (seen.has(Number(p.id))) continue;
-        const imgs = ((p as any).product_images ?? []) as { url: string; worn_for?: string | null }[];
-        const src = (imgs.find((i) => !i.worn_for) ?? imgs[0])?.url;
-        if (!src) continue;
-        seen.add(Number(p.id));
-        out.push({
-          key: `p-${p.id}`,
-          title: p.name,
-          sub: [(p as any).category, p.price ? `${p.price} €` : ""].filter(Boolean).join("  ·  "),
-          text: (s as any).text ?? "",
-          image: src,
-          href: `/product/${p.slug}`,
-          slug: p.slug,
-          who,
-        });
-      }
+  const router = useRouter();
+  const copy = useSiteCopy();
+  const lang = useLocale().slice(0, 2);
+  const slides: Slide[] =
+    initialSlides && initialSlides.length
+      ? initialSlides
+      : [
+          { key: "bloom", label: copy.bloomTitle, href: BLOOM_LINK, image: BLOOM_IMAGE, kind: "Collection" },
+          { key: "fygrances", label: "FY'grances", href: FYGRANCES_LINK, image: FYGRANCES_IMAGE, kind: "Fragrance" },
+        ];
+  const n = slides.length;
+
+  const [active, setActive] = useState<number | null>(null); // null = pile fermée
+  const [rects, setRects] = useState<Record<string, Rect>>({});
+  const [anim, setAnim] = useState(false);
+  const [wrapH, setWrapH] = useState<number | null>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const slots = useRef<Record<string, HTMLElement | null>>({});
+  const animTimer = useRef(0);
+
+  // lit la place de chaque image dans la mise en page courante (pile ou ouverte)
+  const measure = useCallback(() => {
+    const w = wrap.current;
+    if (!w) return;
+    const wr = w.getBoundingClientRect();
+    const next: Record<string, Rect> = {};
+    for (const s of slides) {
+      const el = active === null ? slots.current["closed"] : active === slides.indexOf(s) ? slots.current["main"] : slots.current[s.key];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      next[s.key] = { l: r.left - wr.left, t: r.top - wr.top, w: r.width, h: r.height };
     }
-    return out.slice(0, MAX_ITEMS);
-  }, [initialSlides, slideProducts]);
+    setRects(next);
+    if (inner.current) setWrapH(inner.current.offsetHeight);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, n]);
 
-  const cont = useRef<HTMLDivElement>(null);
-  const show = useRef<HTMLDivElement>(null);
-  const [h, setH] = useState<number | null>(null);
-  const [phase, setPhase] = useState<"ring" | "swap" | "show">("ring");
-  const phaseRef = useRef(phase);
-  phaseRef.current = phase;
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
-  const timers = useRef<number[]>([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useLayoutEffect(() => {
+    measure();
+  }, [measure]);
 
-  const settled = () => {
-    if (phaseRef.current !== "ring" || itemsRef.current.length === 0) return; // rien à montrer : le carrousel reste
-    const ringH = cont.current?.offsetHeight ?? 0;
-    setH(ringH);
-    setPhase("swap");
-    requestAnimationFrame(() => requestAnimationFrame(() => setH(show.current?.offsetHeight ?? null)));
-    timers.current.push(
-      window.setTimeout(() => {
-        setPhase("show");
-        setH(null);
-      }, 900)
-    );
+  useEffect(() => {
+    const ro = new ResizeObserver(() => measure());
+    if (wrap.current) ro.observe(wrap.current);
+    if (inner.current) ro.observe(inner.current);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  const calm = () =>
+    typeof document !== "undefined" &&
+    (document.documentElement.classList.contains("a11y-calm") ||
+      document.documentElement.classList.contains("a11y-focus") ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  const choose = (i: number) => {
+    window.clearTimeout(animTimer.current);
+    setAnim(!calm());
+    setActive(i);
+    animTimer.current = window.setTimeout(() => setAnim(false), MOVE + 100);
+  };
+  useEffect(() => () => window.clearTimeout(animTimer.current), []);
+
+  const open = (s: Slide) => {
+    try {
+      const handled = (window as any).__fysuNavigate?.(s.href);
+      if (!handled) router.push(s.href);
+    } catch {
+      router.push(s.href);
+    }
   };
 
-  const showing = phase !== "ring";
+  const cur = active === null ? null : slides[active];
+  const products = cur ? (slideProducts[cur.key] ?? []).slice(0, 3) : [];
+  const who: "men" | "women" | null = cur && /for-her/.test(cur.href) ? "women" : cur && /for-him/.test(cur.href) ? "men" : null;
+  const dur = anim ? `${MOVE}ms` : "0ms";
 
   return (
-    <div ref={cont} className="grid" style={{ height: h ?? undefined, transition: "height 0.8s cubic-bezier(0.32,0.72,0,1)" }}>
-      {phase !== "show" && (
-        <div className="[grid-area:1/1]" style={{ opacity: phase === "swap" ? 0 : 1, transition: "opacity 0.55s ease", pointerEvents: phase === "swap" ? "none" : undefined }}>
-          <NewSelectionIntro initialSlides={initialSlides} onSettled={settled} tight={false} paused={phase === "swap"} />
-        </div>
-      )}
-      {items.length > 0 && (
-        <div
-          ref={show}
-          className="mb-24 mt-28 self-start [grid-area:1/1] sm:mb-32 sm:mt-36"
-          style={{
-            opacity: showing ? 1 : 0,
-            transition: "opacity 0.7s ease 0.25s",
-            pointerEvents: showing ? undefined : "none",
-            visibility: showing ? "visible" : "hidden",
-          }}
-          aria-hidden={!showing}
-        >
-          <FeaturedShowcase items={items} />
-        </div>
-      )}
-    </div>
+    <section
+      ref={wrap}
+      aria-label="FYSU"
+      className="relative w-full"
+      style={{ height: wrapH ?? undefined, minHeight: "100svh", transition: anim ? `height ${MOVE}ms ${CURVE}` : undefined }}
+    >
+      {/* mise en page (les emplacements) : l'une pour la pile, l'autre pour l'ouverture */}
+      <div ref={inner} className="w-full">
+        {active === null ? (
+          <div className="flex min-h-[100svh] items-center justify-center">
+            <div
+              ref={(el) => {
+                slots.current["closed"] = el;
+              }}
+              style={{ width: "clamp(140px, 40vw, 210px)", aspectRatio: "4 / 5" }}
+            />
+          </div>
+        ) : (
+          <div className="mx-auto w-[90vw] max-w-[1080px] pb-24 pt-28 sm:pt-32">
+            <div className="flex gap-2.5 md:gap-8" style={{ ["--tw" as string]: "clamp(44px, 12vw, 64px)" }}>
+              {/* colonne de vignettes */}
+              <div className="flex w-[var(--tw)] shrink-0 flex-col gap-2 self-start">
+                {slides.map((s, i) =>
+                  i === active ? null : (
+                    <div
+                      key={s.key}
+                      ref={(el) => {
+                        slots.current[s.key] = el;
+                      }}
+                      className="aspect-[4/5] w-full"
+                    />
+                  )
+                )}
+              </div>
+
+              <div className="grid min-w-0 flex-1 grid-cols-1 gap-y-6 md:grid-cols-[minmax(150px,230px)_minmax(0,1fr)] md:gap-x-8 md:gap-y-3">
+                {/* grande image */}
+                <div className="order-1 md:order-none md:col-start-2 md:row-start-1">
+                  <div
+                    ref={(el) => {
+                      slots.current["main"] = el;
+                    }}
+                    className="ml-auto aspect-[4/5] w-full md:max-w-[440px]"
+                  />
+                </div>
+
+                {/* texte */}
+                <div className="order-2 md:order-none md:col-start-1 md:row-start-1 md:self-center">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={cur!.key}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0, transition: { delay: 0.35, duration: 0.4, ease: "easeOut" } }}
+                      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                    >
+                      <p className="font-info text-[10px] uppercase tracking-[0.28em] text-foreground/50">
+                        {String((active ?? 0) + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+                      </p>
+                      <h2 className="mt-3 text-[24px] font-light leading-[1.05] tracking-tight text-foreground md:text-[28px]">{cur!.label}</h2>
+                      {cur!.kind && <p className="font-info mt-2 text-[11px] uppercase tracking-[0.18em] text-foreground/55">{cur!.kind}</p>}
+                      {cur!.text && <p className="mt-4 max-w-[34ch] text-[13px] font-light leading-relaxed text-foreground/70">{cur!.text}</p>}
+                      <button
+                        type="button"
+                        onClick={() => open(cur!)}
+                        className="font-info mt-5 cursor-pointer border-b border-foreground pb-px text-[11px] uppercase tracking-[0.2em] text-foreground transition-opacity hover:opacity-60"
+                      >
+                        {VIEW[lang] ?? VIEW.en} →
+                      </button>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* trois produits phares de la slide */}
+                <div className="order-3 md:order-none md:col-start-2 md:row-start-2">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {products.length > 0 && (
+                      <motion.div
+                        key={cur!.key}
+                        className="grid grid-cols-3 gap-2 md:ml-auto md:max-w-[440px]"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0, transition: { delay: 0.45, duration: 0.45, ease: "easeOut" } }}
+                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                      >
+                        {products.map((p) => (
+                          <Tile key={p.id} product={p} who={who} />
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* les images : posées sur leurs emplacements, elles glissent d'un emplacement à l'autre */}
+      {slides.map((s, i) => {
+        const r = rects[s.key];
+        const isMain = active === i;
+        const closed = active === null;
+        return (
+          <div
+            key={s.key}
+            role="button"
+            tabIndex={closed ? (i === 0 ? 0 : -1) : 0}
+            aria-hidden={closed && i !== 0 ? true : undefined}
+            aria-label={s.label}
+            data-hero-image={i === 0 ? "" : undefined}
+            data-ring-img={i}
+            onClick={() => (closed ? choose(0) : isMain ? open(s) : choose(i))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                closed ? choose(0) : isMain ? open(s) : choose(i);
+              }
+            }}
+            className="absolute cursor-pointer touch-manipulation select-none overflow-hidden bg-neutral-200 will-change-[left,top,width,height] dark:bg-neutral-800"
+            style={{
+              left: r?.l ?? 0,
+              top: r?.t ?? 0,
+              width: r?.w ?? 0,
+              height: r?.h ?? 0,
+              opacity: r ? 1 : 0,
+              zIndex: isMain ? n + 2 : closed ? n - i : 1,
+              transition: `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}`,
+            }}
+          >
+            {isVideo(s.image) ? (
+              <video src={s.image} muted loop autoPlay playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover object-center" />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={s.image} alt="" draggable={false} decoding="async" className="absolute inset-0 h-full w-full object-cover object-center" />
+            )}
+          </div>
+        );
+      })}
+    </section>
   );
 }
