@@ -54,11 +54,35 @@ export default function HomeStage({
   const [active, setActive] = useState<number | null>(null); // null = pile fermée
   const [rects, setRects] = useState<Record<string, Rect>>({});
   const [anim, setAnim] = useState(false);
+  const [peek, setPeek] = useState(false); // la pile : les images de dessous dépassent, une fois l'écran de chargement fini
   const [wrapH, setWrapH] = useState<number | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const slots = useRef<Record<string, HTMLElement | null>>({});
   const animTimer = useRef(0);
+
+  useEffect(() => {
+    let t = 0;
+    let iv = 0;
+    const show = () => {
+      setAnim(!calm());
+      setPeek(true);
+      t = window.setTimeout(() => setAnim(false), MOVE + 100);
+    };
+    if ((window as any).__loaderVisualDone) t = window.setTimeout(show, 150);
+    else
+      iv = window.setInterval(() => {
+        if ((window as any).__loaderVisualDone) {
+          window.clearInterval(iv);
+          t = window.setTimeout(show, 250);
+        }
+      }, 100);
+    return () => {
+      window.clearTimeout(t);
+      window.clearInterval(iv);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // lit la place de chaque image dans la mise en page courante (pile ou ouverte)
   const measure = useCallback(() => {
@@ -199,25 +223,25 @@ export default function HomeStage({
                   </AnimatePresence>
                 </div>
 
-                {/* trois produits phares de la slide */}
-                <div className="order-3 md:order-none md:col-start-2 md:row-start-2">
-                  <AnimatePresence mode="wait" initial={false}>
-                    {products.length > 0 && (
-                      <motion.div
-                        key={cur!.key}
-                        className="ml-auto grid w-[84%] grid-cols-3 gap-3 md:w-full md:max-w-[380px]"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0, transition: { delay: 0.45, duration: 0.45, ease: "easeOut" } }}
-                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
-                      >
-                        {products.map((p) => (
-                          <Tile key={p.id} product={p} who={who} />
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
               </div>
+            </div>
+            {/* trois produits phares de la slide : sur toute la largeur, plus grands */}
+            <div className="mt-12 md:mt-16">
+              <AnimatePresence mode="wait" initial={false}>
+                {products.length > 0 && (
+                  <motion.div
+                    key={cur!.key}
+                    className="grid grid-cols-3 gap-3 md:ml-auto md:max-w-[760px] md:gap-5"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: 0.45, duration: 0.45, ease: "easeOut" } }}
+                    exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                  >
+                    {products.map((p) => (
+                      <Tile key={p.id} product={p} who={who} />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         )}
@@ -228,6 +252,10 @@ export default function HomeStage({
         const r = rects[s.key];
         const isMain = active === i;
         const closed = active === null;
+        // pile : chaque image de dessous dépasse de PEEK px au-dessus de la précédente (3 couches visibles au plus)
+        const k = closed && peek ? Math.min(i, 3) : 0;
+        const PEEK = 12;
+        const sx = k * 7;
         return (
           <div
             key={s.key}
@@ -246,9 +274,9 @@ export default function HomeStage({
             }}
             className="absolute cursor-pointer touch-manipulation select-none overflow-hidden bg-neutral-200 will-change-[left,top,width,height] dark:bg-neutral-800"
             style={{
-              left: r?.l ?? 0,
-              top: r?.t ?? 0,
-              width: r?.w ?? 0,
+              left: (r?.l ?? 0) + sx,
+              top: (r?.t ?? 0) - k * PEEK,
+              width: Math.max(0, (r?.w ?? 0) - sx * 2),
               height: r?.h ?? 0,
               opacity: r ? 1 : 0,
               zIndex: isMain ? n + 2 : closed ? n - i : 1,

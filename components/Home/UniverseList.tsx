@@ -21,7 +21,7 @@ const TITLE: Record<string, string> = {
   ja: "ユニバースを見る",
   en: "Discover the universe",
 };
-const ENTER: Record<string, string> = { fr: "Entrer", nl: "Binnengaan", ja: "入る", en: "Enter" };
+const ENTER: Record<string, string> = { fr: "entrer", nl: "binnengaan", ja: "入る", en: "enter" };
 const CLOSE: Record<string, string> = { fr: "Fermer", nl: "Sluiten", ja: "閉じる", en: "Close" };
 
 const DEFAULTS: Record<string, Universe[]> = {
@@ -74,24 +74,22 @@ export default function UniverseList({ items }: { items?: Universe[] | null }) {
     <section aria-label={TITLE[lang] ?? TITLE.en} className="mx-auto w-[88vw] max-w-[1080px] pb-28 pt-4 sm:pb-40">
       <div className="flex items-end justify-between border-b border-foreground/20 pb-4">
         <h2 className="text-[22px] font-light tracking-tight sm:text-[28px]">{TITLE[lang] ?? TITLE.en}</h2>
-        <span className="font-info text-[10px] tracking-[0.3em] text-foreground/50">({String(list.length).padStart(2, "0")})</span>
       </div>
 
       <LayoutGroup>
         <ul>
-          {list.map((u, i) => (
+          {list.map((u) => (
             <li key={u.id} className="border-b border-foreground/10">
               <button
                 type="button"
                 onClick={() => setOpen(u.id)}
                 aria-haspopup="dialog"
-                className="group flex w-full cursor-pointer touch-manipulation items-center gap-4 py-3 text-left transition-colors hover:bg-foreground/[0.05] active:bg-foreground/[0.08] sm:gap-6 sm:px-2"
+                className="group flex w-full cursor-pointer touch-manipulation items-center gap-4 py-3 text-left transition-colors hover:bg-foreground/[0.05] active:bg-foreground/[0.08] sm:gap-6"
               >
-                <span className="font-info w-6 shrink-0 text-[10px] tracking-[0.2em] text-foreground/45">{String(i + 1).padStart(2, "0")}</span>
                 {open === u.id ? (
                   <div className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
                 ) : (
-                  <motion.div layoutId={`uni-img-${u.id}`} transition={spring} className="relative h-12 w-12 shrink-0 overflow-hidden sm:h-14 sm:w-14">
+                  <motion.div layoutId={`uni-img-${u.id}`} transition={spring} className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl sm:h-14 sm:w-14">
                     <Media src={u.image} className="absolute inset-0 h-full w-full" />
                   </motion.div>
                 )}
@@ -117,17 +115,17 @@ export default function UniverseList({ items }: { items?: Universe[] | null }) {
                 transition={{ duration: calm ? 0 : 0.3 }}
               />
               <motion.div
-                className="relative flex w-full max-w-[760px] flex-col overflow-hidden bg-[var(--page-bg,var(--background))] text-foreground shadow-2xl sm:flex-row"
+                className="relative flex w-full max-w-[760px] flex-col overflow-hidden rounded-[28px] bg-[var(--page-bg,var(--background))] text-foreground shadow-2xl sm:flex-row"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: calm ? 0 : 0.22 }}
               >
-                <motion.div layoutId={`uni-img-${cur.id}`} transition={spring} className="relative aspect-[4/3] w-full shrink-0 overflow-hidden sm:aspect-auto sm:min-h-[360px] sm:w-[46%]">
+                <motion.div layoutId={`uni-img-${cur.id}`} transition={spring} className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[22px] sm:aspect-auto sm:min-h-[360px] sm:w-[46%]">
                   <Media src={cur.image} className="absolute inset-0 h-full w-full" />
                 </motion.div>
                 <motion.div
-                  className="flex flex-1 flex-col justify-between p-6 sm:p-8"
+                  className="flex flex-1 flex-col justify-between p-5 pb-6 sm:p-8"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0, transition: { delay: calm ? 0 : 0.18, duration: 0.3 } }}
                   exit={{ opacity: 0, transition: { duration: 0.12 } }}
@@ -136,10 +134,7 @@ export default function UniverseList({ items }: { items?: Universe[] | null }) {
                     <h3 className="text-[26px] font-light leading-[1.05] tracking-tight">{cur.label}</h3>
                     {cur.text && <p className="mt-4 max-w-[36ch] text-[13px] font-light leading-relaxed text-foreground/70">{cur.text}</p>}
                   </div>
-                  <Link
-                    href={cur.href}
-                    className="font-info mt-8 inline-flex w-fit items-center gap-2 border border-foreground px-5 py-3 text-[11px] uppercase tracking-[0.2em] transition-colors hover:bg-foreground hover:text-background"
-                  >
+                  <Link href={cur.href} className="font-info mt-6 w-fit text-[12px] lowercase tracking-[0.08em] text-foreground/55 transition-colors hover:text-foreground">
                     {ENTER[lang] ?? ENTER.en} →
                   </Link>
                 </motion.div>
@@ -147,7 +142,7 @@ export default function UniverseList({ items }: { items?: Universe[] | null }) {
                   type="button"
                   onClick={() => setOpen(null)}
                   aria-label={CLOSE[lang] ?? CLOSE.en}
-                  className="absolute right-3 top-3 flex h-9 w-9 cursor-pointer items-center justify-center bg-background/80 text-foreground backdrop-blur transition active:scale-95"
+                  className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur transition active:scale-95"
                 >
                   <X className="h-4 w-4" strokeWidth={1.4} />
                 </button>
