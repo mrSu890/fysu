@@ -330,7 +330,7 @@ const Product = ({
           }
         >
           {images.map((src, index) => (
-            <div key={index} className={`relative h-full w-full flex-shrink-0 ${blurred ? "[&_img]:scale-110 [&_img]:blur-2xl" : ""} ${showArrows ? "" : "snap-start snap-always"}`}>
+            <div key={index} className={`relative h-full w-full flex-shrink-0 ${blurred ? "[&_img]:blur-[4px]" : ""} ${showArrows ? "" : "snap-start snap-always"}`}>
               <Image
                 src={src}
                 alt={`${product.name}-${index}`}
