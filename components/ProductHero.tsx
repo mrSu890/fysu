@@ -193,7 +193,8 @@ export default function ProductHero() {
     }
     const tick = () => {
       const now = performance.now()
-      if (Date.now() - started > 3000 && !flyingNow) {
+      // la carte n'est pas retrouvée assez vite : on abandonne l'animation tout de suite (jamais d'écran blanc qui traîne)
+      if (Date.now() - started > 900 && !flyingNow) {
         finishBack()
         return
       }
@@ -281,7 +282,7 @@ export default function ProductHero() {
   // sécurité
   useEffect(() => {
     if (!back) return
-    const t = window.setTimeout(finishBack, 6000)
+    const t = window.setTimeout(finishBack, 2500)
     return () => window.clearTimeout(t)
   }, [back, finishBack])
 
@@ -332,7 +333,7 @@ export default function ProductHero() {
         }, 1300)
         window.setTimeout(() => {
           if (window.location.pathname === from && from !== target) window.location.assign(path)
-        }, 3600)
+        }, 8000)
         return true
       } catch {
         finish()
