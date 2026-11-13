@@ -72,12 +72,12 @@ export default function ProductGrid({ groups }: { groups: GridGroup[]; who?: "me
                     role="tab"
                     aria-selected={on}
                     onClick={() => pick(c.id)}
-                    className={`relative shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] tracking-tight transition-colors ${on ? "text-foreground" : "text-foreground/50 hover:text-foreground"}`}
+                    className={`relative shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] tracking-tight transition-colors ${on ? "text-foreground" : "text-foreground/65 hover:text-foreground"}`}
                   >
                     {on && <motion.span layoutId="grid-chip" className="absolute inset-0 rounded-full bg-foreground/[0.08]" transition={{ type: "spring", stiffness: 380, damping: 34 }} />}
                     <span className="relative">
                       {c.title}
-                      <sup className="font-info ml-1 text-[8px] text-foreground/45">{c.n}</sup>
+                      <sup className="font-info ml-1 text-[8px] text-foreground/62">{c.n}</sup>
                     </span>
                   </button>
                 )

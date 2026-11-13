@@ -194,7 +194,7 @@ export default function ProductHero() {
     const tick = () => {
       const now = performance.now()
       // la carte n'est pas retrouvée assez vite : on abandonne l'animation tout de suite (jamais d'écran blanc qui traîne)
-      if (Date.now() - started > 900 && !flyingNow) {
+      if (Date.now() - started > 500 && !flyingNow) {
         finishBack()
         return
       }
@@ -328,11 +328,18 @@ export default function ProductHero() {
         // Si l'utilisateur est arrivé puis reparti (retour), on ne touche plus à rien.
         const target = path.split("?")[0]
         const from = window.location.pathname
+        // « arrivé » = la fiche s'est affichée au moins une fois. Après ça (même si on revient en arrière
+        // avant la fin des délais), on ne relance JAMAIS la navigation : c'est ce qui renvoyait de force sur la fiche.
+        let arrived = false
+        const watch = window.setInterval(() => {
+          if (window.location.pathname === target) arrived = true
+        }, 80)
+        window.setTimeout(() => window.clearInterval(watch), 9000)
         window.setTimeout(() => {
-          if (window.location.pathname === from && from !== target) router.push(path)
+          if (!arrived && window.location.pathname === from && from !== target) router.push(path)
         }, 1300)
         window.setTimeout(() => {
-          if (window.location.pathname === from && from !== target) window.location.assign(path)
+          if (!arrived && window.location.pathname === from && from !== target) window.location.assign(path)
         }, 8000)
         return true
       } catch {

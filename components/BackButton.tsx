@@ -25,10 +25,15 @@ export default function BackButton() {
   const locale = useLocale()
   const steps = useRef(0) // nombre de pages visitées sur le site depuis l'arrivée
   const first = useRef(true)
+  const popping = useRef(false)
 
   useEffect(() => {
     if (first.current) {
       first.current = false
+      return
+    }
+    if (popping.current) {
+      popping.current = false // ce changement de page vient du bouton retour : on ne le compte pas comme une page de plus
       return
     }
     steps.current += 1
@@ -47,6 +52,7 @@ export default function BackButton() {
       onClick={() => {
         if (steps.current > 0) {
           steps.current = Math.max(0, steps.current - 1)
+          popping.current = true
           router.back()
         } else {
           router.push("/")
