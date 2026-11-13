@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
@@ -74,6 +75,8 @@ export default function CollectionPage({
 
   const hasHero = Boolean(page.hero_image)
   // Ordre fixe des rangées (calculé par le serveur : vestes, hauts, pantalons/jupes, robes, accessoires, chaussures)
+  // « View all » = pas de catégorie : rangées de carrousels ; une catégorie choisie = grille
+  const cat = useSearchParams().get("cat")
   const visibleSections = [...sections]
     .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99) || a.display_order - b.display_order)
     .map((section) => {
@@ -178,10 +181,72 @@ export default function CollectionPage({
               <ProductFilters filters={filters} setFilters={setFilters} />
             )}
 
-            <ProductGrid
+            {cat ? (
+              <ProductGrid
               groups={visibleSections.map((section) => ({ id: String(section.id), title: section.title, products: expandByColor(section.filteredProducts) }))}
               who={slug === "for-her" ? "women" : slug === "for-him" ? "men" : null}
             />
+            ) : (
+              <>
+            {visibleSections
+              .map((section, sectionIndex) => {
+                return (
+                  <div key={section.id} className="mb-20">
+
+                    {/* SECTION TITLE */}
+                    <h2 className="text-xl font-pagetitle mb-6">
+                      {section.title}
+                      <sup className="ml-2 align-top text-[10px]">
+                        <CountUp value={section.filteredProducts.length} prefix="(" suffix=")" />
+                      </sup>
+                    </h2>
+
+                    {/* PRODUCTS HORIZONTAL SCROLL */}
+                    <div className="relative">
+                      <div 
+                        ref={scrollRef}
+                        data-row-memory={String(section.id)}
+                        className="
+                          flex
+                          gap-6
+                          overflow-x-auto
+                          overflow-y-hidden
+                          scroll-smooth
+                          snap-x snap-mandatory
+                          no-scrollbar
+                          pb-2
+                          touch-pan-x
+                          overscroll-x-contain
+                        "
+                      >
+
+                        {expandByColor(section.filteredProducts).map((product, index) => (
+                          <div
+                            key={variantKey(product)}
+                            className="
+                              min-w-[220px] 
+                              sm:min-w-[260px] 
+                              md:min-w-[300px] 
+                              snap-start
+                              flex-shrink-0
+                            "
+                          >
+                            <Product
+                              showArrows
+                              product={product}
+                              scrollRef={scrollRef}
+                              isFirst={sectionIndex === 0 && index === 0}
+                            />
+                          </div>
+                        ))}
+
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              </>
+            )}
           </>
         )}
       </div>
