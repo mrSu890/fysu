@@ -83,6 +83,9 @@ function MobileMenu({
   activePanel,
   setActivePanel,
   collectionOpen,
+  clothingOpen,
+  setClothingOpen,
+  clothing,
   setCollectionOpen,
   handleMobileLinkClick,
   links,
@@ -94,6 +97,9 @@ function MobileMenu({
   activePanel: "menu" | null;
   setActivePanel: (v: "menu" | null) => void;
   collectionOpen: boolean;
+  clothingOpen: boolean;
+  setClothingOpen: (v: boolean) => void;
+  clothing: MenuLink[];
   setCollectionOpen: (v: boolean) => void;
   handleMobileLinkClick: () => void;
   links: MenuLink[];
@@ -530,16 +536,19 @@ function MobileMenu({
                   </motion.button>
                 </div>
 
-                <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6 md:pr-[44%]">
+                <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6 [@media(hover:hover)_and_(pointer:fine)]:md:pr-[44%]">
                   {links.map((link) => {
                     const isProjects = link.href === "#projects";
-                    const isAccordion = link.href === "#" || isProjects;
-                    const isOpen = isProjects ? projectsOpen : collectionOpen;
+                    const isClothing = link.href === "#clothing";
+                    const isAccordion = link.href === "#" || isProjects || isClothing;
+                    const isOpen = isProjects ? projectsOpen : isClothing ? clothingOpen : collectionOpen;
                     const toggle = () =>
                       isProjects
                         ? setProjectsOpen(!projectsOpen)
-                        : setCollectionOpen(!collectionOpen);
-                    const items = isProjects ? projects : collections;
+                        : isClothing
+                          ? setClothingOpen(!clothingOpen)
+                          : setCollectionOpen(!collectionOpen);
+                    const items = isProjects ? projects : isClothing ? clothing : collections;
                     return isAccordion ? (
                       <React.Fragment key={link.href}>
                         <li>
@@ -647,7 +656,7 @@ function MobileMenu({
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.15 } }}
                       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                      className="pointer-events-none absolute right-6 top-0 hidden w-[38%] md:block"
+                      className="pointer-events-none absolute right-6 top-0 hidden w-[38%] [@media(hover:hover)_and_(pointer:fine)]:md:block"
                     >
                       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-black/5">
                         <AnimatePresence mode="popLayout" initial={false}>
@@ -695,6 +704,7 @@ export default function Navbar() {
   const [activePanel, setActivePanel] = useState<"menu" | null>(null);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [clothingOpen, setClothingOpen] = useState(false);
   const musicCopy = useMusicCopy();
   // Projets hors catégories de produits (la musique pour l'instant)
   const gamesCopy = gamesCopyFor(locale);
@@ -705,6 +715,7 @@ export default function Navbar() {
 
   const [links, setLinks] = useState<MenuLink[]>([]);
   const [collections, setCollections] = useState<MenuLink[]>([]);
+  const [clothing, setClothing] = useState<MenuLink[]>([]);
 
   useEffect(() => {
     const loadPages = async () => {
@@ -718,11 +729,22 @@ export default function Navbar() {
         if (v.ok) vis = await v.json();
       } catch {}
 
-      const pageLinks = data.map((p: any) => ({
+      const rawLinks = data.map((p: any) => ({
         label: p.title.toUpperCase(),
         href: `/${p.slug}`,
         image: p.hero_image ?? null,
       }));
+
+      // FOR HIM / FOR HER sont regroupés sous un seul mot : CLOTHING
+      const isHim = (l: MenuLink) => /for.?him/i.test(l.href + l.label);
+      const isHer = (l: MenuLink) => /for.?her/i.test(l.href + l.label);
+      const him = rawLinks.find(isHim);
+      const her = rawLinks.find(isHer);
+      const firstIdx = rawLinks.findIndex((l: MenuLink) => isHim(l) || isHer(l));
+      const pageLinks: MenuLink[] = rawLinks.filter((l: MenuLink) => !isHim(l) && !isHer(l));
+      const group = [him, her].filter(Boolean) as MenuLink[];
+      setClothing(group);
+      if (group.length) pageLinks.splice(Math.min(Math.max(firstIdx, 0), pageLinks.length), 0, { label: "CLOTHING", href: "#clothing" });
 
       // "Kiban Collector" et "TheWave" sont placés juste au-dessus de Fy'grances
       const kibanLink = { label: "KIBAN COLLECTOR", href: "/kiban-collector" };
@@ -763,6 +785,7 @@ export default function Navbar() {
   const handleMobileLinkClick = () => {
     setCollectionOpen(false);
     setProjectsOpen(false);
+    setClothingOpen(false);
     setActivePanel(null);
   };
 
@@ -772,6 +795,9 @@ export default function Navbar() {
       setActivePanel={setActivePanel}
       collectionOpen={collectionOpen}
       setCollectionOpen={setCollectionOpen}
+      clothingOpen={clothingOpen}
+      setClothingOpen={setClothingOpen}
+      clothing={clothing}
       handleMobileLinkClick={handleMobileLinkClick}
       links={links}
       collections={collections}
