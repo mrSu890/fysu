@@ -17,8 +17,9 @@ import { claimPopup, releasePopup } from "@/lib/popups"
    ==================================================================== */
 
 type Box = { top: number; left: number; width: number; height: number }
-type Job = { src: string; from: Box; path: string; radius: number }
-type Back = { src: string; from: Box; slug: string; path: string; kind: "product" | "music"; crop: number; top: number }
+type RGBA = [number, number, number, number]
+type Job = { src: string; from: Box; path: string; radius: number; tint: RGBA | null; bg: RGBA | null }
+type Back = { src: string; from: Box; slug: string; path: string; kind: "product" | "music"; crop: number; top: number; tint: RGBA | null; bg: RGBA | null }
 
 // courbe « ressort amorti » (comme les feuilles de l'iPhone) : démarre vite, se pose sans rebond
 const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number) => {
@@ -33,6 +34,41 @@ const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number) =
   return 3 * (1 - a) * (1 - a) * a * y1 + 3 * (1 - a) * a * a * y2 + a * a * a
 }
 const ease = bezier(0.32, 0.72, 0, 1)
+
+/* ---- teinte des ambiances (aube, après-midi) : les cartes et les fiches ont un filtre « multiply » + un fond ;
+   l'image en vol doit porter le même, qui glisse de celui du départ à celui de l'arrivée, sinon on voit un rectangle plus clair ---- */
+const parseC = (v: string): RGBA | null => {
+  const m = /rgba?\(([^)]+)\)/.exec(v)
+  if (!m) return null
+  const p = m[1].split(/[ ,/]+/).filter(Boolean).map(parseFloat)
+  if (p.length < 3 || p.some((x) => Number.isNaN(x))) return null
+  const a = p.length > 3 ? p[3] : 1
+  return a <= 0 ? null : [p[0], p[1], p[2], a]
+}
+const tintOf = (el: Element | null): RGBA | null => {
+  if (!el) return null
+  const cand: Element[] = [el]
+  let a: Element | null = el.parentElement
+  for (let i = 0; i < 3 && a; i++, a = a.parentElement) cand.push(a)
+  const d = el.querySelector(".aspect-\\[3\\/4\\]")
+  if (d) cand.push(d)
+  for (const n of cand) {
+    try {
+      const cs = getComputedStyle(n, "::after")
+      if (cs.content && cs.content !== "none" && cs.mixBlendMode === "multiply") return parseC(cs.backgroundColor)
+    } catch {}
+  }
+  return null
+}
+const bgOf = (el: Element | null): RGBA | null => (el ? parseC(getComputedStyle(el).backgroundColor) : null)
+const mix = (from: RGBA | null, to: RGBA | null, k: number, none: RGBA): string => {
+  const f = from ?? none
+  const t = to ?? none
+  const c = f.map((x, i) => x + (t[i] - x) * k)
+  return `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${c[3]})`
+}
+const WHITE: RGBA = [255, 255, 255, 1]
+const CLEAR: RGBA = [255, 255, 255, 0]
 
 const isCalm = () => {
   const html = document.documentElement
@@ -50,6 +86,7 @@ export default function ProductHero() {
   const [flying, setFlying] = useState(false)
   const imgRef = useRef<HTMLDivElement | null>(null)
   const innerRef = useRef<HTMLImageElement | null>(null)
+  const tintRef = useRef<HTMLDivElement | null>(null)
   const [bg, setBg] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const jobRef = useRef<Job | null>(null)
@@ -62,6 +99,7 @@ export default function ProductHero() {
   const [backLeaving, setBackLeaving] = useState(false)
   const backImgRef = useRef<HTMLDivElement | null>(null)
   const backInnerRef = useRef<HTMLImageElement | null>(null)
+  const backTintRef = useRef<HTMLDivElement | null>(null)
   const backRef = useRef<Back | null>(null)
   backRef.current = back
   const pathRef = useRef(pathname)
@@ -114,7 +152,7 @@ export default function ProductHero() {
         claimPopup("hero", false, true)
         setBackLeaving(false)
         setBackFlying(false)
-        setBack({ src: img.currentSrc, from: r, slug: m[1], path: to, kind, crop: parseFloat(el.dataset.heroCrop || "0") || 0, top: el.dataset.heroPos === "top" ? 1 : 0 })
+        setBack({ src: img.currentSrc, from: r, slug: m[1], path: to, kind, crop: parseFloat(el.dataset.heroCrop || "0") || 0, top: el.dataset.heroPos === "top" ? 1 : 0, tint: tintOf(el), bg: bgOf(el) })
       } catch {}
     }
     window.addEventListener("popstate", onPop)
@@ -133,6 +171,8 @@ export default function ProductHero() {
     let box: HTMLElement | null = null
     let scrolled = false
     let endRadius = 16
+    let endTint: RGBA | null = null
+    let endBg: RGBA | null = null
     const started = Date.now()
     const DURATION = 740
     const find = (): HTMLElement | null => {
@@ -183,6 +223,8 @@ export default function ProductHero() {
               return
             }
             endRadius = parseFloat(getComputedStyle(box).borderTopLeftRadius) || 0
+            endTint = tintOf(box)
+            endBg = bgOf(box)
             box.style.opacity = "0"
             flyingNow = true
             t0 = now
@@ -200,6 +242,8 @@ export default function ProductHero() {
         el.style.width = `${f.width + (t.width - f.width) * e}px`
         el.style.height = `${f.height + (t.height - f.height) * e}px`
         el.style.borderRadius = `${endRadius * e}px`
+        if (backTintRef.current) backTintRef.current.style.backgroundColor = mix(back.tint, endTint, e, WHITE)
+        el.style.backgroundColor = mix(back.bg, endBg, e, CLEAR)
         const inner = backInnerRef.current
         if (inner) {
           // la photo de la fiche est recadrée (haut coupé, calée en haut) : on revient au cadrage de la carte en glissant
@@ -276,7 +320,7 @@ export default function ProductHero() {
         document.documentElement.classList.add("hero-running")
         setLeaving(false)
         setFlying(false)
-        setJob({ src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius })
+        setJob({ src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius, tint: tintOf(el), bg: bgOf(el) })
         requestAnimationFrame(() => setBg(true))
         router.push(path)
         // filet de sécurité : si on est TOUJOURS sur la page de départ, on relance la navigation.
@@ -322,6 +366,18 @@ export default function ProductHero() {
     let curBox: Box = job.from
     let clipEl: HTMLElement | null = null
     let clipFor: HTMLElement | null = null
+    let endTint: RGBA | null = null
+    let endBg: RGBA | null = null
+    // en attendant la vraie fiche : le filtre qu'elle aura dans cette ambiance
+    const html = document.documentElement
+    const predTint: RGBA | null =
+      html.classList.contains("dark") || html.classList.contains("wave-page")
+        ? null
+        : html.classList.contains("afternoon")
+          ? [247, 246, 243, 1]
+          : html.classList.contains("dawn")
+            ? [251, 252, 251, 1]
+            : null
     const started = Date.now()
     window.scrollTo(0, 0)
     // emplacement prévu de la grande photo (mêmes mesures que la fiche), utilisé tant que la vraie page n'est pas là
@@ -375,6 +431,8 @@ export default function ProductHero() {
           tTop = el.dataset.heroPos === "top" ? 1 : 0
           target = { top: r.top, left: r.left, width: r.width, height: r.height }
           endRadius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
+          endTint = tintOf(el)
+          endBg = bgOf(el)
           if (el !== clipFor) {
             clipFor = el
             clipEl = findClip(el)
@@ -400,6 +458,8 @@ export default function ProductHero() {
       } else if (!realSeen && elapsed > 350 && job.path.startsWith("/product/")) {
         // la page tarde : l'image grandit déjà vers sa place sans attendre (fiches produit seulement)
         target = predict()
+        endTint = predTint
+        endBg = null
         tCrop = 1.8
         tTop = 1
         if (!flyingNow) {
@@ -427,6 +487,8 @@ export default function ProductHero() {
         node.style.width = `${width}px`
         node.style.height = `${height}px`
         node.style.borderRadius = `${job.radius + (endRadius - job.radius) * e}px`
+        if (tintRef.current) tintRef.current.style.backgroundColor = mix(job.tint, endTint, e, WHITE)
+        node.style.backgroundColor = mix(job.bg, endBg, e, CLEAR)
         const inner = innerRef.current
         if (inner) {
           // cadrage de la photo : celui de la carte au départ, celui de la fiche (haut coupé, calée en haut) à l'arrivée
@@ -489,6 +551,8 @@ export default function ProductHero() {
         aria-hidden="true"
         className="pointer-events-none fixed z-[45] overflow-hidden"
         style={{
+          isolation: "isolate",
+          backgroundColor: back.bg ? mix(back.bg, back.bg, 0, CLEAR) : undefined,
           opacity: backLeaving ? 0 : 1,
           transition: "opacity 0.28s ease",
           top: back.from.top,
@@ -506,6 +570,7 @@ export default function ProductHero() {
           className="absolute left-0 w-full object-cover"
           style={{ top: `${-back.crop}%`, height: `${100 + back.crop}%`, objectPosition: `50% ${50 - 50 * back.top}%` }}
         />
+        <div ref={backTintRef} className="pointer-events-none absolute inset-0 z-[1]" style={{ mixBlendMode: "multiply", backgroundColor: back.tint ? mix(back.tint, back.tint, 0, WHITE) : "transparent" }} />
       </div>
     </>
   ) : null
@@ -528,6 +593,8 @@ export default function ProductHero() {
         aria-hidden="true"
         className="pointer-events-none fixed z-[45] overflow-hidden"
         style={{
+          isolation: "isolate",
+          backgroundColor: job.bg ? mix(job.bg, job.bg, 0, CLEAR) : undefined,
           opacity: leaving ? 0 : 1,
           transition: "opacity 0.28s ease",
           top: job.from.top,
@@ -539,6 +606,7 @@ export default function ProductHero() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img ref={innerRef} src={job.src} alt="" draggable={false} className="absolute left-0 top-0 h-full w-full object-cover" />
+        <div ref={tintRef} className="pointer-events-none absolute inset-0 z-[1]" style={{ mixBlendMode: "multiply", backgroundColor: job.tint ? mix(job.tint, job.tint, 0, WHITE) : "transparent" }} />
       </div>
     </>
   )
