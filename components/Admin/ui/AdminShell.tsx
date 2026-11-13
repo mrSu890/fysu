@@ -26,42 +26,43 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react"
+import { IconTile, type TileTone } from "@/components/Admin/ui/kit"
 
 /* ====================================================================
    MENU DE L'ADMIN (facile à modifier)
    ==================================================================== */
 
-type NavItem = { label: string; href: string; icon: LucideIcon }
+type NavItem = { label: string; href: string; icon: LucideIcon; tone: TileTone }
 type NavGroup = { label: string | null; items: NavItem[] }
 
 export const ADMIN_NAV: NavGroup[] = [
   {
     label: null,
-    items: [{ label: "Aperçu", href: "/admin", icon: LayoutDashboard }],
+    items: [{ label: "Aperçu", href: "/admin", icon: LayoutDashboard, tone: "gray" }],
   },
   {
     label: "Boutique",
     items: [
-      { label: "Produits", href: "/admin/catalog", icon: Shirt },
-      { label: "Commandes", href: "/admin/orders", icon: ShoppingBag },
-      { label: "Codes promo", href: "/admin/promo-codes", icon: Tag },
-      { label: "Demandes", href: "/admin/requests", icon: Inbox },
-      { label: "Clients", href: "/admin/users", icon: Users },
-      { label: "Avatars", href: "/admin/avatars", icon: UserCircle },
+      { label: "Produits", href: "/admin/catalog", icon: Shirt, tone: "blue" },
+      { label: "Commandes", href: "/admin/orders", icon: ShoppingBag, tone: "green" },
+      { label: "Codes promo", href: "/admin/promo-codes", icon: Tag, tone: "green" },
+      { label: "Demandes", href: "/admin/requests", icon: Inbox, tone: "orange" },
+      { label: "Clients", href: "/admin/users", icon: Users, tone: "blue" },
+      { label: "Avatars", href: "/admin/avatars", icon: UserCircle, tone: "blue" },
     ],
   },
   {
     label: "Contenu du site",
     items: [
-      { label: "Accueil (hero)", href: "/admin/home-images", icon: Images },
-      { label: "Images de garde", href: "/admin/heroes", icon: ImageIcon },
-      { label: "Collections & pages", href: "/admin/pages", icon: Layers },
-      { label: "Stories", href: "/admin/stories", icon: Clapperboard },
-      { label: "Musique", href: "/admin/music", icon: Music },
-      { label: "FY'grances", href: "/admin/fygrances", icon: Droplets },
-      { label: "About", href: "/admin/about", icon: ScrollText },
-      { label: "Confidentialité", href: "/admin/legal", icon: Scale },
-      { label: "Pages légales", href: "/admin/legal-pages", icon: FileText },
+      { label: "Accueil (hero)", href: "/admin/home-images", icon: Images, tone: "pink" },
+      { label: "Images de garde", href: "/admin/heroes", icon: ImageIcon, tone: "pink" },
+      { label: "Collections & pages", href: "/admin/pages", icon: Layers, tone: "pink" },
+      { label: "Stories", href: "/admin/stories", icon: Clapperboard, tone: "purple" },
+      { label: "Musique", href: "/admin/music", icon: Music, tone: "purple" },
+      { label: "FY'grances", href: "/admin/fygrances", icon: Droplets, tone: "purple" },
+      { label: "About", href: "/admin/about", icon: ScrollText, tone: "purple" },
+      { label: "Confidentialité", href: "/admin/legal", icon: Scale, tone: "gray" },
+      { label: "Pages légales", href: "/admin/legal-pages", icon: FileText, tone: "gray" },
     ],
   },
 ]
@@ -100,9 +101,6 @@ function SidebarContent({
       <div className="flex items-center gap-3 px-6 pb-6 pt-7">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/fysu-dark.png" alt="FYSU" className="h-6 w-auto" />
-        <span className="rounded-full bg-[#171717] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white">
-          Admin
-        </span>
       </div>
 
       {/* Liens */}
@@ -117,7 +115,6 @@ function SidebarContent({
             <ul className="space-y-0.5">
               {group.items.map((item) => {
                 const isActive = active?.href === item.href
-                const Icon = item.icon
                 return (
                   <li key={item.href}>
                     <Link
@@ -126,13 +123,13 @@ function SidebarContent({
                       // couleur en ligne : les liens du site sont bleus par défaut
                       style={{ color: isActive ? "#ffffff" : "#3d3a35" }}
                       className={[
-                        "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors",
+                        "flex items-center gap-3 rounded-2xl px-2.5 py-2 text-sm transition-colors",
                         isActive
                           ? "bg-[#171717] shadow-sm"
                           : "hover:bg-[#171717]/[0.05]",
                       ].join(" ")}
                     >
-                      <Icon size={17} strokeWidth={1.75} />
+                      <IconTile icon={item.icon} tone={item.tone} size={28} />
                       {item.label}
                     </Link>
                   </li>

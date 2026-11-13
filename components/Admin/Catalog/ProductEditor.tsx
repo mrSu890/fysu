@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, ArrowRight, Copy, Crop, ExternalLink, ImagePlus, Plus, RefreshCw, Trash2, Upload } from "lucide-react"
-import { AdminButton, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/kit"
+import { ArrowLeft, ArrowRight, Copy, Crop, ExternalLink, ImagePlus, Lightbulb, Plus, RefreshCw, Trash2, Upload } from "lucide-react"
+import { AdminButton, IconTile, PageHeader, Panel, Skeleton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
 import { uploadInfoBlockMedia } from "@/lib/infoBlockUpload"
@@ -1394,7 +1394,7 @@ export default function ProductEditor({ id }: { id: string }) {
                               hoverSet.includes(url) ? "bg-[#171717] text-white ring-[#171717]" : "bg-white text-[#3d3a35] ring-[#e0dbd3] hover:bg-[#faf8f5]"
                             }`}
                           >
-                            {hoverSet.includes(url) ? "★ Portée principale" : "☆ Choisir comme principale"}
+                            {hoverSet.includes(url) ? "Portée principale" : "Choisir comme principale"}
                           </button>
                         )}
                         {form.product_type === "lamp" && (
@@ -1403,7 +1403,7 @@ export default function ProductEditor({ id }: { id: string }) {
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={litMap[url]} alt="Allumée" className="h-10 w-8 shrink-0 rounded-md object-cover" />
                             ) : (
-                              <span className="flex h-10 w-8 shrink-0 items-center justify-center rounded-md bg-[#f0ece5] text-sm">💡</span>
+                              <IconTile icon={Lightbulb} tone="orange" size={30} />
                             )}
                             <label
                               className={`flex-1 cursor-pointer text-xs text-[#3d3a35] ${uploading ? "pointer-events-none opacity-50" : ""}`}

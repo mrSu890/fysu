@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Copy, MoreHorizontal, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
+import { Copy, EyeOff, MoreHorizontal, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
 import {
   AdminButton,
-  Badge,
   EmptyState,
   PageHeader,
   Panel,
@@ -37,7 +36,7 @@ const GENDERS: Record<string, string> = { him: "Homme", her: "Femme", unisex: "U
 const SELECT_CLASS =
   "h-10 rounded-full border border-[#e0dbd3] bg-white px-4 text-sm text-[#171717] outline-none focus:ring-2 focus:ring-[#171717]/10"
 
-function Pills({
+function FilterSelect({
   label,
   value,
   onChange,
@@ -46,43 +45,30 @@ function Pills({
   label: string
   value: string
   onChange: (v: string) => void
-  options: { id: string; label: string; count?: number }[]
+  options: { id: string; label: string }[]
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-16 shrink-0 text-[11px] font-medium uppercase tracking-wide text-[#9a948a]">{label}</span>
-      <div className="-mx-1 flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {options.map((o) => {
-          const active = value === o.id
-          return (
-            <button
-              key={o.id}
-              type="button"
-              onClick={() => onChange(o.id)}
-              aria-pressed={active}
-              className={`h-9 shrink-0 cursor-pointer whitespace-nowrap rounded-full px-4 text-sm transition-colors ${
-                active
-                  ? "bg-[#171717] text-white"
-                  : "bg-white text-[#3d3a35] ring-1 ring-[#e0dbd3] hover:bg-[#faf8f5]"
-              }`}
-            >
-              {o.label}
-              {o.count !== undefined && (
-                <span className={`ml-1.5 text-xs ${active ? "text-white/60" : "text-[#9a948a]"}`}>{o.count}</span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${SELECT_CLASS} ${value !== "all" ? "bg-[#171717] text-white" : ""} max-w-[48%] sm:max-w-none`}
+    >
+      {options.map((o) => (
+        <option key={o.id} value={o.id}>
+          {o.id === "all" ? label : o.label}
+        </option>
+      ))}
+    </select>
   )
 }
 
+// le stock n'apparaît que s'il y a un problème (rien à signaler = rien d'affiché)
 function StockBadge({ p }: { p: Product }) {
-  if (p.stockState === "none") return <Badge tone="orange">Aucune taille</Badge>
-  if (p.stockState === "out") return <Badge tone="red">Épuisé</Badge>
-  if (p.stockState === "low") return <Badge tone="orange">Stock bas · {p.totalStock}</Badge>
-  return <Badge tone="green">En stock · {p.totalStock}</Badge>
+  if (p.stockState === "none") return <span className="text-xs font-medium text-[#b86e00]">Sans taille</span>
+  if (p.stockState === "out") return <span className="text-xs font-medium text-[#c0392b]">Épuisé</span>
+  if (p.stockState === "low") return <span className="text-xs font-medium text-[#b86e00]">Reste {p.totalStock}</span>
+  return null
 }
 
 export default function AdminCatalog() {
@@ -262,11 +248,7 @@ export default function AdminCatalog() {
   return (
     <>
       <PageHeader
-        eyebrow="Boutique"
-        title="Produits"
-        description={
-          loading ? "Chargement…" : `${products.length} produit(s) dans le catalogue`
-        }
+        title={loading ? "Produits" : `Produits (${products.length})`}
         actions={
           <>
             <AdminButton icon={Tags} onClick={() => setShowCategories((v) => !v)}>
@@ -345,24 +327,19 @@ export default function AdminCatalog() {
           />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Pills
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterSelect
             label="Catégorie"
             value={categoryFilter}
             onChange={setCategoryFilter}
             options={[
-              { id: "all", label: "Toutes", count: products.length },
-              ...categories.map((c) => ({ id: String(c.id), label: c.name, count: countByCategory[c.id] ?? 0 })),
-              { id: "none", label: "Sans catégorie", count: products.filter((p) => p.category_id == null).length },
+              { id: "all", label: "Toutes" },
+              ...categories.map((c) => ({ id: String(c.id), label: `${c.name} (${countByCategory[c.id] ?? 0})` })),
+              { id: "none", label: "Sans catégorie" },
             ]}
           />
-          <Pills
-            label="Type"
-            value={typeFilter}
-            onChange={setTypeFilter}
-            options={[{ id: "all", label: "Tous" }, ...PRODUCT_TYPE_LIST.map((t) => ({ id: t.id, label: t.label }))]}
-          />
-          <Pills
+          <FilterSelect label="Type" value={typeFilter} onChange={setTypeFilter} options={[{ id: "all", label: "Tous" }, ...PRODUCT_TYPE_LIST.map((t) => ({ id: t.id, label: t.label }))]} />
+          <FilterSelect
             label="Genre"
             value={genderFilter}
             onChange={setGenderFilter}
@@ -373,7 +350,7 @@ export default function AdminCatalog() {
               { id: "unisex", label: "Unisexe" },
             ]}
           />
-          <Pills
+          <FilterSelect
             label="Stock"
             value={stockFilter}
             onChange={setStockFilter}
@@ -383,22 +360,19 @@ export default function AdminCatalog() {
               { id: "out", label: "Épuisés" },
             ]}
           />
-
-          <div className="mt-1 flex items-center gap-2">
-            <select value={sort} onChange={(e) => setSort(e.target.value)} className={SELECT_CLASS}>
-              <option value="newest">Plus récents</option>
-              <option value="oldest">Plus anciens</option>
-              <option value="name">Nom (A → Z)</option>
-              <option value="price-asc">Prix croissant</option>
-              <option value="price-desc">Prix décroissant</option>
-              <option value="stock-asc">Stock le plus bas</option>
-            </select>
-            {hasFilters && (
-              <AdminButton variant="ghost" icon={X} onClick={resetFilters}>
-                Effacer
-              </AdminButton>
-            )}
-          </div>
+          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Trier" className={SELECT_CLASS}>
+            <option value="newest">Plus récents</option>
+            <option value="oldest">Plus anciens</option>
+            <option value="name">Nom (A → Z)</option>
+            <option value="price-asc">Prix croissant</option>
+            <option value="price-desc">Prix décroissant</option>
+            <option value="stock-asc">Stock le plus bas</option>
+          </select>
+          {hasFilters && (
+            <AdminButton variant="ghost" icon={X} onClick={resetFilters}>
+              Effacer
+            </AdminButton>
+          )}
         </div>
       </div>
 
@@ -449,8 +423,8 @@ export default function AdminCatalog() {
                     />
                   ) : null}
                   {p.is_hidden && (
-                    <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#6b665d]">
-                      Masqué
+                    <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-md bg-white/90 text-[#6b665d]" title="Masqué">
+                      <EyeOff size={13} />
                     </span>
                   )}
                 </Link>
@@ -464,10 +438,7 @@ export default function AdminCatalog() {
                     {p.name}
                   </Link>
                   <p className="truncate text-xs text-[#9a948a]">
-                    {getProductType(p.product_type).label}
-                    {" · "}
-                    {p.category_id != null ? categoryName[p.category_id] ?? "—" : "Sans catégorie"}
-                    {p.gender && ` · ${GENDERS[p.gender] ?? p.gender}`}
+                    {p.category_id != null ? categoryName[p.category_id] ?? "" : ""}
                   </p>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <p className="text-sm font-medium">{p.price.toFixed(2)} €</p>
@@ -496,7 +467,6 @@ export default function AdminCatalog() {
                         }`}
                       />
                     </span>
-                    {p.is_hidden ? "Masqué" : "Visible"}
                   </button>
                   <button
                     type="button"
