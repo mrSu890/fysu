@@ -137,6 +137,16 @@ export default function HomeStage({
     } catch {}
     animTimer.current = window.setTimeout(() => setAnim(false), MOVE + 100);
   };
+  // la croix : on referme le carrousel (la pile se replie)
+  const close = () => {
+    window.clearTimeout(animTimer.current);
+    setAnim(!calm());
+    setActive(null);
+    try {
+      sessionStorage.removeItem("fysu-home-active");
+    } catch {}
+    animTimer.current = window.setTimeout(() => setAnim(false), MOVE + 100);
+  };
   useEffect(() => () => window.clearTimeout(animTimer.current), []);
 
   const [line, setLine] = useState(false); // le trait sous « discover » se dessine au toucher
@@ -200,12 +210,25 @@ export default function HomeStage({
               <div className="grid min-w-0 flex-1 grid-cols-1 gap-y-8 md:grid-cols-[minmax(150px,230px)_minmax(0,1fr)] md:gap-x-10 md:gap-y-6">
                 {/* grande image */}
                 <div className="order-1 md:order-none md:col-start-2 md:row-start-1">
-                  <div
-                    ref={(el) => {
-                      slots.current["main"] = el;
-                    }}
-                    className="ml-auto aspect-[4/5] w-[84%] md:w-full md:max-w-[380px]"
-                  />
+                  <div className="relative ml-auto w-[84%] md:w-full md:max-w-[380px]">
+                    <div
+                      ref={(el) => {
+                        slots.current["main"] = el;
+                      }}
+                      className="aspect-[4/5] w-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={close}
+                      aria-label="Close"
+                      style={{ zIndex: n + 10 }}
+                      className="absolute right-2.5 top-2.5 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-background/70 text-foreground backdrop-blur-md transition active:scale-90"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true">
+                        <path d="M2 2l8 8M10 2l-8 8" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {/* texte */}
@@ -218,12 +241,12 @@ export default function HomeStage({
                       exit={{ opacity: 0, transition: { duration: 0.15 } }}
                     >
                       <h2 className="text-[19px] font-light leading-[1.1] tracking-tight text-foreground md:text-[22px]">{cur!.label}</h2>
-                      {cur!.kind && <p className="font-info mt-2.5 text-[9.5px] uppercase tracking-[0.22em] text-foreground/45">{cur!.kind}</p>}
-                      {cur!.text && <p className="mt-5 max-w-[34ch] text-[12px] font-light leading-[1.7] text-foreground/60">{cur!.text}</p>}
+                      {cur!.kind && <p className="font-info mt-2.5 text-[9.5px] uppercase tracking-[0.22em] text-foreground/62">{cur!.kind}</p>}
+                      {cur!.text && <p className="mt-5 max-w-[34ch] text-[12px] font-light leading-[1.7] text-foreground/75">{cur!.text}</p>}
                       <button
                         type="button"
                         onClick={() => go(cur!)}
-                        className="font-info mt-6 cursor-pointer text-[12px] lowercase tracking-[0.08em] text-foreground/55 transition-colors hover:text-foreground"
+                        className="font-info mt-6 cursor-pointer text-[12px] lowercase tracking-[0.08em] text-foreground/72 transition-colors hover:text-foreground"
                       >
                         <span
                           className="bg-gradient-to-r from-current to-current bg-no-repeat pb-[3px] transition-[background-size] duration-500 ease-out"

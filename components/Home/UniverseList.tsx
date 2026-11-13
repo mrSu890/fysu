@@ -94,8 +94,8 @@ export default function UniverseList({ items }: { items?: Universe[] | null }) {
                   </motion.div>
                 )}
                 <span className="min-w-0 flex-1 truncate text-[15px] font-light tracking-tight sm:text-[17px]">{u.label}</span>
-                {u.text && <span className="hidden min-w-0 flex-1 truncate text-[13px] font-light text-foreground/50 md:block">{u.text}</span>}
-                <span aria-hidden="true" className="shrink-0 pr-1 text-foreground/40 transition-transform duration-300 group-hover:translate-x-1">→</span>
+                {u.text && <span className="hidden min-w-0 flex-1 truncate text-[13px] font-light text-foreground/65 md:block">{u.text}</span>}
+                <span aria-hidden="true" className="shrink-0 pr-1 text-foreground/58 transition-transform duration-300 group-hover:translate-x-1">→</span>
               </button>
             </li>
           ))}
@@ -134,7 +134,7 @@ export default function UniverseList({ items }: { items?: Universe[] | null }) {
                     <h3 className="text-[26px] font-light leading-[1.05] tracking-tight">{cur.label}</h3>
                     {cur.text && <p className="mt-4 max-w-[36ch] text-[13px] font-light leading-relaxed text-foreground/70">{cur.text}</p>}
                   </div>
-                  <Link href={cur.href} className="font-info mt-6 w-fit text-[12px] lowercase tracking-[0.08em] text-foreground/55 transition-colors hover:text-foreground">
+                  <Link href={cur.href} className="font-info mt-6 w-fit text-[12px] lowercase tracking-[0.08em] text-foreground/72 transition-colors hover:text-foreground">
                     {ENTER[lang] ?? ENTER.en} →
                   </Link>
                 </motion.div>
