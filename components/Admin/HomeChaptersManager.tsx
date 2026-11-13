@@ -197,8 +197,8 @@ export default function HomeChaptersManager() {
                     <input className={inputClass} value={s.label} onChange={(e) => change(s.id, { label: e.target.value })} placeholder="Ex : FY'grances" />
                   </Field>
 
-                  <Field label="Texte court" hint="Affiché à côté du titre dans la liste, et dans la carte dépliée">
-                    <input className={inputClass} value={s.text ?? ""} maxLength={200} onChange={(e) => change(s.id, { text: e.target.value })} placeholder="Ex : Les parfums de la maison" />
+                  <Field label="Texte de la carte" hint="Le petit texte qui s'affiche sous le titre quand on touche la ligne (et à côté du titre sur grand écran)">
+                    <textarea rows={3} className={`${inputClass} h-auto py-3`} value={s.text ?? ""} maxLength={400} onChange={(e) => change(s.id, { text: e.target.value })} placeholder="Écris ici le texte de la carte (3 lignes environ)" />
                   </Field>
 
                   <Field label="Mène vers la page">

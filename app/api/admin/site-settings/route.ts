@@ -35,7 +35,7 @@ function cleanChapters(input: any) {
       label: String(s?.label || "").slice(0, 80),
       href: String(s?.href || "/").slice(0, 300),
       image: String(s?.image || "").slice(0, 600),
-      text: String(s?.text || "").slice(0, 200),
+      text: String(s?.text || "").slice(0, 400),
     }))
     .filter((s) => s.label)
     .slice(0, 12)
