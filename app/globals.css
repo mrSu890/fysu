@@ -823,6 +823,15 @@ html.rain .liquid-glass::after {
   100% { background-position: 27% -1000px, 71% -1000px, 30px 10px, 190px 140px, 0 0, 0 0, 0 0; animation-timing-function: ease-in-out; }
 }
 @keyframes rain-glass-in { to { opacity: 1; } }
+/* trace du doigt : le masque (voir FogLayer) efface la buée là où l'on est passé */
+html.rain .liquid-glass::after {
+  -webkit-mask-image: var(--fog-mask, none);
+  mask-image: var(--fog-mask, none);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
 @media (prefers-reduced-motion: reduce) {
   html.rain .liquid-glass::after { animation-duration: 0.01s; }
 }
