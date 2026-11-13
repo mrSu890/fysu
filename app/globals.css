@@ -410,9 +410,10 @@ body:not(:has(.admin-root)) h3.font-medium {
    3 · tout le reste           : très fin, faible opacité (comme « For him / For her »)
    Réglages : changer les 3 valeurs ci-dessous. */
 :root {
-  --ink-2: 0.85;
-  --ink-3: 0.58;
+  --ink-2: 0.9;
+  --ink-3: 0.72; /* mesuré : 5,7:1 minimum sur toutes les ambiances claires (avant 0.58 = 3,8:1 à l'aube, illisible) */
 }
+html.night { --ink-3: 0.66; }
 
 /* Niveau 1 */
 body:not(:has(.admin-root)) :is(main:not([style*="z-index"]), footer) h1 {
