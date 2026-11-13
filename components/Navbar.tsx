@@ -79,6 +79,75 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
+
+type LayerItem = { label: string; href: string; count?: number | null; rows?: boolean };
+type Layer = { title: string; items: LayerItem[] };
+
+/* Une couche du menu : elle recouvre la précédente, le texte apparaît en cascade */
+function MenuLayer({
+  layer,
+  onBack,
+  onPick,
+  onNavigate,
+  backLabel,
+}: {
+  layer: Layer;
+  onBack: () => void;
+  onPick: (item: LayerItem) => void;
+  onNavigate: () => void;
+  backLabel: string;
+}) {
+  const ease = [0.22, 1, 0.36, 1] as const;
+  return (
+    <motion.div
+      initial={{ x: "12%", opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: "6%", opacity: 0, transition: { duration: 0.18 } }}
+      transition={{ duration: 0.4, ease }}
+      className="px-6 pb-8"
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-6 flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] opacity-70 transition-opacity hover:opacity-100"
+      >
+        <ChevronDown size={14} className="rotate-90" /> {backLabel}
+      </button>
+      <p className="mb-6 text-5xl font-bold tracking-tighter">{layer.title}</p>
+      <ul className="flex flex-col gap-1 uppercase tracking-wider">
+        {layer.items.map((item, i) => {
+          const inner = (
+            <motion.span
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.55, ease, delay: 0.08 + i * 0.055 }}
+              className="flex items-baseline gap-2 py-2 text-2xl font-light"
+            >
+              {item.label}
+              {typeof item.count === "number" && (
+                <sup className="text-[10px] font-normal tracking-normal opacity-60">{item.count}</sup>
+              )}
+            </motion.span>
+          );
+          return (
+            <li key={item.href + item.label} className="overflow-hidden">
+              {item.rows ? (
+                <button type="button" onClick={() => onPick(item)} className="block w-full text-left">
+                  {inner}
+                </button>
+              ) : (
+                <Link href={item.href} onClick={onNavigate} className="block">
+                  {inner}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </motion.div>
+  );
+}
+
 function MobileMenu({
   activePanel,
   setActivePanel,
@@ -121,6 +190,47 @@ function MobileMenu({
   const isKiban = brandPage === "kiban";
   const isWave = brandPage === "thewave";
   const [kibanLogoSrc, setKibanLogoSrc] = useState<string | null>(null);
+  const [stack, setStack] = useState<Layer[]>([]);
+  useEffect(() => {
+    if (activePanel !== "menu") setStack([]);
+  }, [activePanel]);
+  const counts = React.useRef<Record<string, { total: number; rows: { id: string; title: string; count: number }[] }>>({});
+  const slugOf = (href: string) => href.replace(/^\//, "").split("?")[0];
+  const loadRows = async (href: string) => {
+    const slug = slugOf(href);
+    if (counts.current[slug]) return counts.current[slug];
+    try {
+      const r = await fetch(`/api/pages/${slug}/rows`);
+      const j = await r.json();
+      counts.current[slug] = { total: j.total ?? 0, rows: j.rows ?? [] };
+    } catch {
+      counts.current[slug] = { total: 0, rows: [] };
+    }
+    return counts.current[slug];
+  };
+  const openLayer = async (title: string, items: MenuLink[], withRows: boolean) => {
+    setStack((st) => [...st, { title, items: items.map((i) => ({ label: i.label, href: i.href, rows: withRows })) }]);
+    if (!withRows) return;
+    const filled = await Promise.all(items.map(async (i) => ({ ...i, c: await loadRows(i.href) })));
+    setStack((st) =>
+      st.map((l) =>
+        l.title === title ? { ...l, items: l.items.map((it, k) => ({ ...it, count: filled[k]?.c.total ?? null })) } : l
+      )
+    );
+  };
+  const pickItem = async (item: LayerItem) => {
+    const c = await loadRows(item.href);
+    setStack((st) => [
+      ...st,
+      {
+        title: item.label,
+        items: [
+          { label: "View all", href: item.href, count: c.total },
+          ...c.rows.map((r) => ({ label: r.title, href: `${item.href}?cat=${r.id}`, count: r.count })),
+        ],
+      },
+    ]);
+  };
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -517,6 +627,22 @@ function MobileMenu({
                 className="relative max-h-[calc(100dvh-7rem)] overflow-y-auto"
                 onPointerLeave={() => setPreview(null)}
               >
+                {stack.length > 0 ? (
+                  <AnimatePresence mode="wait" initial={false}>
+                    <MenuLayer
+                      key={stack.length}
+                      layer={stack[stack.length - 1]}
+                      backLabel="Back"
+                      onBack={() => setStack((st) => st.slice(0, -1))}
+                      onPick={pickItem}
+                      onNavigate={() => {
+                        setStack([]);
+                        handleMobileLinkClick();
+                      }}
+                    />
+                  </AnimatePresence>
+                ) : (
+                <>
                 <div className="flex items-start justify-between px-6 pb-4">
                   <p className="text-5xl font-bold tracking-tighter">{t("menu")}</p>
                   <motion.button
@@ -541,57 +667,19 @@ function MobileMenu({
                     const isProjects = link.href === "#projects";
                     const isClothing = link.href === "#clothing";
                     const isAccordion = link.href === "#" || isProjects || isClothing;
-                    const isOpen = isProjects ? projectsOpen : isClothing ? clothingOpen : collectionOpen;
-                    const toggle = () =>
-                      isProjects
-                        ? setProjectsOpen(!projectsOpen)
-                        : isClothing
-                          ? setClothingOpen(!clothingOpen)
-                          : setCollectionOpen(!collectionOpen);
                     const items = isProjects ? projects : isClothing ? clothing : collections;
                     return isAccordion ? (
-                      <React.Fragment key={link.href}>
-                        <li>
-                          <button
-                            onPointerEnter={(e) => hoverLink(e, link)}
-                            onClick={toggle}
-                            className="flex items-center justify-between w-full py-2 border-b border-current/20"
-                            type="button"
-                          >
-                            {link.label}
-                            <ChevronDown
-                              size={16}
-                              className={`transition-transform ${
-                                isOpen ? "rotate-180" : ""
-                              }`}
-                            />
-                          </button>
-                        </li>
-
-                        <AnimatePresence>
-                          {isOpen && (
-                            <motion.ul
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="pl-4 space-y-2 text-xs overflow-hidden"
-                            >
-                              {items.map((col) => (
-                                <li key={col.label}>
-                                  <Link
-                                    href={col.href}
-                                    onPointerEnter={(e) => hoverLink(e, col)}
-                                    onClick={handleMobileLinkClick}
-                                    className="block py-1 border-b border-current/10"
-                                  >
-                                    {col.label}
-                                  </Link>
-                                </li>
-                              ))}
-                            </motion.ul>
-                          )}
-                        </AnimatePresence>
-                      </React.Fragment>
+                      <li key={link.href}>
+                        <button
+                          onPointerEnter={(e) => hoverLink(e, link)}
+                          onClick={() => openLayer(link.label, items, isClothing)}
+                          className="flex items-center justify-between w-full py-2 border-b border-current/20"
+                          type="button"
+                        >
+                          {link.label}
+                          <ChevronDown size={16} className="-rotate-90" />
+                        </button>
+                      </li>
                     ) : (
                       <li key={link.href}>
                         <Link
@@ -646,6 +734,9 @@ function MobileMenu({
                     </Link>
                   </li>
                 </ul>
+
+                </>
+                )}
 
                 {/* aperçu : s'ouvre au survol, se referme quand la souris s'éloigne (grand écran seulement) */}
                 <AnimatePresence>
