@@ -30,7 +30,6 @@ export default function ProfileEditor({
   fallbackName,
   onClose,
   onSaved,
-  onOpenAvatar,
 }: {
   profile: ProfileData
   avatars: GalleryAvatar[]
@@ -39,7 +38,6 @@ export default function ProfileEditor({
   fallbackName: string
   onClose: () => void
   onSaved: () => void
-  onOpenAvatar?: () => void
 }) {
   const [username, setUsername] = useState(profile.username ?? "")
   const [displayName, setDisplayName] = useState(profile.display_name ?? "")
