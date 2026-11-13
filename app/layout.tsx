@@ -103,6 +103,7 @@ export default async function RootLayout({
                 if (man) { var sv = parseFloat(localStorage.getItem("fysu-mood-v")); if (!isNaN(sv)) v = sv; }
                 var hh = (((v % 1440) + 1440) % 1440) / 60;
                 var mood = (hh >= 20 || hh < 5) ? "night" : hh < 8 ? "dawn" : hh < 15 ? "day" : hh < 18 ? "afternoon" : "night";
+                if (location.pathname.indexOf("/kiban-collector") === 0) mood = "night";
                 var dark = mood === "night" || mood === "sunset";
                 localStorage.setItem("theme", dark ? "dark" : "light");
                 var root = document.documentElement;

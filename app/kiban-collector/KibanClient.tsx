@@ -1,6 +1,7 @@
 "use client"
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
+import { applyMood, currentMood } from "@/lib/mood"
 import { useLocale } from "next-intl"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
@@ -50,21 +51,12 @@ export default function KibanCollectorClient({ initialProducts }: { initialProdu
     sort: "default",
   })
 
-  // Cette page existe uniquement en mode sombre
+  // Cette page existe uniquement en mode nuit (l'ambiance « nuit » du site, comme les autres ambiances)
   useLayoutEffect(() => {
-    const html = document.documentElement
-    html.classList.add("dark")
-    // marque la page : elle garde son fond sombre d'origine
-    html.classList.add("kiban-dark")
-
+    applyMood("night")
     return () => {
-      html.classList.remove("kiban-dark")
-      // En partant, on remet le mode choisi par le visiteur
-      let saved: string | null = null
-      try {
-        saved = localStorage.getItem("theme")
-      } catch {}
-      if (saved !== "dark") html.classList.remove("dark")
+      // en partant, on remet l'ambiance du visiteur (heure réelle ou choix du soleil)
+      window.setTimeout(() => applyMood(currentMood()), 0)
     }
   }, [])
 
@@ -95,10 +87,6 @@ export default function KibanCollectorClient({ initialProducts }: { initialProdu
       .filter((cat) => cat.products.length > 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale, products, filters])
-
-  const goTo = (id: string) => {
-    document.getElementById(`kiban-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }
 
   return (
     <>
@@ -137,23 +125,6 @@ export default function KibanCollectorClient({ initialProducts }: { initialProdu
         {products.length > 0 && (
           <>
             <ProductFilters filters={filters} setFilters={setFilters} />
-
-            {/* raccourcis vers les catégories */}
-            {categories.length > 1 && (
-              <div className="mx-auto mb-4 mt-6 flex w-full max-w-6xl flex-wrap justify-center gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => goTo(cat.id)}
-                    className="cursor-pointer touch-manipulation rounded-full px-4 py-2 text-xs transition active:scale-95"
-                    style={{ border: "1px solid color-mix(in srgb, currentColor 25%, transparent)" }}
-                  >
-                    {cat.title}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {categories.map((cat, index) => (
               <section

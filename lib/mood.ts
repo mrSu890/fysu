@@ -75,8 +75,7 @@ export function currentMood(): Mood {
 const isForced = (html: HTMLElement) =>
   html.classList.contains("wave-page") ||
   html.classList.contains("arcade-page") ||
-  html.classList.contains("event-page") ||
-  window.location.pathname.startsWith("/kiban-collector")
+  html.classList.contains("event-page")
 
 // couleur de la barre d'état du téléphone (haut de l'écran) : elle suit l'ambiance
 const THEME_COLORS: Record<Mood, string> = {
@@ -137,6 +136,8 @@ function setThemeColor(mood: Mood, keepOwn: boolean) {
 // le fondu des ambiances est fait par les variables de couleur de globals.css (voir « SYNCHRO DES AMBIANCES »)
 export function applyMood(mood: Mood) {
   const html = document.documentElement
+  // Kiban Collector : toujours la nuit, comme n'importe quelle ambiance (mêmes couleurs, même verre)
+  if (window.location.pathname.startsWith("/kiban-collector")) mood = "night"
   const admin = window.location.pathname.startsWith("/admin")
   html.classList.toggle("dawn", mood === "dawn" && !admin)
   html.classList.toggle("afternoon", mood === "afternoon" && !admin)
