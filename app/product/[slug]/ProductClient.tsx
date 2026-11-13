@@ -291,7 +291,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
         src={img.url}
         alt={product.name}
         fill
-        className="object-cover object-top"
+        className={`object-cover object-top ${mode === "coming_soon" ? "scale-110 blur-2xl" : ""}`}
         style={imageCrop}
         priority={extra.priority}
       />

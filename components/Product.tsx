@@ -53,6 +53,8 @@ const Product = ({
     getEffectiveAvailability(product),
     getAvailabilityCopy(locale)
   )
+  const modeNow = getEffectiveAvailability(product)
+  const blurred = modeNow === "sold_out" || modeNow === "coming_soon"
   const lowN = getEffectiveAvailability(product) === "available" ? lowStockCount(product) : null
   const lowText = lowN ? lowStockText(lowN, locale) : null
   const router = useRouter()
@@ -328,7 +330,7 @@ const Product = ({
           }
         >
           {images.map((src, index) => (
-            <div key={index} className={`relative h-full w-full flex-shrink-0 ${showArrows ? "" : "snap-start snap-always"}`}>
+            <div key={index} className={`relative h-full w-full flex-shrink-0 ${blurred ? "[&_img]:scale-110 [&_img]:blur-2xl" : ""} ${showArrows ? "" : "snap-start snap-always"}`}>
               <Image
                 src={src}
                 alt={`${product.name}-${index}`}

@@ -855,3 +855,14 @@ a:has(video) {
   user-select: none;
   -webkit-user-drag: none;
 }
+
+/* curseur rond (ordinateur) : on cache le curseur système, sauf dans les champs de texte */
+html.fysu-cursor,
+html.fysu-cursor * {
+  cursor: none !important;
+}
+html.fysu-cursor input,
+html.fysu-cursor textarea,
+html.fysu-cursor [contenteditable="true"] {
+  cursor: text !important;
+}
