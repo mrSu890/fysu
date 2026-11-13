@@ -105,6 +105,16 @@ export default function HomeStage({
     measure();
   }, [measure]);
 
+  // retour depuis une fiche produit : on retrouve la page comme on l'a laissée (même image ouverte), sans animation
+  useLayoutEffect(() => {
+    try {
+      const v = sessionStorage.getItem("fysu-home-active");
+      const i = v === null ? NaN : parseInt(v, 10);
+      if (Number.isInteger(i) && i >= 0 && i < n) setActive(i);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const ro = new ResizeObserver(() => measure());
     if (wrap.current) ro.observe(wrap.current);
@@ -122,6 +132,9 @@ export default function HomeStage({
     window.clearTimeout(animTimer.current);
     setAnim(!calm());
     setActive(i);
+    try {
+      sessionStorage.setItem("fysu-home-active", String(i));
+    } catch {}
     animTimer.current = window.setTimeout(() => setAnim(false), MOVE + 100);
   };
   useEffect(() => () => window.clearTimeout(animTimer.current), []);
