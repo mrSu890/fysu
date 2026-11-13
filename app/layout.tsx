@@ -10,6 +10,7 @@ import DecorativeDots from "@/components/DecorativeDots";
 import ScrollReveal from "@/components/ScrollReveal";
 import ClockWeather from "@/components/ClockWeather";
 import RainLayer from "@/components/RainLayer";
+import FogLayer from "@/components/FogLayer";
 import SiteLoader from "@/components/SiteLoader";
 import PixelTransition from "@/components/PixelTransition";
 import ProductHero from "@/components/ProductHero";
@@ -178,6 +179,7 @@ export default async function RootLayout({
         {/* Heure + météo, très discrètes, en bas à droite ; gère aussi le mode sombre automatique */}
         <ClockWeather />
         <RainLayer />
+        <FogLayer />
         <ClickFeedback />
       </body>
     </html>
