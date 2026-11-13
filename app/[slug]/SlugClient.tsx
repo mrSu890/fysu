@@ -9,6 +9,7 @@ import PageBar from "@/components/PageBar"
 import { expandByColor, variantKey } from "@/lib/expandColors"
 import { usePersistedFilters, useScrollRestore } from "@/lib/useScrollRestore"
 import ProductFilters from "@/components/ProductFilters"
+import ProductGrid from "@/components/ProductGrid"
 import StoryBar from "@/components/Stories/StoryBar"
 import { ProductType } from "@/types/product"
 import ThemeToggle from "@/components/ThemeToggle"
@@ -177,63 +178,10 @@ export default function CollectionPage({
               <ProductFilters filters={filters} setFilters={setFilters} />
             )}
 
-            {visibleSections
-              .map((section, sectionIndex) => {
-                return (
-                  <div key={section.id} className="mb-20">
-
-                    {/* SECTION TITLE */}
-                    <h2 className="text-xl font-pagetitle mb-6">
-                      {section.title}
-                      <sup className="ml-2 align-top text-[10px]">
-                        <CountUp value={section.filteredProducts.length} prefix="(" suffix=")" />
-                      </sup>
-                    </h2>
-
-                    {/* PRODUCTS HORIZONTAL SCROLL */}
-                    <div className="relative">
-                      <div 
-                        ref={scrollRef}
-                        data-row-memory={String(section.id)}
-                        className="
-                          flex
-                          gap-6
-                          overflow-x-auto
-                          overflow-y-hidden
-                          scroll-smooth
-                          snap-x snap-mandatory
-                          no-scrollbar
-                          pb-2
-                          touch-pan-x
-                          overscroll-x-contain
-                        "
-                      >
-
-                        {expandByColor(section.filteredProducts).map((product, index) => (
-                          <div
-                            key={variantKey(product)}
-                            className="
-                              min-w-[220px] 
-                              sm:min-w-[260px] 
-                              md:min-w-[300px] 
-                              snap-start
-                              flex-shrink-0
-                            "
-                          >
-                            <Product
-                              showArrows
-                              product={product}
-                              scrollRef={scrollRef}
-                              isFirst={sectionIndex === 0 && index === 0}
-                            />
-                          </div>
-                        ))}
-
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+            <ProductGrid
+              groups={visibleSections.map((section) => ({ id: String(section.id), title: section.title, products: expandByColor(section.filteredProducts) }))}
+              who={slug === "for-her" ? "women" : slug === "for-him" ? "men" : null}
+            />
           </>
         )}
       </div>

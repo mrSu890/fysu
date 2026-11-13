@@ -9,6 +9,7 @@ import { expandByColor, variantKey } from "@/lib/expandColors"
 import GridToggle, { useGridCols } from "@/components/GridToggle"
 import { usePersistedFilters, useScrollRestore } from "@/lib/useScrollRestore"
 import ProductFilters from "@/components/ProductFilters"
+import ProductGrid, { type GridGroup } from "@/components/ProductGrid"
 import ThemeToggle from "@/components/ThemeToggle"
 import StoryBar from "@/components/Stories/StoryBar"
 import { useTranslations } from "next-intl"
@@ -68,6 +69,23 @@ export default function CollectionClient({
   }
 
   const hasHero = Boolean(page.hero_image)
+  // catégories de la collection (celles des produits) : une pastille par catégorie
+  const collectionGroups: GridGroup[] = (() => {
+    const map = new Map<string, GridGroup>()
+    for (const p of expandByColor(filteredProducts)) {
+      const name = String((p as any).category ?? (p as any).categories?.name ?? "").trim()
+      if (!name) continue
+      const g = map.get(name) ?? { id: name, title: name, products: [] }
+      g.products.push(p)
+      map.set(name, g)
+    }
+    const groups = Array.from(map.values())
+    const named = groups.reduce((n, g) => n + g.products.length, 0)
+    // produits sans catégorie : regroupés à part pour que « Tout » les montre
+    const rest = expandByColor(filteredProducts).filter((p) => !String((p as any).category ?? (p as any).categories?.name ?? "").trim())
+    if (rest.length) groups.push({ id: "__other", title: "—", products: rest })
+    return named === 0 ? [{ id: "__all", title: "—", products: rest }] : groups
+  })()
 
     return (
       <>
@@ -189,20 +207,7 @@ export default function CollectionClient({
                 <ProductFilters filters={filters} setFilters={setFilters} />
               )}
               <div className={`relative ${hasHero ? "top-4" : "top-12"}`}>
-                <GridToggle cols={gridCols} setCols={setGridCols} />
-                <div
-                  className={`
-                    grid
-                    ${gridCols === 1 ? "grid-cols-1" : "grid-cols-2"}
-                    gap-x-4 gap-y-8
-                    md:grid-cols-3
-                    lg:grid-cols-4
-                  `}
-                >
-                  {expandByColor(filteredProducts).map((product) => (
-                    <Product key={variantKey(product)} product={product} />
-                  ))}
-                </div>
+                <ProductGrid groups={collectionGroups} who={null} />
               </div>
             </>
           )}
