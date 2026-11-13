@@ -60,14 +60,6 @@ type Stats = {
   }[]
 }
 
-const SHORTCUTS = [
-  { label: "Accueil (hero)", href: "/admin/home-images", icon: Images },
-  { label: "Collections & pages", href: "/admin/pages", icon: Layers },
-  { label: "Stories", href: "/admin/stories", icon: Clapperboard },
-  { label: "About", href: "/admin/about", icon: ScrollText },
-  { label: "Confidentialité", href: "/admin/legal", icon: Scale },
-  { label: "Pages légales", href: "/admin/legal-pages", icon: FileText },
-]
 
 /* ====================================================================
    Graphique : ventes par jour, 30 jours (une seule série, une seule teinte)
@@ -274,9 +266,7 @@ export default function AdminHome() {
   return (
     <>
       <PageHeader
-        eyebrow="Aperçu"
-        title="Bonjour 👋"
-        description="Ce qui demande ton attention aujourd'hui."
+        title="Aperçu"
         actions={
           <AdminButton href="/admin/catalog" variant="primary" icon={Plus}>
             Nouveau produit
@@ -295,16 +285,16 @@ export default function AdminHome() {
         <StatCard
           label="À expédier"
           value={stats?.toShip ?? 0}
-          hint="commandes payées"
           icon={PackageCheck}
+          tone="green"
           href="/admin/orders"
           loading={loading}
         />
         <StatCard
           label="Demandes à traiter"
           value={stats?.newRequests ?? 0}
-          hint="me prévenir et devis"
           icon={Inbox}
+          tone="orange"
           href="/admin/requests"
           loading={loading}
         />
@@ -315,23 +305,23 @@ export default function AdminHome() {
         <StatCard
           label="Ventes, 7 jours"
           value={formatMoney(stats?.revenue7)}
-          hint={`${stats?.orders7 ?? 0} commande(s)`}
           icon={TrendingUp}
+          tone="green"
           loading={loading}
         />
         <StatCard
           label="Ventes, 30 jours"
           value={formatMoney(stats?.revenue30)}
-          hint={`${stats?.orders30 ?? 0} commande(s)`}
           icon={Wallet}
+          tone="green"
           loading={loading}
         />
         <div className="col-span-2 lg:col-span-1">
           <StatCard
             label="Panier moyen, 30 jours"
             value={formatMoney(stats?.averageBasket)}
-            hint="par commande"
             icon={ShoppingBasket}
+            tone="blue"
             loading={loading}
           />
         </div>
@@ -340,7 +330,6 @@ export default function AdminHome() {
       {/* Graphique */}
       <Panel
         title="Ventes des 30 derniers jours"
-        description="Commandes payées et expédiées, par jour"
         className="mt-6"
       >
         {loading ? <Skeleton className="h-48 w-full" /> : stats && <SalesChart days={stats.days} />}
@@ -390,7 +379,7 @@ export default function AdminHome() {
           )}
         </Panel>
 
-        <Panel title="Produits les plus vendus" description="Sur les 30 derniers jours">
+        <Panel title="Produits les plus vendus">
           {loading ? (
             <div className="space-y-3">
               {[0, 1, 2, 3].map((i) => (
@@ -414,14 +403,13 @@ export default function AdminHome() {
               ))}
             </ul>
           ) : (
-            <EmptyState title="Pas encore de ventes" description="Le classement apparaît après les premières commandes." />
+            <EmptyState title="Pas encore de ventes" />
           )}
         </Panel>
       </div>
 
       <Panel
         title="Stock à surveiller"
-        description={`Tailles actives avec ${stats?.lowStockThreshold ?? 3} pièces ou moins`}
         className="mt-4"
         action={
           <Link href="/admin/catalog" style={{ color: "#3d3a35" }} className="text-xs underline">
@@ -450,14 +438,7 @@ export default function AdminHome() {
                       {s.color ? `${s.color} · ` : ""}Taille {s.size}
                     </p>
                   </div>
-                  <span
-                    className={[
-                      "rounded-full px-2.5 py-1 text-[11px] font-medium",
-                      s.stock <= 0
-                        ? "bg-[#f8d9d9] text-[#7a1f1f]"
-                        : "bg-[#fbe6c8] text-[#7a4a0a]",
-                    ].join(" ")}
-                  >
+                  <span className={["text-xs font-medium", s.stock <= 0 ? "text-[#c0392b]" : "text-[#b86e00]"].join(" ")}>
                     {s.stock <= 0 ? "Épuisé" : `${s.stock} restant(s)`}
                   </span>
                 </Link>
@@ -465,7 +446,7 @@ export default function AdminHome() {
             ))}
           </ul>
         ) : (
-          <EmptyState title="Tout est bien approvisionné" description="Aucune taille en stock bas." />
+          <EmptyState title="Tout est bien approvisionné" />
         )}
       </Panel>
 
@@ -495,22 +476,6 @@ export default function AdminHome() {
         </div>
       </Panel>
 
-      {/* Raccourcis contenu */}
-      <Panel title="Contenu du site" description="Accès rapide aux panneaux de contenu" className="mt-6">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {SHORTCUTS.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              style={{ color: "#171717" }}
-              className="flex flex-col gap-3 rounded-2xl border border-[#eee9e1] bg-[#faf8f5] p-4 text-sm transition hover:bg-white hover:shadow-sm"
-            >
-              <Icon size={18} strokeWidth={1.6} />
-              {label}
-            </Link>
-          ))}
-        </div>
-      </Panel>
     </>
   )
 }

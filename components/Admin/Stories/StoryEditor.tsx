@@ -283,8 +283,8 @@ export default function StoryEditor({
 
       message.success(
         editingStory
-          ? "Story updated 🎉"
-          : "Story created 🎉"
+          ? "Story updated"
+          : "Story created"
       );
 
       form.resetFields();
@@ -297,7 +297,7 @@ export default function StoryEditor({
       }
 
       if (onSaved) {
-        onSaved(); // 🔥 refresh manager
+        onSaved(); // refresh manager
       }
 
     } catch {

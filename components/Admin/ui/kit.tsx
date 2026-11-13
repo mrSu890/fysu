@@ -1,7 +1,57 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import type { LucideIcon } from "lucide-react"
+import { Info, type LucideIcon } from "lucide-react"
+
+/* ---------- CODE COULOR (un sens = une couleur, partout dans l'admin) ----------
+   vert   : argent et ventes (commandes, codes promo)
+   bleu   : catalogue et personnes (produits, clients)
+   orange : à traiter (demandes)
+   rose   : l'accueil et l'image du site
+   violet : le contenu éditorial (stories, musique, FY'grances, about)
+   gris   : légal et réglages, aperçu
+   -------------------------------------------------------------------------- */
+export type TileTone = "green" | "blue" | "orange" | "pink" | "purple" | "gray"
+const TILE: Record<TileTone, string> = {
+  green: "#34c759",
+  blue: "#0a84ff",
+  orange: "#ff9500",
+  pink: "#ff375f",
+  purple: "#af52de",
+  gray: "#8e8e93",
+}
+
+/* Pastille d'icône : carré arrondi coloré, pictogramme blanc (comme les réglages iOS) */
+export function IconTile({ icon: Icon, tone = "gray", size = 28 }: { icon: LucideIcon; tone?: TileTone; size?: number }) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center text-white"
+      style={{ width: size, height: size, borderRadius: size * 0.27, background: TILE[tone] }}
+    >
+      <Icon size={Math.round(size * 0.58)} strokeWidth={2} />
+    </span>
+  )
+}
+
+/* Texte d'aide : replié derrière une petite icône « i » (un toucher l'ouvre) */
+export function Hint({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Aide"
+        aria-expanded={open}
+        className="ml-1.5 inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full align-middle text-[#9a948a] hover:text-[#171717]"
+      >
+        <Info size={14} strokeWidth={1.75} />
+      </button>
+      {open && <span className="mt-1.5 block max-w-2xl text-xs font-normal normal-case tracking-normal text-[#7a756d]">{children}</span>}
+    </>
+  )
+}
 
 /* ====================================================================
    KIT DE COMPOSANTS COMMUNS À TOUS LES PANNEAUX ADMIN
@@ -23,13 +73,10 @@ export function PageHeader({
   return (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        {eyebrow && (
-          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.22em] text-[#9a948a]">
-            {eyebrow}
-          </p>
-        )}
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
-        {description && <p className="mt-1.5 max-w-2xl text-sm text-[#7a756d]">{description}</p>}
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          {title}
+          {description && <Hint>{description}</Hint>}
+        </h1>
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -59,8 +106,12 @@ export function Panel({
       {(title || action) && (
         <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-6 sm:pt-6">
           <div className="min-w-0">
-            {title && <h2 className="text-base font-semibold tracking-tight">{title}</h2>}
-            {description && <p className="mt-0.5 text-xs text-[#7a756d]">{description}</p>}
+            {title && (
+              <h2 className="text-base font-semibold tracking-tight">
+                {title}
+                {description && <Hint>{description}</Hint>}
+              </h2>
+            )}
           </div>
           {action}
         </div>
@@ -111,6 +162,7 @@ export function StatCard({
   value,
   hint,
   icon: Icon,
+  tone = "gray",
   href,
   loading,
 }: {
@@ -118,6 +170,7 @@ export function StatCard({
   value: React.ReactNode
   hint?: string
   icon?: LucideIcon
+  tone?: TileTone
   href?: string
   loading?: boolean
 }) {
@@ -125,11 +178,7 @@ export function StatCard({
     <div className="flex h-full flex-col justify-between gap-6 rounded-3xl border border-[#e9e5df] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between">
         <p className="text-xs text-[#7a756d]">{label}</p>
-        {Icon && (
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#171717]/[0.05]">
-            <Icon size={15} strokeWidth={1.75} />
-          </span>
-        )}
+        {Icon && <IconTile icon={Icon} tone={tone} size={30} />}
       </div>
       <div>
         {loading ? (
@@ -137,7 +186,7 @@ export function StatCard({
         ) : (
           <p className="text-2xl font-semibold tracking-tight sm:text-[28px]">{value}</p>
         )}
-        {hint && <p className="mt-1 text-xs text-[#9a948a]">{hint}</p>}
+        {/* hint volontairement non affiché : le chiffre suffit */}
       </div>
     </div>
   )

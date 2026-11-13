@@ -30,7 +30,7 @@ export type Story = {
 
 type Props = {
   onEdit?: (story: Story) => void;
-  refreshKey?: number; // 🔥 Permet de forcer refresh depuis parent
+  refreshKey?: number; // Permet de forcer refresh depuis parent
 };
 
 export default function StoryManager({ onEdit, refreshKey }: Props) {
