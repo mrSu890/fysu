@@ -83,7 +83,8 @@ function MenuIcon({ open }: { open: boolean }) {
 type LayerItem = { label: string; href: string; count?: number | null; rows?: boolean };
 type Layer = { title: string; items: LayerItem[] };
 
-/* Une couche du menu : elle recouvre la précédente, le texte apparaît en cascade */
+/* Couche du menu : même liste que le menu principal (mêmes lignes, même police) ;
+   seuls les textes changent, en cascade, dans la même fenêtre */
 function MenuLayer({
   layer,
   onBack,
@@ -98,53 +99,63 @@ function MenuLayer({
   backLabel: string;
 }) {
   const ease = [0.22, 1, 0.36, 1] as const;
-  return (
-    <motion.div
-      initial={{ x: "12%", opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: "6%", opacity: 0, transition: { duration: 0.18 } }}
-      transition={{ duration: 0.4, ease }}
-      className="px-6 pb-8"
+  const line = "block w-full overflow-hidden border-b border-current/20 py-2 text-left";
+  const text = (i: number, children: React.ReactNode) => (
+    <motion.span
+      initial={{ y: "110%", opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease, delay: 0.04 + i * 0.05 }}
+      className="flex items-baseline gap-2"
     >
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-6 flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] opacity-70 transition-opacity hover:opacity-100"
-      >
-        <ChevronDown size={14} className="rotate-90" /> {backLabel}
-      </button>
-      <p className="mb-6 text-5xl font-bold tracking-tighter">{layer.title}</p>
-      <ul className="flex flex-col gap-1 uppercase tracking-wider">
-        {layer.items.map((item, i) => {
-          const inner = (
-            <motion.span
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.55, ease, delay: 0.08 + i * 0.055 }}
-              className="flex items-baseline gap-2 py-2 text-2xl font-light"
-            >
-              {item.label}
-              {typeof item.count === "number" && (
-                <sup className="text-[10px] font-normal tracking-normal opacity-60">{item.count}</sup>
+      {children}
+    </motion.span>
+  );
+  return (
+    <motion.ul
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      className="flex flex-col gap-4 px-6 pb-6 text-sm uppercase tracking-wider [@media(hover:hover)_and_(pointer:fine)]:md:pr-[44%]"
+    >
+      <li>
+        <button type="button" onClick={onBack} className={`${line} opacity-70`}>
+          {text(
+            0,
+            <>
+              <ChevronDown size={14} className="rotate-90 self-center" /> {backLabel}
+            </>
+          )}
+        </button>
+      </li>
+      {layer.items.map((item, i) => (
+        <li key={item.href + item.label}>
+          {item.rows ? (
+            <button type="button" onClick={() => onPick(item)} className={line}>
+              {text(
+                i + 1,
+                <>
+                  {item.label}
+                  {typeof item.count === "number" && (
+                    <sup className="text-[9px] tracking-normal opacity-60">{item.count}</sup>
+                  )}
+                </>
               )}
-            </motion.span>
-          );
-          return (
-            <li key={item.href + item.label} className="overflow-hidden">
-              {item.rows ? (
-                <button type="button" onClick={() => onPick(item)} className="block w-full text-left">
-                  {inner}
-                </button>
-              ) : (
-                <Link href={item.href} onClick={onNavigate} className="block">
-                  {inner}
-                </Link>
+            </button>
+          ) : (
+            <Link href={item.href} onClick={onNavigate} className={line}>
+              {text(
+                i + 1,
+                <>
+                  {item.label}
+                  {typeof item.count === "number" && (
+                    <sup className="text-[9px] tracking-normal opacity-60">{item.count}</sup>
+                  )}
+                </>
               )}
-            </li>
-          );
-        })}
-      </ul>
-    </motion.div>
+            </Link>
+          )}
+        </li>
+      ))}
+    </motion.ul>
   );
 }
 
@@ -627,22 +638,6 @@ function MobileMenu({
                 className="relative max-h-[calc(100dvh-7rem)] overflow-y-auto"
                 onPointerLeave={() => setPreview(null)}
               >
-                {stack.length > 0 ? (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <MenuLayer
-                      key={stack.length}
-                      layer={stack[stack.length - 1]}
-                      backLabel="Back"
-                      onBack={() => setStack((st) => st.slice(0, -1))}
-                      onPick={pickItem}
-                      onNavigate={() => {
-                        setStack([]);
-                        handleMobileLinkClick();
-                      }}
-                    />
-                  </AnimatePresence>
-                ) : (
-                <>
                 <div className="flex items-start justify-between px-6 pb-4">
                   <p className="text-5xl font-bold tracking-tighter">{t("menu")}</p>
                   <motion.button
@@ -662,6 +657,21 @@ function MobileMenu({
                   </motion.button>
                 </div>
 
+                {stack.length > 0 ? (
+                  <AnimatePresence mode="wait" initial={false}>
+                    <MenuLayer
+                      key={stack.length}
+                      layer={stack[stack.length - 1]}
+                      backLabel="Back"
+                      onBack={() => setStack((st) => st.slice(0, -1))}
+                      onPick={pickItem}
+                      onNavigate={() => {
+                        setStack([]);
+                        handleMobileLinkClick();
+                      }}
+                    />
+                  </AnimatePresence>
+                ) : (
                 <ul className="flex flex-col gap-4 uppercase text-sm tracking-wider px-6 pb-6 [@media(hover:hover)_and_(pointer:fine)]:md:pr-[44%]">
                   {links.map((link) => {
                     const isProjects = link.href === "#projects";
@@ -735,7 +745,6 @@ function MobileMenu({
                   </li>
                 </ul>
 
-                </>
                 )}
 
                 {/* aperçu : s'ouvre au survol, se referme quand la souris s'éloigne (grand écran seulement) */}
