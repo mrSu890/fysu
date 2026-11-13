@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { RAIN_EVENT } from "@/lib/rain"
 
-/* Buée du mode pluie : une vitre embuée sur toute la page, parsemée de gouttelettes.
+/* Buée du mode pluie : uniquement sur les éléments en verre (barre de navigation, menu, pastilles), parsemés de gouttelettes.
    Le doigt / la souris dessine dans la buée (trace claire et douce) qui se reforme lentement ;
    de temps en temps une goutte glisse et laisse un sillage. Ne reçoit aucun toucher. */
 
@@ -13,11 +13,11 @@ const HIDDEN = ["/admin", "/games", "/thewave", "/checkout", "/success", "/passw
 // couleur de la buée selon l'ambiance
 function fogTone(): [number, number, number, number] {
   const c = document.documentElement.classList
-  if (c.contains("night")) return [150, 166, 188, 0.5]
-  if (c.contains("dawn")) return [206, 216, 222, 0.42]
-  if (c.contains("afternoon")) return [176, 180, 172, 0.42]
-  if (c.contains("sunset")) return [212, 202, 188, 0.42]
-  return [232, 236, 240, 0.42]
+  if (c.contains("night")) return [150, 166, 188, 0.36]
+  if (c.contains("dawn")) return [206, 216, 222, 0.3]
+  if (c.contains("afternoon")) return [176, 180, 172, 0.3]
+  if (c.contains("sunset")) return [212, 202, 188, 0.3]
+  return [232, 236, 240, 0.3]
 }
 
 export default function FogLayer() {
@@ -49,6 +49,8 @@ export default function FogLayer() {
     const mask = document.createElement("canvas")
     const mctx = mask.getContext("2d")!
     // « tex » = la texture de la buée (voile + gouttelettes), dessinée une seule fois
+    const comp = document.createElement("canvas")
+    const cctx = comp.getContext("2d")!
     const tex = document.createElement("canvas")
     const tctx = tex.getContext("2d")!
     let tone = fogTone()
@@ -74,11 +76,11 @@ export default function FogLayer() {
         tctx.fillRect(x - rad, y - rad, rad * 2, rad * 2)
       }
       // gouttelettes : petits anneaux sombres avec un reflet clair
-      const n = Math.round((w * h) / 520)
+      const n = Math.round((w * h) / 380)
       for (let i = 0; i < n; i++) {
         const x = Math.random() * w
         const y = Math.random() * h
-        const rad = 0.8 + Math.random() * Math.random() * 3.4
+        const rad = 0.7 + Math.random() * Math.random() * 2.6
         tctx.beginPath()
         tctx.arc(x, y, rad, 0, Math.PI * 2)
         tctx.fillStyle = `rgba(20,26,32,${0.1 + Math.random() * 0.12})`
@@ -97,6 +99,8 @@ export default function FogLayer() {
       canvas.height = h
       mask.width = w
       mask.height = h
+      comp.width = w
+      comp.height = h
       mctx.fillStyle = "#fff"
       mctx.fillRect(0, 0, w, h)
       buildTexture()
@@ -114,7 +118,7 @@ export default function FogLayer() {
     /* ---- essuyer ---- */
     let lx = -1
     let ly = -1
-    const brush = Math.max(22, Math.min(34, w / 28))
+    const brush = 16
     const wipeAt = (x: number, y: number) => {
       mctx.globalCompositeOperation = "destination-out"
       const steps = lx < 0 ? 1 : Math.max(1, Math.ceil(Math.hypot(x - lx, y - ly) / (brush * 0.35)))
@@ -153,8 +157,21 @@ export default function FogLayer() {
     type Run = { x: number; y: number; r: number; v: number; life: number }
     const runs: Run[] = []
     let nextRun = 0
+    type G = { l: number; t: number; w: number; h: number; r: number }
+    let glass: G[] = []
+    const readGlass = () => {
+      glass = Array.from(document.querySelectorAll(".liquid-glass"))
+        .map((el) => {
+          const b = el.getBoundingClientRect()
+          const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
+          return { l: b.left, t: b.top, w: b.width, h: b.height, r: Math.min(r, b.width / 2, b.height / 2) }
+        })
+        .filter((g) => g.w > 24 && g.h > 24 && g.t < h && g.t + g.h > 0 && g.l < w && g.l + g.w > 0)
+    }
     const spawn = () => {
-      runs.push({ x: Math.random() * w, y: Math.random() * h * 0.7, r: 2.4 + Math.random() * 2.4, v: 0, life: 1.8 + Math.random() * 2.6 })
+      if (!glass.length) return
+      const g = glass[Math.floor(Math.random() * glass.length)]
+      runs.push({ x: g.l + 10 + Math.random() * Math.max(1, g.w - 20), y: g.t + Math.random() * g.h * 0.5, r: 1.8 + Math.random() * 1.8, v: 0, life: 1.2 + Math.random() * 1.8 })
     }
 
     let last = performance.now()
@@ -162,6 +179,7 @@ export default function FogLayer() {
       const dt = Math.min(0.05, (t - last) / 1000)
       last = t
       frame++
+      if (frame % 3 === 1) readGlass()
 
       // la buée se reforme doucement
       if (frame % 4 === 0) {
@@ -198,12 +216,26 @@ export default function FogLayer() {
       mctx.globalCompositeOperation = "source-over"
 
       // assemblage : texture × masque, puis les gouttes visibles par-dessus
-      ctx.globalCompositeOperation = "source-over"
+      cctx.globalCompositeOperation = "source-over"
+      cctx.clearRect(0, 0, w, h)
+      cctx.drawImage(tex, 0, 0)
+      cctx.globalCompositeOperation = "destination-in"
+      cctx.drawImage(mask, 0, 0)
+      cctx.globalCompositeOperation = "source-over"
       ctx.clearRect(0, 0, w, h)
-      ctx.drawImage(tex, 0, 0)
-      ctx.globalCompositeOperation = "destination-in"
-      ctx.drawImage(mask, 0, 0)
-      ctx.globalCompositeOperation = "source-over"
+      ctx.save()
+      ctx.beginPath()
+      for (const g of glass) {
+        const r = g.r
+        ctx.moveTo(g.l + r, g.t)
+        ctx.arcTo(g.l + g.w, g.t, g.l + g.w, g.t + g.h, r)
+        ctx.arcTo(g.l + g.w, g.t + g.h, g.l, g.t + g.h, r)
+        ctx.arcTo(g.l, g.t + g.h, g.l, g.t, r)
+        ctx.arcTo(g.l, g.t, g.l + g.w, g.t, r)
+        ctx.closePath()
+      }
+      ctx.clip()
+      ctx.drawImage(comp, 0, 0)
       for (const d of runs) {
         ctx.beginPath()
         ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2)
@@ -214,6 +246,7 @@ export default function FogLayer() {
         ctx.fillStyle = "rgba(255,255,255,0.7)"
         ctx.fill()
       }
+      ctx.restore()
       raf = requestAnimationFrame(tick)
     }
     const onVis = () => {
@@ -239,7 +272,7 @@ export default function FogLayer() {
   }, [on, hidden])
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[60]">
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full transition-opacity duration-[2500ms]" style={{ opacity: on && !hidden ? 1 : 0 }} />
     </div>
   )
