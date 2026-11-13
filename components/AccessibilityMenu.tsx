@@ -412,7 +412,7 @@ export default function AccessibilityMenu() {
       </AnimatePresence>
 
       <AnimatePresence>
-      {gone === false && (
+      {false && gone === false && (
       <DraggableFab
         key="a11y-fab"
         storageKey="fysu-a11y-fab"
