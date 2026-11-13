@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CustomCursor from "@/components/CustomCursor"
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "@/context/CartContext";
@@ -149,6 +150,7 @@ export default async function RootLayout({
                 {children}
                 {/* Flèche retour (pastille discrète sous la barre de navigation) */}
                 <BackButton />
+                <CustomCursor />
                 {/* Astuces guidées (première fois : musique, vinyle, accessibilité…) */}
                 <Tips />
                 {/* Choix de la zone : apparaît avant les cookies et les notifications */}

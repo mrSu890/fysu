@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useLocale } from "next-intl"
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
 import { prefetchProduct } from "@/lib/productCache"
+import { getAvailabilityCopy, getBadgeText, getEffectiveAvailability } from "@/lib/availability"
 import type { ProductType } from "@/types/product"
 
 /* ====================================================================
@@ -34,6 +35,11 @@ function Card({ product, who }: { product: ProductType; who: "men" | "women" | n
   const src = (imgs.find((i) => !i.worn_for) ?? imgs[0])?.url
   const path = `/product/${product.slug}`
   const boxRef = useRef<HTMLDivElement>(null)
+  const locale = useLocale()
+  const mode = getEffectiveAvailability(product as any)
+  // épuisé ou à venir : photo floutée (la fiche s'ouvre quand même)
+  const blurred = mode === "sold_out" || mode === "coming_soon"
+  const status = blurred ? getBadgeText(mode, getAvailabilityCopy(locale)) : null
   const go = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
     e.preventDefault()
@@ -45,7 +51,7 @@ function Card({ product, who }: { product: ProductType; who: "men" | "women" | n
       const w = window as any
       const el = boxRef.current?.querySelector("img") as HTMLImageElement | null
       const shown = el?.currentSrc || el?.src
-      if (w.__fysuHero && shown && product.brand !== "thewave" && w.__fysuHero(boxRef.current, path, shown)) return
+      if (!blurred && w.__fysuHero && shown && product.brand !== "thewave" && w.__fysuHero(boxRef.current, path, shown)) return
     } catch {}
     const handled = (window as any).__fysuNavigate?.(path)
     if (!handled) router.push(path)
@@ -63,10 +69,10 @@ function Card({ product, who }: { product: ProductType; who: "men" | "women" | n
     >
       <Link href={path} onClick={go} data-hero-link="" aria-label={product.name} draggable={false} className="block">
         <div ref={boxRef} data-card-box="" className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-neutral-200 transition active:scale-[0.98] dark:bg-neutral-800 sm:rounded-3xl">
-          {src && <Image src={src} alt="" fill draggable={false} sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw" className="object-cover" />}
+          {src && <Image src={src} alt="" fill draggable={false} sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw" className={`object-cover ${blurred ? "scale-110 blur-2xl" : ""}`} />}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/55 via-black/20 to-transparent px-3.5 pb-3 pt-12 text-white sm:px-4 sm:pb-4">
             <p className="truncate text-[13px] font-medium tracking-tight sm:text-sm">{product.name}</p>
-            <p className="font-info mt-0.5 text-[10px] tracking-[0.12em] text-white/75">{Number(product.price).toFixed(0)} €</p>
+            <p className="font-info mt-0.5 text-[10px] tracking-[0.12em] text-white/75">{status ?? `${Number(product.price).toFixed(0)} €`}</p>
           </div>
         </div>
       </Link>
