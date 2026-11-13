@@ -32,7 +32,7 @@ export default async function KibanCollectorPage() {
   return (
     <>
       {/* l'ambiance de la page est posée dès l'arrivée (mêmes classes que le composant client) : pas de flash */}
-      <script dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add("dark","kiban-dark")` }} />
+      <script dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add("dark","night")` }} />
       <JsonLd data={itemListJsonLd("Kiban Collector", `${SITE}/kiban-collector`, products)} />
       <KibanClient initialProducts={products} />
     </>
