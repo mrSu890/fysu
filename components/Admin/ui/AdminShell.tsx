@@ -48,6 +48,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Commandes", href: "/admin/orders", icon: ShoppingBag, tone: "green" },
       { label: "Codes promo", href: "/admin/promo-codes", icon: Tag, tone: "green" },
       { label: "Demandes", href: "/admin/requests", icon: Inbox, tone: "orange" },
+      { label: "Mails de commande", href: "/admin/emails", icon: Mail, tone: "orange" },
       { label: "Clients", href: "/admin/users", icon: Users, tone: "blue" },
       { label: "Avatars", href: "/admin/avatars", icon: UserCircle, tone: "blue" },
     ],
