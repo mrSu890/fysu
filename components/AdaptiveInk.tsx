@@ -184,8 +184,9 @@ function run() {
   // et on ne bascule que si le fond est NETTEMENT contraire (blanc franc ou noir franc)
   // après-midi (verre vert) et coucher de soleil : toujours blanc, pas d'adaptation
   // aube : texte sombre par défaut ; nuit et jour : texte clair par défaut
-  const forceLight = html.classList.contains("afternoon") || html.classList.contains("sunset")
-  const darkMood = !html.classList.contains("dawn")
+  const glassForceLight = html.classList.contains("afternoon") || html.classList.contains("sunset")
+  const glassDarkMood = !html.classList.contains("dawn")
+  const pageDark = html.classList.contains("dark") // nuit / coucher de soleil : page sombre ; sinon page claire (texte sombre par défaut)
   document.querySelectorAll(ROOTS).forEach((root) => {
     const rr = root.getBoundingClientRect()
     if (rr.width === 0 || rr.height === 0 || rr.bottom < 0 || rr.top > window.innerHeight) return
@@ -193,6 +194,9 @@ function run() {
     // une pastille de la barre (logo + icône, ou panier + menu) : une seule décision pour tout son contenu,
     // prise sur plusieurs points de sa largeur, pour que logo et icônes restent toujours de la même couleur
     const isPill = rr.height < 130 && root.matches(".navbar-root .liquid-glass")
+    // le « toujours blanc » de l'après-midi ne vaut que pour le verre vert de la barre, pas pour le texte posé sur la page
+    const forceLight = isPill && glassForceLight
+    const darkMood = isPill ? glassDarkMood : pageDark
     let pillInk: "dark" | "light" | null = null
     if (isPill) {
       const y = Math.min(window.innerHeight - 1, Math.max(0, rr.top + rr.height / 2))
