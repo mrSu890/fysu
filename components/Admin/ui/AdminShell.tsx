@@ -25,6 +25,7 @@ import {
   UserCircle,
   X,
   type LucideIcon,
+  Mail,
 } from "lucide-react"
 import { IconTile, type TileTone } from "@/components/Admin/ui/kit"
 
@@ -58,6 +59,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Images de garde", href: "/admin/heroes", icon: ImageIcon, tone: "pink" },
       { label: "Collections & pages", href: "/admin/pages", icon: Layers, tone: "pink" },
       { label: "Stories", href: "/admin/stories", icon: Clapperboard, tone: "purple" },
+      { label: "Newsletter", href: "/admin/newsletter", icon: Mail, tone: "orange" },
       { label: "Musique", href: "/admin/music", icon: Music, tone: "purple" },
       { label: "FY'grances", href: "/admin/fygrances", icon: Droplets, tone: "purple" },
       { label: "About", href: "/admin/about", icon: ScrollText, tone: "purple" },

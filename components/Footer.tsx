@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 import CroppedLogo from "./CroppedLogo";
 import FygrancesIntro from "./FygrancesIntro";
 import HomeTiles from "./HomeTiles";
+import NewsletterSignup from "./Newsletter/NewsletterSignup";
 
 const logo = "/images/footer_logo.png"
 
@@ -105,6 +106,8 @@ const Footer: React.FC = () => {
             )}
           </div>
         </div>
+
+        <div className="mt-14"><NewsletterSignup style={ink} /></div>
 
         {/* Bottom links */}
         <div className={isWave ? "border-t border-current mt-16 pt-6" : "border-t border-white mt-16 pt-6"}>
