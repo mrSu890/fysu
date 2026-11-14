@@ -157,8 +157,7 @@ export default function HomeStage({
       setDragging(true);
     }
     swMoved.current = true;
-    const edge = (front === 0 && dx > 0) || (front === n - 1 && dx < 0);
-    setDragX(edge ? dx * 0.25 : dx);
+    setDragX(dx);
   };
   const onPileUp = (e: React.PointerEvent) => {
     const g = sw.current;
@@ -166,13 +165,13 @@ export default function HomeStage({
     if (!g || !g.locked) return;
     const dx = e.clientX - g.x;
     const v = dx / Math.max(1, performance.now() - g.t);
-    let next = front;
-    if (dx < -50 || v < -0.45) next = front + 1;
-    else if (dx > 50 || v > 0.45) next = front - 1;
-    setFront(Math.max(0, Math.min(n - 1, next)));
+    if (dx < -50 || v < -0.45) setFront((front + 1) % n);
+    else if (dx > 50 || v > 0.45) setFront((front - 1 + n) % n);
     setDragX(0);
     setDragging(false);
   };
+
+  const step = (d: number) => setFront((f) => (f + d + n) % n);
 
   const choose = (i: number) => {
     window.clearTimeout(animTimer.current);
@@ -229,12 +228,29 @@ export default function HomeStage({
       <div ref={inner} className="w-full">
         {active === null ? (
           <div className="flex min-h-[100svh] items-center justify-center">
-            <div
-              ref={(el) => {
-                slots.current["closed"] = el;
-              }}
-              style={{ width: "clamp(140px, 40vw, 210px)", aspectRatio: "4 / 5" }}
-            />
+            <div className="relative">
+              <div
+                ref={(el) => {
+                  slots.current["closed"] = el;
+                }}
+                style={{ width: "clamp(140px, 40vw, 210px)", aspectRatio: "4 / 5" }}
+              />
+              {n > 1 &&
+                ([-1, 1] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    aria-label={d < 0 ? "Précédent" : "Suivant"}
+                    onClick={() => step(d)}
+                    className="absolute top-1/2 z-[60] flex h-11 w-11 -translate-y-1/2 items-center justify-center opacity-40 transition-opacity hover:opacity-90 active:opacity-100"
+                    style={d < 0 ? { right: "calc(100% + 6px)" } : { left: "calc(100% + 6px)" }}
+                  >
+                    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: d < 0 ? undefined : "scaleX(-1)" }}>
+                      <path d="M8.5 1.5 1.5 9l7 7.5" />
+                    </svg>
+                  </button>
+                ))}
+            </div>
           </div>
         ) : (
           <div className="mx-auto w-[90vw] max-w-[1080px] pb-32 pt-32 sm:pt-36">
@@ -336,10 +352,9 @@ export default function HomeStage({
         const isMain = active === i;
         const closed = active === null;
         // pile : chaque image de dessous dépasse de PEEK px au-dessus de la précédente (3 couches visibles au plus)
-        const rel = closed ? i - front : i; // place dans la pile (0 = devant ; <0 = déjà passée, sortie à gauche)
+        const rel = closed ? (i - front + n) % n : i; // place dans la pile (0 = devant ; l'image passée repart en dernière position)
         const k = closed && peek ? Math.max(0, Math.min(rel, 3)) : 0;
-        const passed = closed && rel < 0;
-        const PEEK = 12;
+                const PEEK = 12;
         const sx = k * 7;
         return (
           <div
@@ -373,11 +388,10 @@ export default function HomeStage({
               top: (r?.t ?? 0) - k * PEEK,
               width: Math.max(0, (r?.w ?? 0) - sx * 2),
               height: r?.h ?? 0,
-              zIndex: isMain ? n + 2 : closed ? (passed ? 0 : n - rel) : 1,
+              zIndex: isMain ? n + 2 : closed ? n - rel : 1,
               touchAction: closed ? "pan-y" : undefined,
-              transform: closed ? (passed ? "translateX(-40%)" : rel === 0 && dragX ? `translateX(${dragX}px)` : undefined) : undefined,
-              opacity: !r ? 0 : passed ? 0 : rel === 0 && dragX ? Math.max(0.35, 1 - Math.abs(dragX) / 420) : 1,
-              pointerEvents: passed ? "none" : undefined,
+              transform: closed ? (rel === 0 && dragX ? `translateX(${dragX}px)` : undefined) : undefined,
+              opacity: !r ? 0 : rel === 0 && dragX ? Math.max(0.35, 1 - Math.abs(dragX) / 420) : 1,
               transition: dragging
                 ? `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}`
                 : `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}, transform 0.55s ${CURVE}, opacity 0.4s ease`,
