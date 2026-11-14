@@ -18,8 +18,18 @@ import { claimPopup, releasePopup } from "@/lib/popups"
 
 type Box = { top: number; left: number; width: number; height: number }
 type RGBA = [number, number, number, number]
-type Job = { src: string; from: Box; path: string; radius: number; tint: RGBA | null; bg: RGBA | null }
-type Back = { src: string; from: Box; slug: string; path: string; kind: "product" | "music"; crop: number; top: number; tint: RGBA | null; bg: RGBA | null }
+// flou (en px) d'une image : l'image qui voyage garde le flou de sa carte (à venir / épuisé) et le perd ou le garde à l'arrivée
+const blurOf = (img: Element | null | undefined): number => {
+  try {
+    if (!img) return 0
+    const m = getComputedStyle(img).filter.match(/blur\(([\d.]+)px\)/)
+    return m ? parseFloat(m[1]) || 0 : 0
+  } catch {
+    return 0
+  }
+}
+type Job = { blur: number; src: string; from: Box; path: string; radius: number; tint: RGBA | null; bg: RGBA | null }
+type Back = { blur: number; src: string; from: Box; slug: string; path: string; kind: "product" | "music"; crop: number; top: number; tint: RGBA | null; bg: RGBA | null }
 
 // courbe « ressort amorti » (comme les feuilles de l'iPhone) : démarre vite, se pose sans rebond
 const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number) => {
@@ -152,7 +162,7 @@ export default function ProductHero() {
         claimPopup("hero", false, true)
         setBackLeaving(false)
         setBackFlying(false)
-        setBack({ src: img.currentSrc, from: r, slug: m[1], path: to, kind, crop: parseFloat(el.dataset.heroCrop || "0") || 0, top: el.dataset.heroPos === "top" ? 1 : 0, tint: tintOf(el), bg: bgOf(el) })
+        setBack({ src: img.currentSrc, from: r, slug: m[1], path: to, kind, crop: parseFloat(el.dataset.heroCrop || "0") || 0, top: el.dataset.heroPos === "top" ? 1 : 0, tint: tintOf(el), bg: bgOf(el), blur: blurOf(img) })
       } catch {}
     }
     window.addEventListener("popstate", onPop)
@@ -173,6 +183,7 @@ export default function ProductHero() {
     let endRadius = 16
     let endTint: RGBA | null = null
     let endBg: RGBA | null = null
+    let endBlur = 0
     const started = Date.now()
     const DURATION = 740
     const find = (): HTMLElement | null => {
@@ -226,6 +237,7 @@ export default function ProductHero() {
             endRadius = parseFloat(getComputedStyle(box).borderTopLeftRadius) || 0
             endTint = tintOf(box)
             endBg = bgOf(box)
+            endBlur = blurOf(box.querySelector("img"))
             box.style.opacity = "0"
             flyingNow = true
             t0 = now
@@ -244,6 +256,7 @@ export default function ProductHero() {
         el.style.height = `${f.height + (t.height - f.height) * e}px`
         el.style.borderRadius = `${endRadius * e}px`
         if (backTintRef.current) backTintRef.current.style.backgroundColor = mix(back.tint, endTint, e, WHITE)
+        if (backInnerRef.current) backInnerRef.current.style.filter = `blur(${back.blur + (endBlur - back.blur) * e}px)`
         el.style.backgroundColor = mix(back.bg, endBg, e, CLEAR)
         const inner = backInnerRef.current
         if (inner) {
@@ -321,7 +334,7 @@ export default function ProductHero() {
         document.documentElement.classList.add("hero-running")
         setLeaving(false)
         setFlying(false)
-        setJob({ src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius, tint: tintOf(el), bg: bgOf(el) })
+        setJob({ blur: blurOf(el.querySelector("img")), src, from: { top: r.top, left: r.left, width: r.width, height: r.height }, path, radius, tint: tintOf(el), bg: bgOf(el) })
         requestAnimationFrame(() => setBg(true))
         router.push(path)
         // filet de sécurité : si on est TOUJOURS sur la page de départ, on relance la navigation.
@@ -376,6 +389,7 @@ export default function ProductHero() {
     let clipFor: HTMLElement | null = null
     let endTint: RGBA | null = null
     let endBg: RGBA | null = null
+    let endBlur = job.blur
     // en attendant la vraie fiche : le filtre qu'elle aura dans cette ambiance
     const html = document.documentElement
     const predTint: RGBA | null =
@@ -441,6 +455,7 @@ export default function ProductHero() {
           endRadius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
           endTint = tintOf(el)
           endBg = bgOf(el)
+          endBlur = blurOf(img)
           if (el !== clipFor) {
             clipFor = el
             clipEl = findClip(el)
@@ -496,6 +511,7 @@ export default function ProductHero() {
         node.style.height = `${height}px`
         node.style.borderRadius = `${job.radius + (endRadius - job.radius) * e}px`
         if (tintRef.current) tintRef.current.style.backgroundColor = mix(job.tint, endTint, e, WHITE)
+        if (innerRef.current) innerRef.current.style.filter = `blur(${job.blur + (endBlur - job.blur) * e}px)`
         node.style.backgroundColor = mix(job.bg, endBg, e, CLEAR)
         const inner = innerRef.current
         if (inner) {
@@ -576,7 +592,7 @@ export default function ProductHero() {
           alt=""
           draggable={false}
           className="absolute left-0 w-full object-cover"
-          style={{ top: `${-back.crop}%`, height: `${100 + back.crop}%`, objectPosition: `50% ${50 - 50 * back.top}%` }}
+          style={{ top: `${-back.crop}%`, height: `${100 + back.crop}%`, objectPosition: `50% ${50 - 50 * back.top}%`, filter: back.blur ? `blur(${back.blur}px)` : undefined }}
         />
         <div ref={backTintRef} className="pointer-events-none absolute inset-0 z-[1]" style={{ mixBlendMode: "multiply", backgroundColor: back.tint ? mix(back.tint, back.tint, 0, WHITE) : "transparent" }} />
       </div>
@@ -613,7 +629,7 @@ export default function ProductHero() {
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img ref={innerRef} src={job.src} alt="" draggable={false} className="absolute left-0 top-0 h-full w-full object-cover" />
+        <img ref={innerRef} src={job.src} alt="" draggable={false} className="absolute left-0 top-0 h-full w-full object-cover" style={{ filter: job.blur ? `blur(${job.blur}px)` : undefined }} />
         <div ref={tintRef} className="pointer-events-none absolute inset-0 z-[1]" style={{ mixBlendMode: "multiply", backgroundColor: job.tint ? mix(job.tint, job.tint, 0, WHITE) : "transparent" }} />
       </div>
     </>
