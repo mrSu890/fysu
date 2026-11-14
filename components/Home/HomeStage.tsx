@@ -165,13 +165,21 @@ export default function HomeStage({
     if (!g || !g.locked) return;
     const dx = e.clientX - g.x;
     const v = dx / Math.max(1, performance.now() - g.t);
-    if (dx < -50 || v < -0.45) setFront((front + 1) % n);
-    else if (dx > 50 || v > 0.45) setFront((front - 1 + n) % n);
+    if (dx < -50 || v < -0.45) turn(1);
+    else if (dx > 50 || v > 0.45) turn(-1);
     setDragX(0);
     setDragging(false);
   };
 
-  const step = (d: number) => setFront((f) => (f + d + n) % n);
+  // image qui « fait le tour » (repart derrière ou revient devant) : petite glissade
+  const [wr, setWr] = useState<{ id: number; tick: number }>({ id: -1, tick: 0 });
+  const turn = (d: number) => {
+    const from = front;
+    const to = (front + d + n) % n;
+    setWr((w) => ({ id: d > 0 ? from : to, tick: w.tick + 1 }));
+    setFront(to);
+  };
+  const step = (d: number) => turn(d);
 
   const choose = (i: number) => {
     window.clearTimeout(animTimer.current);
@@ -392,16 +400,17 @@ export default function HomeStage({
               touchAction: closed ? "pan-y" : undefined,
               transform: closed ? (rel === 0 && dragX ? `translateX(${dragX}px)` : undefined) : undefined,
               opacity: !r ? 0 : rel === 0 && dragX ? Math.max(0.35, 1 - Math.abs(dragX) / 420) : 1,
+              animation: closed && wr.id === i && wr.tick > 0 ? `pile-wrap${wr.tick % 2} 0.6s ${CURVE} both` : undefined,
               transition: dragging
                 ? `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}`
                 : `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}, transform 0.55s ${CURVE}, opacity 0.4s ease`,
             }}
           >
             {isVideo(s.image) ? (
-              <video src={s.image} muted loop autoPlay playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover object-center" />
+              <video src={s.image} muted loop autoPlay playsInline preload="auto" className="absolute inset-0 h-full w-full object-cover object-center" />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={s.image} alt="" draggable={false} decoding="async" className="absolute inset-0 h-full w-full object-cover object-center" />
+              <img src={s.image} alt="" draggable={false} decoding="async" loading="eager" className="absolute inset-0 h-full w-full object-cover object-center" />
             )}
           </div>
         );

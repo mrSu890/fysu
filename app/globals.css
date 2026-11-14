@@ -880,3 +880,7 @@ html.fysu-cursor [contenteditable="true"] {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
+
+/* pile d'accueil : l'image qui fait le tour glisse depuis la gauche */
+@keyframes pile-wrap0 { from { transform: translateX(-70%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pile-wrap1 { from { transform: translateX(-70%); opacity: 0; } to { transform: none; opacity: 1; } }
