@@ -6,6 +6,7 @@ import { useLocale } from "next-intl"
 import { ArrowLeft, Check, Copy } from "lucide-react"
 import FysuBirdGame from "@/components/FysuBirdGame"
 import { REWARD_SCORE, gamesCopyFor } from "@/lib/games"
+import { useGameBack } from "@/lib/useGameBack"
 
 /* ====================================================================
    FYSU BIRD : page du jeu (plein écran)
@@ -20,6 +21,7 @@ const TERM = '"VT323", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
 
 export default function FysuBirdPage() {
   const copy = gamesCopyFor(useLocale())
+  const backHref = useGameBack()
   const token = useRef<string | null>(null)
   const [reward, setReward] = useState<Reward | null>(null)
   const rewardRef = useRef<Reward | null>(null)
@@ -100,7 +102,7 @@ export default function FysuBirdPage() {
 
       {/* retour : gros bouton facile à repérer */}
       <Link
-        href="/games"
+        href={backHref}
         className="absolute left-4 top-4 flex items-center gap-2 border-2 bg-black px-4 py-3 active:translate-y-0.5"
         style={{
           zIndex: 50,

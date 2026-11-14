@@ -12,6 +12,7 @@ import { makeSlice } from "@/components/arcade/sliceGame"
 import { GAMES, bestKey, gameTextFor, gamesCopyFor } from "@/lib/games"
 import { loadSkin, skinKey, skinList, skinText, type SkinKind } from "@/lib/skins"
 import type { ArcadeMaker } from "@/lib/arcadeKit"
+import { useGameBack } from "@/lib/useGameBack"
 
 /* Page plein écran d'un jeu sans récompense (Pool, Hoops, Crossing, Slice),
    avec le choix des décors / balles débloqués. */
@@ -30,6 +31,7 @@ export default function GameShell({ slug }: { slug: string }) {
   const locale = useLocale()
   const lang = locale === "fr" ? "fr" : "en"
   const copy = gamesCopyFor(locale)
+  const backHref = useGameBack()
   const text = gameTextFor(slug, locale)
   const tx = skinText(locale)
   const name = GAMES.find((g) => g.slug === slug)?.name ?? slug
@@ -111,7 +113,7 @@ export default function GameShell({ slug }: { slug: string }) {
       )}
 
       <Link
-        href="/games"
+        href={backHref}
         className="absolute left-4 top-4 flex items-center gap-2 border-2 bg-black px-4 py-3 active:translate-y-0.5"
         style={{ zIndex: 50, marginTop: "env(safe-area-inset-top)", borderColor: CYAN, color: CYAN, fontFamily: PIXEL, fontSize: 12 }}
       >

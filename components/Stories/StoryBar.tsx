@@ -27,6 +27,12 @@ type Props = {
   collectionSlug?: string;
 };
 
+// l'image du cercle est TOUJOURS la première image de la story (sinon la couverture choisie, ex. si la première diapo est une vidéo)
+const coverOf = (st: Story) => {
+  const first = st.story_items?.[0];
+  return first && first.type === "image" && first.media_url ? first.media_url : st.cover_url;
+};
+
 export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   const [stories, setStories] = useState<Story[]>([]);
   const [activeStory, setActiveStory] = useState<Story | null>(null);
@@ -103,9 +109,9 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
     const run = () => {
       const bag: any[] = [];
       stories.forEach((st) => {
-        if (st.cover_url) {
+        if (coverOf(st)) {
           const c = new Image();
-          c.src = st.cover_url;
+          c.src = coverOf(st);
           bag.push(c);
         }
         st.story_items.forEach((it, i) => {
@@ -194,7 +200,10 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
 
   const openStory = (story: Story) => {
     if (story.link_url) {
-      router.push(story.link_url);
+      // on retient la page d'où l'on vient : le bouton retour du jeu y revient
+      const sep = story.link_url.includes("?") ? "&" : "?";
+      const from = window.location.pathname + window.location.search;
+      router.push(`${story.link_url}${sep}from=${encodeURIComponent(from)}`);
       return;
     }
     if (story.story_items.length === 0) return;
@@ -305,7 +314,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                 data-story-cover={story.id}
                 className="w-full h-full rounded-full bg-cover bg-center"
                 style={{
-                  backgroundImage: `url(${story.cover_url})`,
+                  backgroundImage: `url(${coverOf(story)})`,
                 }}
               />
             </div>
@@ -327,7 +336,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
             style={{
               zIndex: 9000,
               touchAction: "none",
-              backgroundImage: `url(${activeStory.cover_url})`,
+              backgroundImage: `url(${coverOf(activeStory)})`,
             }}
             initial={{
               top: origin?.top ?? 0,
@@ -456,7 +465,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
                 <div className="pointer-events-none flex items-center gap-2.5 text-white">
                   <span
                     className="h-8 w-8 rounded-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${activeStory.cover_url})` }}
+                    style={{ backgroundImage: `url(${coverOf(activeStory)})` }}
                   />
                   <span className="text-sm font-medium drop-shadow">{activeStory.title}</span>
                 </div>
