@@ -292,7 +292,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
   return (
     <>
       {/* STORY CIRCLES */}
-      <div className="w-full flex justify-center gap-5 overflow-x-auto py-4 relative top-10">
+      <div className="w-full flex justify-center gap-[18px] overflow-x-auto py-4 relative top-10">
         {stories.map((story) => (
           <motion.div
             key={story.id}
@@ -300,7 +300,7 @@ export default function StoryBar({ pageSlug, collectionSlug }: Props) {
             onClick={() => openStory(story)}
             className="flex flex-col items-center cursor-pointer"
           >
-            <div className="h-[68px] w-[68px] rounded-full border border-foreground/25 p-[4px]">
+            <div className="h-16 w-16 rounded-full border-[2.5px] border-foreground/15 p-[4px]">
               <div
                 data-story-cover={story.id}
                 className="w-full h-full rounded-full bg-cover bg-center"
