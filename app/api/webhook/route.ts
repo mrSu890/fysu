@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { sendOrderConfirmation } from "@/lib/orderMailer";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-01-28.clover",
@@ -131,8 +132,9 @@ export async function POST(req: Request) {
     const items = await takeStockAndBuildItems(cartFromMetadata);
     const shipping = session.customer_details;
 
+    const orderId = crypto.randomUUID();
     const { error } = await supabase.from("orders").insert({
-      id: crypto.randomUUID(),
+      id: orderId,
       user_id: session.metadata.userId,
       stripe_session_id: session.id,
       stripe_payment_intent: session.payment_intent,
@@ -148,6 +150,15 @@ export async function POST(req: Request) {
       console.error("Supabase insert error:", error);
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
+
+    await sendOrderConfirmation({
+      id: orderId,
+      email: shipping?.email ?? session.customer_email ?? null,
+      total: session.amount_total ?? 0,
+      currency: session.currency ?? "eur",
+      shipping_data: shipping,
+      items,
+    });
   }
 
   /* ---------- Paiement Apple Pay / Google Pay depuis la fiche produit ---------- */
@@ -186,8 +197,9 @@ export async function POST(req: Request) {
       address: intent.shipping?.address ?? null,
     };
 
+    const expressId = crypto.randomUUID();
     const { error } = await supabase.from("orders").insert({
-      id: crypto.randomUUID(),
+      id: expressId,
       user_id: intent.metadata.userId,
       // même colonne que pour les paiements du panier : l'identifiant du paiement fait office d'identifiant unique
       stripe_session_id: intent.id,
@@ -204,6 +216,15 @@ export async function POST(req: Request) {
       console.error("Supabase insert error (express):", error);
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
+
+    await sendOrderConfirmation({
+      id: expressId,
+      email: shipping.email,
+      total: intent.amount,
+      currency: intent.currency,
+      shipping_data: shipping,
+      items,
+    });
   }
 
   return NextResponse.json({ received: true });
