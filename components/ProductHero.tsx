@@ -154,6 +154,7 @@ export default function ProductHero() {
         }
         const img = el?.querySelector("img") as HTMLImageElement | null
         if (!el || !img || !img.currentSrc || bestA < 4000) return
+        if (blurOf(img) > 0) return
         const rr = el.getBoundingClientRect()
         const left = Math.max(rr.left, 0)
         const top = Math.max(rr.top, 0)
@@ -231,6 +232,11 @@ export default function ProductHero() {
               return
             }
             if (off) {
+              finishBack()
+              return
+            }
+            // carte floutée : pas de vol retour non plus
+            if (blurOf(box.querySelector("img")) > 0) {
               finishBack()
               return
             }
@@ -327,6 +333,8 @@ export default function ProductHero() {
         if (isCalm() || !(window as any).__loaderVisualDone) return false
         const r = el.getBoundingClientRect()
         if (r.width < 40 || r.height < 40) return false
+        // produit flouté (à venir / épuisé) : pas de vol d'image, juste le fondu de changement de page
+        if (blurOf(el.querySelector("img")) > 0) return false
         const radius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
         ;(window as any).__fysuHeroSrc = src
         ;(window as any).__heroActive = true
