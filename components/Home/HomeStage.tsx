@@ -128,6 +128,52 @@ export default function HomeStage({
       document.documentElement.classList.contains("a11y-focus") ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
+  // pile fermée : l'image de devant et le glissement du doigt
+  const [front, setFront] = useState(0);
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const sw = useRef<{ x: number; y: number; id: number; locked: boolean; t: number } | null>(null);
+  const swMoved = useRef(false);
+  const onPileDown = (e: React.PointerEvent) => {
+    if (n < 2) return;
+    sw.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false, t: performance.now() };
+    swMoved.current = false;
+  };
+  const onPileMove = (e: React.PointerEvent) => {
+    const g = sw.current;
+    if (!g) return;
+    const dx = e.clientX - g.x;
+    const dy = e.clientY - g.y;
+    if (!g.locked) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        sw.current = null; // geste vertical : la page défile
+        return;
+      }
+      g.locked = true;
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(g.id);
+      } catch {}
+      setDragging(true);
+    }
+    swMoved.current = true;
+    const edge = (front === 0 && dx > 0) || (front === n - 1 && dx < 0);
+    setDragX(edge ? dx * 0.25 : dx);
+  };
+  const onPileUp = (e: React.PointerEvent) => {
+    const g = sw.current;
+    sw.current = null;
+    if (!g || !g.locked) return;
+    const dx = e.clientX - g.x;
+    const v = dx / Math.max(1, performance.now() - g.t);
+    let next = front;
+    if (dx < -50 || v < -0.45) next = front + 1;
+    else if (dx > 50 || v > 0.45) next = front - 1;
+    setFront(Math.max(0, Math.min(n - 1, next)));
+    setDragX(0);
+    setDragging(false);
+  };
+
   const choose = (i: number) => {
     window.clearTimeout(animTimer.current);
     setAnim(!calm());
@@ -141,6 +187,7 @@ export default function HomeStage({
   const close = () => {
     window.clearTimeout(animTimer.current);
     setAnim(!calm());
+    if (active !== null) setFront(active);
     setActive(null);
     try {
       sessionStorage.removeItem("fysu-home-active");
@@ -289,23 +336,35 @@ export default function HomeStage({
         const isMain = active === i;
         const closed = active === null;
         // pile : chaque image de dessous dépasse de PEEK px au-dessus de la précédente (3 couches visibles au plus)
-        const k = closed && peek ? Math.min(i, 3) : 0;
+        const rel = closed ? i - front : i; // place dans la pile (0 = devant ; <0 = déjà passée, sortie à gauche)
+        const k = closed && peek ? Math.max(0, Math.min(rel, 3)) : 0;
+        const passed = closed && rel < 0;
         const PEEK = 12;
         const sx = k * 7;
         return (
           <div
             key={s.key}
             role="button"
-            tabIndex={closed ? (i === 0 ? 0 : -1) : 0}
-            aria-hidden={closed && i !== 0 ? true : undefined}
+            tabIndex={closed ? (rel === 0 ? 0 : -1) : 0}
+            aria-hidden={closed && rel !== 0 ? true : undefined}
             aria-label={s.label}
             data-hero-image={i === 0 ? "" : undefined}
             data-ring-img={i}
-            onClick={() => (closed ? choose(0) : isMain ? open(s) : choose(i))}
+            onPointerDown={closed ? onPileDown : undefined}
+            onPointerMove={closed ? onPileMove : undefined}
+            onPointerUp={closed ? onPileUp : undefined}
+            onPointerCancel={closed ? onPileUp : undefined}
+            onClick={() => {
+              if (swMoved.current) {
+                swMoved.current = false;
+                return;
+              }
+              closed ? choose(rel === 0 ? front : i) : isMain ? open(s) : choose(i);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                closed ? choose(0) : isMain ? open(s) : choose(i);
+                closed ? choose(front) : isMain ? open(s) : choose(i);
               }
             }}
             className="absolute cursor-pointer touch-manipulation select-none overflow-hidden bg-neutral-200 will-change-[left,top,width,height] dark:bg-neutral-800"
@@ -314,9 +373,14 @@ export default function HomeStage({
               top: (r?.t ?? 0) - k * PEEK,
               width: Math.max(0, (r?.w ?? 0) - sx * 2),
               height: r?.h ?? 0,
-              opacity: r ? 1 : 0,
-              zIndex: isMain ? n + 2 : closed ? n - i : 1,
-              transition: `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}`,
+              zIndex: isMain ? n + 2 : closed ? (passed ? 0 : n - rel) : 1,
+              touchAction: closed ? "pan-y" : undefined,
+              transform: closed ? (passed ? "translateX(-40%)" : rel === 0 && dragX ? `translateX(${dragX}px)` : undefined) : undefined,
+              opacity: !r ? 0 : passed ? 0 : rel === 0 && dragX ? Math.max(0.35, 1 - Math.abs(dragX) / 420) : 1,
+              pointerEvents: passed ? "none" : undefined,
+              transition: dragging
+                ? `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}`
+                : `left ${dur} ${CURVE}, top ${dur} ${CURVE}, width ${dur} ${CURVE}, height ${dur} ${CURVE}, transform 0.55s ${CURVE}, opacity 0.4s ease`,
             }}
           >
             {isVideo(s.image) ? (
