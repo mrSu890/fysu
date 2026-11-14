@@ -875,3 +875,8 @@ html.fysu-cursor textarea,
 html.fysu-cursor [contenteditable="true"] {
   cursor: text !important;
 }
+
+@keyframes album-title-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
