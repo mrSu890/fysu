@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowDown, ArrowUp, Mail, Plus, Send, Trash2 } from "lucide-react"
+import { ArrowDown, ArrowUp, Copy, Mail, Plus, Send, Trash2 } from "lucide-react"
 import { AdminButton, PageHeader, Panel } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
@@ -32,6 +32,54 @@ const NEW_BLOCK: Record<Exclude<Block["type"], "raw">, Block> = {
   divider: { type: "divider" },
 }
 
+const TEMPLATES: { name: string; hint: string; make: () => Campaign }[] = [
+  {
+    name: "Nouvelle collection",
+    hint: "Grande image, titre, texte, bouton, sélection de produits",
+    make: () => ({
+      subject: "", preheader: "",
+      blocks: [
+        { type: "hero", imageUrl: "", alt: "" },
+        { type: "title", eyebrow: "Nouvelle collection", title: "" },
+        { type: "text", text: "" },
+        { type: "button", label: "Découvrir la collection", url: "https://f-y-s-u.com", style: "solid" },
+        { type: "products", heading: "La sélection", columns: 2, items: [] },
+      ],
+    }),
+  },
+  {
+    name: "Un produit à l'honneur",
+    hint: "Un seul produit en grand, un mot, un bouton",
+    make: () => ({
+      subject: "", preheader: "",
+      blocks: [
+        { type: "title", eyebrow: "À découvrir", title: "" },
+        { type: "products", heading: "", columns: 1, items: [] },
+        { type: "text", text: "" },
+        { type: "button", label: "Voir la pièce", url: "https://f-y-s-u.com", style: "solid" },
+      ],
+    }),
+  },
+  {
+    name: "Annonce / événement",
+    hint: "Image, titre, date et lieu, bouton",
+    make: () => ({
+      subject: "", preheader: "",
+      blocks: [
+        { type: "hero", imageUrl: "", alt: "" },
+        { type: "title", eyebrow: "Événement", title: "" },
+        { type: "text", text: "Date :\nLieu :\n\n" },
+        { type: "button", label: "En savoir plus", url: "https://f-y-s-u.com", style: "outline" },
+      ],
+    }),
+  },
+  {
+    name: "Message simple",
+    hint: "Un titre et du texte, rien d'autre",
+    make: () => ({ subject: "", preheader: "", blocks: [{ type: "title", eyebrow: "", title: "" }, { type: "text", text: "" }] }),
+  },
+]
+
 async function uploadImage(file: File): Promise<string> {
   const small = await resizeImage(file)
   const form = new FormData()
@@ -61,7 +109,11 @@ function ProductPicker({ items, onChange }: { items: ProductPick[]; onChange: (v
           </button>
         ))}
       </div>
-      <button type="button" onClick={() => setOpen((v) => !v)} className="mt-2 text-sm underline">{open ? "Fermer la liste" : "Ajouter des produits"}</button>
+      <div className="mt-2 flex flex-wrap gap-4">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="text-sm underline">{open ? "Fermer la liste" : "Ajouter des produits"}</button>
+        <button type="button" className="text-sm underline" onClick={() => api.get<{ items: ProductPick[] }>("/api/admin/newsletter/products?q=").then((r) => onChange(r.items.slice(0, 4))).catch(() => {})}>Les 4 derniers produits</button>
+        {items.length > 0 && <button type="button" className="text-sm underline" onClick={() => onChange([])}>Tout retirer</button>}
+      </div>
       {open && (
         <div className="mt-2 rounded-xl bg-[#faf8f5] p-2 ring-1 ring-[#e0dbd3]">
           <input className={field} placeholder="Rechercher un produit" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -176,7 +228,7 @@ export default function NewsletterAdmin() {
     return () => { if (timer.current) clearTimeout(timer.current) }
   }, [c, loaded])
 
-  const preview = useMemo(() => renderEmail(c, "#").html, [c])
+  const preview = useMemo(() => renderEmail(c, "#").html.replace("<head>", '<head><base target="_blank">'), [c])
   const setBlock = (i: number, b: Block) => setC((p) => ({ ...p, blocks: p.blocks.map((x, j) => (j === i ? b : x)) }))
   const move = (i: number, d: number) => setC((p) => {
     const a = [...p.blocks]
@@ -212,6 +264,17 @@ export default function NewsletterAdmin() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
+          <Panel title="Démarrer d'un modèle" description="Un modèle remplace le contenu actuel (le brouillon se sauvegarde, rien n'est envoyé).">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {TEMPLATES.map((t) => (
+                <button key={t.name} type="button" onClick={() => { if (!window.confirm(`Remplacer le contenu par le modèle « ${t.name} » ?`)) return; setC(t.make()) }} className="rounded-xl bg-white p-3 text-left ring-1 ring-[#e0dbd3] hover:ring-[#171717]">
+                  <span className="block text-sm font-medium">{t.name}</span>
+                  <span className="block text-xs text-[#6b6760]">{t.hint}</span>
+                </button>
+              ))}
+            </div>
+          </Panel>
+
           <Panel title="Objet" description={`${info?.active ?? 0} inscrit(s) actif(s) · ${saved}`}>
             <div className="space-y-3">
               <div><span className={label}>Objet de l'e-mail</span><input className={field} value={c.subject} onChange={(e) => setC({ ...c, subject: e.target.value })} placeholder="When The Flowers Bloom — les précommandes ouvrent" /></div>
@@ -224,6 +287,7 @@ export default function NewsletterAdmin() {
               <div className="flex gap-1">
                 <button type="button" aria-label="Monter" onClick={() => move(i, -1)} className="rounded-full p-2 hover:bg-[#171717]/[0.06]"><ArrowUp size={16} /></button>
                 <button type="button" aria-label="Descendre" onClick={() => move(i, 1)} className="rounded-full p-2 hover:bg-[#171717]/[0.06]"><ArrowDown size={16} /></button>
+                <button type="button" aria-label="Dupliquer" onClick={() => setC((p) => ({ ...p, blocks: [...p.blocks.slice(0, i + 1), JSON.parse(JSON.stringify(b)), ...p.blocks.slice(i + 1)] }))} className="rounded-full p-2 hover:bg-[#171717]/[0.06]"><Copy size={16} /></button>
                 <button type="button" aria-label="Supprimer" onClick={() => setC((p) => ({ ...p, blocks: p.blocks.filter((_, j) => j !== i) }))} className="rounded-full p-2 hover:bg-[#fdeeee]"><Trash2 size={16} /></button>
               </div>
             }>

@@ -8,7 +8,9 @@
    Ce fichier sert à la fois pour l'aperçu dans l'admin et pour l'envoi.
    ==================================================================== */
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://f-y-s-u.com").replace(/\/$/, "")
+const RAW_SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://f-y-s-u.com").trim()
+// sans « https:// » (réglage Vercel incomplet), les liens du mail resteraient vides : on le complète
+export const SITE_URL = (/^https?:\/\//i.test(RAW_SITE) ? RAW_SITE : `https://${RAW_SITE}`).replace(/\/$/, "")
 
 export type ProductPick = { id: number; name: string; price: number; imageUrl: string; url: string }
 
@@ -73,13 +75,15 @@ export function button(label: string, url: string, style: "solid" | "outline" = 
 const row = (inner: string, pad = "0 28px 22px") => `<tr><td style="padding:${pad};">${inner}</td></tr>`
 
 function productCell(p: ProductPick, big: boolean): string {
-  const href = safeUrl(p.url)
+  // le lien ne reste jamais vide : à défaut, la boutique
+  const href = safeUrl(p.url) || safeUrl(`${SITE_URL}/product/${p.id}`) || SITE_URL
   const img = safeUrl(p.imageUrl)
   const w = big ? 544 : 262
-  return `<a href="${href}" style="text-decoration:none;color:${C.ink};display:block;">
-${img ? `<img src="${img}" alt="${esc(p.name)}" width="${w}" style="display:block;width:100%;height:auto;border:0;background:${C.paper};">` : ""}
-<div style="padding:12px 0 0;font-family:${F.sans};font-size:14px;line-height:1.35;font-weight:500;color:${C.ink};">${esc(p.name)}</div>
-<div style="padding:4px 0 0;${eyebrowStyle}">${money(p.price)}</div></a>`
+  const link = `color:${C.ink};text-decoration:none;`
+  // photo, nom et prix sont chacun un lien (un seul bloc cliquable pose problème dans certains clients mail)
+  return `${img ? `<a href="${href}" target="_blank" style="${link}display:block;"><img src="${img}" alt="${esc(p.name)}" width="${w}" style="display:block;width:100%;height:auto;border:0;background:${C.paper};"></a>` : ""}
+<div style="padding:12px 0 0;font-family:${F.sans};font-size:14px;line-height:1.35;font-weight:500;"><a href="${href}" target="_blank" style="${link}color:${C.ink};">${esc(p.name)}</a></div>
+<div style="padding:4px 0 0;${eyebrowStyle}"><a href="${href}" target="_blank" style="${link}color:${C.soft};">${money(p.price)}</a></div>`
 }
 
 export function renderBlock(b: Block): string {
