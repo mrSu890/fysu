@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
+  Search,
   Sparkles,
   BarChart3,
   ShieldCheck,
@@ -31,6 +32,7 @@ import {
   Mail,
 } from "lucide-react"
 import { IconTile, type TileTone } from "@/components/Admin/ui/kit"
+import CommandPalette from "@/components/Admin/ui/CommandPalette"
 
 /* ====================================================================
    MENU DE L'ADMIN (facile à modifier)
@@ -189,6 +191,7 @@ function SidebarContent({
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [drawer, setDrawer] = useState(false)
+  const [palette, setPalette] = useState(false)
   const active = useMemo(() => findActive(pathname), [pathname])
 
   // L'admin est toujours en mode clair (le mode sombre du site ne s'applique pas ici)
@@ -199,6 +202,17 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     return () => {
       if (hadDark) html.classList.add("dark")
     }
+  }, [])
+
+  // raccourcis : « / » ou Ctrl/⌘ + K ouvrent la recherche rapide
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      const typing = !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) { e.preventDefault(); setPalette(true) }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
   }, [])
 
   // Ferme le menu mobile quand on change de page
@@ -288,7 +302,17 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             )}
           </p>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPalette(true)}
+              aria-label="Recherche rapide"
+              className="flex h-9 items-center gap-2 rounded-full bg-white px-3 text-xs text-[#7a756d] shadow-sm ring-1 ring-[#e9e5df]"
+            >
+              <Search size={15} />
+              <span className="hidden sm:inline">Rechercher</span>
+              <kbd className="hidden rounded bg-[#171717]/[0.06] px-1.5 py-0.5 text-[10px] sm:inline">/</kbd>
+            </button>
             <a
               href="/"
               target="_blank"
@@ -302,6 +326,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </div>
         </div>
       </header>
+
+      <CommandPalette open={palette} onClose={() => setPalette(false)} items={ALL_ITEMS} />
 
       {/* Contenu */}
       <main className="admin-content mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
