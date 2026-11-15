@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   BarChart3,
+  ShieldCheck,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -79,6 +80,10 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "FY'grances", href: "/admin/fygrances", icon: Droplets, tone: "purple" },
       { label: "About", href: "/admin/about", icon: ScrollText, tone: "purple" },
     ],
+  },
+  {
+    label: "Équipe",
+    items: [{ label: "Équipe & rôles", href: "/admin/team", icon: ShieldCheck, tone: "gray" }],
   },
   {
     label: "Légal",
