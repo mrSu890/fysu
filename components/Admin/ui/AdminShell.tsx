@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
+  BarChart3,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -39,7 +40,10 @@ type NavGroup = { label: string | null; items: NavItem[] }
 export const ADMIN_NAV: NavGroup[] = [
   {
     label: null,
-    items: [{ label: "Aperçu", href: "/admin", icon: LayoutDashboard, tone: "gray" }],
+    items: [
+      { label: "Aperçu", href: "/admin", icon: LayoutDashboard, tone: "gray" },
+      { label: "Analyses", href: "/admin/analytics", icon: BarChart3, tone: "blue" },
+    ],
   },
   {
     label: "Vendre",
