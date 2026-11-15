@@ -8,12 +8,12 @@ const LOW_STOCK = 3
 
 // Liste légère des produits pour le catalogue admin (réservée aux admins par le middleware)
 export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from("products")
-    .select(
-      "id, name, slug, price, gender, product_type, category_id, createdAt, is_hidden, product_images(url), product_sizes(stock, is_active)"
-    )
-    .order("createdAt", { ascending: false })
+  const cols = "id, name, slug, price, gender, product_type, category_id, createdAt, is_hidden, product_images(url), product_sizes(stock, is_active)"
+  let { data, error } = await supabaseAdmin.from("products").select(`${cols}, is_archived`).order("createdAt", { ascending: false })
+  // colonne is_archived pas encore créée (SQL de l'archivage) : le catalogue reste utilisable
+  if (error && /is_archived/.test(error.message)) {
+    ;({ data, error } = (await supabaseAdmin.from("products").select(cols).order("createdAt", { ascending: false })) as any)
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -44,6 +44,7 @@ export async function GET() {
       category_id: p.category_id ?? null,
       createdAt: p.createdAt,
       is_hidden: !!p.is_hidden,
+      is_archived: !!p.is_archived,
       thumbnail: p.product_images?.[0]?.url ?? null,
       totalStock,
       sizeCount: sizes.length,
