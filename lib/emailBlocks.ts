@@ -16,8 +16,11 @@ export type ProductPick = { id: number; name: string; price: number; imageUrl: s
 
 export type Block =
   | { type: "hero"; imageUrl: string; alt?: string; href?: string }
-  | { type: "title"; eyebrow?: string; title: string }
-  | { type: "text"; text: string }
+  | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center" }
+  | { type: "text"; text: string; align?: "left" | "center" }
+  | { type: "nav"; links: { label: string; url: string }[] }
+  | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string }
+  | { type: "mosaic"; images: { imageUrl: string; alt?: string; href?: string }[] }
   | { type: "button"; label: string; url: string; style?: "solid" | "outline" }
   | { type: "products"; heading?: string; columns?: 1 | 2; items: ProductPick[] }
   | { type: "quote"; text: string; by?: string }
@@ -26,6 +29,9 @@ export type Block =
 
 export const BLOCK_LABEL: Record<Block["type"], string> = {
   hero: "Image",
+  nav: "Menu (liens du haut)",
+  heroTitle: "Image avec titre dessus",
+  mosaic: "Mosaïque de photos",
   title: "Titre",
   text: "Texte",
   button: "Bouton",
@@ -95,18 +101,57 @@ export function renderBlock(b: Block): string {
       const href = safeUrl(b.href)
       return `<tr><td style="padding:0 0 30px;">${href ? `<a href="${href}">${tag}</a>` : tag}</td></tr>`
     }
-    case "title":
+    case "title": {
+      const ta = b.align === "center" ? "text-align:center;" : ""
+      const titleCss =
+        b.style === "light"
+          ? `font-size:26px;line-height:1.2;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;`
+          : `font-size:32px;line-height:1.08;font-weight:800;letter-spacing:-0.025em;`
       return row(
-        `${b.eyebrow ? `<div style="${eyebrowStyle}padding:0 0 14px;">${esc(b.eyebrow)}</div>` : ""}
-<div style="font-family:${F.sans};font-size:32px;line-height:1.08;font-weight:800;letter-spacing:-0.025em;color:${C.ink};">${esc(b.title)}</div>`,
+        `${b.eyebrow ? `<div style="${eyebrowStyle}padding:0 0 14px;${ta}">${esc(b.eyebrow)}</div>` : ""}
+<div style="font-family:${F.sans};${titleCss}color:${C.ink};${ta}">${esc(b.title)}</div>`,
         "6px 28px 18px"
       )
+    }
+    case "nav": {
+      const links = (b.links || []).filter((l) => l.label && safeUrl(l.url)).slice(0, 4)
+      if (links.length === 0) return ""
+      const cells = links
+        .map((l) => `<td align="center" style="padding:0 4px;"><a href="${safeUrl(l.url)}" target="_blank" style="font-family:${F.mono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;color:${C.ink};">${esc(l.label)}</a></td>`)
+        .join("")
+      return `<tr><td style="padding:0 28px 26px;"><div style="border-top:1px solid ${C.ink};font-size:0;line-height:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>${cells}</tr></table></td></tr>`
+    }
+    case "heroTitle": {
+      const img = safeUrl(b.imageUrl)
+      if (!img) return ""
+      const href = safeUrl(b.buttonUrl)
+      const btn = href && b.buttonLabel
+        ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:22px auto 0;"><tr><td bgcolor="#ffffff" style="background:#ffffff;"><a href="${href}" target="_blank" style="display:inline-block;padding:13px 28px;font-family:${F.mono};font-size:11px;line-height:1;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;color:${C.ink};">${esc(b.buttonLabel)}</a></td></tr></table>`
+        : ""
+      // photo en fond de cellule : sous Outlook (ordinateur) elle ne s'affiche pas, le fond reste sombre et le texte lisible
+      return `<tr><td style="padding:0 28px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td background="${img}" bgcolor="#3a3935" height="520" valign="bottom" align="center" style="height:520px;background-color:#3a3935;background-image:linear-gradient(rgba(0,0,0,0) 45%,rgba(0,0,0,0.5) 100%),url('${img}');background-size:cover;background-position:center top;padding:0 20px 34px;">
+<div style="font-family:${F.sans};font-size:30px;line-height:1.1;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;color:#ffffff;text-shadow:0 1px 14px rgba(0,0,0,0.45);">${esc(b.title)}</div>${btn}</td></tr></table></td></tr>`
+    }
+    case "mosaic": {
+      const imgs = (b.images || []).filter((i) => safeUrl(i.imageUrl))
+      if (imgs.length === 0) return ""
+      const tag = (i: { imageUrl: string; alt?: string; href?: string }, w: number) => {
+        const t = `<img src="${safeUrl(i.imageUrl)}" alt="${esc(i.alt || "")}" width="${w}" style="display:block;width:100%;height:auto;border:0;background:${C.paper};">`
+        return safeUrl(i.href) ? `<a href="${safeUrl(i.href)}" target="_blank">${t}</a>` : t
+      }
+      const top = imgs.length >= 2
+        ? `<tr><td style="padding:0 28px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="50%" valign="top" style="padding:0 4px 0 0;">${tag(imgs[0], 262)}</td><td width="50%" valign="top" style="padding:0 0 0 4px;">${tag(imgs[1], 262)}</td></tr></table></td></tr>`
+        : `<tr><td style="padding:0 28px 8px;">${tag(imgs[0], 544)}</td></tr>`
+      const wide = imgs.length >= 3 ? `<tr><td style="padding:0 28px 8px;">${tag(imgs[2], 544)}</td></tr>` : ""
+      return top + wide + `<tr><td style="font-size:0;line-height:0;height:22px;">&nbsp;</td></tr>`
+    }
     case "text":
       return (b.text || "")
         .split(/\n\s*\n/)
         .map((p) => p.trim())
         .filter(Boolean)
-        .map((p) => row(`<div style="font-family:${F.sans};font-size:15px;line-height:1.75;font-weight:300;color:#2b2a27;">${richText(p)}</div>`, "0 28px 16px"))
+        .map((p) => row(`<div style="font-family:${F.sans};font-size:15px;line-height:1.75;font-weight:300;color:#2b2a27;${b.align === "center" ? "text-align:center;" : ""}">${richText(p)}</div>`, "0 28px 16px"))
         .join("")
     case "button":
       return row(button(b.label, b.url, b.style), "8px 28px 36px")
@@ -180,6 +225,8 @@ export function renderText(blocks: Block[], unsubUrl?: string | null): string {
     if (b.type === "title") out.push(`${b.eyebrow ? b.eyebrow.toUpperCase() + "\n" : ""}${b.title}`)
     else if (b.type === "text") out.push(b.text.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, "$1 ($2)"))
     else if (b.type === "button") out.push(`${b.label} : ${b.url}`)
+    else if (b.type === "heroTitle") out.push(`${b.title}${b.buttonLabel && b.buttonUrl ? "\n" + b.buttonLabel + " : " + b.buttonUrl : ""}`)
+    else if (b.type === "nav") out.push(b.links.filter((l) => l.label).map((l) => `${l.label} : ${l.url}`).join("\n"))
     else if (b.type === "quote") out.push(`« ${b.text} »${b.by ? " — " + b.by : ""}`)
     else if (b.type === "products") out.push((b.heading ? b.heading + "\n" : "") + (b.items || []).map((p) => `${p.name} — ${money(p.price)}\n${p.url}`).join("\n\n"))
   }
