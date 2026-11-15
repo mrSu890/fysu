@@ -26,7 +26,8 @@ export function logoImg(w: number, color: "dark" | "light" = "dark"): string {
   return `<a href="${SITE_URL}" target="_blank"><img src="${SITE_URL}/images/${f}" alt="FYSU" width="${w}" style="display:block;border:0;width:${w}px;height:auto;"></a>`
 }
 
-export type Block =
+type BlockBase =
+  | { type: "background"; color: string }
   | { type: "logo"; size?: LogoSize; align?: "left" | "center" | "right"; color?: "dark" | "light" }
   | { type: "hero"; imageUrl: string; alt?: string; href?: string; frame?: "wide" | "landscape" | "square" | "full"; focus?: "top" | "center" | "bottom"; logo?: LogoOver }
   | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center"; size?: Size }
@@ -40,7 +41,11 @@ export type Block =
   | { type: "divider" }
   | { type: "raw"; html: string } // usage interne (récapitulatif de commande)
 
+/** bg = couleur de fond de la section (facultatif) */
+export type Block = BlockBase & { bg?: string }
+
 export const BLOCK_LABEL: Record<Block["type"], string> = {
+  background: "Fond du mail",
   logo: "Logo FYSU",
   hero: "Image",
   nav: "Menu (liens du haut)",
@@ -89,7 +94,7 @@ export function button(label: string, url: string, style: "solid" | "outline" = 
   if (!href || !label) return ""
   const solid = style === "solid"
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${solid ? C.ink : C.page}" style="background:${solid ? C.ink : "transparent"};border:1px solid ${C.ink};">
-<a href="${href}" style="display:inline-block;padding:16px 34px;font-family:${F.mono};font-size:12px;line-height:1;letter-spacing:0.18em;text-transform:uppercase;text-decoration:none;color:${solid ? "#ffffff" : C.ink};">${esc(label)}</a></td></tr></table>`
+<a href="${href}" style="display:inline-block;padding:16px 34px;font-family:${F.mono};font-size:12px;line-height:1;letter-spacing:0.18em;text-transform:uppercase;text-decoration:none;color:${solid ? "#fefefe" : C.ink};">${esc(label)}</a></td></tr></table>`
 }
 
 const row = (inner: string, pad = "0 28px 22px") => `<tr><td style="padding:${pad};">${inner}</td></tr>`
@@ -106,8 +111,35 @@ function productCell(p: ProductPick, big: boolean): string {
 <div style="padding:4px 0 0;${eyebrowStyle}"><a href="${href}" target="_blank" style="${link}color:${C.soft};">${money(p.price)}</a></div>`
 }
 
-export function renderBlock(b: Block): string {
+const HEX = /^#[0-9a-f]{6}$/i
+export const safeColor = (c?: string) => (c && HEX.test(c) ? c.toLowerCase() : "")
+export function isDark(c: string): boolean {
+  const h = safeColor(c)
+  if (!h) return false
+  const [r, g, bl] = [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16))
+  return 0.299 * r + 0.587 * g + 0.114 * bl < 120
+}
+/** sur fond sombre : encre claire (le bouton plein devient blanc, son texte repasse en encre) */
+function onDark(html: string): string {
+  return html
+    .replace(/#151515/gi, "#ffffff").replace(/#2b2a27/gi, "#e8e7e3").replace(/#5c5a55/gi, "#b5b2aa").replace(/#cfcdc7/gi, "#55534e")
+    .replace(/#fefefe/gi, "#151515")
+}
+
+/** page = couleur de fond du mail ; bg du bloc = couleur de sa section */
+export function renderBlock(b: Block, page?: string): string {
+  if (b.type === "background") return ""
+  const inner = renderInner(b)
+  const sec = safeColor(b.bg)
+  const eff = sec || safeColor(page)
+  const out = eff && isDark(eff) ? onDark(inner) : inner
+  if (!sec || !out) return out
+  return `<tr><td bgcolor="${sec}" style="background:${sec};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${out}</table></td></tr>`
+}
+
+function renderInner(b: Block): string {
   switch (b.type) {
+    case "background": return ""
     case "logo": {
       if (b.size === "none") return ""
       const al = b.align ?? "center"
@@ -237,24 +269,27 @@ export type DocOpts = {
 export function renderDoc(o: DocOpts): string {
   const b = o.business
   const hasLogo = o.blocks.some((x) => x.type === "logo")
-  const body = o.blocks.map(renderBlock).join("\n")
+  const bgb = o.blocks.find((x) => x.type === "background")
+  const pg = (bgb && bgb.type === "background" && safeColor(bgb.color)) || C.page
+  const dark = isDark(pg)
+  const body = o.blocks.map((x) => renderBlock(x, pg)).join("\n")
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only">
 <style>:root{color-scheme:light only;supported-color-schemes:light only;}@media only screen and (max-width:620px){.wrap{width:100%!important}}</style></head>
-<body style="margin:0;padding:0;background:${C.page};">
+<body style="margin:0;padding:0;background:${pg};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${esc(o.preheader || "")}${"&zwnj;&nbsp;".repeat(40)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="background:${C.page};"><tr><td align="center" style="padding:0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${pg}" style="background:${pg};"><tr><td align="center" style="padding:0;">
 <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;">
-${hasLogo ? "" : `<tr><td align="center" style="padding:40px 28px 34px;">${logoImg(104)}</td></tr>`}
+${hasLogo ? "" : `<tr><td align="center" style="padding:40px 28px 34px;">${logoImg(104, dark ? "light" : "dark")}</td></tr>`}
 ${body}
-<tr><td style="padding:14px 28px 44px;">
+${(() => { const f = `<tr><td style="padding:14px 28px 44px;">
 <div style="border-top:1px solid ${C.line};padding:22px 0 0;font-family:${F.sans};font-size:12px;line-height:1.7;font-weight:300;color:${C.soft};">
 ${o.footerNote ? `${richText(o.footerNote)}<br><br>` : ""}
 ${esc(b.name)} · ${esc(b.street)}, ${esc(b.postalCode)} ${esc(b.city)}, ${esc(b.country)}<br>
 <a href="mailto:${esc(b.email)}" style="color:${C.soft};">${esc(b.email)}</a>${b.instagram ? ` · <a href="${esc(b.instagram)}" style="color:${C.soft};">Instagram</a>` : ""} · <a href="${SITE_URL}" style="color:${C.soft};">f-y-s-u.com</a>
 ${o.unsubUrl ? `<br><br>Tu reçois cet e-mail car tu t'es inscrit à la newsletter FYSU. <a href="${esc(o.unsubUrl)}" style="color:${C.soft};">Se désinscrire</a>` : ""}
-</div></td></tr>
+</div></td></tr>`; return dark ? onDark(f) : f })()}
 </table></td></tr></table></body></html>`
 }
 

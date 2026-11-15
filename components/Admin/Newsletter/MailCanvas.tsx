@@ -1,13 +1,13 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Crop, AlignLeft, ArrowDown, ArrowUp, Captions, Copy, Heading, Image as ImageIcon, LayoutGrid, Menu as MenuIcon, Minus, MousePointerClick, Plus, Quote, Shirt, Stamp, Trash2, X, type LucideIcon } from "lucide-react"
+import { Crop, AlignLeft, ArrowDown, ArrowUp, Captions, Copy, Heading, Image as ImageIcon, LayoutGrid, Menu as MenuIcon, Minus, MousePointerClick, Plus, Quote, Palette, Shirt, Stamp, Trash2, X, type LucideIcon } from "lucide-react"
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { errorMessage, notify } from "@/lib/adminApi"
 import { ProductPicker, uploadImage } from "@/components/Admin/Newsletter/shared"
 import CropModal from "@/components/Admin/Newsletter/CropModal"
 import LinkPicker from "@/components/Admin/Newsletter/LinkPicker"
-import { BLOCK_LABEL, renderBlock, type Block } from "@/lib/emailBlocks"
+import { BLOCK_LABEL, isDark, renderBlock, type Block } from "@/lib/emailBlocks"
 
 export const field = "w-full rounded-xl bg-white px-3 py-2.5 text-[15px] ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]"
 export const SITE = "https://f-y-s-u.com"
@@ -15,6 +15,7 @@ export const SITE = "https://f-y-s-u.com"
 export type Kind = Exclude<Block["type"], "raw">
 
 export const NEW_BLOCK: Record<Kind, Block> = {
+  background: { type: "background", color: "#151515" },
   logo: { type: "logo", size: "m", align: "center", color: "dark" },
   hero: { type: "hero", imageUrl: "", alt: "" },
   heroTitle: { type: "heroTitle", imageUrl: "", alt: "", title: "", buttonLabel: "Découvrir", buttonUrl: SITE },
@@ -30,6 +31,7 @@ export const NEW_BLOCK: Record<Kind, Block> = {
 
 export const PICK: [Kind, string, LucideIcon][] = [
   ["logo", "Logo", Stamp],
+  ["background", "Fond du mail", Palette],
   ["hero", "Photo", ImageIcon],
   ["heroTitle", "Photo + titre", Captions],
   ["title", "Titre", Heading],
@@ -59,8 +61,8 @@ export function isEmpty(b: Block): boolean {
   }
 }
 
-export function BlockView({ b }: { b: Block }) {
-  const html = useMemo(() => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${renderBlock(b)}</table>`, [b])
+export function BlockView({ b, page }: { b: Block; page?: string }) {
+  const html = useMemo(() => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${renderBlock(b, page)}</table>`, [b, page])
   return <div style={{ pointerEvents: "none" }} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
@@ -100,8 +102,30 @@ export function Seg<T extends string>({ value, opts, onChange }: { value: T; opt
   )
 }
 
+const SWATCHES: [string, string][] = [["#e8e7e3", "Gris FYSU"], ["#ffffff", "Blanc"], ["#d9d3c7", "Sable"], ["#c9d1c0", "Sauge"], ["#151515", "Noir"]]
+export function ColorPick({ value, onChange, none }: { value?: string; onChange: (c: string) => void; none?: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {none && <button type="button" onClick={() => onChange("")} className={`rounded-full px-3 py-1.5 text-sm ring-1 ${!value ? "bg-[#171717] text-white ring-[#171717]" : "bg-white ring-[#e0dbd3]"}`}>{none}</button>}
+      {SWATCHES.map(([c, l]) => (
+        <button key={c} type="button" aria-label={l} onClick={() => onChange(c)} className={`h-9 w-9 rounded-full ring-2 ${value?.toLowerCase() === c ? "ring-[#0a84ff]" : "ring-[#d9d3c7]"}`} style={{ background: c }} />
+      ))}
+      <label className="relative h-9 w-9 cursor-pointer overflow-hidden rounded-full ring-2 ring-[#d9d3c7]" aria-label="Autre couleur" style={{ background: "conic-gradient(#e33,#fb3,#3c6,#39f,#93f,#e33)" }}>
+        <input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" value={value && /^#[0-9a-f]{6}$/i.test(value) ? value : "#e8e7e3"} onChange={(e) => onChange(e.target.value)} />
+      </label>
+    </div>
+  )
+}
+
 export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void; chips?: [string, string][] }) {
   switch (b.type) {
+    case "background":
+      return (
+        <div className="space-y-3">
+          <ColorPick value={b.color} onChange={(c) => set({ ...b, color: c })} />
+          <p className="text-xs text-[#7a756d]">Couleur de tout le mail. Le texte passe en clair tout seul sur un fond foncé. Chaque bloc peut aussi avoir sa propre couleur.</p>
+        </div>
+      )
     case "logo":
       return (
         <div className="space-y-3">
@@ -292,13 +316,16 @@ export function MailCanvas({ blocks, onChange, wide, hideSheet, onTouch, chips }
     </div>
   )
   const block = sel !== null ? blocks[sel] : null
+  const bgb = blocks.find((x) => x.type === "background")
+  const page = bgb && bgb.type === "background" ? bgb.color : "#e8e7e3"
+  const dark = isDark(page)
   const open = !hideSheet && (adding || block !== null)
 
   return (
     <>
       <div className="mx-auto" style={{ maxWidth: wide ? 600 : 390 }}>
-        <div className="overflow-hidden rounded-2xl ring-1 ring-[#d9d7d1]" style={{ background: "#e8e7e3" }} onClick={() => touch(null)}>
-          {!blocks.some((x) => x.type === "logo") && <div className="flex justify-center px-7 pb-7 pt-9">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/images/fysu-dark.png" alt="FYSU" width={104} style={{ width: 104, height: "auto" }} /></div>}
+        <div className="overflow-hidden rounded-2xl ring-1 ring-[#d9d7d1]" style={{ background: page }} onClick={() => touch(null)}>
+          {!blocks.some((x) => x.type === "logo") && <div className="flex justify-center px-7 pb-7 pt-9">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={dark ? "/images/fysu-light.png" : "/images/fysu-dark.png"} alt="FYSU" width={104} style={{ width: 104, height: "auto" }} /></div>}
           {plus(0)}
           {blocks.map((b, i) => (
             <div key={i}>
@@ -308,18 +335,20 @@ export function MailCanvas({ blocks, onChange, wide, hideSheet, onTouch, chips }
                 onKeyDown={(e) => e.key === "Enter" && touch(i)}
                 className={`relative cursor-pointer ${sel === i ? "outline outline-2 outline-offset-[-2px] outline-[#0a84ff]" : "hover:outline hover:outline-1 hover:outline-offset-[-1px] hover:outline-[#0a84ff]/50"}`}
               >
-                {isEmpty(b) ? (
+                {b.type === "background" ? (
+                  <div className="mx-7 mb-3 flex items-center gap-2 rounded-full bg-black/5 px-3 py-2 text-xs" style={{ color: dark ? "#ddd" : "#5c5a55" }}><Palette size={14} />Fond du mail<span className="ml-auto h-4 w-4 rounded-full ring-1 ring-black/20" style={{ background: b.color }} /></div>
+                ) : isEmpty(b) ? (
                   <div className="mx-7 mb-5 flex h-24 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[#a9a59c] text-[#7a756d]">
                     {(() => { const I = ICON_OF[b.type] ?? ImageIcon; return <I size={20} /> })()}
                     <span className="text-xs">Touche pour ajouter {WORD[b.type] ?? ""}</span>
                   </div>
-                ) : <BlockView b={b} />}
+                ) : <BlockView b={b} page={page} />}
               </div>
               {plus(i + 1)}
             </div>
           ))}
           {blocks.length === 0 && <p className="px-6 py-10 text-center text-sm text-[#7a756d]">Touche +</p>}
-          <p className="px-7 pb-8 pt-4 text-center text-[11px] text-[#9a948a]">FYSU · adresse · Se désinscrire</p>
+          <p className="px-7 pb-8 pt-4 text-center text-[11px]" style={{ color: dark ? "#b5b2aa" : "#9a948a" }}>FYSU · adresse · Se désinscrire</p>
         </div>
       </div>
       <div className={open ? "h-[58vh] lg:h-0" : "h-24"} />
@@ -335,6 +364,12 @@ export function MailCanvas({ blocks, onChange, wide, hideSheet, onTouch, chips }
             <IconBtn label="Fermer" onClick={() => setSel(null)}><X size={16} /></IconBtn>
           </div>
           <BlockForm b={block} set={(nb) => setBlock(sel, nb)} chips={chips} />
+          {block.type !== "background" && (
+            <div className="mt-4 border-t border-[#ebe6de] pt-3">
+              <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Fond de cette section</p>
+              <ColorPick none="Comme le mail" value={block.bg} onChange={(c) => setBlock(sel, { ...block, bg: c || undefined })} />
+            </div>
+          )}
         </Sheet>
       )}
 
