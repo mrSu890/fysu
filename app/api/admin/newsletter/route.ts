@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { renderEmail, SITE_URL, type Campaign, type Footer } from "@/lib/newsletter"
 import { FOOTER, stripKeep } from "@/lib/emailBlocks"
+import { earlyKey } from "@/lib/preLaunch"
 import { audienceCounts, isAudience, loadAudience } from "@/lib/audience"
 import { fillDeep } from "@/lib/emailScenarios"
 import { baseLocale, isTranslated, translateDeep } from "@/lib/mailTranslate"
@@ -25,7 +26,7 @@ export async function GET() {
     return fail(/relation|does not exist/i.test(m) ? "La table newsletter_subscribers n'existe pas encore (SQL à lancer dans Supabase)." : m)
   }
   const { data: d } = await supabaseAdmin.from("email_templates").select("data").eq("key", "newsletter_draft").maybeSingle()
-  return NextResponse.json({ active: counts.all, counts, configured: resendReady(), draft: d?.data ?? null })
+  return NextResponse.json({ earlyUrl: (await earlyKey()) ? `${SITE_URL}/api/early?k=${await earlyKey()}` : null, active: counts.all, counts, configured: resendReady(), draft: d?.data ?? null })
 }
 
 export async function PUT(req: Request) {

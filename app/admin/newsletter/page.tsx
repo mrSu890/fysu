@@ -22,7 +22,7 @@ const TEMPLATES: { name: string; make: () => Campaign }[] = [
 ]
 
 export default function NewsletterAdmin() {
-  const [info, setInfo] = useState<{ active: number; counts: Record<Audience, number>; configured: boolean } | null>(null)
+  const [info, setInfo] = useState<{ active: number; counts: Record<Audience, number>; configured: boolean; earlyUrl?: string | null } | null>(null)
   const [aud, setAud] = useState<Audience>("all")
   const [c, setC] = useState<Campaign>({ subject: "", preheader: "", blocks: [] })
   const [loaded, setLoaded] = useState(false)
@@ -33,7 +33,7 @@ export default function NewsletterAdmin() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    api.get<{ active: number; counts: Record<Audience, number>; configured: boolean; draft: Campaign | null }>("/api/admin/newsletter")
+    api.get<{ active: number; counts: Record<Audience, number>; configured: boolean; earlyUrl?: string | null; draft: Campaign | null }>("/api/admin/newsletter")
       .then((r) => {
         setInfo(r)
         if (r.draft && Array.isArray(r.draft.blocks) && r.draft.blocks.length) setC(r.draft)
@@ -84,7 +84,7 @@ export default function NewsletterAdmin() {
         <Sheet>
           <div className="mb-3 flex items-center"><span className="mr-auto text-sm font-medium">Modèles</span>{c.blocks.length > 0 && <IconBtn label="Fermer" onClick={() => setPanel(null)}><X size={16} /></IconBtn>}</div>
           <div className="grid grid-cols-2 gap-2">
-            {TEMPLATES.map((t) => (
+            {[...(info?.earlyUrl ? [{ name: "Accès anticipé", make: T([{ type: "title", eyebrow: "Accès anticipé", title: "Le site ouvre pour toi en premier", style: "light", align: "center" }, { type: "text", text: "Tu fais partie des premiers inscrits : entre avant tout le monde avec ce lien privé, merci de ne pas le partager.", align: "center" }, { type: "button", label: "Entrer en avant-première", url: info.earlyUrl, style: "solid" }, { type: "products", heading: "La sélection", columns: 2, items: [] }]) }] : []), ...TEMPLATES].map((t) => (
               <button key={t.name} type="button" onClick={() => { if (c.blocks.some((b) => !isEmpty(b)) && !window.confirm(`Remplacer le mail par « ${t.name} » ?`)) return; const n = t.make(); setC((p) => ({ ...n, subject: p.subject, preheader: p.preheader })); setPanel(null) }} className="rounded-2xl bg-[#faf8f5] p-4 text-left text-sm font-medium ring-1 ring-[#ebe6de] hover:ring-[#171717]">{t.name}</button>
             ))}
           </div>

@@ -42,3 +42,11 @@ export async function gateToken(): Promise<string | null> {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("")
 }
+
+// Clé du lien « accès anticipé » : empreinte du mot de passe du site (elle change quand le mot de passe change)
+export async function earlyKey(): Promise<string | null> {
+  const password = sitePassword()
+  if (!password) return null
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`fysu-early:${password}`))
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 24)
+}

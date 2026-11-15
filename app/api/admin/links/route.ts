@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { SITE_URL } from "@/lib/emailBlocks"
+import { earlyKey } from "@/lib/preLaunch"
 
 export const runtime = "nodejs"
 
@@ -14,11 +15,13 @@ export async function GET() {
     supabaseAdmin.from("collectionPages").select("*"),
     supabaseAdmin.from("products").select("slug, name").eq("is_hidden", false).order("createdAt", { ascending: false }).limit(200),
   ])
+  const ek = await earlyKey()
   const nice = (r: any) => String(r.title ?? r.name ?? r.slug)
   const ok = (r: any) => r.slug && r.visible !== false
 
   return NextResponse.json({
     groups: [
+      ...(ek ? [{ group: "Accès anticipé", items: [{ label: "Ouvrir le site avant tout le monde (lien privé)", url: u(`/api/early?k=${ek}`) }, ...((collections.data ?? []) as any[]).filter((r) => r.slug && r.visible !== false).slice(0, 12).map((r) => ({ label: `Accès anticipé · ${String(r.title ?? r.name ?? r.slug)}`, url: u(`/api/early?k=${ek}&to=/collections/${r.slug}`) }))] }] : []),
       {
         group: "Pages",
         items: [
