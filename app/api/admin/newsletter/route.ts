@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
-import { renderEmail, SITE_URL, type Campaign } from "@/lib/newsletter"
+import { renderEmail, SITE_URL, type Campaign, type Footer } from "@/lib/newsletter"
+import { FOOTER, stripKeep } from "@/lib/emailBlocks"
+import { baseLocale, isTranslated, translateDeep } from "@/lib/mailTranslate"
 import { resendBatch, resendReady, type Mail } from "@/lib/resend"
 
 export const runtime = "nodejs"
@@ -42,22 +44,31 @@ export async function POST(req: Request) {
       const to = String(body.to || "").trim()
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return fail("Adresse de test invalide.", 400)
       const { html, text } = renderEmail(c, `${SITE_URL}/api/newsletter/unsubscribe?t=test`)
-      await resendBatch([{ from, to: [to], subject: `[TEST] ${c.subject}`, html, text, reply_to: replyTo }])
+      await resendBatch([{ from, to: [to], subject: `[TEST] ${stripKeep(c.subject)}`, html, text, reply_to: replyTo }])
       return NextResponse.json({ ok: true, sent: 1 })
     }
 
     if (body.action === "send") {
-      const { data, error } = await supabaseAdmin.from("newsletter_subscribers").select("email, token").is("unsubscribed_at", null)
+      const { data, error } = await supabaseAdmin.from("newsletter_subscribers").select("email, token, locale").is("unsubscribed_at", null)
       if (error) return fail(error.message)
       const subs = data ?? []
       if (subs.length === 0) return fail("Aucun inscrit.", 400)
+      // la campagne est écrite en français : chaque langue du site est traduite une seule fois, l'anglais aussi
+      const langs = Array.from(new Set(subs.map((s) => baseLocale(s.locale)).filter((l) => l && l !== "fr" && isTranslated(l) || l === "en")))
+      const versions = new Map<string, { c: Campaign; footer: Footer; lang: string }>()
+      await Promise.all(langs.map(async (l) => {
+        const t = await translateDeep({ c, footer: FOOTER.fr }, "fr", l)
+        if (t) versions.set(l, { c: t.c, footer: t.footer, lang: l })
+      }))
+      const orig = { c, footer: FOOTER.fr, lang: "fr" }
       let sent = 0
       for (let i = 0; i < subs.length; i += 100) {
         const chunk = subs.slice(i, i + 100)
         const mails: Mail[] = chunk.map((s) => {
           const url = `${SITE_URL}/api/newsletter/unsubscribe?t=${s.token}`
-          const { html, text } = renderEmail(c, url)
-          return { from, to: [s.email], subject: c.subject, html, text, reply_to: replyTo, headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
+          const v = versions.get(baseLocale(s.locale)) ?? orig
+          const { html, text } = renderEmail(v.c, url, v.lang, v.footer)
+          return { from, to: [s.email], subject: stripKeep(v.c.subject), html, text, reply_to: replyTo, headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
         })
         await resendBatch(mails)
         sent += chunk.length

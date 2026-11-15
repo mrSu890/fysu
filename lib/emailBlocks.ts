@@ -73,8 +73,10 @@ export const F = {
   serif: "Georgia,'Times New Roman',serif",
 }
 
+/** [[mot]] = mot protégé de la traduction ; les crochets ne s'affichent jamais */
+export const stripKeep = (s: string) => String(s ?? "").replace(/\[\[|\]\]/g, "")
 export const esc = (s: string) =>
-  String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+  stripKeep(String(s ?? "")).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 
 export const safeUrl = (u?: string) => (u && /^https?:\/\//i.test(u.trim()) ? esc(u.trim()) : "")
 
@@ -257,7 +259,14 @@ ${b.by ? `<div style="${eyebrowStyle}padding:12px 0 0;">${esc(b.by)}</div>` : ""
   }
 }
 
+export const FOOTER = {
+  fr: { intro: "Tu reçois cet e-mail car tu t'es inscrit à la newsletter FYSU.", link: "Se désinscrire" },
+  en: { intro: "You are receiving this email because you subscribed to the FYSU newsletter.", link: "Unsubscribe" },
+}
+
 export type DocOpts = {
+  lang?: string
+  footer?: { intro: string; link: string }
   preheader?: string
   blocks: Block[]
   /** lien de désinscription (newsletter) ; absent pour les mails de commande */
@@ -268,11 +277,12 @@ export type DocOpts = {
 
 export function renderDoc(o: DocOpts): string {
   const b = o.business
+  const ft = o.footer ?? (o.lang === "en" ? FOOTER.en : FOOTER.fr)
   const bgb = o.blocks.find((x) => x.type === "background")
   const pg = (bgb && bgb.type === "background" && safeColor(bgb.color)) || C.page
   const dark = isDark(pg)
   const body = o.blocks.map((x) => renderBlock(x, pg)).join("\n")
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="${esc(o.lang || "fr")}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only">
 <style>:root{color-scheme:light only;supported-color-schemes:light only;}@media only screen and (max-width:620px){.wrap{width:100%!important}}</style></head>
@@ -286,13 +296,13 @@ ${(() => { const f = `<tr><td style="padding:14px 28px 44px;">
 ${o.footerNote ? `${richText(o.footerNote)}<br><br>` : ""}
 ${esc(b.name)} · ${esc(b.street)}, ${esc(b.postalCode)} ${esc(b.city)}, ${esc(b.country)}<br>
 <a href="mailto:${esc(b.email)}" style="color:${C.soft};">${esc(b.email)}</a>${b.instagram ? ` · <a href="${esc(b.instagram)}" style="color:${C.soft};">Instagram</a>` : ""} · <a href="${SITE_URL}" style="color:${C.soft};">f-y-s-u.com</a>
-${o.unsubUrl ? `<br><br>Tu reçois cet e-mail car tu t'es inscrit à la newsletter FYSU. <a href="${esc(o.unsubUrl)}" style="color:${C.soft};">Se désinscrire</a>` : ""}
+${o.unsubUrl ? `<br><br>${esc(ft.intro)} <a href="${esc(o.unsubUrl)}" style="color:${C.soft};">${esc(ft.link)}</a>` : ""}
 </div></td></tr>`; return dark ? onDark(f) : f })()}
 </table></td></tr></table></body></html>`
 }
 
 /** version texte brut (clients sans HTML + score anti-spam) */
-export function renderText(blocks: Block[], unsubUrl?: string | null): string {
+export function renderText(blocks: Block[], unsubUrl?: string | null, unsubLabel = "Se désinscrire"): string {
   const out: string[] = []
   for (const b of blocks) {
     if (b.type === "title") out.push(`${b.eyebrow ? b.eyebrow.toUpperCase() + "\n" : ""}${b.title}`)
@@ -303,6 +313,6 @@ export function renderText(blocks: Block[], unsubUrl?: string | null): string {
     else if (b.type === "quote") out.push(`« ${b.text} »${b.by ? " — " + b.by : ""}`)
     else if (b.type === "products") out.push((b.heading ? b.heading + "\n" : "") + (b.items || []).map((p) => `${p.name} — ${money(p.price)}\n${p.url}`).join("\n\n"))
   }
-  if (unsubUrl) out.push(`—\nSe désinscrire : ${unsubUrl}`)
-  return out.join("\n\n")
+  if (unsubUrl) out.push(`—\n${unsubLabel} : ${unsubUrl}`)
+  return stripKeep(out.join("\n\n"))
 }

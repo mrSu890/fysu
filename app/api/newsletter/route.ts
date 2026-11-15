@@ -30,6 +30,6 @@ export async function POST(req: Request) {
     console.error("newsletter_subscribers:", error.message)
     return NextResponse.json({ error: "Could not save" }, { status: 500 })
   }
-  await autoSend("welcome", { email, lang: locale?.startsWith("fr") ? "fr" : "en", vars: {} })
+  await autoSend("welcome", { email, lang: locale?.startsWith("fr") ? "fr" : "en", locale, vars: {} })
   return NextResponse.json({ ok: true })
 }

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { BUSINESS } from "@/lib/business"
-import { renderDoc, renderText, SITE_URL, type Block } from "@/lib/emailBlocks"
+import { FOOTER, stripKeep, renderDoc, renderText, SITE_URL, type Block } from "@/lib/emailBlocks"
+import { baseLocale, isTranslated, translateDeep } from "@/lib/mailTranslate"
 import { resendBatch, resendReady, type Mail } from "@/lib/resend"
 
 /* ====================================================================
@@ -138,7 +139,7 @@ function fillDeep<T>(x: T, v: Vars): T {
   return x
 }
 
-export function renderScenario(copy: Copy, v: Vars, unsubUrl?: string | null) {
+export function renderScenario(copy: Copy, v: Vars, unsubUrl?: string | null, lang = "fr", footer?: { intro: string; link: string }) {
   let blocks: Block[]
   if (copy.blocks?.length) {
     blocks = fillDeep(copy.blocks, v).map((b) => (b.type === "button" && v.url ? { ...b, url: v.url } : b))
@@ -150,19 +151,31 @@ export function renderScenario(copy: Copy, v: Vars, unsubUrl?: string | null) {
     if (copy.cta && (v.url || copy.url)) blocks.push({ type: "button", label: copy.cta, url: v.url || copy.url, style: "solid" })
   }
   return {
-    subject: fill(copy.subject, v),
-    html: renderDoc({ preheader: fill(copy.subject, v), blocks, unsubUrl: unsubUrl ?? null, business: BUSINESS }),
-    text: renderText(blocks, unsubUrl ?? null),
+    subject: stripKeep(fill(copy.subject, v)),
+    html: renderDoc({ preheader: fill(copy.subject, v), blocks, unsubUrl: unsubUrl ?? null, business: BUSINESS, lang, footer }),
+    text: renderText(blocks, unsubUrl ?? null, footer?.link),
   }
 }
 
-export type Recipient = { email: string; lang: Lang; vars: Vars; unsubUrl?: string }
+/** locale = langue du site du client (ex. « ja ») : traduction automatique si ce n'est ni fr ni en */
+export type Recipient = { email: string; lang: Lang; locale?: string | null; vars: Vars; unsubUrl?: string }
 
 export async function sendScenario(copyFor: (lang: Lang) => Copy, rs: Recipient[], testPrefix = "") {
   const from = process.env.ORDERS_FROM || process.env.NEWSLETTER_FROM!
   const replyTo = process.env.NEWSLETTER_REPLY_TO || BUSINESS.email
-  const mails: Mail[] = rs.map((r) => {
-    const m = renderScenario(copyFor(r.lang), r.vars, r.unsubUrl)
+  // une seule traduction par langue, même pour 500 destinataires
+  const tr = new Map<string, Promise<{ copy: Copy; footer: { intro: string; link: string } } | null>>()
+  const translated = (loc: string) => {
+    if (!tr.has(loc)) tr.set(loc, translateDeep({ copy: copyFor("en"), footer: FOOTER.en }, "en", loc))
+    return tr.get(loc)!
+  }
+  const prepared = await Promise.all(rs.map(async (r) => {
+    const loc = baseLocale(r.locale)
+    const t = isTranslated(loc) ? await translated(loc) : null
+    return { r, copy: t?.copy ?? copyFor(t === null && isTranslated(loc) ? "en" : r.lang), footer: t?.footer, lang: t ? loc : isTranslated(loc) ? "en" : r.lang }
+  }))
+  const mails: Mail[] = prepared.map(({ r, copy, footer, lang }) => {
+    const m = renderScenario(copy, r.vars, r.unsubUrl, lang, footer)
     return {
       from, to: [r.email], subject: testPrefix + m.subject, html: m.html, text: m.text, reply_to: replyTo,
       ...(r.unsubUrl ? { headers: { "List-Unsubscribe": `<${r.unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } } : {}),
