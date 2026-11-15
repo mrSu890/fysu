@@ -268,7 +268,6 @@ export type DocOpts = {
 
 export function renderDoc(o: DocOpts): string {
   const b = o.business
-  const hasLogo = o.blocks.some((x) => x.type === "logo")
   const bgb = o.blocks.find((x) => x.type === "background")
   const pg = (bgb && bgb.type === "background" && safeColor(bgb.color)) || C.page
   const dark = isDark(pg)
@@ -281,7 +280,6 @@ export function renderDoc(o: DocOpts): string {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${esc(o.preheader || "")}${"&zwnj;&nbsp;".repeat(40)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${pg}" style="background:${pg};"><tr><td align="center" style="padding:0;">
 <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;">
-${hasLogo ? "" : `<tr><td align="center" style="padding:40px 28px 34px;">${logoImg(104, dark ? "light" : "dark")}</td></tr>`}
 ${body}
 ${(() => { const f = `<tr><td style="padding:14px 28px 44px;">
 <div style="border-top:1px solid ${C.line};padding:22px 0 0;font-family:${F.sans};font-size:12px;line-height:1.7;font-weight:300;color:${C.soft};">

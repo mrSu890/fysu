@@ -325,7 +325,6 @@ export function MailCanvas({ blocks, onChange, wide, hideSheet, onTouch, chips }
     <>
       <div className="mx-auto" style={{ maxWidth: wide ? 600 : 390 }}>
         <div className="overflow-hidden rounded-2xl ring-1 ring-[#d9d7d1]" style={{ background: page }} onClick={() => touch(null)}>
-          {!blocks.some((x) => x.type === "logo") && <div className="flex justify-center px-7 pb-7 pt-9">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={dark ? "/images/fysu-light.png" : "/images/fysu-dark.png"} alt="FYSU" width={104} style={{ width: 104, height: "auto" }} /></div>}
           {plus(0)}
           {blocks.map((b, i) => (
             <div key={i}>
