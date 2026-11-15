@@ -17,7 +17,7 @@ export type ProductPick = { id: number; name: string; price: number; imageUrl: s
 export type Size = "s" | "m" | "l"
 
 export type Block =
-  | { type: "hero"; imageUrl: string; alt?: string; href?: string }
+  | { type: "hero"; imageUrl: string; alt?: string; href?: string; frame?: "wide" | "landscape" | "square" | "full"; focus?: "top" | "center" | "bottom" }
   | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center"; size?: Size }
   | { type: "text"; text: string; align?: "left" | "center"; size?: Size }
   | { type: "nav"; links: { label: string; url: string }[] }
@@ -99,8 +99,15 @@ export function renderBlock(b: Block): string {
     case "hero": {
       const img = safeUrl(b.imageUrl)
       if (!img) return ""
-      const tag = `<img src="${img}" alt="${esc(b.alt || "")}" width="600" style="display:block;width:100%;height:auto;border:0;">`
       const href = safeUrl(b.href)
+      const frame = b.frame ?? "landscape"
+      if (frame !== "full") {
+        // cadre fixe (mail plus court) : la photo remplit le cadre, on choisit la partie visible
+        const H = { wide: 300, landscape: 380, square: 520 }[frame]
+        const inner = href ? `<a href="${href}" target="_blank" style="display:block;height:${H}px;font-size:0;line-height:0;text-decoration:none;">&nbsp;</a>` : "&nbsp;"
+        return `<tr><td background="${img}" bgcolor="#e8e7e3" height="${H}" style="height:${H}px;font-size:0;line-height:0;background-color:#e8e7e3;background-image:url('${img}');background-size:cover;background-position:center ${b.focus ?? "center"};">${inner}</td></tr><tr><td style="font-size:0;line-height:0;height:30px;">&nbsp;</td></tr>`
+      }
+      const tag = `<img src="${img}" alt="${esc(b.alt || "")}" width="600" style="display:block;width:100%;height:auto;border:0;">`
       return `<tr><td style="padding:0 0 30px;">${href ? `<a href="${href}">${tag}</a>` : tag}</td></tr>`
     }
     case "title": {

@@ -30,9 +30,9 @@ function Switch({ on, onChange, label: l }: { on: boolean; onChange: (v: boolean
   )
 }
 
-function Seg<T extends string>({ value, opts, onChange }: { value: T; opts: [T, string][]; onChange: (v: T) => void }) {
+function Seg<T extends string>({ value, opts, onChange, nowrap }: { value: T; opts: [T, string][]; onChange: (v: T) => void; nowrap?: boolean }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className={`flex gap-2 ${nowrap ? "flex-nowrap" : "flex-wrap"}`}>
       {opts.map(([v, l]) => (
         <button key={v} type="button" onClick={() => onChange(v)} className={`rounded-full px-3 py-1.5 text-sm ring-1 ${value === v ? "bg-[#171717] text-white ring-[#171717]" : "bg-white ring-[#e0dbd3]"}`}>{l}</button>
       ))}
@@ -108,11 +108,11 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f6f4f0]">
-      <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-[#e9e5df] bg-[#f6f4f0]/95 px-4 py-2.5 backdrop-blur">
+      <div className="sticky top-0 z-30 flex flex-nowrap items-center gap-2 overflow-hidden whitespace-nowrap border-b border-[#e9e5df] bg-[#f6f4f0]/95 px-4 py-2.5 backdrop-blur">
         <button type="button" aria-label="Fermer" onClick={onClose} className="rounded-full p-2 hover:bg-[#171717]/[0.06]"><X size={18} /></button>
         <IconTile icon={Icon} tone={tone} size={28} />
-        <span className="mr-auto truncate text-sm font-medium">{s.label}</span>
-        <Seg value={lang} opts={[["fr", "FR"], ["en", "EN"]]} onChange={setLang} />
+        <span className="mr-auto hidden min-w-0 truncate text-sm font-medium sm:block">{s.label}</span><span className="mr-auto sm:hidden" />
+        <Seg nowrap value={lang} opts={[["fr", "FR"], ["en", "EN"]]} onChange={setLang} />
         <AdminButton icon={Save} onClick={save} disabled={!!busy}>Enregistrer</AdminButton>
         <AdminButton icon={Send} variant="primary" onClick={() => setPanel("send")}>{situation ? "Envoyer" : "Test"}</AdminButton>
       </div>

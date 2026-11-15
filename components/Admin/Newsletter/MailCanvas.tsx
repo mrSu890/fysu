@@ -90,7 +90,7 @@ const SIZES: ["s" | "m" | "l", string][] = [["s", "Petit"], ["m", "Moyen"], ["l"
 
 export function Seg<T extends string>({ value, opts, onChange }: { value: T; opts: [T, string][]; onChange: (v: T) => void }) {
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       {opts.map(([v, l]) => (
         <button key={v} type="button" onClick={() => onChange(v)} className={`rounded-full px-3 py-1.5 text-sm ring-1 ${value === v ? "bg-[#171717] text-white ring-[#171717]" : "bg-white ring-[#e0dbd3]"}`}>{l}</button>
       ))}
@@ -153,6 +153,16 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
       return (
         <div className="space-y-3">
           <Upload url={b.imageUrl} onUrl={(u) => set({ ...b, imageUrl: u })} />
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Cadre</p>
+            <Seg value={b.frame ?? "landscape"} opts={[["wide", "Bandeau"], ["landscape", "Paysage"], ["square", "Carré"], ["full", "Entière"]]} onChange={(v) => set({ ...b, frame: v })} />
+          </div>
+          {(b.frame ?? "landscape") !== "full" && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Partie de la photo</p>
+              <Seg value={b.focus ?? "center"} opts={[["top", "Haut"], ["center", "Milieu"], ["bottom", "Bas"]]} onChange={(v) => set({ ...b, focus: v })} />
+            </div>
+          )}
           <LinkPicker optional value={b.href ?? ""} onChange={(u) => set({ ...b, href: u })} />
         </div>
       )
