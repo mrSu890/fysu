@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { autoSend } from "@/lib/emailScenarios"
 
 export const runtime = "nodejs"
 
@@ -29,5 +30,6 @@ export async function POST(req: Request) {
     console.error("newsletter_subscribers:", error.message)
     return NextResponse.json({ error: "Could not save" }, { status: 500 })
   }
+  await autoSend("welcome", { email, lang: locale?.startsWith("fr") ? "fr" : "en", vars: {} })
   return NextResponse.json({ ok: true })
 }
