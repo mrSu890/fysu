@@ -1,10 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { AlignLeft, ArrowDown, ArrowUp, Captions, Copy, Heading, Image as ImageIcon, LayoutGrid, Menu as MenuIcon, Minus, MousePointerClick, Plus, Quote, Shirt, Trash2, X, type LucideIcon } from "lucide-react"
+import { Crop, AlignLeft, ArrowDown, ArrowUp, Captions, Copy, Heading, Image as ImageIcon, LayoutGrid, Menu as MenuIcon, Minus, MousePointerClick, Plus, Quote, Shirt, Trash2, X, type LucideIcon } from "lucide-react"
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { errorMessage, notify } from "@/lib/adminApi"
 import { ProductPicker, uploadImage } from "@/components/Admin/Newsletter/shared"
+import CropModal from "@/components/Admin/Newsletter/CropModal"
 import { BLOCK_LABEL, renderBlock, type Block } from "@/lib/emailBlocks"
 
 export const field = "w-full rounded-xl bg-white px-3 py-2.5 text-[15px] ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]"
@@ -62,21 +63,29 @@ export function BlockView({ b }: { b: Block }) {
 
 function Upload({ url, onUrl }: { url: string; onUrl: (u: string) => void }) {
   const [busy, setBusy] = useState(false)
+  const [crop, setCrop] = useState<File | string | null>(null)
+
+  async function done(f: File) {
+    setCrop(null)
+    setBusy(true)
+    try { onUrl(await uploadImage(f)) } catch (er) { notify.error(errorMessage(er)) } finally { setBusy(false) }
+  }
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       {url ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={url} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-[#f0ece5] text-[#9a948a]"><ImageIcon size={22} /></div>}
       <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#171717] px-4 py-2.5 text-sm font-medium text-white">
-        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-          const f = e.target.files?.[0]
-          if (!f) return
-          setBusy(true)
-          try { onUrl(await uploadImage(f)) } catch (er) { notify.error(errorMessage(er)) } finally { setBusy(false) }
-        }} />
-        {busy ? "Envoi…" : url ? "Changer la photo" : "Choisir une photo"}
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setCrop(f) }} />
+        {busy ? "Envoi…" : url ? "Changer" : "Choisir une photo"}
       </label>
+      {url && !busy && (
+        <button type="button" onClick={() => setCrop(url)} className="inline-flex items-center gap-2 rounded-full bg-[#f0ece5] px-4 py-2.5 text-sm font-medium"><Crop size={15} />Recadrer</button>
+      )}
+      {crop && <CropModal src={crop} onCancel={() => setCrop(null)} onDone={done} />}
     </div>
   )
 }
+
+const SIZES: ["s" | "m" | "l", string][] = [["s", "Petit"], ["m", "Moyen"], ["l", "Grand"]]
 
 export function Seg<T extends string>({ value, opts, onChange }: { value: T; opts: [T, string][]; onChange: (v: T) => void }) {
   return (
@@ -108,6 +117,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
         <div className="space-y-3">
           <Upload url={b.imageUrl} onUrl={(u) => set({ ...b, imageUrl: u })} />
           <input className={field} placeholder="Titre écrit sur la photo (ex. Nouvelle collection)" value={b.title} onChange={(e) => set({ ...b, title: e.target.value })} />
+          <Seg value={b.size ?? "m"} opts={SIZES} onChange={(v) => set({ ...b, size: v })} />
           <div className="grid grid-cols-2 gap-3">
             <input className={field} placeholder="Texte du bouton (vide = pas de bouton)" value={b.buttonLabel ?? ""} onChange={(e) => set({ ...b, buttonLabel: e.target.value })} />
             <input className={field} placeholder="Lien du bouton" value={b.buttonUrl ?? ""} onChange={(e) => set({ ...b, buttonUrl: e.target.value })} />
@@ -143,6 +153,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
           <input className={field} placeholder="Petite étiquette au-dessus (ex. SS27)" value={b.eyebrow ?? ""} onChange={(e) => set({ ...b, eyebrow: e.target.value })} />
           <input className={field} placeholder="Titre" value={b.title} onChange={(e) => set({ ...b, title: e.target.value })} />
           <Chips chips={chips} onPick={(t) => set({ ...b, title: b.title + t })} />
+          <Seg value={b.size ?? "m"} opts={SIZES} onChange={(v) => set({ ...b, size: v })} />
           <Seg value={b.style ?? "bold"} opts={[["bold", "Gras"], ["light", "Fin, en capitales"]]} onChange={(v) => set({ ...b, style: v })} />
           <Seg value={b.align ?? "left"} opts={[["left", "À gauche"], ["center", "Centré"]]} onChange={(v) => set({ ...b, align: v })} />
         </div>
@@ -152,6 +163,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
         <div className="space-y-3">
           <textarea className={field} rows={6} placeholder="Ton texte…" value={b.text} onChange={(e) => set({ ...b, text: e.target.value })} />
           <Chips chips={chips} onPick={(t) => set({ ...b, text: b.text + t })} />
+          <Seg value={b.size ?? "m"} opts={SIZES} onChange={(v) => set({ ...b, size: v })} />
           <Seg value={b.align ?? "left"} opts={[["left", "À gauche"], ["center", "Centré"]]} onChange={(v) => set({ ...b, align: v })} />
         </div>
       )
