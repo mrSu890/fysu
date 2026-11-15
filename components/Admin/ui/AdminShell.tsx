@@ -42,28 +42,43 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [{ label: "Aperçu", href: "/admin", icon: LayoutDashboard, tone: "gray" }],
   },
   {
-    label: "Boutique",
+    label: "Vendre",
     items: [
-      { label: "Produits", href: "/admin/catalog", icon: Shirt, tone: "blue" },
       { label: "Commandes", href: "/admin/orders", icon: ShoppingBag, tone: "green" },
+      { label: "Produits", href: "/admin/catalog", icon: Shirt, tone: "blue" },
       { label: "Codes promo", href: "/admin/promo-codes", icon: Tag, tone: "green" },
       { label: "Demandes", href: "/admin/requests", icon: Inbox, tone: "orange" },
-      { label: "Mails de commande", href: "/admin/emails", icon: Mail, tone: "orange" },
+    ],
+  },
+  {
+    label: "Clients",
+    items: [
       { label: "Clients", href: "/admin/users", icon: Users, tone: "blue" },
       { label: "Avatars", href: "/admin/avatars", icon: UserCircle, tone: "blue" },
     ],
   },
   {
-    label: "Contenu du site",
+    label: "Marketing",
+    items: [
+      { label: "Newsletter", href: "/admin/newsletter", icon: Mail, tone: "orange" },
+      { label: "Mails automatiques", href: "/admin/emails", icon: Mail, tone: "orange" },
+      { label: "Stories", href: "/admin/stories", icon: Clapperboard, tone: "purple" },
+    ],
+  },
+  {
+    label: "Site",
     items: [
       { label: "Accueil (hero)", href: "/admin/home-images", icon: Images, tone: "pink" },
       { label: "Images de garde", href: "/admin/heroes", icon: ImageIcon, tone: "pink" },
       { label: "Collections & pages", href: "/admin/pages", icon: Layers, tone: "pink" },
-      { label: "Stories", href: "/admin/stories", icon: Clapperboard, tone: "purple" },
-      { label: "Newsletter", href: "/admin/newsletter", icon: Mail, tone: "orange" },
       { label: "Musique", href: "/admin/music", icon: Music, tone: "purple" },
       { label: "FY'grances", href: "/admin/fygrances", icon: Droplets, tone: "purple" },
       { label: "About", href: "/admin/about", icon: ScrollText, tone: "purple" },
+    ],
+  },
+  {
+    label: "Légal",
+    items: [
       { label: "Confidentialité", href: "/admin/legal", icon: Scale, tone: "gray" },
       { label: "Pages légales", href: "/admin/legal-pages", icon: FileText, tone: "gray" },
     ],

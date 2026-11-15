@@ -12,6 +12,7 @@ import {
   Plus,
   ScrollText,
   Scale,
+  Shirt,
   ShoppingBasket,
   TrendingUp,
   Wallet,
@@ -281,7 +282,7 @@ export default function AdminHome() {
       )}
 
       {/* À faire */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           label="À expédier"
           value={stats?.toShip ?? 0}
@@ -296,6 +297,14 @@ export default function AdminHome() {
           icon={Inbox}
           tone="orange"
           href="/admin/requests"
+          loading={loading}
+        />
+        <StatCard
+          label="Stock bas"
+          value={stats?.lowStock.length ?? 0}
+          icon={Shirt}
+          tone="orange"
+          href="/admin/catalog"
           loading={loading}
         />
       </div>
