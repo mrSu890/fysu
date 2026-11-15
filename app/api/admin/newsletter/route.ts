@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { renderEmail, SITE_URL, type Campaign, type Footer } from "@/lib/newsletter"
 import { FOOTER, stripKeep } from "@/lib/emailBlocks"
+import { trackHtml } from "@/lib/tracking"
 import { earlyKey } from "@/lib/preLaunch"
 import { audienceCounts, isAudience, loadAudience } from "@/lib/audience"
 import { fillDeep } from "@/lib/emailScenarios"
@@ -66,20 +67,27 @@ export async function POST(req: Request) {
         if (t) versions.set(l, { c: t.c, footer: t.footer, lang: l })
       }))
       const orig = { c, footer: FOOTER.fr, lang: "fr" }
+      // fiche de la campagne (pour le suivi) ; si la table n'existe pas encore, l'envoi se fait quand même, sans suivi
+      const ab = !!c.subjectB?.trim()
+      const ins = await supabaseAdmin.from("email_campaigns").insert({ subject: c.subject, subject_b: ab ? c.subjectB : null, segment: isAudience(body.segment) ? body.segment : "all", recipients: subs.length }).select("id").single()
+      const cid: string | null = ins.error ? null : (ins.data as { id: string }).id
       let sent = 0
       for (let i = 0; i < subs.length; i += 100) {
         const chunk = subs.slice(i, i + 100)
-        const mails: Mail[] = chunk.map((s) => {
+        const mails: Mail[] = chunk.map((s, k) => {
           const url = `${SITE_URL}/api/newsletter/unsubscribe?t=${s.token}`
           const v = versions.get(baseLocale(s.locale)) ?? orig
           const mine = fillDeep(v.c, { prenom: s.first_name ?? "" })
-          const { html, text } = renderEmail(mine, url, v.lang, v.footer)
-          return { from, to: [s.email], subject: stripKeep(mine.subject), html, text, reply_to: replyTo, headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
+          const variant = ab && (i + k) % 2 === 1 ? "B" : "A"
+          const rendered = renderEmail(mine, url, v.lang, v.footer)
+          const html = cid ? trackHtml(rendered.html, { campaign: cid, email: s.email, variant }) : rendered.html
+          const text = rendered.text
+          return { from, to: [s.email], subject: stripKeep(variant === "B" && mine.subjectB?.trim() ? mine.subjectB : mine.subject), html, text, reply_to: replyTo, headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
         })
         await resendBatch(mails)
         sent += chunk.length
       }
-      return NextResponse.json({ ok: true, sent })
+      return NextResponse.json({ ok: true, sent, tracked: !!cid })
     }
     return fail("Action inconnue.", 400)
   } catch (e) {

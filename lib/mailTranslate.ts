@@ -14,7 +14,7 @@ export const LANG_NAME: Record<string, string> = {
 }
 
 /** champs de texte à traduire (jamais les liens, noms de produits, auteurs) */
-const KEYS = new Set(["subject", "preheader", "eyebrow", "title", "body", "cta", "text", "buttonLabel", "label", "heading", "intro", "link"])
+const KEYS = new Set(["subject", "subjectB", "preheader", "eyebrow", "title", "body", "cta", "text", "buttonLabel", "label", "heading", "intro", "link"])
 const MODEL = process.env.AI_TRANSLATE_MODEL || "claude-haiku-4-5"
 const cache = new Map<string, string[]>()
 
