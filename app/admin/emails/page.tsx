@@ -5,8 +5,10 @@ import Link from "next/link"
 import { Bug, Clock, Heart, Layers, Lock, PackageCheck, PackageX, RotateCcw, Save, Send, Shirt, ShoppingCart, Sparkles, Star, Truck, Wrench, X, Mail, ShoppingBag, type LucideIcon } from "lucide-react"
 import { AdminButton, IconTile, PageHeader, Panel, type TileTone } from "@/components/Admin/ui/kit"
 import { api, errorMessage, formatDate, notify } from "@/lib/adminApi"
+import { MailCanvas, Sheet, IconBtn, field } from "@/components/Admin/Newsletter/MailCanvas"
+import type { Block } from "@/lib/emailBlocks"
 
-type Copy = { subject: string; eyebrow: string; title: string; body: string; cta: string; url: string }
+type Copy = { subject: string; eyebrow: string; title: string; body: string; cta: string; url: string; blocks?: Block[] }
 type Sc = { id: string; kind: "auto" | "situation" | "campaign" | "soon"; label: string; when: string; enabled: boolean; fr: Copy; en: Copy; defaults: { fr: Copy; en: Copy } }
 type Order = { id: string; customerName: string | null; email: string | null; createdAt: string; status: string }
 type Aud = "orders" | "subscribers" | "segment" | "email"
@@ -19,8 +21,6 @@ const ICON: Record<string, [LucideIcon, TileTone]> = {
 }
 const SEGMENTS: [string, string][] = [["vip", "VIP"], ["loyal", "Fidèles"], ["new", "Nouveaux"], ["risk", "À relancer"], ["prospect", "Sans achat"]]
 
-const field = "w-full rounded-xl bg-white px-3 py-2.5 text-[15px] ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]"
-const label = "mb-1.5 block text-xs font-medium uppercase tracking-wider text-[#6b6760]"
 
 function Switch({ on, onChange, label: l }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
@@ -40,10 +40,29 @@ function Seg<T extends string>({ value, opts, onChange }: { value: T; opts: [T, 
   )
 }
 
+const CHIPS: Record<string, [string, string][]> = {
+  shipped: [["Prénom", "{prenom}"], ["N° commande", "{commande}"], ["Suivi", "{suivi}"]],
+  delay: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
+  apology: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
+  stockout: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
+  refund: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
+  review: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
+  restock: [["Pièce", "{produit}"]],
+  cart: [["Panier", "{produits}"]],
+}
+
+// structure de départ d'un scénario : titre, texte, bouton
+function blocksOf(c: Copy): Block[] {
+  if (c.blocks?.length) return c.blocks
+  const b: Block[] = [{ type: "title", eyebrow: c.eyebrow, title: c.title }, { type: "text", text: c.body }]
+  if (c.cta) b.push({ type: "button", label: c.cta, url: c.url || "https://f-y-s-u.com", style: "solid" })
+  return b
+}
+
 function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subscribers: number; configured: boolean; onClose: () => void; onSaved: (id: string, fr: Copy, en: Copy) => void }) {
   const [lang, setLang] = useState<"fr" | "en">("fr")
   const [c, setC] = useState<{ fr: Copy; en: Copy }>({ fr: s.fr, en: s.en })
-  const [html, setHtml] = useState("")
+  const [panel, setPanel] = useState<null | "send">(null)
   const [to, setTo] = useState("")
   const [busy, setBusy] = useState("")
   const [aud, setAud] = useState<Aud>("orders")
@@ -58,23 +77,17 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
     api.get<{ orders: Order[] }>("/api/admin/orders?status=all").then((r) => setOrders(r.orders.filter((o) => o.email))).catch(() => {})
   }, [situation])
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      api.post<{ html: string }>("/api/admin/emails/scenarios", { action: "preview", id: s.id, lang, fr: c.fr, en: c.en }).then((r) => setHtml(r.html)).catch(() => {})
-    }, 400)
-    return () => clearTimeout(t)
-  }, [c, lang, s.id])
-
-  const set = (k: keyof Copy, v: string) => setC((p) => ({ ...p, [lang]: { ...p[lang], [k]: v } }))
   const cur = c[lang]
+  const blocks = blocksOf(cur)
+  const full = () => ({ fr: { ...c.fr, blocks: blocksOf(c.fr) }, en: { ...c.en, blocks: blocksOf(c.en) } })
 
   async function save() {
     setBusy("save")
-    try { await api.put("/api/admin/emails/scenarios", { id: s.id, fr: c.fr, en: c.en }); onSaved(s.id, c.fr, c.en); notify.success("Enregistré") } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
+    try { const f = full(); await api.put("/api/admin/emails/scenarios", { id: s.id, ...f }); onSaved(s.id, f.fr, f.en); notify.success("Enregistré") } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
   }
   async function test() {
     setBusy("test")
-    try { await api.post("/api/admin/emails/scenarios", { action: "test", id: s.id, lang, to, fr: c.fr, en: c.en }); notify.success("Test envoyé") } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
+    try { await api.post("/api/admin/emails/scenarios", { action: "test", id: s.id, lang, to, ...full() }); notify.success("Test envoyé") } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
   }
   async function send() {
     const audience = aud === "orders" ? { type: "orders", ids: picked } : aud === "subscribers" ? { type: "subscribers" } : aud === "segment" ? { type: "segment", segment } : { type: "email", email: one }
@@ -82,9 +95,11 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
     if (!window.confirm(`Envoyer « ${cur.subject} » à ${who} ? Impossible d'annuler.`)) return
     setBusy("send")
     try {
-      await api.put("/api/admin/emails/scenarios", { id: s.id, fr: c.fr, en: c.en })
-      const r = await api.post<{ sent: number }>("/api/admin/emails/scenarios", { action: "send", id: s.id, fr: c.fr, en: c.en, audience })
+      const f = full()
+      await api.put("/api/admin/emails/scenarios", { id: s.id, ...f })
+      const r = await api.post<{ sent: number }>("/api/admin/emails/scenarios", { action: "send", id: s.id, ...f, audience })
       notify.success(`Envoyé à ${r.sent} personne(s)`)
+      setPanel(null)
     } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
   }
 
@@ -92,42 +107,33 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
   const canSend = configured && !busy && !!cur.subject.trim() && (aud !== "orders" || picked.length > 0) && (aud !== "email" || one.includes("@"))
 
   return (
-    <div className="mt-6 rounded-3xl border border-[#e9e5df] bg-[#faf8f5] p-4 sm:p-5">
-      <div className="mb-4 flex items-center gap-3">
-        <IconTile icon={Icon} tone={tone} size={34} />
-        <div className="flex-1"><p className="font-medium">{s.label}</p><p className="text-xs text-[#7a756d]">{s.when}</p></div>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f6f4f0]">
+      <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-[#e9e5df] bg-[#f6f4f0]/95 px-4 py-2.5 backdrop-blur">
         <button type="button" aria-label="Fermer" onClick={onClose} className="rounded-full p-2 hover:bg-[#171717]/[0.06]"><X size={18} /></button>
+        <IconTile icon={Icon} tone={tone} size={28} />
+        <span className="mr-auto truncate text-sm font-medium">{s.label}</span>
+        <Seg value={lang} opts={[["fr", "FR"], ["en", "EN"]]} onChange={setLang} />
+        <AdminButton icon={Save} onClick={save} disabled={!!busy}>Enregistrer</AdminButton>
+        <AdminButton icon={Send} variant="primary" onClick={() => setPanel("send")}>{situation ? "Envoyer" : "Test"}</AdminButton>
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="space-y-3">
-          <Seg value={lang} opts={[["fr", "Français"], ["en", "English"]]} onChange={setLang} />
-          <div><span className={label}>Objet</span><input className={field} value={cur.subject} onChange={(e) => set("subject", e.target.value)} /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><span className={label}>Étiquette</span><input className={field} value={cur.eyebrow} onChange={(e) => set("eyebrow", e.target.value)} /></div>
-            <div><span className={label}>Titre</span><input className={field} value={cur.title} onChange={(e) => set("title", e.target.value)} /></div>
-          </div>
-          <div><span className={label}>Texte</span><textarea className={field} rows={7} value={cur.body} onChange={(e) => set("body", e.target.value)} />
-            <p className="mt-1 text-xs text-[#9a948a]">{`{prenom}`}, {`{commande}`} et {`{suivi}`} sont remplacés pour chaque client.</p></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><span className={label}>Bouton</span><input className={field} value={cur.cta} onChange={(e) => set("cta", e.target.value)} placeholder="Vide = pas de bouton" /></div>
-            <div><span className={label}>Lien du bouton</span><input className={field} value={cur.url} onChange={(e) => set("url", e.target.value)} /></div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <AdminButton icon={Save} variant={situation ? "secondary" : "primary"} onClick={save} disabled={!!busy}>Enregistrer</AdminButton>
-            <button type="button" className="text-sm underline" onClick={() => setC({ fr: s.defaults.fr, en: s.defaults.en })}>Remettre le texte d'origine</button>
-          </div>
 
-          <div className="border-t border-[#e9e5df] pt-3">
-            <span className={label}>Envoyer un test à</span>
-            <div className="flex gap-2"><input className={field} type="email" value={to} onChange={(e) => setTo(e.target.value)} placeholder="ton@email.com" /><AdminButton icon={Mail} onClick={test} disabled={!configured || !!busy || !to}>Test</AdminButton></div>
-          </div>
+      <div className="mx-auto max-w-[390px] px-4 pt-4 sm:px-0">
+        <input value={cur.subject} onChange={(e) => setC((p) => ({ ...p, [lang]: { ...p[lang], subject: e.target.value } }))} placeholder="Objet du mail" className="mb-4 w-full rounded-2xl bg-white px-4 py-3 text-[15px] font-medium ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]" />
+      </div>
+      <div className="px-4 sm:px-0">
+        <MailCanvas blocks={blocks} onChange={(b) => setC((p) => ({ ...p, [lang]: { ...p[lang], blocks: b } }))} hideSheet={panel !== null} onTouch={() => setPanel(null)} chips={CHIPS[s.id]} />
+      </div>
 
+      {panel === "send" && (
+        <Sheet>
+          <div className="mb-3 flex items-center"><span className="mr-auto text-sm font-medium">{situation ? "Envoyer" : "Tester"}</span><IconBtn label="Fermer" onClick={() => setPanel(null)}><X size={16} /></IconBtn></div>
+          {!configured && <p className="mb-3 rounded-xl bg-[#fff6e5] p-3 text-sm text-[#7a5200]">Resend n'est pas branché.</p>}
+          <div className="flex gap-2"><input className={field} type="email" value={to} onChange={(e) => setTo(e.target.value)} placeholder="ton@email.com" /><AdminButton icon={Mail} onClick={test} disabled={!configured || !!busy || !to}>Test</AdminButton></div>
           {situation && (
-            <div className="space-y-3 border-t border-[#e9e5df] pt-3">
-              <span className={label}>Envoyer à qui ?</span>
+            <div className="mt-4 space-y-3 border-t border-[#e9e5df] pt-4">
               <Seg value={aud} opts={[["orders", "Des commandes"], ["subscribers", `Inscrits (${subscribers})`], ["segment", "Un groupe"], ["email", "Une adresse"]]} onChange={setAud} />
               {aud === "orders" && (
-                <div className="max-h-56 overflow-y-auto rounded-xl bg-white ring-1 ring-[#e0dbd3]">
+                <div className="max-h-52 overflow-y-auto rounded-xl bg-white ring-1 ring-[#e0dbd3]">
                   {orders.length === 0 && <p className="p-3 text-sm text-[#9a948a]">Aucune commande.</p>}
                   {orders.map((o) => (
                     <label key={o.id} className="flex cursor-pointer items-center gap-3 border-b border-[#f0ece5] px-3 py-2 text-sm last:border-0">
@@ -143,11 +149,8 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
               <AdminButton icon={Send} variant="primary" onClick={send} disabled={!canSend}>{busy === "send" ? "Envoi…" : "Envoyer"}</AdminButton>
             </div>
           )}
-        </div>
-        <div className="lg:sticky lg:top-4 lg:self-start">
-          <div className="flex justify-center rounded-2xl bg-[#d9d7d1] p-3"><iframe title="Aperçu" srcDoc={html} className="h-[640px] w-full max-w-[390px] bg-[#e8e7e3]" /></div>
-        </div>
-      </div>
+        </Sheet>
+      )}
     </div>
   )
 }

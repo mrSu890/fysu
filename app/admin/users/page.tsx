@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ChevronDown, Crown, Heart, Mail, MailX, Search, Sparkles, TrendingDown, UserPlus, type LucideIcon } from "lucide-react"
-import { Badge, EmptyState, IconTile, PageHeader, Panel, Skeleton, OrderStatusBadge, type TileTone } from "@/components/Admin/ui/kit"
-import { api, errorMessage, formatDate, formatMoney } from "@/lib/adminApi"
+import { Check, ChevronDown, Copy, Crown, MousePointerClick, X, Heart, Mail, MailX, Search, Sparkles, TrendingDown, UserPlus, type LucideIcon } from "lucide-react"
+import { AdminButton, Badge, EmptyState, IconTile, PageHeader, Panel, Skeleton, OrderStatusBadge, type TileTone } from "@/components/Admin/ui/kit"
+import { api, errorMessage, formatDate, formatMoney, notify } from "@/lib/adminApi"
 
 type Segment = "vip" | "loyal" | "new" | "risk" | "prospect"
 type Customer = {
@@ -36,6 +36,8 @@ export default function CustomersPage() {
   const [q, setQ] = useState("")
   const [seg, setSeg] = useState<Segment | "all">("all")
   const [open, setOpen] = useState<string | null>(null)
+  const [selecting, setSelecting] = useState(false)
+  const [picked, setPicked] = useState<string[]>([])
 
   useEffect(() => {
     api.get<{ customers: Customer[] }>("/api/admin/customers").then((r) => setList(r.customers)).catch((e) => setErr(errorMessage(e)))
@@ -54,7 +56,7 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Clients" />
+      <PageHeader title="Clients" actions={<AdminButton icon={selecting ? X : MousePointerClick} onClick={() => { setSelecting((v) => !v); setPicked([]) }}>{selecting ? "Terminer" : "Sélectionner"}</AdminButton>} />
       {err && <p className="mb-4 rounded-xl bg-[#fdeeee] p-3 text-sm text-[#9b1c1c]">{err}</p>}
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -90,7 +92,8 @@ export default function CustomersPage() {
               const isOpen = open === c.email
               return (
                 <li key={c.email}>
-                  <button type="button" onClick={() => setOpen(isOpen ? null : c.email)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
+                  <button type="button" onClick={() => (selecting ? setPicked((l) => (l.includes(c.email) ? l.filter((x) => x !== c.email) : [...l, c.email])) : setOpen(isOpen ? null : c.email))} className="flex w-full items-center gap-3 px-4 py-3 text-left">
+                    {selecting && <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${picked.includes(c.email) ? "border-[#171717] bg-[#171717] text-white" : "border-[#cfc9be] text-transparent"}`}><Check size={14} /></span>}
                     <IconTile icon={s.icon} tone={s.tone} size={30} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{c.name ?? c.email}</span>
@@ -133,6 +136,16 @@ export default function CustomersPage() {
         )}
       </Panel>
       <p className="mt-3 text-xs text-[#9a948a]">{shown.length} client(s) · Touche un groupe pour filtrer.</p>
+
+      {selecting && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e9e5df] bg-white/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
+            <button type="button" className="text-sm underline" onClick={() => setPicked(picked.length === shown.length ? [] : shown.map((c) => c.email))}>{picked.length === shown.length && shown.length > 0 ? "Tout désélectionner" : "Tout sélectionner"}</button>
+            <span className="mr-auto text-sm text-[#7a756d]">{picked.length} choisi(s)</span>
+            <AdminButton icon={Copy} variant="primary" disabled={!picked.length} onClick={async () => { const t = picked.join(", "); try { await navigator.clipboard.writeText(t); notify.success("E-mails copiés") } catch { window.prompt("Copie les e-mails :", t) } }}>Copier les e-mails</AdminButton>
+          </div>
+        </div>
+      )}
     </>
   )
 }
