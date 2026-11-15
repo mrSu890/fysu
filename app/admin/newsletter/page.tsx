@@ -5,6 +5,7 @@ import { Mail, Monitor, Send, Smartphone, X, LayoutTemplate } from "lucide-react
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { MailCanvas, NEW_BLOCK, SITE, Sheet, IconBtn, field, isEmpty } from "@/components/Admin/Newsletter/MailCanvas"
+import { AUDIENCES, type Audience } from "@/lib/audience"
 import type { Block } from "@/lib/emailBlocks"
 import type { Campaign } from "@/lib/newsletter"
 
@@ -21,7 +22,8 @@ const TEMPLATES: { name: string; make: () => Campaign }[] = [
 ]
 
 export default function NewsletterAdmin() {
-  const [info, setInfo] = useState<{ active: number; configured: boolean } | null>(null)
+  const [info, setInfo] = useState<{ active: number; counts: Record<Audience, number>; configured: boolean } | null>(null)
+  const [aud, setAud] = useState<Audience>("all")
   const [c, setC] = useState<Campaign>({ subject: "", preheader: "", blocks: [] })
   const [loaded, setLoaded] = useState(false)
   const [panel, setPanel] = useState<null | "templates" | "send">(null)
@@ -31,7 +33,7 @@ export default function NewsletterAdmin() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    api.get<{ active: number; configured: boolean; draft: Campaign | null }>("/api/admin/newsletter")
+    api.get<{ active: number; counts: Record<Audience, number>; configured: boolean; draft: Campaign | null }>("/api/admin/newsletter")
       .then((r) => {
         setInfo(r)
         if (r.draft && Array.isArray(r.draft.blocks) && r.draft.blocks.length) setC(r.draft)
@@ -53,10 +55,11 @@ export default function NewsletterAdmin() {
     try { await api.post("/api/admin/newsletter", { action: "test", to: testTo, campaign: c }); notify.success("Test envoyé") } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
   }
   async function send() {
-    if (!window.confirm(`Envoyer « ${c.subject} » à ${info?.active ?? 0} inscrit(s) ? Impossible d'annuler.`)) return
+    if (!window.confirm(`Envoyer « ${c.subject} » à ${n} personne(s) (${AUDIENCES.find((a) => a.id === aud)?.label}) ? Impossible d'annuler.`)) return
     setBusy("send")
-    try { const r = await api.post<{ sent: number }>("/api/admin/newsletter", { action: "send", campaign: c }); notify.success(`Envoyé à ${r.sent} inscrit(s)`); setPanel(null) } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
+    try { const r = await api.post<{ sent: number }>("/api/admin/newsletter", { action: "send", campaign: c, segment: aud }); notify.success(`Envoyé à ${r.sent} inscrit(s)`); setPanel(null) } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
   }
+  const n = info?.counts?.[aud] ?? 0
   const canSend = !busy && !!info?.configured && !!c.subject.trim() && c.blocks.length > 0
 
   return (
@@ -94,7 +97,13 @@ export default function NewsletterAdmin() {
           {info && !info.configured && <p className="mb-3 rounded-xl bg-[#fff6e5] p-3 text-sm text-[#7a5200]">Resend n'est pas branché.</p>}
           {!c.subject.trim() && <p className="mb-3 text-sm text-[#9b1c1c]">Ajoute un objet en haut du mail.</p>}
           <div className="flex gap-2"><input className={field} type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="ton@email.com" /><AdminButton icon={Mail} onClick={test} disabled={!canSend || !testTo}>Test</AdminButton></div>
-          <div className="mt-3"><AdminButton icon={Send} variant="primary" onClick={send} disabled={!canSend || !((info?.active ?? 0) > 0)}>{busy === "send" ? "Envoi…" : `Envoyer à ${info?.active ?? 0} inscrit(s)`}</AdminButton></div>
+          <p className="mb-1.5 mt-4 text-xs font-medium uppercase tracking-wider text-[#6b6760]">À qui</p>
+          <div className="flex flex-wrap gap-2">
+            {AUDIENCES.map((a) => (
+              <button key={a.id} type="button" onClick={() => setAud(a.id)} className={`rounded-full px-3 py-1.5 text-sm ring-1 ${aud === a.id ? "bg-[#171717] text-white ring-[#171717]" : "bg-white ring-[#e0dbd3]"}`}>{a.label} · {info?.counts?.[a.id] ?? 0}</button>
+            ))}
+          </div>
+          <div className="mt-3"><AdminButton icon={Send} variant="primary" onClick={send} disabled={!canSend || n === 0}>{busy === "send" ? "Envoi…" : `Envoyer à ${n} personne(s)`}</AdminButton></div>
         </Sheet>
       )}
     </div>
