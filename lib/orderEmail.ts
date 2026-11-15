@@ -1,5 +1,5 @@
 import { BUSINESS } from "@/lib/business"
-import { esc, F, C, renderDoc, renderText, SITE_URL, type Block } from "@/lib/emailBlocks"
+import { esc, F, C, renderDoc, renderText, SITE_URL, type Block, type ProductPick } from "@/lib/emailBlocks"
 
 /* ====================================================================
    MAIL DE CONFIRMATION DE COMMANDE (confirmation + remerciement, envoyé juste après le paiement)
@@ -15,7 +15,18 @@ export type OrderCopy = {
   intro: string
   next: string // ce qui se passe ensuite
   signoff: string
+  discoverTitle: string // titre de la section « à découvrir »
+  discoverCta: string // bouton sous la section
 }
+
+/* réglages communs aux deux langues */
+export type OrderExtras = {
+  heroUrl: string // image de garde en haut du mail (facultative)
+  heroAlt: string
+  discoverMode: "auto" | "manual" | "off" // auto = les 2 derniers produits non achetés
+  discoverItems: ProductPick[]
+}
+export const DEFAULT_EXTRAS: OrderExtras = { heroUrl: "", heroAlt: "", discoverMode: "auto", discoverItems: [] }
 
 export const DEFAULT_ORDER_COPY: Record<"fr" | "en", OrderCopy> = {
   fr: {
@@ -25,6 +36,8 @@ export const DEFAULT_ORDER_COPY: Record<"fr" | "en", OrderCopy> = {
     intro: "Ta commande est bien confirmée. Chaque pièce est préparée avec soin avant de partir chez toi.",
     next: "Une question, un ajustement d'adresse ? Réponds simplement à cet e-mail, nous lisons chaque message.",
     signoff: "À très vite,\nL'équipe FYSU",
+    discoverTitle: "À découvrir",
+    discoverCta: "Voir toute la boutique",
   },
   en: {
     subject: "Your FYSU order is confirmed",
@@ -33,6 +46,8 @@ export const DEFAULT_ORDER_COPY: Record<"fr" | "en", OrderCopy> = {
     intro: "Your order is confirmed. Every piece is prepared with care before it leaves for you.",
     next: "A question, or need to change your address? Simply reply to this email, we read every message.",
     signoff: "Speak soon,\nThe FYSU team",
+    discoverTitle: "Discover",
+    discoverCta: "Visit the shop",
   },
 }
 
@@ -52,10 +67,11 @@ export const langForCountry = (country?: string | null): "fr" | "en" =>
 const eyebrow = `font-family:${F.mono};font-size:11px;line-height:1.4;letter-spacing:0.16em;text-transform:uppercase;color:${C.soft};`
 const fmt = (n: number, cur: string) => `${Number.isInteger(n) ? n : n.toFixed(2)} ${cur.toUpperCase()}`
 
-export function renderOrderEmail(copy: OrderCopy, d: OrderData, lang: "fr" | "en"): { subject: string; html: string; text: string } {
+export function renderOrderEmail(copy: OrderCopy, d: OrderData, lang: "fr" | "en", extras: OrderExtras = DEFAULT_EXTRAS, discover: ProductPick[] = []): { subject: string; html: string; text: string } {
   const L = lang === "fr" ? { total: "Total payé", ship: "Livraison", qty: "Qté" } : { total: "Total paid", ship: "Shipping to", qty: "Qty" }
   const short = d.id.slice(0, 8).toUpperCase()
   const blocks: Block[] = [
+    ...(extras.heroUrl ? ([{ type: "hero", imageUrl: extras.heroUrl, alt: extras.heroAlt || "FYSU" }] as Block[]) : []),
     { type: "title", eyebrow: `${copy.eyebrow} N° ${short}`, title: copy.title.replace("{prenom}", d.firstName || "").replace(/\s+([.,!])/g, "$1") },
     { type: "text", text: copy.intro },
   ]
@@ -80,6 +96,13 @@ export function renderOrderEmail(copy: OrderCopy, d: OrderData, lang: "fr" | "en
     { type: "raw", html: summary + ship },
     { type: "divider" },
     { type: "text", text: copy.next },
+    ...(discover.length > 0
+      ? ([
+          { type: "divider" },
+          { type: "products", heading: copy.discoverTitle, columns: 2, items: discover },
+          { type: "button", label: copy.discoverCta, url: SITE_URL, style: "outline" },
+        ] as Block[])
+      : []),
     { type: "text", text: copy.signoff },
   ]
   const finalHtml = renderDoc({ preheader: copy.intro, blocks: all, business: BUSINESS })

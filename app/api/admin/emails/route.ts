@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
-import { DEFAULT_ORDER_COPY, SAMPLE_ORDER, renderOrderEmail, type OrderCopy } from "@/lib/orderEmail"
-import { loadOrderCopy } from "@/lib/orderMailer"
+import { DEFAULT_EXTRAS, DEFAULT_ORDER_COPY, SAMPLE_ORDER, renderOrderEmail, type OrderCopy, type OrderExtras } from "@/lib/orderEmail"
+import { loadOrderSettings, pickDiscover } from "@/lib/orderMailer"
 import { resendOne, resendReady } from "@/lib/resend"
 
 export const runtime = "nodejs"
@@ -10,13 +10,14 @@ export const runtime = "nodejs"
 const fail = (m: string, s = 500) => NextResponse.json({ error: m }, { status: s })
 
 export async function GET() {
-  return NextResponse.json({ copy: await loadOrderCopy(), defaults: DEFAULT_ORDER_COPY, configured: resendReady() })
+  const st = await loadOrderSettings()
+  return NextResponse.json({ copy: st.copy, extras: st.extras, defaults: DEFAULT_ORDER_COPY, configured: resendReady() })
 }
 
 export async function PUT(req: Request) {
   const body = await req.json().catch(() => null)
   if (!body?.copy) return fail("Contenu vide.", 400)
-  const { error } = await supabaseAdmin.from("email_templates").upsert({ key: "order_confirmation", data: body.copy, updated_at: new Date().toISOString() })
+  const { error } = await supabaseAdmin.from("email_templates").upsert({ key: "order_confirmation", data: { ...body.copy, shared: body.extras ?? {} }, updated_at: new Date().toISOString() })
   if (error) return fail(/relation|does not exist/i.test(error.message) ? "La table email_templates n'existe pas encore (SQL à lancer dans Supabase)." : error.message)
   return NextResponse.json({ ok: true })
 }
@@ -26,7 +27,9 @@ export async function POST(req: Request) {
   const lang = body?.lang === "en" ? "en" : "fr"
   const copy = body?.copy as OrderCopy | undefined
   if (!copy) return fail("Contenu vide.", 400)
-  const { subject, html, text } = renderOrderEmail(copy, SAMPLE_ORDER, lang)
+  const extras: OrderExtras = { ...DEFAULT_EXTRAS, ...((body?.extras ?? {}) as Partial<OrderExtras>) }
+  const discover = await pickDiscover(extras, [])
+  const { subject, html, text } = renderOrderEmail(copy, SAMPLE_ORDER, lang, extras, discover)
   if (body.action === "preview") return NextResponse.json({ html })
   if (!resendReady()) return fail("Resend n'est pas encore branché.", 400)
   const to = String(body.to || "").trim()
