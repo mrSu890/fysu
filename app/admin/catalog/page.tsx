@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Archive, ArchiveRestore, Copy, EyeOff, MoreHorizontal, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
+import { Archive, ArchiveRestore, Check, Copy, Eye, EyeOff, MousePointerClick, MoreHorizontal, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
 import {
   AdminButton,
   EmptyState,
@@ -85,6 +85,9 @@ export default function AdminCatalog() {
   const [stockFilter, setStockFilter] = useState("all")
   const [sort, setSort] = useState("newest")
   const [view, setView] = useState<"active" | "archived">("active")
+  const [selecting, setSelecting] = useState(false)
+  const [picked, setPicked] = useState<number[]>([])
+  const [acting, setActing] = useState(false)
 
   const [showCategories, setShowCategories] = useState(false)
   const [newCategory, setNewCategory] = useState("")
@@ -203,6 +206,26 @@ export default function AdminCatalog() {
       setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, is_hidden: !next } : x)))
       notify.error(errorMessage(e, "Impossible de changer la visibilité"))
     }
+  }
+
+  const stopSelecting = () => { setSelecting(false); setPicked([]) }
+  async function bulk(kind: "archive" | "restore" | "hide" | "show" | "delete") {
+    if (picked.length === 0) return
+    if (kind === "delete" && !confirm(`Supprimer ${picked.length} produit(s) ? Cette action est définitive.`)) return
+    setActing(true)
+    let ok = 0
+    for (const id of picked) {
+      try {
+        if (kind === "delete") await api.post("/api/admin/products/delete", { id })
+        else if (kind === "archive" || kind === "restore") await api.post("/api/admin/products/visibility", { id, archived: kind === "archive" })
+        else await api.post("/api/admin/products/visibility", { id, hidden: kind === "hide" })
+        ok++
+      } catch {}
+    }
+    setActing(false)
+    notify[ok === picked.length ? "success" : "error"](`${ok} sur ${picked.length} fait(s)`)
+    stopSelecting()
+    await load()
   }
 
   async function toggleArchive(p: Product) {
@@ -330,8 +353,11 @@ export default function AdminCatalog() {
       <div className="mb-4 flex flex-col gap-3">
         <div className="inline-flex self-start gap-1 rounded-full bg-[#171717]/[0.05] p-1">
           {([["active", "Produits"], ["archived", `Archivés (${products.filter((p) => p.is_archived).length})`]] as const).map(([id, l]) => (
-            <button key={id} type="button" onClick={() => setView(id)} className={`cursor-pointer rounded-full px-4 py-2 text-sm transition ${view === id ? "bg-white font-medium shadow-sm" : "text-[#7a756d]"}`}>{l}</button>
+            <button key={id} type="button" onClick={() => { setView(id); setPicked([]) }} className={`cursor-pointer rounded-full px-4 py-2 text-sm transition ${view === id ? "bg-white font-medium shadow-sm" : "text-[#7a756d]"}`}>{l}</button>
           ))}
+        </div>
+        <div className="flex">
+          <AdminButton icon={selecting ? X : MousePointerClick} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>{selecting ? "Terminer" : "Sélectionner"}</AdminButton>
         </div>
         <div className="relative">
           <Search
@@ -428,11 +454,18 @@ export default function AdminCatalog() {
             {filtered.map((p) => (
               <li
                 key={p.id}
-                className={`relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#ebe6de] ${
+                className={`relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ${picked.includes(p.id) ? "ring-2 ring-[#171717]" : "ring-[#ebe6de]"} ${
                   busy === p.id ? "opacity-50" : ""
                 }`}
               >
-                <Link href={`/admin/catalog/${p.id}`} className="relative block aspect-[3/4] w-full bg-[#f0ece5]">
+                <Link
+                  href={`/admin/catalog/${p.id}`}
+                  onClick={(e) => { if (selecting) { e.preventDefault(); setPicked((l) => (l.includes(p.id) ? l.filter((x) => x !== p.id) : [...l, p.id])) } }}
+                  className="relative block aspect-[3/4] w-full bg-[#f0ece5]"
+                >
+                  {selecting && (
+                    <span className={`absolute right-2 top-2 z-[1] flex h-7 w-7 items-center justify-center rounded-full border-2 ${picked.includes(p.id) ? "border-[#171717] bg-[#171717] text-white" : "border-white bg-black/20 text-transparent"}`}><Check size={15} /></span>
+                  )}
                   {p.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -556,6 +589,25 @@ export default function AdminCatalog() {
           {filtered.length} produit(s) affiché(s)
           {hasFilters ? ` sur ${products.length}` : ""} · L'interrupteur affiche ou masque le produit sur le site. Dupliquer et supprimer : bouton « … ».
         </p>
+      )}
+
+      {selecting && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e9e5df] bg-white/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
+            <button type="button" className="text-sm underline" onClick={() => setPicked(picked.length === filtered.length ? [] : filtered.map((p) => p.id))}>{picked.length === filtered.length && filtered.length > 0 ? "Tout désélectionner" : "Tout sélectionner"}</button>
+            <span className="mr-auto text-sm text-[#7a756d]">{picked.length} choisi(s)</span>
+            {view === "active" ? (
+              <>
+                <AdminButton icon={EyeOff} disabled={!picked.length || acting} onClick={() => bulk("hide")}>Masquer</AdminButton>
+                <AdminButton icon={Eye} disabled={!picked.length || acting} onClick={() => bulk("show")}>Afficher</AdminButton>
+                <AdminButton icon={Archive} variant="primary" disabled={!picked.length || acting} onClick={() => bulk("archive")}>Archiver</AdminButton>
+              </>
+            ) : (
+              <AdminButton icon={ArchiveRestore} variant="primary" disabled={!picked.length || acting} onClick={() => bulk("restore")}>Restaurer</AdminButton>
+            )}
+            <AdminButton icon={Trash2} variant="danger" disabled={!picked.length || acting} onClick={() => bulk("delete")}>Supprimer</AdminButton>
+          </div>
+        </div>
       )}
     </>
   )
