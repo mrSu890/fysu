@@ -30,9 +30,40 @@ const NEW_BLOCK: Record<Exclude<Block["type"], "raw">, Block> = {
   products: { type: "products", heading: "La sélection", columns: 2, items: [] },
   quote: { type: "quote", text: "", by: "" },
   divider: { type: "divider" },
+  nav: { type: "nav", links: [{ label: "Nouveautés", url: "https://f-y-s-u.com" }, { label: "Tout voir", url: "https://f-y-s-u.com" }] },
+  heroTitle: { type: "heroTitle", imageUrl: "", alt: "", title: "", buttonLabel: "Découvrir", buttonUrl: "https://f-y-s-u.com" },
+  mosaic: { type: "mosaic", images: [{ imageUrl: "" }, { imageUrl: "" }] },
 }
 
+const HELP: Record<Exclude<Block["type"], "raw">, string> = {
+  nav: "Une ligne de 2 à 4 liens en haut (Nouveautés, Best-sellers…)",
+  heroTitle: "Grande photo avec le titre écrit dessus et un petit bouton",
+  hero: "Une grande photo seule",
+  title: "Un titre, gras ou fin en capitales",
+  text: "Un paragraphe, aligné à gauche ou centré",
+  mosaic: "2 ou 3 photos côte à côte, sans texte",
+  products: "Une grille de produits cliquables",
+  button: "Un bouton vers une page du site",
+  quote: "Une citation",
+  divider: "Un filet fin pour aérer",
+}
+
+const STEPS = ["Choisis un modèle (ou pars de zéro)", "Remplis chaque bloc : l'aperçu se met à jour à côté", "Ajoute, déplace ou supprime des blocs", "Envoie-toi un test, puis envoie à tous"]
+
 const TEMPLATES: { name: string; hint: string; make: () => Campaign }[] = [
+  {
+    name: "Éditorial",
+    hint: "Menu en haut, photo avec titre dessus, texte centré, mosaïque",
+    make: () => ({
+      subject: "", preheader: "",
+      blocks: [
+        { type: "nav", links: [{ label: "Nouveautés", url: "https://f-y-s-u.com" }, { label: "Best-sellers", url: "https://f-y-s-u.com" }, { label: "Tout voir", url: "https://f-y-s-u.com" }] },
+        { type: "heroTitle", imageUrl: "", alt: "", title: "", buttonLabel: "Découvrir", buttonUrl: "https://f-y-s-u.com" },
+        { type: "text", text: "", align: "center" },
+        { type: "mosaic", images: [{ imageUrl: "" }, { imageUrl: "" }, { imageUrl: "" }] },
+      ],
+    }),
+  },
   {
     name: "Nouvelle collection",
     hint: "Grande image, titre, texte, bouton, sélection de produits",
@@ -80,9 +111,76 @@ const TEMPLATES: { name: string; hint: string; make: () => Campaign }[] = [
   },
 ]
 
+function Upload({ url, onUrl }: { url: string; onUrl: (u: string) => void }) {
+  const [busy, setBusy] = useState(false)
+  return (
+    <div className="space-y-2">
+      <input type="file" accept="image/*" className="text-sm" onChange={async (e) => {
+        const f = e.target.files?.[0]
+        if (!f) return
+        setBusy(true)
+        try { onUrl(await uploadImage(f)) } catch (er) { notify.error(errorMessage(er)) } finally { setBusy(false) }
+      }} />
+      {busy && <p className="text-xs text-[#6b6760]">Envoi de l'image…</p>}
+      {url && /* eslint-disable-next-line @next/next/no-img-element */ <img src={url} alt="" className="max-h-32 rounded" />}
+    </div>
+  )
+}
+
+function Seg<T extends string>({ value, opts, onChange }: { value: T; opts: [T, string][]; onChange: (v: T) => void }) {
+  return (
+    <div className="flex gap-2">
+      {opts.map(([v, l]) => (
+        <button key={v} type="button" onClick={() => onChange(v)} className={`rounded-full px-3 py-1.5 text-sm ring-1 ${value === v ? "bg-[#171717] text-white ring-[#171717]" : "bg-white ring-[#e0dbd3]"}`}>{l}</button>
+      ))}
+    </div>
+  )
+}
+
 function BlockForm({ b, set }: { b: Block; set: (b: Block) => void }) {
   const [busy, setBusy] = useState(false)
   switch (b.type) {
+    case "nav":
+      return (
+        <div className="space-y-3">
+          {b.links.map((l, i) => (
+            <div key={i} className="grid grid-cols-[1fr_1.4fr_auto] gap-2">
+              <input className={field} placeholder="Nom (ex. Best-sellers)" value={l.label} onChange={(e) => set({ ...b, links: b.links.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) })} />
+              <input className={field} placeholder="Lien (https://…)" value={l.url} onChange={(e) => set({ ...b, links: b.links.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })} />
+              <button type="button" aria-label="Retirer" onClick={() => set({ ...b, links: b.links.filter((_, j) => j !== i) })} className="rounded-full p-2 hover:bg-[#fdeeee]"><Trash2 size={16} /></button>
+            </div>
+          ))}
+          {b.links.length < 4 ? <AdminButton icon={Plus} onClick={() => set({ ...b, links: [...b.links, { label: "", url: "https://f-y-s-u.com" }] })}>Ajouter un lien</AdminButton> : <p className="text-xs text-[#6b6760]">4 liens maximum, pour rester lisible sur téléphone.</p>}
+        </div>
+      )
+    case "heroTitle":
+      return (
+        <div className="space-y-3">
+          <Upload url={b.imageUrl} onUrl={(u) => set({ ...b, imageUrl: u })} />
+          <input className={field} placeholder="Titre écrit sur la photo (ex. Nouvelle collection)" value={b.title} onChange={(e) => set({ ...b, title: e.target.value })} />
+          <div className="grid grid-cols-2 gap-3">
+            <input className={field} placeholder="Texte du bouton (vide = pas de bouton)" value={b.buttonLabel ?? ""} onChange={(e) => set({ ...b, buttonLabel: e.target.value })} />
+            <input className={field} placeholder="Lien du bouton" value={b.buttonUrl ?? ""} onChange={(e) => set({ ...b, buttonUrl: e.target.value })} />
+          </div>
+          <p className="text-xs text-[#6b6760]">Choisis une photo plutôt sombre en bas : le texte blanc sera plus lisible.</p>
+        </div>
+      )
+    case "mosaic":
+      return (
+        <div className="space-y-4">
+          {b.images.map((im, i) => (
+            <div key={i} className="space-y-2 rounded-xl bg-white p-3 ring-1 ring-[#e0dbd3]">
+              <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-[#6b6760]">
+                <span>{i < 2 ? `Photo ${i + 1}` : "Photo large (en dessous)"}</span>
+                {b.images.length > 1 && <button type="button" aria-label="Retirer" onClick={() => set({ ...b, images: b.images.filter((_, j) => j !== i) })} className="rounded-full p-1.5 hover:bg-[#fdeeee]"><Trash2 size={14} /></button>}
+              </div>
+              <Upload url={im.imageUrl} onUrl={(u) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, imageUrl: u } : x)) })} />
+              <input className={field} placeholder="Lien au clic (facultatif)" value={im.href ?? ""} onChange={(e) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, href: e.target.value } : x)) })} />
+            </div>
+          ))}
+          {b.images.length < 3 && <AdminButton icon={Plus} onClick={() => set({ ...b, images: [...b.images, { imageUrl: "" }] })}>Ajouter une photo</AdminButton>}
+        </div>
+      )
     case "hero":
       return (
         <div className="space-y-3">
@@ -103,10 +201,17 @@ function BlockForm({ b, set }: { b: Block; set: (b: Block) => void }) {
         <div className="space-y-3">
           <input className={field} placeholder="Petite étiquette au-dessus (ex. SS27)" value={b.eyebrow ?? ""} onChange={(e) => set({ ...b, eyebrow: e.target.value })} />
           <input className={field} placeholder="Titre" value={b.title} onChange={(e) => set({ ...b, title: e.target.value })} />
+          <Seg value={b.style ?? "bold"} opts={[["bold", "Gras"], ["light", "Fin, en capitales"]]} onChange={(v) => set({ ...b, style: v })} />
+          <Seg value={b.align ?? "left"} opts={[["left", "À gauche"], ["center", "Centré"]]} onChange={(v) => set({ ...b, align: v })} />
         </div>
       )
     case "text":
-      return <textarea className={field} rows={6} placeholder="Texte. Une ligne vide = nouveau paragraphe. Lien : [texte](https://…)" value={b.text} onChange={(e) => set({ ...b, text: e.target.value })} />
+      return (
+        <div className="space-y-3">
+          <textarea className={field} rows={6} placeholder="Texte. Une ligne vide = nouveau paragraphe. Lien : [texte](https://…)" value={b.text} onChange={(e) => set({ ...b, text: e.target.value })} />
+          <Seg value={b.align ?? "left"} opts={[["left", "À gauche"], ["center", "Centré"]]} onChange={(v) => set({ ...b, align: v })} />
+        </div>
+      )
     case "button":
       return (
         <div className="space-y-3">
@@ -205,9 +310,15 @@ export default function NewsletterAdmin() {
 
   return (
     <div>
-      <PageHeader title="Newsletter" description="Un modèle à la DA de FYSU, construit en blocs : image, titre, texte, bouton, grille de produits, citation." />
+      <PageHeader title="Newsletter" description="Un modèle à la DA de FYSU, construit en blocs que tu empiles comme tu veux." />
       {err && <p className="mb-4 rounded-xl bg-[#fdeeee] p-3 text-sm text-[#9b1c1c]">{err}</p>}
       {info && !info.configured && <p className="mb-4 rounded-xl bg-[#fff6e5] p-3 text-sm text-[#7a5200]">Resend n'est pas encore branché : les envois sont impossibles pour l'instant.</p>}
+
+      <ol className="mb-4 grid gap-2 sm:grid-cols-4">
+        {STEPS.map((t, i) => (
+          <li key={i} className="rounded-xl bg-white p-3 text-sm ring-1 ring-[#e0dbd3]"><span className="mb-1 block text-xs font-medium text-[#6b6760]">Étape {i + 1}</span>{t}</li>
+        ))}
+      </ol>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
@@ -242,10 +353,13 @@ export default function NewsletterAdmin() {
             </Panel>
           ))}
 
-          <Panel title="Ajouter un bloc">
-            <div className="flex flex-wrap gap-2">
+          <Panel title="Ajouter un bloc" description="Il s'ajoute tout en bas ; tu peux ensuite le monter avec les flèches.">
+            <div className="grid gap-2 sm:grid-cols-2">
               {(Object.keys(NEW_BLOCK) as (keyof typeof NEW_BLOCK)[]).map((k) => (
-                <AdminButton key={k} icon={Plus} onClick={() => setC((p) => ({ ...p, blocks: [...p.blocks, NEW_BLOCK[k]] }))}>{BLOCK_LABEL[k]}</AdminButton>
+                <button key={k} type="button" onClick={() => setC((p) => ({ ...p, blocks: [...p.blocks, JSON.parse(JSON.stringify(NEW_BLOCK[k]))] }))} className="flex items-start gap-2 rounded-xl bg-white p-3 text-left ring-1 ring-[#e0dbd3] hover:ring-[#171717]">
+                  <Plus size={16} className="mt-0.5 shrink-0" />
+                  <span><span className="block text-sm font-medium">{BLOCK_LABEL[k]}</span><span className="block text-xs text-[#6b6760]">{HELP[k]}</span></span>
+                </button>
               ))}
             </div>
           </Panel>
