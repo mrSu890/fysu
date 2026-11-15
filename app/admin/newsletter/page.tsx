@@ -5,7 +5,7 @@ import { Mail, Monitor, Send, Smartphone, Split, X, LayoutTemplate } from "lucid
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { MailCanvas, NEW_BLOCK, SITE, Sheet, IconBtn, field, isEmpty } from "@/components/Admin/Newsletter/MailCanvas"
-import { AUDIENCES, type Audience } from "@/lib/audience"
+import { AUDIENCES, TOPICS, type Audience, type Topic } from "@/lib/audience"
 import type { Block } from "@/lib/emailBlocks"
 import type { Campaign } from "@/lib/newsletter"
 
@@ -24,6 +24,7 @@ const TEMPLATES: { name: string; make: () => Campaign }[] = [
 export default function NewsletterAdmin() {
   const [info, setInfo] = useState<{ active: number; counts: Record<Audience, number>; configured: boolean; earlyUrl?: string | null } | null>(null)
   const [aud, setAud] = useState<Audience>("all")
+  const [topic, setTopic] = useState<Topic>("all")
   const [c, setC] = useState<Campaign>({ subject: "", preheader: "", blocks: [] })
   const [loaded, setLoaded] = useState(false)
   const [panel, setPanel] = useState<null | "templates" | "send">(null)
@@ -58,7 +59,7 @@ export default function NewsletterAdmin() {
   async function send() {
     if (!window.confirm(`Envoyer « ${c.subject} » à ${n} personne(s) (${AUDIENCES.find((a) => a.id === aud)?.label}) ? Impossible d'annuler.`)) return
     setBusy("send")
-    try { const r = await api.post<{ sent: number; tracked?: boolean }>("/api/admin/newsletter", { action: "send", campaign: c, segment: aud }); notify.success(`Envoyé à ${r.sent} inscrit(s)${r.tracked ? "" : " (suivi non activé : SQL à lancer)"}`); setPanel(null) } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
+    try { const r = await api.post<{ sent: number; tracked?: boolean }>("/api/admin/newsletter", { action: "send", campaign: c, segment: aud, topic }); notify.success(`Envoyé à ${r.sent} inscrit(s)${r.tracked ? "" : " (suivi non activé : SQL à lancer)"}`); setPanel(null) } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
   }
   const n = info?.counts?.[aud] ?? 0
   const canSend = !busy && !!info?.configured && !!c.subject.trim() && c.blocks.length > 0
@@ -112,6 +113,13 @@ export default function NewsletterAdmin() {
               <button key={a.id} type="button" onClick={() => setAud(a.id)} className={`rounded-full px-3 py-1.5 text-sm ring-1 ${aud === a.id ? "bg-[#171717] text-white ring-[#171717]" : "bg-white ring-[#e0dbd3]"}`}>{a.label} · {info?.counts?.[a.id] ?? 0}</button>
             ))}
           </div>
+          <p className="mb-1.5 mt-4 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Sujet</p>
+          <div className="flex flex-wrap gap-2">
+            {TOPICS.map((tp) => (
+              <button key={tp.id} type="button" onClick={() => setTopic(tp.id)} className={`rounded-full px-3 py-1.5 text-sm ring-1 ${topic === tp.id ? "bg-[#171717] text-white ring-[#171717]" : "bg-white ring-[#e0dbd3]"}`}>{tp.label}</button>
+            ))}
+          </div>
+          {topic !== "all" && <p className="mt-1.5 text-xs text-[#7a756d]">Les abonnés qui ont décoché ce sujet ne le reçoivent pas.</p>}
           <div className="mt-3"><AdminButton icon={Send} variant="primary" onClick={send} disabled={!canSend || n === 0}>{busy === "send" ? "Envoi…" : `Envoyer à ${n} personne(s)`}</AdminButton></div>
         </Sheet>
       )}

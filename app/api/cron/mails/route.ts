@@ -4,6 +4,8 @@ import { notifyRestock } from "@/lib/restock"
 import { autoSend } from "@/lib/emailScenarios"
 import { loadCustomers } from "@/lib/customers"
 import { SITE_URL } from "@/lib/emailBlocks"
+import { reviewUrl } from "@/lib/reviews"
+import { langForCountry } from "@/lib/orderEmail"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -63,5 +65,21 @@ export async function GET(req: Request) {
   } catch (e) {
     console.error("cron winback:", e)
   }
-  return NextResponse.json({ restock, carts, winback })
+
+  // demande d'avis : commandes expédiées depuis 10 à 40 jours, une seule fois par commande (50 par jour au plus)
+  let reviews = 0
+  try {
+    const { data: logRow } = await supabaseAdmin.from("email_templates").select("data").eq("key", "review_sent").maybeSingle()
+    const log: Record<string, string> = (logRow?.data as Record<string, string>) ?? {}
+    const { data: orders } = await supabaseAdmin.from("orders").select("id, email, shipping_data, shipped_at").eq("status", "shipped").lte("shipped_at", new Date(Date.now() - 10 * 86400e3).toISOString()).gte("shipped_at", new Date(Date.now() - 40 * 86400e3).toISOString()).limit(200)
+    for (const o of ((orders ?? []) as any[]).filter((x) => x.email && !log[x.id]).slice(0, 50)) {
+      log[o.id] = new Date().toISOString()
+      await autoSend("review", { email: o.email, lang: langForCountry(o.shipping_data?.address?.country), vars: { prenom: String(o.shipping_data?.name ?? "").trim().split(/\s+/)[0] ?? "", commande: String(o.id).slice(0, 8), url: reviewUrl(String(o.id)) } })
+      reviews++
+    }
+    if (reviews) await supabaseAdmin.from("email_templates").upsert({ key: "review_sent", data: log, updated_at: new Date().toISOString() })
+  } catch (e) {
+    console.error("cron reviews:", e)
+  }
+  return NextResponse.json({ restock, carts, winback, reviews })
 }

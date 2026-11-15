@@ -11,8 +11,8 @@ export const ROLE_LABEL: Record<Role, { label: string; hint: string }> = {
 }
 
 const ZONES: Record<Exclude<Role, "admin">, string[]> = {
-  manager: ["assistant", "orders", "returns", "catalog", "products", "promo-codes", "requests", "users", "customers", "analytics", "stats", "emails", "newsletter", "campaigns", "stories", "avatars", "categories", "site-settings", "uploadHero"],
-  support: ["orders", "returns", "requests", "users", "customers", "stats"],
+  manager: ["assistant", "orders", "returns", "reviews", "catalog", "products", "promo-codes", "requests", "users", "customers", "analytics", "stats", "emails", "newsletter", "campaigns", "stories", "avatars", "categories", "site-settings", "uploadHero"],
+  support: ["orders", "returns", "reviews", "requests", "users", "customers", "stats"],
   content: ["home-images", "hero-images", "heroes", "uploadHero", "pages", "collectionPages", "sections", "stories", "music", "fygrances", "about", "newsletter", "campaigns", "emails", "site-settings", "stats"],
 }
 

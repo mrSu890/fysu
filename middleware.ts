@@ -116,6 +116,8 @@ async function preLaunchGate(req: NextRequest, res: NextResponse): Promise<NextR
 
   // la connexion admin reste toujours accessible
   if (pathname.startsWith("/auth")) return null
+  // pages des liens de mail (préférences, avis) : accessibles avant l'ouverture
+  if (pathname.startsWith("/preferences") || pathname.startsWith("/review")) return null
 
   const token = await gateToken()
   const hasPassword = Boolean(token) && req.cookies.get(GATE_COOKIE)?.value === token

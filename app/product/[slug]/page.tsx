@@ -4,6 +4,7 @@ import { cache } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProductClient from "./ProductClient"
+import ProductReviews from "@/components/Product/ProductReviews"
 import ThemeToggle from "@/components/ThemeToggle"
 import { GET as getProductRoute } from "@/app/api/products/[slug]/route"
 import { internalRequest, readRoute } from "@/lib/serverData"
@@ -175,6 +176,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {brandInit && <script dangerouslySetInnerHTML={{ __html: brandInit }} />}
       <Navbar />
       <ProductClient key={slug} initialProduct={product} />
+      {product.id ? <ProductReviews productId={Number(product.id)} /> : null}
       <ThemeToggle />
       <Footer />
     </>

@@ -4,7 +4,7 @@ import { renderEmail, SITE_URL, type Campaign, type Footer } from "@/lib/newslet
 import { FOOTER, stripKeep } from "@/lib/emailBlocks"
 import { trackHtml } from "@/lib/tracking"
 import { earlyKey } from "@/lib/preLaunch"
-import { audienceCounts, isAudience, loadAudience } from "@/lib/audience"
+import { audienceCounts, isAudience, isTopic, loadAudience } from "@/lib/audience"
 import { fillDeep } from "@/lib/emailScenarios"
 import { baseLocale, isTranslated, translateDeep } from "@/lib/mailTranslate"
 import { resendBatch, resendReady, type Mail } from "@/lib/resend"
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     }
 
     if (body.action === "send") {
-      const subs = await loadAudience(isAudience(body.segment) ? body.segment : "all")
+      const subs = await loadAudience(isAudience(body.segment) ? body.segment : "all", isTopic(body.topic) ? body.topic : "all")
       if (subs.length === 0) return fail("Aucun inscrit.", 400)
       // la campagne est écrite en français : chaque langue du site est traduite une seule fois, l'anglais aussi
       const langs = Array.from(new Set(subs.map((s) => baseLocale(s.locale)).filter((l) => l && l !== "fr" && isTranslated(l) || l === "en")))
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
           const v = versions.get(baseLocale(s.locale)) ?? orig
           const mine = fillDeep(v.c, { prenom: s.first_name ?? "" })
           const variant = ab && (i + k) % 2 === 1 ? "B" : "A"
-          const rendered = renderEmail(mine, url, v.lang, v.footer)
+          const rendered = renderEmail(mine, url, v.lang, v.footer, `${SITE_URL}/preferences?t=${s.token}`)
           const html = cid ? trackHtml(rendered.html, { campaign: cid, email: s.email, variant }) : rendered.html
           const text = rendered.text
           return { from, to: [s.email], subject: stripKeep(variant === "B" && mine.subjectB?.trim() ? mine.subjectB : mine.subject), html, text, reply_to: replyTo, headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
