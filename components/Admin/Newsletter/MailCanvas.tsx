@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { Crop, AlignLeft, ArrowDown, ArrowUp, Captions, Copy, Heading, Image as ImageIcon, LayoutGrid, Menu as MenuIcon, Minus, MousePointerClick, Plus, Quote, Palette, Shirt, Stamp, Trash2, X, type LucideIcon } from "lucide-react"
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { errorMessage, notify } from "@/lib/adminApi"
@@ -117,6 +117,43 @@ export function ColorPick({ value, onChange, none }: { value?: string; onChange:
   )
 }
 
+/* Champ intelligent : taper « + » ou « { » ouvre la liste de ce qu'on peut insérer (prénom, mot non traduit…). */
+function SmartField({ value, onChange, chips, multiline, rows, placeholder }: { value: string; onChange: (v: string) => void; chips?: [string, string][]; multiline?: boolean; rows?: number; placeholder?: string }) {
+  const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
+  const [at, setAt] = useState<number | null>(null)
+  const items: [string, string][] = [...(chips ?? []), ["Ne pas traduire", "[[mot]]"]]
+
+  function change(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    const v = e.target.value
+    const c = e.target.selectionStart ?? v.length
+    onChange(v)
+    setAt(c > 0 && (v[c - 1] === "+" || v[c - 1] === "{") ? c - 1 : null)
+  }
+  function pick(tok: string) {
+    if (at === null) return
+    onChange(value.slice(0, at) + tok + value.slice(at + 1))
+    setAt(null)
+    const start = at + (tok.startsWith("[[") ? 2 : tok.length)
+    const end = at + (tok.startsWith("[[") ? 5 : tok.length)
+    setTimeout(() => { ref.current?.focus(); ref.current?.setSelectionRange(start, end) }, 0)
+  }
+  const common = { ref, value, placeholder, className: field, onChange: change, onBlur: () => setTimeout(() => setAt(null), 150) }
+  return (
+    <div className="relative">
+      {multiline ? <textarea {...common} rows={rows ?? 5} /> : <input {...common} />}
+      {at !== null && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-[#d9d3c7]">
+          {items.map(([l, t]) => (
+            <button key={t} type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => pick(t)} className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm hover:bg-[#f4f1ec]">
+              <span>{l}</span><span className="font-mono text-xs text-[#9a948a]">{t}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void; chips?: [string, string][] }) {
   switch (b.type) {
     case "background":
@@ -161,7 +198,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
       return (
         <div className="space-y-3">
           <Upload url={b.imageUrl} onUrl={(u) => set({ ...b, imageUrl: u })} />
-          <input className={field} placeholder="Titre écrit sur la photo (ex. Nouvelle collection)" value={b.title} onChange={(e) => set({ ...b, title: e.target.value })} />
+          <SmartField chips={chips} placeholder="Titre écrit sur la photo (ex. Nouvelle collection)" value={b.title} onChange={(v) => set({ ...b, title: v })} />
           <Seg value={b.size ?? "m"} opts={SIZES} onChange={(v) => set({ ...b, size: v })} />
           <div>
             <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Cadre</p>
@@ -221,9 +258,8 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
     case "title":
       return (
         <div className="space-y-3">
-          <input className={field} placeholder="Petite étiquette au-dessus (ex. SS27)" value={b.eyebrow ?? ""} onChange={(e) => set({ ...b, eyebrow: e.target.value })} />
-          <input className={field} placeholder="Titre" value={b.title} onChange={(e) => set({ ...b, title: e.target.value })} />
-          <Chips chips={chips} onPick={(t) => set({ ...b, title: b.title + t })} />
+          <SmartField chips={chips} placeholder="Petite étiquette au-dessus (ex. SS27)" value={b.eyebrow ?? ""} onChange={(v) => set({ ...b, eyebrow: v })} />
+          <SmartField chips={chips} placeholder="Titre" value={b.title} onChange={(v) => set({ ...b, title: v })} />
           <Seg value={b.size ?? "m"} opts={SIZES} onChange={(v) => set({ ...b, size: v })} />
           <Seg value={b.style ?? "bold"} opts={[["bold", "Gras"], ["light", "Fin, en capitales"]]} onChange={(v) => set({ ...b, style: v })} />
           <Seg value={b.align ?? "left"} opts={[["left", "À gauche"], ["center", "Centré"]]} onChange={(v) => set({ ...b, align: v })} />
@@ -232,8 +268,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
     case "text":
       return (
         <div className="space-y-3">
-          <textarea className={field} rows={6} placeholder="Ton texte…" value={b.text} onChange={(e) => set({ ...b, text: e.target.value })} />
-          <Chips chips={chips} onPick={(t) => set({ ...b, text: b.text + t })} />
+          <SmartField multiline rows={6} chips={chips} placeholder="Ton texte… (tape + pour insérer)" value={b.text} onChange={(v) => set({ ...b, text: v })} />
           <Seg value={b.size ?? "m"} opts={SIZES} onChange={(v) => set({ ...b, size: v })} />
           <Seg value={b.align ?? "left"} opts={[["left", "À gauche"], ["center", "Centré"]]} onChange={(v) => set({ ...b, align: v })} />
         </div>
@@ -242,7 +277,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
       return (
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <input className={field} placeholder="Texte du bouton" value={b.label} onChange={(e) => set({ ...b, label: e.target.value })} />
+            <SmartField chips={chips} placeholder="Texte du bouton" value={b.label} onChange={(v) => set({ ...b, label: v })} />
             <LinkPicker value={b.url} onChange={(u) => set({ ...b, url: u })} />
           </div>
           <select className={field} value={b.style ?? "solid"} onChange={(e) => set({ ...b, style: e.target.value as "solid" | "outline" })}>
@@ -254,7 +289,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
     case "quote":
       return (
         <div className="space-y-3">
-          <textarea className={field} rows={3} placeholder="Citation" value={b.text} onChange={(e) => set({ ...b, text: e.target.value })} />
+          <SmartField multiline rows={3} chips={chips} placeholder="Citation" value={b.text} onChange={(v) => set({ ...b, text: v })} />
           <input className={field} placeholder="Auteur (facultatif)" value={b.by ?? ""} onChange={(e) => set({ ...b, by: e.target.value })} />
         </div>
       )
@@ -281,15 +316,6 @@ export const IconBtn = ({ label, onClick, children, danger }: { label: string; o
   <button type="button" aria-label={label} onClick={onClick} className={`rounded-full p-2.5 ${danger ? "hover:bg-[#fdeeee]" : "hover:bg-[#171717]/[0.06]"}`}>{children}</button>
 )
 
-
-function Chips({ chips, onPick }: { chips?: [string, string][]; onPick: (t: string) => void }) {
-  if (!chips?.length) return null
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {chips.map(([l, t]) => <button key={t} type="button" onClick={() => onPick(t)} className="rounded-full bg-[#f0ece5] px-2.5 py-1 text-xs">+ {l}</button>)}
-    </div>
-  )
-}
 
 /* La toile : le mail tel qu'il sera reçu. On touche un bloc pour le modifier, « + » pour en ajouter. */
 export function MailCanvas({ blocks, onChange, wide, hideSheet, onTouch, chips }: { blocks: Block[]; onChange: (b: Block[]) => void; wide?: boolean; hideSheet?: boolean; onTouch?: () => void; chips?: [string, string][] }) {

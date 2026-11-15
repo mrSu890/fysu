@@ -38,6 +38,7 @@ export async function notifyRestock(): Promise<number> {
       await autoSend("restock", {
         email: r.email,
         lang: String(r.locale ?? "").startsWith("fr") ? "fr" : "en",
+        locale: r.locale,
         vars: { produit: [p?.name, size && size.toUpperCase()].filter(Boolean).join(" · "), url: p?.slug ? `${SITE_URL}/product/${p.slug}` : SITE_URL },
       })
       sent++

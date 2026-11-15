@@ -10,9 +10,11 @@ export type Campaign = {
   blocks: Block[]
 }
 
-export function renderEmail(c: Campaign, unsubUrl: string): { html: string; text: string } {
+export type Footer = { intro: string; link: string }
+
+export function renderEmail(c: Campaign, unsubUrl: string, lang = "fr", footer?: Footer): { html: string; text: string } {
   return {
-    html: renderDoc({ preheader: c.preheader, blocks: c.blocks, unsubUrl, business: BUSINESS }),
-    text: renderText(c.blocks, unsubUrl),
+    html: renderDoc({ preheader: c.preheader, blocks: c.blocks, unsubUrl, business: BUSINESS, lang, footer }),
+    text: renderText(c.blocks, unsubUrl, footer?.link),
   }
 }

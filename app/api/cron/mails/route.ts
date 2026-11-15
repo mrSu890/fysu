@@ -32,7 +32,7 @@ export async function GET(req: Request) {
       const { count } = await supabaseAdmin.from("orders").select("id", { count: "exact", head: true }).eq("email", a.email).gte("createdAt", a.created_at)
       if (count) continue
       const list = (Array.isArray(a.lines) ? a.lines : []).map((l: any) => `· ${l.name}${l.size ? ` (${l.size})` : ""}${l.quantity > 1 ? ` × ${l.quantity}` : ""}`).join("\n")
-      await autoSend("cart", { email: a.email, lang: String(a.locale ?? "fr").startsWith("fr") ? "fr" : "en", vars: { produits: list } })
+      await autoSend("cart", { email: a.email, lang: String(a.locale ?? "fr").startsWith("fr") ? "fr" : "en", locale: a.locale, vars: { produits: list } })
       carts++
     }
   } catch (e) {
