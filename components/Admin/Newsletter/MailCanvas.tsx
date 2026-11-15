@@ -6,6 +6,7 @@ import { AdminButton } from "@/components/Admin/ui/kit"
 import { errorMessage, notify } from "@/lib/adminApi"
 import { ProductPicker, uploadImage } from "@/components/Admin/Newsletter/shared"
 import CropModal from "@/components/Admin/Newsletter/CropModal"
+import LinkPicker from "@/components/Admin/Newsletter/LinkPicker"
 import { BLOCK_LABEL, renderBlock, type Block } from "@/lib/emailBlocks"
 
 export const field = "w-full rounded-xl bg-white px-3 py-2.5 text-[15px] ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]"
@@ -105,7 +106,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
           {b.links.map((l, i) => (
             <div key={i} className="grid grid-cols-[1fr_1.4fr_auto] gap-2">
               <input className={field} placeholder="Nom (ex. Best-sellers)" value={l.label} onChange={(e) => set({ ...b, links: b.links.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) })} />
-              <input className={field} placeholder="Lien (https://…)" value={l.url} onChange={(e) => set({ ...b, links: b.links.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })} />
+              <LinkPicker value={l.url} onChange={(u) => set({ ...b, links: b.links.map((x, j) => (j === i ? { ...x, url: u } : x)) })} />
               <button type="button" aria-label="Retirer" onClick={() => set({ ...b, links: b.links.filter((_, j) => j !== i) })} className="rounded-full p-2 hover:bg-[#fdeeee]"><Trash2 size={16} /></button>
             </div>
           ))}
@@ -118,9 +119,17 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
           <Upload url={b.imageUrl} onUrl={(u) => set({ ...b, imageUrl: u })} />
           <input className={field} placeholder="Titre écrit sur la photo (ex. Nouvelle collection)" value={b.title} onChange={(e) => set({ ...b, title: e.target.value })} />
           <Seg value={b.size ?? "m"} opts={SIZES} onChange={(v) => set({ ...b, size: v })} />
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Cadre</p>
+            <Seg value={b.height ?? "l"} opts={[["s", "Bandeau"], ["m", "Paysage"], ["l", "Portrait"]]} onChange={(v) => set({ ...b, height: v })} />
+          </div>
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Partie de la photo</p>
+            <Seg value={b.focus ?? "top"} opts={[["top", "Haut"], ["center", "Milieu"], ["bottom", "Bas"]]} onChange={(v) => set({ ...b, focus: v })} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <input className={field} placeholder="Texte du bouton (vide = pas de bouton)" value={b.buttonLabel ?? ""} onChange={(e) => set({ ...b, buttonLabel: e.target.value })} />
-            <input className={field} placeholder="Lien du bouton" value={b.buttonUrl ?? ""} onChange={(e) => set({ ...b, buttonUrl: e.target.value })} />
+            <LinkPicker optional value={b.buttonUrl ?? ""} onChange={(u) => set({ ...b, buttonUrl: u })} />
           </div>
         </div>
       )
@@ -134,7 +143,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
                 {b.images.length > 1 && <button type="button" aria-label="Retirer" onClick={() => set({ ...b, images: b.images.filter((_, j) => j !== i) })} className="rounded-full p-1.5 hover:bg-[#fdeeee]"><Trash2 size={14} /></button>}
               </div>
               <Upload url={im.imageUrl} onUrl={(u) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, imageUrl: u } : x)) })} />
-              <input className={field} placeholder="Lien au clic (facultatif)" value={im.href ?? ""} onChange={(e) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, href: e.target.value } : x)) })} />
+              <LinkPicker optional value={im.href ?? ""} onChange={(u) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, href: u } : x)) })} />
             </div>
           ))}
           {b.images.length < 3 && <AdminButton icon={Plus} onClick={() => set({ ...b, images: [...b.images, { imageUrl: "" }] })}>Ajouter une photo</AdminButton>}
@@ -144,7 +153,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
       return (
         <div className="space-y-3">
           <Upload url={b.imageUrl} onUrl={(u) => set({ ...b, imageUrl: u })} />
-          <input className={field} placeholder="Lien au clic (facultatif)" value={b.href ?? ""} onChange={(e) => set({ ...b, href: e.target.value })} />
+          <LinkPicker optional value={b.href ?? ""} onChange={(u) => set({ ...b, href: u })} />
         </div>
       )
     case "title":
@@ -172,7 +181,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <input className={field} placeholder="Texte du bouton" value={b.label} onChange={(e) => set({ ...b, label: e.target.value })} />
-            <input className={field} placeholder="Lien" value={b.url} onChange={(e) => set({ ...b, url: e.target.value })} />
+            <LinkPicker value={b.url} onChange={(u) => set({ ...b, url: u })} />
           </div>
           <select className={field} value={b.style ?? "solid"} onChange={(e) => set({ ...b, style: e.target.value as "solid" | "outline" })}>
             <option value="solid">Plein (noir)</option>
