@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { renderEmail, SITE_URL, type Campaign, type Footer } from "@/lib/newsletter"
 import { FOOTER, stripKeep } from "@/lib/emailBlocks"
+import { audienceCounts, isAudience, loadAudience } from "@/lib/audience"
 import { fillDeep } from "@/lib/emailScenarios"
 import { baseLocale, isTranslated, translateDeep } from "@/lib/mailTranslate"
 import { resendBatch, resendReady, type Mail } from "@/lib/resend"
@@ -18,10 +19,13 @@ export const maxDuration = 60
 const fail = (message: string, status = 500) => NextResponse.json({ error: message }, { status })
 
 export async function GET() {
-  const { count, error } = await supabaseAdmin.from("newsletter_subscribers").select("id", { count: "exact", head: true }).is("unsubscribed_at", null)
-  if (error) return fail(/relation|does not exist/i.test(error.message) ? "La table newsletter_subscribers n'existe pas encore (SQL à lancer dans Supabase)." : error.message)
+  let counts
+  try { counts = await audienceCounts() } catch (e) {
+    const m = e instanceof Error ? e.message : "Erreur"
+    return fail(/relation|does not exist/i.test(m) ? "La table newsletter_subscribers n'existe pas encore (SQL à lancer dans Supabase)." : m)
+  }
   const { data: d } = await supabaseAdmin.from("email_templates").select("data").eq("key", "newsletter_draft").maybeSingle()
-  return NextResponse.json({ active: count ?? 0, configured: resendReady(), draft: d?.data ?? null })
+  return NextResponse.json({ active: counts.all, counts, configured: resendReady(), draft: d?.data ?? null })
 }
 
 export async function PUT(req: Request) {
@@ -51,10 +55,7 @@ export async function POST(req: Request) {
     }
 
     if (body.action === "send") {
-      let q = await supabaseAdmin.from("newsletter_subscribers").select("email, token, locale, first_name").is("unsubscribed_at", null)
-      if (q.error && /first_name/i.test(q.error.message)) q = (await supabaseAdmin.from("newsletter_subscribers").select("email, token, locale").is("unsubscribed_at", null)) as typeof q
-      if (q.error) return fail(q.error.message)
-      const subs = (q.data ?? []) as { email: string; token: string; locale: string | null; first_name?: string | null }[]
+      const subs = await loadAudience(isAudience(body.segment) ? body.segment : "all")
       if (subs.length === 0) return fail("Aucun inscrit.", 400)
       // la campagne est écrite en français : chaque langue du site est traduite une seule fois, l'anglais aussi
       const langs = Array.from(new Set(subs.map((s) => baseLocale(s.locale)).filter((l) => l && l !== "fr" && isTranslated(l) || l === "en")))
