@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { validateCheckoutCart } from "@/lib/payments";
 import { shippingFeeCents } from "@/lib/shipping";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { findPromo } from "@/lib/promoCodes";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -255,6 +256,17 @@ export async function POST(req: Request) {
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout`,
     });
+
+    // pour le mail « panier abandonné » (ne bloque jamais le paiement)
+    try {
+      const locale = /NEXT_LOCALE=([a-z-]+)/i.exec(req.headers.get("cookie") ?? "")?.[1] ?? "fr";
+      await supabaseAdmin.from("checkout_attempts").insert({
+        email: user.email,
+        user_id: user.id,
+        locale,
+        lines: validatedCart.items.map((i) => ({ name: i.productName, size: i.sizeLabel, quantity: i.quantity })),
+      });
+    } catch {}
 
     return NextResponse.json({ url: session.url });
 

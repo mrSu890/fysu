@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { autoSend } from "@/lib/emailScenarios"
+import { notifyRestock } from "@/lib/restock"
 import { langForCountry } from "@/lib/orderEmail"
 
 export const runtime = "nodejs"
@@ -81,6 +82,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (Object.keys(patch).length === 0) return NextResponse.json({ ok: true })
   const { error } = await supabaseAdmin.from("orders").update(patch).eq("id", id)
   if (error) return fail(error.message)
+
+  if (patch.restocked_at) await notifyRestock().catch(() => {})
 
   // mail d'expédition automatique (seulement au passage à « expédiée »)
   if (body.status === "shipped" && o.status !== "shipped" && o.email) {

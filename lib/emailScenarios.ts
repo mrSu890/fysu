@@ -94,8 +94,20 @@ export const SCENARIOS: Scenario[] = [
   { id: "collection", kind: "campaign", label: "Nouvelle collection", when: "Annoncer une collection", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
   { id: "private", kind: "campaign", label: "Vente privée", when: "Accès anticipé réservé aux inscrits", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
   { id: "product", kind: "campaign", label: "Nouveauté", when: "Mettre une pièce en avant", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
-  { id: "cart", kind: "soon", label: "Panier abandonné", when: "Rappel à ceux qui n'ont pas payé", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
-  { id: "restock", kind: "soon", label: "Retour en stock", when: "Prévenir ceux qui attendaient une pièce", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
+  {
+    id: "cart", kind: "auto", label: "Panier abandonné", when: "Rappel 2 h à 3 jours après un paiement non terminé",
+    copy: c(
+      { subject: "Tu as oublié quelque chose", eyebrow: "Ton panier", title: "Ta sélection t'attend.", body: "Bonjour,\n\nTu as commencé une commande sans la terminer :\n{produits}\n\nTes pièces sont toujours là, mais le stock est limité.", cta: "Reprendre ma commande", url: `${home}/checkout` },
+      { subject: "You left something behind", eyebrow: "Your cart", title: "Your selection is waiting.", body: "Hello,\n\nYou started an order without finishing it:\n{produits}\n\nYour pieces are still here, but stock is limited.", cta: "Resume my order", url: `${home}/checkout` }
+    ),
+  },
+  {
+    id: "restock", kind: "auto", label: "Retour en stock", when: "Quand une pièce demandée via « Me prévenir » revient",
+    copy: c(
+      { subject: "C'est de nouveau disponible", eyebrow: "Retour en stock", title: "Elle est revenue.", body: "Bonne nouvelle : {produit} est de nouveau disponible. Les quantités sont limitées.", cta: "Voir la pièce" },
+      { subject: "It's back in stock", eyebrow: "Back in stock", title: "It's back.", body: "Good news: {produit} is available again. Quantities are limited.", cta: "View the piece" }
+    ),
+  },
 ]
 
 export type Settings = Record<string, { enabled?: boolean; fr?: Partial<Copy>; en?: Partial<Copy> }>
@@ -114,16 +126,16 @@ export function resolveCopy(s: Scenario, st: Settings, lang: Lang): Copy {
 }
 export const isEnabled = (s: Scenario, st: Settings) => st[s.id]?.enabled ?? s.kind === "auto"
 
-export type Vars = { prenom?: string; commande?: string; suivi?: string }
+export type Vars = { prenom?: string; commande?: string; suivi?: string; produit?: string; produits?: string; url?: string }
 const fill = (t: string, v: Vars) =>
-  t.replace(/\{prenom\}/g, v.prenom || "").replace(/\{commande\}/g, v.commande || "").replace(/\{suivi\}/g, v.suivi || "—").replace(/ ,/g, ",")
+  t.replace(/\{prenom\}/g, v.prenom || "").replace(/\{commande\}/g, v.commande || "").replace(/\{suivi\}/g, v.suivi || "—").replace(/\{produit\}/g, v.produit || "").replace(/\{produits\}/g, v.produits || "").replace(/ ,/g, ",")
 
 export function renderScenario(copy: Copy, v: Vars, unsubUrl?: string | null) {
   const blocks: Block[] = [
     { type: "title", eyebrow: copy.eyebrow, title: fill(copy.title, v) },
     { type: "text", text: fill(copy.body, v) },
   ]
-  if (copy.cta && copy.url) blocks.push({ type: "button", label: copy.cta, url: copy.url, style: "solid" })
+  if (copy.cta && (v.url || copy.url)) blocks.push({ type: "button", label: copy.cta, url: v.url || copy.url, style: "solid" })
   return {
     subject: fill(copy.subject, v),
     html: renderDoc({ preheader: fill(copy.subject, v), blocks, unsubUrl: unsubUrl ?? null, business: BUSINESS }),
