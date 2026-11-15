@@ -23,6 +23,7 @@ import AccessibilityMenu from "@/components/AccessibilityMenu";
 import GamesFab from "@/components/GamesFab";
 import BackButton from "@/components/BackButton";
 import Tips from "@/components/Tips";
+import InstallPrompt from "@/components/InstallPrompt";
 import { MusicPlayerProvider } from "@/context/MusicPlayerContext";
 import { rtlLocales } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
@@ -73,8 +74,9 @@ export async function generateMetadata(): Promise<Metadata> {
   icons: {
     icon: [{ url: "/api/favicon", type: "image/png" }],
     shortcut: "/api/favicon",
-    apple: "/api/favicon",
+    apple: "/icons/apple-touch-icon.png",
   },
+  appleWebApp: { capable: true, title: "FYSU", statusBarStyle: "black-translucent" },
   };
 }
 
@@ -160,6 +162,8 @@ export default async function RootLayout({
                 <NotificationToasts />
                 {/* Musique : pop-up sur les collections + pastille de lecture */}
                 <MusicPrompt />
+                {/* Invite « ajouter à l'écran d'accueil » : jamais pendant un achat */}
+                <InstallPrompt />
                 <MiniPlayer />
                 {/* Transition en pixels entre les pages */}
                 <PixelTransition />
