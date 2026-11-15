@@ -14,12 +14,14 @@ export const SITE_URL = (/^https?:\/\//i.test(RAW_SITE) ? RAW_SITE : `https://${
 
 export type ProductPick = { id: number; name: string; price: number; imageUrl: string; url: string }
 
+export type Size = "s" | "m" | "l"
+
 export type Block =
   | { type: "hero"; imageUrl: string; alt?: string; href?: string }
-  | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center" }
-  | { type: "text"; text: string; align?: "left" | "center" }
+  | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center"; size?: Size }
+  | { type: "text"; text: string; align?: "left" | "center"; size?: Size }
   | { type: "nav"; links: { label: string; url: string }[] }
-  | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string }
+  | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string; size?: Size }
   | { type: "mosaic"; images: { imageUrl: string; alt?: string; href?: string }[] }
   | { type: "button"; label: string; url: string; style?: "solid" | "outline" }
   | { type: "products"; heading?: string; columns?: 1 | 2; items: ProductPick[] }
@@ -105,8 +107,8 @@ export function renderBlock(b: Block): string {
       const ta = b.align === "center" ? "text-align:center;" : ""
       const titleCss =
         b.style === "light"
-          ? `font-size:26px;line-height:1.2;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;`
-          : `font-size:32px;line-height:1.08;font-weight:800;letter-spacing:-0.025em;`
+          ? `font-size:${{ s: 20, m: 26, l: 34 }[b.size ?? "m"]}px;line-height:1.2;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;`
+          : `font-size:${{ s: 24, m: 32, l: 42 }[b.size ?? "m"]}px;line-height:1.08;font-weight:800;letter-spacing:-0.025em;`
       return row(
         `${b.eyebrow ? `<div style="${eyebrowStyle}padding:0 0 14px;${ta}">${esc(b.eyebrow)}</div>` : ""}
 <div style="font-family:${F.sans};${titleCss}color:${C.ink};${ta}">${esc(b.title)}</div>`,
@@ -131,7 +133,7 @@ export function renderBlock(b: Block): string {
       // photo en fond de cellule : sous Outlook (ordinateur) elle ne s'affiche pas, le fond reste sombre et le texte lisible
       return `<tr><td style="padding:0 28px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
 <td background="${img}" bgcolor="#3a3935" height="520" valign="bottom" align="center" style="height:520px;background-color:#3a3935;background-image:linear-gradient(rgba(0,0,0,0) 45%,rgba(0,0,0,0.5) 100%),url('${img}');background-size:cover;background-position:center top;padding:0 20px 34px;">
-<div style="font-family:${F.sans};font-size:30px;line-height:1.1;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;color:#ffffff;text-shadow:0 1px 14px rgba(0,0,0,0.45);">${esc(b.title)}</div>${btn}</td></tr></table></td></tr>`
+<div style="font-family:${F.sans};font-size:${{ s: 22, m: 30, l: 40 }[b.size ?? "m"]}px;line-height:1.1;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;color:#ffffff;text-shadow:0 1px 14px rgba(0,0,0,0.45);">${esc(b.title)}</div>${btn}</td></tr></table></td></tr>`
     }
     case "mosaic": {
       const imgs = (b.images || []).filter((i) => safeUrl(i.imageUrl))
@@ -151,7 +153,7 @@ export function renderBlock(b: Block): string {
         .split(/\n\s*\n/)
         .map((p) => p.trim())
         .filter(Boolean)
-        .map((p) => row(`<div style="font-family:${F.sans};font-size:15px;line-height:1.75;font-weight:300;color:#2b2a27;${b.align === "center" ? "text-align:center;" : ""}">${richText(p)}</div>`, "0 28px 16px"))
+        .map((p) => row(`<div style="font-family:${F.sans};font-size:${{ s: 13, m: 15, l: 19 }[b.size ?? "m"]}px;line-height:1.75;font-weight:300;color:#2b2a27;${b.align === "center" ? "text-align:center;" : ""}">${richText(p)}</div>`, "0 28px 16px"))
         .join("")
     case "button":
       return row(button(b.label, b.url, b.style), "8px 28px 36px")
