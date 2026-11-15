@@ -13,6 +13,69 @@ type Order = {
 };
 
 // Étiquettes de statut lisibles (fr / en ; les autres langues voient l'anglais)
+const RETURN_COPY = {
+  fr: { btn: "Retourner un article", title: "Quels articles retournes-tu ?", why: "Pourquoi ?", reasons: { size_small: "Trop petit", size_big: "Trop grand", not_liked: "Ne me plaît pas", defect: "Défaut", other: "Autre" }, comment: "Un mot de plus (facultatif)", send: "Envoyer la demande", sent: "Demande envoyée. Nous revenons vers toi très vite.", pick: "Choisis au moins un article.", status: { requested: "Retour demandé", approved: "Retour accepté : regarde ta boîte mail", received: "Retour reçu", refunded: "Retour remboursé", rejected: "Retour refusé" }, window: "Retour possible 21 jours après l'expédition." },
+  en: { btn: "Return an item", title: "Which items are you returning?", why: "Why?", reasons: { size_small: "Too small", size_big: "Too big", not_liked: "Don't like it", defect: "Defect", other: "Other" }, comment: "Anything to add (optional)", send: "Send request", sent: "Request sent. We'll get back to you very soon.", pick: "Pick at least one item.", status: { requested: "Return requested", approved: "Return accepted: check your inbox", received: "Return received", refunded: "Return refunded", rejected: "Return declined" }, window: "Returns are possible within 21 days of shipping." },
+} as const;
+
+function ReturnPanel({ order, items, rc, onDone }: { order: Order; items: any[]; rc: (typeof RETURN_COPY)["fr"] | (typeof RETURN_COPY)["en"]; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [reason, setReason] = useState("size_small");
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function submit() {
+    if (picked.length === 0) { setMsg(rc.pick); return; }
+    setBusy(true);
+    setMsg("");
+    try {
+      const r = await fetch("/api/returns", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: order.id, indexes: picked, reason, comment }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j?.error || "Error");
+      setMsg(rc.sent);
+      setOpen(false);
+      onDone();
+    } catch (e: any) {
+      setMsg(e?.message ?? "Error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-5">
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)} className="text-[11px] font-light uppercase tracking-[0.18em] underline underline-offset-4">{rc.btn}</button>
+      ) : (
+        <div className="border border-foreground/15 p-4">
+          <p className="text-[11px] font-light uppercase tracking-[0.18em]">{rc.title}</p>
+          <div className="mt-3 space-y-2">
+            {items.map((item, i) => (
+              <label key={i} className="flex cursor-pointer items-center gap-3 text-sm font-light">
+                <input type="checkbox" checked={picked.includes(i)} onChange={() => setPicked((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]))} />
+                <span>{item?.product?.name ?? item?.description ?? "Item"}{item?.size_label ? ` · ${item.size_label}` : ""}{(item?.quantity ?? 1) > 1 ? ` ×${item.quantity}` : ""}</span>
+              </label>
+            ))}
+          </div>
+          <p className="mt-4 text-[11px] font-light uppercase tracking-[0.18em]">{rc.why}</p>
+          <select value={reason} onChange={(e) => setReason(e.target.value)} className="mt-2 w-full border-b border-foreground/30 bg-transparent py-2 text-sm font-light outline-none">
+            {Object.entries(rc.reasons).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <input value={comment} onChange={(e) => setComment(e.target.value.slice(0, 600))} placeholder={rc.comment} className="mt-3 w-full border-b border-foreground/30 bg-transparent py-2 text-sm font-light outline-none placeholder:opacity-50" />
+          <div className="mt-4 flex items-center gap-4">
+            <button type="button" disabled={busy} onClick={submit} className="text-[11px] font-light uppercase tracking-[0.18em] underline underline-offset-4 disabled:opacity-40">{rc.send}</button>
+            <button type="button" onClick={() => setOpen(false)} className="text-[11px] font-light uppercase tracking-[0.18em] opacity-50">×</button>
+          </div>
+          <p className="mt-3 text-[11px] font-light opacity-50">{rc.window}</p>
+        </div>
+      )}
+      {msg && <p className="mt-2 text-sm font-light text-foreground/60">{msg}</p>}
+    </div>
+  );
+}
+
 const STATUS_COPY = {
   fr: {
     pending: "En attente de paiement",
@@ -46,6 +109,9 @@ export default function UserOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rets, setRets] = useState<Record<string, string>>({});
+  const rc = locale === "fr" ? RETURN_COPY.fr : RETURN_COPY.en;
+  const loadRets = () => fetch("/api/returns").then((r) => (r.ok ? r.json() : { requests: [] })).then((j) => setRets(Object.fromEntries((j.requests ?? []).map((x: any) => [x.order_id, x.status])))).catch(() => {});
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +126,7 @@ export default function UserOrders() {
         }
         const json = await res.json();
         if (!cancelled) setOrders(json?.orders ?? []);
+        loadRets();
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? t("unknownError"));
       } finally {
@@ -126,6 +193,13 @@ export default function UserOrders() {
                   </>
                 )}
               </p>
+            )}
+
+            {rets[order.id] && rets[order.id] !== "rejected" && (
+              <p className="mt-3 text-[11px] font-light uppercase tracking-[0.18em]">{(rc.status as Record<string, string>)[rets[order.id]] ?? rets[order.id]}</p>
+            )}
+            {s === "shipped" && (!rets[order.id] || rets[order.id] === "rejected") && items.length > 0 && Date.now() - new Date((order as any).shipped_at ?? order.createdAt ?? 0).getTime() < 21 * 24 * 3600 * 1000 && (
+              <ReturnPanel order={order} items={items} rc={rc} onDone={loadRets} />
             )}
 
             {items.length > 0 && (

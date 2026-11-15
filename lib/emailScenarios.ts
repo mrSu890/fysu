@@ -92,6 +92,27 @@ export const SCENARIOS: Scenario[] = [
       { subject: "So, how is it?", eyebrow: "Your feedback", title: "How is it going?", body: "Hello {prenom},\n\nYour order #{commande} arrived a few days ago. A short note from you helps us a lot.\n\nJust reply to this email.", cta: "Contact us" }
     ),
   },
+  {
+    id: "return_requested", kind: "auto", label: "Retour demandé", when: "Quand un client demande un retour depuis son compte",
+    copy: c(
+      { subject: "Ta demande de retour est reçue", eyebrow: "Retour", title: "C'est bien reçu, {prenom}.", body: "Nous avons reçu ta demande de retour pour la commande #{commande}. Nous la regardons et revenons vers toi très vite avec la marche à suivre.", cta: "Voir mon compte", url: `${home}/profile` },
+      { subject: "We received your return request", eyebrow: "Return", title: "Got it, {prenom}.", body: "We received your return request for order #{commande}. We're looking at it and will come back to you very soon with the next steps.", cta: "View my account", url: `${home}/profile` }
+    ),
+  },
+  {
+    id: "return_approved", kind: "auto", label: "Retour accepté", when: "Quand tu acceptes une demande de retour",
+    copy: c(
+      { subject: "Ton retour est accepté", eyebrow: "Retour", title: "Voici comment faire.", body: "Bonjour {prenom},\n\nNous avons accepté le retour de ta commande #{commande}. Renvoie les pièces, non portées et avec leurs étiquettes, à cette adresse :\n\n{adresse}\n\nGlisse ton numéro de commande dans le colis. Dès réception, nous te remboursons.", cta: "Nous écrire" },
+      { subject: "Your return is accepted", eyebrow: "Return", title: "Here's how.", body: "Hello {prenom},\n\nWe accepted the return of your order #{commande}. Send the pieces back, unworn and with their tags, to this address:\n\n{adresse}\n\nPlease include your order number in the parcel. Once we receive it, we refund you.", cta: "Contact us" }
+    ),
+  },
+  {
+    id: "return_rejected", kind: "auto", label: "Retour refusé", when: "Quand tu refuses une demande de retour",
+    copy: c(
+      { subject: "À propos de ta demande de retour", eyebrow: "Retour", title: "Nous ne pouvons pas l'accepter.", body: "Bonjour {prenom},\n\nNous ne pouvons malheureusement pas accepter le retour de ta commande #{commande}. Si tu penses que c'est une erreur, réponds simplement à cet e-mail : nous regardons ça ensemble.", cta: "Nous écrire" },
+      { subject: "About your return request", eyebrow: "Return", title: "We can't accept it.", body: "Hello {prenom},\n\nUnfortunately we can't accept the return of your order #{commande}. If you think this is a mistake, just reply to this email and we'll look into it together.", cta: "Contact us" }
+    ),
+  },
   { id: "collection", kind: "campaign", label: "Nouvelle collection", when: "Annoncer une collection", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
   { id: "private", kind: "campaign", label: "Vente privée", when: "Accès anticipé réservé aux inscrits", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
   { id: "product", kind: "campaign", label: "Nouveauté", when: "Mettre une pièce en avant", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
@@ -127,9 +148,9 @@ export function resolveCopy(s: Scenario, st: Settings, lang: Lang): Copy {
 }
 export const isEnabled = (s: Scenario, st: Settings) => st[s.id]?.enabled ?? s.kind === "auto"
 
-export type Vars = { prenom?: string; commande?: string; suivi?: string; produit?: string; produits?: string; url?: string }
+export type Vars = { prenom?: string; commande?: string; suivi?: string; produit?: string; produits?: string; url?: string; adresse?: string; code?: string }
 const fill = (t: string, v: Vars) =>
-  t.replace(/\{prenom\}/g, v.prenom || "").replace(/\{commande\}/g, v.commande || "").replace(/\{suivi\}/g, v.suivi || "—").replace(/\{produit\}/g, v.produit || "").replace(/\{produits\}/g, v.produits || "").replace(/ ,/g, ",").replace(/,\s*([.!?…])/g, "$1").replace(/,\s*$/g, "")
+  t.replace(/\{prenom\}/g, v.prenom || "").replace(/\{commande\}/g, v.commande || "").replace(/\{suivi\}/g, v.suivi || "—").replace(/\{produit\}/g, v.produit || "").replace(/\{produits\}/g, v.produits || "").replace(/\{adresse\}/g, v.adresse || "").replace(/\{code\}/g, v.code || "").replace(/ ,/g, ",").replace(/,\s*([.!?…])/g, "$1").replace(/,\s*$/g, "")
 
 // remplace les {prenom}, {commande}… dans tous les textes d'un bloc
 export function fillDeep<T>(x: T, v: Vars): T {

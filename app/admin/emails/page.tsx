@@ -18,6 +18,7 @@ const ICON: Record<string, [LucideIcon, TileTone]> = {
   delay: [Clock, "orange"], apology: [Heart, "orange"], stockout: [PackageX, "orange"], refund: [RotateCcw, "orange"], bug: [Bug, "orange"], maintenance: [Wrench, "orange"], review: [Star, "orange"],
   collection: [Layers, "purple"], private: [Lock, "purple"], product: [Shirt, "purple"],
   cart: [ShoppingCart, "gray"], restock: [PackageCheck, "gray"],
+  return_requested: [RotateCcw, "gray"], return_approved: [RotateCcw, "green"], return_rejected: [RotateCcw, "orange"],
 }
 const SEGMENTS: [string, string][] = [["vip", "VIP"], ["loyal", "Fidèles"], ["new", "Nouveaux"], ["risk", "À relancer"], ["prospect", "Sans achat"]]
 
@@ -49,6 +50,9 @@ const CHIPS: Record<string, [string, string][]> = {
   refund: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
   review: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
   restock: [["Pièce", "{produit}"]],
+  return_requested: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
+  return_approved: [["Prénom", "{prenom}"], ["N° commande", "{commande}"], ["Adresse de retour", "{adresse}"]],
+  return_rejected: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
   cart: [["Panier", "{produits}"]],
 }
 
