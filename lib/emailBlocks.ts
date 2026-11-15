@@ -260,13 +260,14 @@ ${b.by ? `<div style="${eyebrowStyle}padding:12px 0 0;">${esc(b.by)}</div>` : ""
 }
 
 export const FOOTER = {
-  fr: { intro: "Tu reçois cet e-mail car tu t'es inscrit à la newsletter FYSU.", link: "Se désinscrire" },
-  en: { intro: "You are receiving this email because you subscribed to the FYSU newsletter.", link: "Unsubscribe" },
+  fr: { intro: "Tu reçois cet e-mail car tu t'es inscrit à la newsletter FYSU.", link: "Se désinscrire", prefs: "Préférences" },
+  en: { intro: "You are receiving this email because you subscribed to the FYSU newsletter.", link: "Unsubscribe", prefs: "Preferences" },
 }
 
 export type DocOpts = {
   lang?: string
-  footer?: { intro: string; link: string }
+  footer?: { intro: string; link: string; prefs?: string }
+  prefsUrl?: string | null
   preheader?: string
   blocks: Block[]
   /** lien de désinscription (newsletter) ; absent pour les mails de commande */
@@ -296,7 +297,7 @@ ${(() => { const f = `<tr><td style="padding:14px 28px 44px;">
 ${o.footerNote ? `${richText(o.footerNote)}<br><br>` : ""}
 ${esc(b.name)} · ${esc(b.street)}, ${esc(b.postalCode)} ${esc(b.city)}, ${esc(b.country)}<br>
 <a href="mailto:${esc(b.email)}" style="color:${C.soft};">${esc(b.email)}</a>${b.instagram ? ` · <a href="${esc(b.instagram)}" style="color:${C.soft};">Instagram</a>` : ""} · <a href="${SITE_URL}" style="color:${C.soft};">f-y-s-u.com</a>
-${o.unsubUrl ? `<br><br>${esc(ft.intro)} <a href="${esc(o.unsubUrl)}" style="color:${C.soft};">${esc(ft.link)}</a>` : ""}
+${o.unsubUrl ? `<br><br>${esc(ft.intro)} <a href="${esc(o.unsubUrl)}" style="color:${C.soft};">${esc(ft.link)}</a>${o.prefsUrl ? ` · <a href="${esc(o.prefsUrl)}" style="color:${C.soft};">${esc(ft.prefs || (o.lang === "fr" || !o.lang ? "Préférences" : "Preferences"))}</a>` : ""}` : ""}
 </div></td></tr>`; return dark ? onDark(f) : f })()}
 </table></td></tr></table></body></html>`
 }

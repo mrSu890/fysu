@@ -12,11 +12,11 @@ export type Campaign = {
   blocks: Block[]
 }
 
-export type Footer = { intro: string; link: string }
+export type Footer = { intro: string; link: string; prefs?: string }
 
-export function renderEmail(c: Campaign, unsubUrl: string, lang = "fr", footer?: Footer): { html: string; text: string } {
+export function renderEmail(c: Campaign, unsubUrl: string, lang = "fr", footer?: Footer, prefsUrl?: string): { html: string; text: string } {
   return {
-    html: renderDoc({ preheader: c.preheader, blocks: c.blocks, unsubUrl, business: BUSINESS, lang, footer }),
+    html: renderDoc({ preheader: c.preheader, blocks: c.blocks, unsubUrl, business: BUSINESS, lang, footer, prefsUrl }),
     text: renderText(c.blocks, unsubUrl, footer?.link),
   }
 }

@@ -88,10 +88,10 @@ export const SCENARIOS: Scenario[] = [
     ),
   },
   {
-    id: "review", kind: "situation", label: "Demande d'avis", when: "Quelques jours après la livraison",
+    id: "review", kind: "auto", defaultOff: true, label: "Demande d'avis", when: "10 jours après l'expédition (une fois par commande)",
     copy: c(
-      { subject: "Alors, cette pièce ?", eyebrow: "Ton avis", title: "Comment ça se passe ?", body: "Bonjour {prenom},\n\nTa commande #{commande} est arrivée depuis quelques jours. Un retour de ta part, même court, nous aide énormément.\n\nRéponds simplement à cet e-mail.", cta: "Nous écrire" },
-      { subject: "So, how is it?", eyebrow: "Your feedback", title: "How is it going?", body: "Hello {prenom},\n\nYour order #{commande} arrived a few days ago. A short note from you helps us a lot.\n\nJust reply to this email.", cta: "Contact us" }
+      { subject: "Alors, cette pièce ?", eyebrow: "Ton avis", title: "Comment ça se passe ?", body: "Bonjour {prenom},\n\nTa commande #{commande} est arrivée depuis quelques jours. Un avis de ta part, même court, nous aide énormément.", cta: "Donner mon avis" },
+      { subject: "So, how is it?", eyebrow: "Your feedback", title: "How is it going?", body: "Hello {prenom},\n\nYour order #{commande} arrived a few days ago. A short review from you helps us a lot.", cta: "Leave a review" }
     ),
   },
   {
