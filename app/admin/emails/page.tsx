@@ -41,6 +41,7 @@ function Seg<T extends string>({ value, opts, onChange, nowrap }: { value: T; op
 }
 
 const CHIPS: Record<string, [string, string][]> = {
+  welcome: [["Prénom", "{prenom}"]],
   shipped: [["Prénom", "{prenom}"], ["N° commande", "{commande}"], ["Suivi", "{suivi}"]],
   delay: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
   apology: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
