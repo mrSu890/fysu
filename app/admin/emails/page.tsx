@@ -9,12 +9,12 @@ import { MailCanvas, Sheet, IconBtn, field } from "@/components/Admin/Newsletter
 import type { Block } from "@/lib/emailBlocks"
 
 type Copy = { subject: string; eyebrow: string; title: string; body: string; cta: string; url: string; blocks?: Block[] }
-type Sc = { id: string; kind: "auto" | "situation" | "campaign" | "soon"; label: string; when: string; enabled: boolean; fr: Copy; en: Copy; defaults: { fr: Copy; en: Copy } }
+type Sc = { id: string; kind: "auto" | "situation" | "campaign" | "soon"; label: string; when: string; enabled: boolean; promo?: { percent: number; days: number } | null; fr: Copy; en: Copy; defaults: { fr: Copy; en: Copy } }
 type Order = { id: string; customerName: string | null; email: string | null; createdAt: string; status: string }
 type Aud = "orders" | "subscribers" | "segment" | "email"
 
 const ICON: Record<string, [LucideIcon, TileTone]> = {
-  welcome: [Sparkles, "green"], shipped: [Truck, "green"],
+  welcome: [Sparkles, "green"], winback: [Heart, "green"], shipped: [Truck, "green"],
   delay: [Clock, "orange"], apology: [Heart, "orange"], stockout: [PackageX, "orange"], refund: [RotateCcw, "orange"], bug: [Bug, "orange"], maintenance: [Wrench, "orange"], review: [Star, "orange"],
   collection: [Layers, "purple"], private: [Lock, "purple"], product: [Shirt, "purple"],
   cart: [ShoppingCart, "gray"], restock: [PackageCheck, "gray"],
@@ -43,6 +43,7 @@ function Seg<T extends string>({ value, opts, onChange, nowrap }: { value: T; op
 
 const CHIPS: Record<string, [string, string][]> = {
   welcome: [["Prénom", "{prenom}"]],
+  winback: [["Prénom", "{prenom}"]],
   shipped: [["Prénom", "{prenom}"], ["N° commande", "{commande}"], ["Suivi", "{suivi}"]],
   delay: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
   apology: [["Prénom", "{prenom}"], ["N° commande", "{commande}"]],
@@ -76,6 +77,8 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
   const [segment, setSegment] = useState("risk")
   const [one, setOne] = useState("")
   const situation = s.kind === "situation"
+  const promoable = s.id === "welcome" || s.id === "winback"
+  const [promo, setPromo] = useState<{ on: boolean; percent: number; days: number }>({ on: !!s.promo, percent: s.promo?.percent ?? 10, days: s.promo?.days ?? 30 })
 
   useEffect(() => {
     if (!situation) return
@@ -84,7 +87,7 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
 
   const cur = c[lang]
   const blocks = blocksOf(cur)
-  const full = () => ({ fr: { ...c.fr, blocks: blocksOf(c.fr) }, en: { ...c.en, blocks: blocksOf(c.en) } })
+  const full = () => ({ promo: promoable ? (promo.on ? { percent: promo.percent, days: promo.days } : null) : undefined, fr: { ...c.fr, blocks: blocksOf(c.fr) }, en: { ...c.en, blocks: blocksOf(c.en) } })
 
   async function save() {
     setBusy("save")
@@ -125,6 +128,19 @@ function Editor({ s, subscribers, configured, onClose, onSaved }: { s: Sc; subsc
       <div className="mx-auto max-w-[390px] px-4 pt-4 sm:px-0">
         <input value={cur.subject} onChange={(e) => setC((p) => ({ ...p, [lang]: { ...p[lang], subject: e.target.value } }))} placeholder="Objet du mail" className="mb-4 w-full rounded-2xl bg-white px-4 py-3 text-[15px] font-medium ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]" />
       </div>
+      {promoable && (
+        <div className="mx-auto mb-4 flex max-w-[390px] flex-wrap items-center gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-[#e0dbd3]">
+          <Switch on={promo.on} onChange={(v) => setPromo((p) => ({ ...p, on: v }))} label="Offrir un code promo" />
+          <span className="text-sm">Offrir un code</span>
+          {promo.on && (
+            <>
+              <input type="number" min={1} max={100} value={promo.percent} onChange={(e) => setPromo((p) => ({ ...p, percent: Number(e.target.value) }))} className="w-16 rounded-lg bg-[#f6f4f0] px-2 py-1.5 text-center text-sm outline-none" /><span className="text-sm">%</span>
+              <input type="number" min={1} max={365} value={promo.days} onChange={(e) => setPromo((p) => ({ ...p, days: Number(e.target.value) }))} className="w-16 rounded-lg bg-[#f6f4f0] px-2 py-1.5 text-center text-sm outline-none" /><span className="text-sm">jours</span>
+            </>
+          )}
+          <p className="w-full text-xs text-[#7a756d]">{promo.on ? "Un code personnel (une seule utilisation) est créé et ajouté au mail pour chaque personne." : "Désactivé : aucun code dans le mail."}</p>
+        </div>
+      )}
       <div className="px-4 sm:px-0">
         <MailCanvas blocks={blocks} onChange={(b) => setC((p) => ({ ...p, [lang]: { ...p[lang], blocks: b } }))} hideSheet={panel !== null} onTouch={() => setPanel(null)} chips={CHIPS[s.id]} />
       </div>

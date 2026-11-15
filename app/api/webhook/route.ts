@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendOrderConfirmation } from "@/lib/orderMailer";
+import { rewardReferrer } from "@/lib/referral";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-01-28.clover",
@@ -159,6 +160,11 @@ export async function POST(req: Request) {
       shipping_data: shipping,
       items,
     });
+
+    // parrainage : le parrain reçoit son code (ne bloque jamais la commande)
+    if (session.metadata?.referrer) {
+      await rewardReferrer(session.metadata.referrer, shipping?.email ?? session.customer_email ?? null, session.id).catch(() => {});
+    }
   }
 
   /* ---------- Paiement Apple Pay / Google Pay depuis la fiche produit ---------- */

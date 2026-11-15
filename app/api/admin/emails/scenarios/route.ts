@@ -18,7 +18,7 @@ export async function GET() {
   return NextResponse.json({
     configured: resendReady(),
     subscribers: count ?? 0,
-    scenarios: SCENARIOS.map((s) => ({ id: s.id, kind: s.kind, label: s.label, when: s.when, enabled: isEnabled(s, st), fr: resolveCopy(s, st, "fr"), en: resolveCopy(s, st, "en"), defaults: s.copy })),
+    scenarios: SCENARIOS.map((s) => ({ promo: st[s.id]?.promo ?? null, id: s.id, kind: s.kind, label: s.label, when: s.when, enabled: isEnabled(s, st), fr: resolveCopy(s, st, "fr"), en: resolveCopy(s, st, "en"), defaults: s.copy })),
   })
 }
 
@@ -28,7 +28,7 @@ export async function PUT(req: Request) {
   if (!s) return fail("Scénario inconnu.", 400)
   const st = await loadScenarioSettings()
   const cur = st[s.id] ?? {}
-  const next: Settings = { ...st, [s.id]: { ...cur, ...(typeof b.enabled === "boolean" ? { enabled: b.enabled } : {}), ...(b.fr ? { fr: b.fr } : {}), ...(b.en ? { en: b.en } : {}) } }
+  const next: Settings = { ...st, [s.id]: { ...cur, ...(typeof b.enabled === "boolean" ? { enabled: b.enabled } : {}), ...(b.fr ? { fr: b.fr } : {}), ...(b.en ? { en: b.en } : {}), ...(b.promo === null ? { promo: undefined } : b.promo ? { promo: { percent: Math.min(100, Math.max(1, Math.round(Number(b.promo.percent) || 10))), days: Math.min(365, Math.max(1, Math.round(Number(b.promo.days) || 30))) } } : {}) } }
   const { error } = await supabaseAdmin.from("email_templates").upsert({ key: "scenarios", data: next, updated_at: new Date().toISOString() })
   if (error) return fail(/relation|does not exist/i.test(error.message) ? "La table email_templates n'existe pas encore (SQL à lancer dans Supabase)." : error.message)
   return NextResponse.json({ ok: true })
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
   const s = SCENARIOS.find((x) => x.id === b?.id)
   if (!s || !b) return fail("Requête invalide.", 400)
   const copies = { fr: b.fr as Copy, en: b.en as Copy }
-  const sample = { prenom: "Camille", commande: "A1B2C3D4", suivi: "XX123456789BE" }
+  const sample = { prenom: "Camille", commande: "A1B2C3D4", suivi: "XX123456789BE", ...(b.promo ? { code: "FYSU-A1B2C3" } : {}) }
 
   if (b.action === "preview") {
     const lang: Lang = b.lang === "en" ? "en" : "fr"
