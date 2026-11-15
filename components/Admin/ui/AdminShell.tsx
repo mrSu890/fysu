@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
+  Sparkles,
   BarChart3,
   ShieldCheck,
   ExternalLink,
@@ -44,6 +45,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: "Aperçu", href: "/admin", icon: LayoutDashboard, tone: "gray" },
       { label: "Analyses", href: "/admin/analytics", icon: BarChart3, tone: "blue" },
+      { label: "Assistant", href: "/admin/assistant", icon: Sparkles, tone: "purple" },
     ],
   },
   {
