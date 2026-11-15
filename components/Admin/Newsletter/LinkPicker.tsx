@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { ChevronRight, Link2, Search, X } from "lucide-react"
 import { api } from "@/lib/adminApi"
 
@@ -36,8 +37,8 @@ export default function LinkPicker({ value, onChange, optional }: { value: strin
         <ChevronRight size={15} className="text-[#9a948a]" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setOpen(false)}>
+      {open && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setOpen(false)}>
           <div className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-3xl bg-white sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 border-b border-[#f0ece5] px-4">
               <Search size={16} className="text-[#9a948a]" />
@@ -64,7 +65,8 @@ export default function LinkPicker({ value, onChange, optional }: { value: strin
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
