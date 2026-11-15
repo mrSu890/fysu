@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { Check, X } from "lucide-react"
 import { notify } from "@/lib/adminApi"
 
@@ -132,8 +133,9 @@ export default function CropModal({ src, onCancel, onDone }: { src: File | strin
     </div>
   )
 
-  return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-[#111]" style={{ height: "100dvh" }}>
+  if (typeof document === "undefined") return null
+  return createPortal(
+    <div className="fixed left-0 top-0 z-[200] flex w-full flex-col bg-[#111]" style={{ height: "100dvh" }}>
       <div className="flex shrink-0 items-center px-3 pb-2 text-white" style={{ paddingTop: "max(env(safe-area-inset-top), 12px)" }}>
         <button type="button" aria-label="Annuler" onClick={onCancel} className="rounded-full p-2.5 hover:bg-white/10"><X size={20} /></button>
         <span className="mx-auto text-sm font-medium">Recadrer</span>
@@ -181,6 +183,7 @@ export default function CropModal({ src, onCancel, onDone }: { src: File | strin
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
