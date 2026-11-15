@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Copy, EyeOff, MoreHorizontal, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
+import { Archive, ArchiveRestore, Copy, EyeOff, MoreHorizontal, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react"
 import {
   AdminButton,
   EmptyState,
@@ -27,6 +27,7 @@ type Product = {
   sizeCount: number
   stockState: "none" | "out" | "low" | "ok"
   is_hidden: boolean
+  is_archived?: boolean
 }
 
 type Category = { id: number; name: string; slug: string }
@@ -83,6 +84,7 @@ export default function AdminCatalog() {
   const [typeFilter, setTypeFilter] = useState("all")
   const [stockFilter, setStockFilter] = useState("all")
   const [sort, setSort] = useState("newest")
+  const [view, setView] = useState<"active" | "archived">("active")
 
   const [showCategories, setShowCategories] = useState(false)
   const [newCategory, setNewCategory] = useState("")
@@ -126,6 +128,7 @@ export default function AdminCatalog() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     let list = products.filter((p) => {
+      if (!!p.is_archived !== (view === "archived")) return false
       if (q && !`${p.name} ${p.slug}`.toLowerCase().includes(q)) return false
       if (categoryFilter === "none" && p.category_id != null) return false
       if (
@@ -158,7 +161,7 @@ export default function AdminCatalog() {
       }
     })
     return list
-  }, [products, query, categoryFilter, genderFilter, typeFilter, stockFilter, sort])
+  }, [products, query, categoryFilter, genderFilter, typeFilter, stockFilter, sort, view])
 
   const hasFilters =
     query !== "" ||
@@ -199,6 +202,17 @@ export default function AdminCatalog() {
     } catch (e) {
       setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, is_hidden: !next } : x)))
       notify.error(errorMessage(e, "Impossible de changer la visibilité"))
+    }
+  }
+
+  async function toggleArchive(p: Product) {
+    const next = !p.is_archived
+    try {
+      await api.post("/api/admin/products/visibility", { id: p.id, archived: next })
+      setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, is_archived: next, is_hidden: true } : x)))
+      notify.success(next ? "Produit archivé" : "Produit restauré (toujours masqué sur le site : active l'interrupteur)")
+    } catch (e) {
+      notify.error(errorMessage(e, "Impossible d'archiver"))
     }
   }
 
@@ -314,6 +328,11 @@ export default function AdminCatalog() {
 
       {/* Barre de recherche + filtres */}
       <div className="mb-4 flex flex-col gap-3">
+        <div className="inline-flex self-start gap-1 rounded-full bg-[#171717]/[0.05] p-1">
+          {([["active", "Produits"], ["archived", `Archivés (${products.filter((p) => p.is_archived).length})`]] as const).map(([id, l]) => (
+            <button key={id} type="button" onClick={() => setView(id)} className={`cursor-pointer rounded-full px-4 py-2 text-sm transition ${view === id ? "bg-white font-medium shadow-sm" : "text-[#7a756d]"}`}>{l}</button>
+          ))}
+        </div>
         <div className="relative">
           <Search
             size={16}
@@ -387,7 +406,7 @@ export default function AdminCatalog() {
         ) : filtered.length === 0 ? (
           <div className="p-5">
             <EmptyState
-              title={hasFilters ? "Aucun produit ne correspond" : "Aucun produit pour l'instant"}
+              title={view === "archived" ? "Aucun produit archivé" : hasFilters ? "Aucun produit ne correspond" : "Aucun produit pour l'instant"}
               description={
                 hasFilters
                   ? "Essaie d'effacer les filtres."
@@ -496,6 +515,16 @@ export default function AdminCatalog() {
                       className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#faf8f5] px-3 text-sm text-[#171717]"
                     >
                       <Copy size={15} /> Dupliquer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuId(null)
+                        toggleArchive(p)
+                      }}
+                      className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#faf8f5] px-3 text-sm text-[#171717]"
+                    >
+                      {p.is_archived ? <ArchiveRestore size={15} /> : <Archive size={15} />} {p.is_archived ? "Restaurer" : "Archiver"}
                     </button>
                     <button
                       type="button"
