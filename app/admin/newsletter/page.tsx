@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Mail, Monitor, Send, Smartphone, X, LayoutTemplate } from "lucide-react"
+import { Mail, Monitor, Send, Smartphone, Split, X, LayoutTemplate } from "lucide-react"
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { MailCanvas, NEW_BLOCK, SITE, Sheet, IconBtn, field, isEmpty } from "@/components/Admin/Newsletter/MailCanvas"
@@ -27,6 +27,7 @@ export default function NewsletterAdmin() {
   const [c, setC] = useState<Campaign>({ subject: "", preheader: "", blocks: [] })
   const [loaded, setLoaded] = useState(false)
   const [panel, setPanel] = useState<null | "templates" | "send">(null)
+  const [ab, setAb] = useState(false)
   const [wide, setWide] = useState(false)
   const [testTo, setTestTo] = useState("")
   const [busy, setBusy] = useState<"" | "test" | "send">("")
@@ -36,7 +37,7 @@ export default function NewsletterAdmin() {
     api.get<{ active: number; counts: Record<Audience, number>; configured: boolean; earlyUrl?: string | null; draft: Campaign | null }>("/api/admin/newsletter")
       .then((r) => {
         setInfo(r)
-        if (r.draft && Array.isArray(r.draft.blocks) && r.draft.blocks.length) setC(r.draft)
+        if (r.draft && Array.isArray(r.draft.blocks) && r.draft.blocks.length) { setC(r.draft); if (r.draft.subjectB) setAb(true) }
         else setPanel("templates")
       })
       .catch((e) => { notify.error(errorMessage(e)); setPanel("templates") })
@@ -57,7 +58,7 @@ export default function NewsletterAdmin() {
   async function send() {
     if (!window.confirm(`Envoyer « ${c.subject} » à ${n} personne(s) (${AUDIENCES.find((a) => a.id === aud)?.label}) ? Impossible d'annuler.`)) return
     setBusy("send")
-    try { const r = await api.post<{ sent: number }>("/api/admin/newsletter", { action: "send", campaign: c, segment: aud }); notify.success(`Envoyé à ${r.sent} inscrit(s)`); setPanel(null) } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
+    try { const r = await api.post<{ sent: number; tracked?: boolean }>("/api/admin/newsletter", { action: "send", campaign: c, segment: aud }); notify.success(`Envoyé à ${r.sent} inscrit(s)${r.tracked ? "" : " (suivi non activé : SQL à lancer)"}`); setPanel(null) } catch (e) { notify.error(errorMessage(e)) } finally { setBusy("") }
   }
   const n = info?.counts?.[aud] ?? 0
   const canSend = !busy && !!info?.configured && !!c.subject.trim() && c.blocks.length > 0
@@ -75,6 +76,14 @@ export default function NewsletterAdmin() {
 
       <div className="mx-auto" style={{ maxWidth: wide ? 600 : 390 }}>
         <input value={c.subject} onChange={(e) => setC({ ...c, subject: e.target.value })} placeholder="Objet du mail" className="mb-2 w-full rounded-2xl bg-white px-4 py-3 text-[15px] font-medium ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]" />
+        {ab ? (
+          <div className="mb-2 flex gap-2">
+            <input value={c.subjectB ?? ""} onChange={(e) => setC({ ...c, subjectB: e.target.value })} placeholder="Objet B (reçu par la moitié)" className="w-full rounded-2xl bg-white px-4 py-3 text-[15px] font-medium ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]" />
+            <button type="button" aria-label="Retirer l'objet B" onClick={() => { setC({ ...c, subjectB: "" }); setAb(false) }} className="rounded-full p-3 hover:bg-[#171717]/[0.06]"><X size={16} /></button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setAb(true)} className="mb-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-[#6b6760] ring-1 ring-[#e0dbd3] hover:ring-[#171717]"><Split size={13} />Tester 2 objets (A/B)</button>
+        )}
         <input value={c.preheader ?? ""} onChange={(e) => setC({ ...c, preheader: e.target.value })} placeholder="Phrase grise sous l'objet (facultatif)" className="mb-4 w-full rounded-2xl bg-white px-4 py-2.5 text-sm ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]" />
       </div>
 
@@ -85,7 +94,7 @@ export default function NewsletterAdmin() {
           <div className="mb-3 flex items-center"><span className="mr-auto text-sm font-medium">Modèles</span>{c.blocks.length > 0 && <IconBtn label="Fermer" onClick={() => setPanel(null)}><X size={16} /></IconBtn>}</div>
           <div className="grid grid-cols-2 gap-2">
             {[...(info?.earlyUrl ? [{ name: "Accès anticipé", make: T([{ type: "title", eyebrow: "Accès anticipé", title: "Le site ouvre pour toi en premier", style: "light", align: "center" }, { type: "text", text: "Tu fais partie des premiers inscrits : entre avant tout le monde avec ce lien privé, merci de ne pas le partager.", align: "center" }, { type: "button", label: "Entrer en avant-première", url: info.earlyUrl, style: "solid" }, { type: "products", heading: "La sélection", columns: 2, items: [] }]) }] : []), ...TEMPLATES].map((t) => (
-              <button key={t.name} type="button" onClick={() => { if (c.blocks.some((b) => !isEmpty(b)) && !window.confirm(`Remplacer le mail par « ${t.name} » ?`)) return; const n = t.make(); setC((p) => ({ ...n, subject: p.subject, preheader: p.preheader })); setPanel(null) }} className="rounded-2xl bg-[#faf8f5] p-4 text-left text-sm font-medium ring-1 ring-[#ebe6de] hover:ring-[#171717]">{t.name}</button>
+              <button key={t.name} type="button" onClick={() => { if (c.blocks.some((b) => !isEmpty(b)) && !window.confirm(`Remplacer le mail par « ${t.name} » ?`)) return; const n = t.make(); setC((p) => ({ ...n, subject: p.subject, subjectB: p.subjectB, preheader: p.preheader })); setPanel(null) }} className="rounded-2xl bg-[#faf8f5] p-4 text-left text-sm font-medium ring-1 ring-[#ebe6de] hover:ring-[#171717]">{t.name}</button>
             ))}
           </div>
         </Sheet>

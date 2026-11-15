@@ -6,6 +6,8 @@ export type { Block }
 
 export type Campaign = {
   subject: string
+  /** 2e objet : la moitié des destinataires reçoit celui-ci (test A/B) */
+  subjectB?: string
   preheader?: string
   blocks: Block[]
 }
