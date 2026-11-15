@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Check, Copy, RotateCcw, Trash2 } from "lucide-react"
+import { Check, Copy, MousePointerClick, RotateCcw, Trash2, X } from "lucide-react"
 import {
   AdminButton,
   Badge,
@@ -110,6 +110,27 @@ export default function RequestsPage() {
 
   const newCount = (rows ?? []).filter((r) => r.status === "new").length
 
+  const [selecting, setSelecting] = useState(false)
+  const [picked, setPicked] = useState<number[]>([])
+  const [acting, setActing] = useState(false)
+  const stopSelecting = () => { setSelecting(false); setPicked([]) }
+  async function bulk(kind: "done" | "new" | "delete") {
+    if (kind === "delete" && !window.confirm(`Supprimer ${picked.length} demande(s) ?`)) return
+    setActing(true)
+    const ok: number[] = []
+    for (const id of picked) {
+      try {
+        if (kind === "delete") await api.del(`/api/admin/requests/${id}`)
+        else await api.put(`/api/admin/requests/${id}`, { status: kind })
+        ok.push(id)
+      } catch {}
+    }
+    setRows((cur) => (cur ?? []).flatMap((x) => (!ok.includes(x.id as any) ? [x] : kind === "delete" ? [] : [{ ...x, status: kind }])))
+    setActing(false)
+    notify[ok.length === picked.length ? "success" : "error"](`${ok.length} sur ${picked.length} fait(s)`)
+    stopSelecting()
+  }
+
   async function setDone(r: RequestRow, next: "new" | "done") {
     try {
       await api.put(`/api/admin/requests/${r.id}`, { status: next })
@@ -156,6 +177,7 @@ export default function RequestsPage() {
         eyebrow="Boutique"
         title="Demandes"
         description="Les personnes qui veulent être prévenues d'un produit et les demandes de devis envoyées depuis le site."
+        actions={<AdminButton icon={selecting ? X : MousePointerClick} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>{selecting ? "Terminer" : "Sélectionner"}</AdminButton>}
       />
 
       {error && (
@@ -263,7 +285,8 @@ export default function RequestsPage() {
           {filtered.map((r) => (
             <div
               key={r.id}
-              className="rounded-3xl border border-[#e9e5df] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] sm:p-5"
+              onClick={() => selecting && setPicked((l) => (l.includes(r.id as any) ? l.filter((x) => x !== (r.id as any)) : [...l, r.id as any]))}
+              className={`rounded-3xl border bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] sm:p-5 ${selecting ? "cursor-pointer" : ""} ${picked.includes(r.id as any) ? "border-[#171717] ring-1 ring-[#171717]" : "border-[#e9e5df]"}`}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={r.kind === "quote" ? "blue" : "orange"}>
@@ -315,6 +338,18 @@ export default function RequestsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {selecting && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e9e5df] bg-white/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
+            <button type="button" className="text-sm underline" onClick={() => setPicked(picked.length === filtered.length ? [] : filtered.map((r) => r.id as any))}>{picked.length === filtered.length && filtered.length > 0 ? "Tout désélectionner" : "Tout sélectionner"}</button>
+            <span className="mr-auto text-sm text-[#7a756d]">{picked.length} choisie(s)</span>
+            <AdminButton icon={Check} variant="primary" disabled={!picked.length || acting} onClick={() => bulk("done")}>Traitées</AdminButton>
+            <AdminButton icon={RotateCcw} disabled={!picked.length || acting} onClick={() => bulk("new")}>Rouvrir</AdminButton>
+            <AdminButton icon={Trash2} variant="danger" disabled={!picked.length || acting} onClick={() => bulk("delete")}>Supprimer</AdminButton>
+          </div>
         </div>
       )}
     </div>

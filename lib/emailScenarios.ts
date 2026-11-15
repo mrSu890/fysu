@@ -12,7 +12,7 @@ import { resendBatch, resendReady, type Mail } from "@/lib/resend"
    ==================================================================== */
 
 export type Lang = "fr" | "en"
-export type Copy = { subject: string; eyebrow: string; title: string; body: string; cta: string; url: string }
+export type Copy = { subject: string; eyebrow: string; title: string; body: string; cta: string; url: string; blocks?: Block[] }
 export type Scenario = {
   id: string
   kind: "auto" | "situation" | "campaign" | "soon"
@@ -130,12 +130,25 @@ export type Vars = { prenom?: string; commande?: string; suivi?: string; produit
 const fill = (t: string, v: Vars) =>
   t.replace(/\{prenom\}/g, v.prenom || "").replace(/\{commande\}/g, v.commande || "").replace(/\{suivi\}/g, v.suivi || "—").replace(/\{produit\}/g, v.produit || "").replace(/\{produits\}/g, v.produits || "").replace(/ ,/g, ",")
 
+// remplace les {prenom}, {commande}… dans tous les textes d'un bloc
+function fillDeep<T>(x: T, v: Vars): T {
+  if (typeof x === "string") return fill(x, v) as T
+  if (Array.isArray(x)) return x.map((i) => fillDeep(i, v)) as T
+  if (x && typeof x === "object") return Object.fromEntries(Object.entries(x as object).map(([k, val]) => [k, fillDeep(val, v)])) as T
+  return x
+}
+
 export function renderScenario(copy: Copy, v: Vars, unsubUrl?: string | null) {
-  const blocks: Block[] = [
-    { type: "title", eyebrow: copy.eyebrow, title: fill(copy.title, v) },
-    { type: "text", text: fill(copy.body, v) },
-  ]
-  if (copy.cta && (v.url || copy.url)) blocks.push({ type: "button", label: copy.cta, url: v.url || copy.url, style: "solid" })
+  let blocks: Block[]
+  if (copy.blocks?.length) {
+    blocks = fillDeep(copy.blocks, v).map((b) => (b.type === "button" && v.url ? { ...b, url: v.url } : b))
+  } else {
+    blocks = [
+      { type: "title", eyebrow: copy.eyebrow, title: fill(copy.title, v) },
+      { type: "text", text: fill(copy.body, v) },
+    ]
+    if (copy.cta && (v.url || copy.url)) blocks.push({ type: "button", label: copy.cta, url: v.url || copy.url, style: "solid" })
+  }
   return {
     subject: fill(copy.subject, v),
     html: renderDoc({ preheader: fill(copy.subject, v), blocks, unsubUrl: unsubUrl ?? null, business: BUSINESS }),
