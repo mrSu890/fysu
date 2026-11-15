@@ -4,14 +4,15 @@ import { useState } from "react"
 import { useLocale } from "next-intl"
 
 const TX = {
-  fr: { title: "Newsletter", ph: "Ton e-mail", btn: "S'inscrire", consent: "J'accepte de recevoir les e-mails de FYSU (désinscription possible à tout moment).", ok: "Merci, tu es inscrit.", bad: "Adresse invalide ou erreur, réessaie." },
-  en: { title: "Newsletter", ph: "Your email", btn: "Subscribe", consent: "I agree to receive emails from FYSU (unsubscribe anytime).", ok: "Thank you, you're subscribed.", bad: "Invalid address or error, try again." },
+  fr: { title: "Newsletter", ph: "Ton e-mail", name: "Ton prénom (facultatif)", btn: "S'inscrire", consent: "J'accepte de recevoir les e-mails de FYSU (désinscription possible à tout moment).", ok: "Merci, tu es inscrit.", bad: "Adresse invalide ou erreur, réessaie." },
+  en: { title: "Newsletter", ph: "Your email", name: "Your first name (optional)", btn: "Subscribe", consent: "I agree to receive emails from FYSU (unsubscribe anytime).", ok: "Thank you, you're subscribed.", bad: "Invalid address or error, try again." },
 }
 
 export default function NewsletterSignup({ style }: { style?: React.CSSProperties }) {
   const locale = useLocale()
   const t = (locale === "fr" ? TX.fr : TX.en)
   const [email, setEmail] = useState("")
+  const [first, setFirst] = useState("")
   const [consent, setConsent] = useState(false)
   const [trap, setTrap] = useState("")
   const [state, setState] = useState<"idle" | "busy" | "ok" | "bad">("idle")
@@ -21,7 +22,7 @@ export default function NewsletterSignup({ style }: { style?: React.CSSPropertie
     if (state === "busy") return
     setState("busy")
     try {
-      const r = await fetch("/api/newsletter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, locale, consent, website: trap }) })
+      const r = await fetch("/api/newsletter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, firstName: first, locale, consent, website: trap }) })
       setState(r.ok ? "ok" : "bad")
       if (r.ok) setEmail("")
     } catch {
@@ -36,6 +37,16 @@ export default function NewsletterSignup({ style }: { style?: React.CSSPropertie
         <p className="text-sm font-light">{t.ok}</p>
       ) : (
         <>
+          <input
+            type="text"
+            autoComplete="given-name"
+            maxLength={40}
+            value={first}
+            onChange={(e) => setFirst(e.target.value)}
+            placeholder={t.name}
+            aria-label={t.name}
+            className="mb-3 w-full border-b border-current/40 bg-transparent py-1.5 text-sm font-light outline-none placeholder:opacity-50"
+          />
           <div className="flex items-center gap-2 border-b border-current pb-1">
             <input
               type="email"

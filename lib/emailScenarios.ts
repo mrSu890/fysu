@@ -129,10 +129,10 @@ export const isEnabled = (s: Scenario, st: Settings) => st[s.id]?.enabled ?? s.k
 
 export type Vars = { prenom?: string; commande?: string; suivi?: string; produit?: string; produits?: string; url?: string }
 const fill = (t: string, v: Vars) =>
-  t.replace(/\{prenom\}/g, v.prenom || "").replace(/\{commande\}/g, v.commande || "").replace(/\{suivi\}/g, v.suivi || "—").replace(/\{produit\}/g, v.produit || "").replace(/\{produits\}/g, v.produits || "").replace(/ ,/g, ",")
+  t.replace(/\{prenom\}/g, v.prenom || "").replace(/\{commande\}/g, v.commande || "").replace(/\{suivi\}/g, v.suivi || "—").replace(/\{produit\}/g, v.produit || "").replace(/\{produits\}/g, v.produits || "").replace(/ ,/g, ",").replace(/,\s*([.!?…])/g, "$1").replace(/,\s*$/g, "")
 
 // remplace les {prenom}, {commande}… dans tous les textes d'un bloc
-function fillDeep<T>(x: T, v: Vars): T {
+export function fillDeep<T>(x: T, v: Vars): T {
   if (typeof x === "string") return fill(x, v) as T
   if (Array.isArray(x)) return x.map((i) => fillDeep(i, v)) as T
   if (x && typeof x === "object") return Object.fromEntries(Object.entries(x as object).map(([k, val]) => [k, fillDeep(val, v)])) as T

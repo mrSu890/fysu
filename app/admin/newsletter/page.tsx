@@ -75,7 +75,7 @@ export default function NewsletterAdmin() {
         <input value={c.preheader ?? ""} onChange={(e) => setC({ ...c, preheader: e.target.value })} placeholder="Phrase grise sous l'objet (facultatif)" className="mb-4 w-full rounded-2xl bg-white px-4 py-2.5 text-sm ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]" />
       </div>
 
-      <MailCanvas blocks={c.blocks} onChange={(blocks) => setC((p) => ({ ...p, blocks }))} wide={wide} hideSheet={panel !== null} onTouch={() => setPanel(null)} />
+      <MailCanvas blocks={c.blocks} onChange={(blocks) => setC((p) => ({ ...p, blocks }))} wide={wide} hideSheet={panel !== null} onTouch={() => setPanel(null)} chips={[["Prénom", "{prenom}"]]} />
 
       {panel === "templates" && (
         <Sheet>
