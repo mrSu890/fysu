@@ -1,3 +1,4 @@
+import { notifyRestock } from "@/lib/restock";
 import { NextResponse } from "next/server";
 import { cleanSizeGuide } from "@/lib/sizeGuide";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -433,6 +434,7 @@ export async function POST(req: Request) {
       }
     }
 
+    await notifyRestock().catch(() => {});
     return NextResponse.json({ success: true });
 
   } catch (error) {
