@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Crop, AlignLeft, ArrowDown, ArrowUp, Captions, Copy, Heading, Image as ImageIcon, LayoutGrid, Menu as MenuIcon, Minus, MousePointerClick, Plus, Quote, Shirt, Trash2, X, type LucideIcon } from "lucide-react"
+import { Crop, AlignLeft, ArrowDown, ArrowUp, Captions, Copy, Heading, Image as ImageIcon, LayoutGrid, Menu as MenuIcon, Minus, MousePointerClick, Plus, Quote, Shirt, Stamp, Trash2, X, type LucideIcon } from "lucide-react"
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { errorMessage, notify } from "@/lib/adminApi"
 import { ProductPicker, uploadImage } from "@/components/Admin/Newsletter/shared"
@@ -15,6 +15,7 @@ export const SITE = "https://f-y-s-u.com"
 export type Kind = Exclude<Block["type"], "raw">
 
 export const NEW_BLOCK: Record<Kind, Block> = {
+  logo: { type: "logo", size: "m", align: "center", color: "dark" },
   hero: { type: "hero", imageUrl: "", alt: "" },
   heroTitle: { type: "heroTitle", imageUrl: "", alt: "", title: "", buttonLabel: "Découvrir", buttonUrl: SITE },
   title: { type: "title", eyebrow: "", title: "" },
@@ -28,6 +29,7 @@ export const NEW_BLOCK: Record<Kind, Block> = {
 }
 
 export const PICK: [Kind, string, LucideIcon][] = [
+  ["logo", "Logo", Stamp],
   ["hero", "Photo", ImageIcon],
   ["heroTitle", "Photo + titre", Captions],
   ["title", "Titre", Heading],
@@ -100,6 +102,24 @@ export function Seg<T extends string>({ value, opts, onChange }: { value: T; opt
 
 export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void; chips?: [string, string][] }) {
   switch (b.type) {
+    case "logo":
+      return (
+        <div className="space-y-3">
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Taille</p>
+            <Seg value={b.size ?? "m"} opts={[["none", "Aucun"], ["s", "S"], ["m", "M"], ["l", "L"]]} onChange={(v) => set({ ...b, size: v })} />
+          </div>
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Place</p>
+            <Seg value={b.align ?? "center"} opts={[["left", "Gauche"], ["center", "Centre"], ["right", "Droite"]]} onChange={(v) => set({ ...b, align: v })} />
+          </div>
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Couleur</p>
+            <Seg value={b.color ?? "dark"} opts={[["dark", "Noir"], ["light", "Blanc"]]} onChange={(v) => set({ ...b, color: v })} />
+          </div>
+          <p className="text-xs text-[#7a756d]">Monte / descends le bloc pour le placer où tu veux. Pour le mettre sur une photo, choisis « Logo sur la photo » dans le bloc photo.</p>
+        </div>
+      )
     case "nav":
       return (
         <div className="space-y-3">
@@ -126,6 +146,10 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
           <div>
             <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Partie de la photo</p>
             <Seg value={b.focus ?? "top"} opts={[["top", "Haut"], ["center", "Milieu"], ["bottom", "Bas"]]} onChange={(v) => set({ ...b, focus: v })} />
+          </div>
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Logo sur la photo</p>
+            <Seg value={b.logo ?? "none"} opts={[["none", "Aucun"], ["top", "En haut"], ["center", "Au centre"]]} onChange={(v) => set({ ...b, logo: v })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <input className={field} placeholder="Texte du bouton (vide = pas de bouton)" value={b.buttonLabel ?? ""} onChange={(e) => set({ ...b, buttonLabel: e.target.value })} />
@@ -163,6 +187,10 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
               <Seg value={b.focus ?? "center"} opts={[["top", "Haut"], ["center", "Milieu"], ["bottom", "Bas"]]} onChange={(v) => set({ ...b, focus: v })} />
             </div>
           )}
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Logo sur la photo</p>
+            <Seg value={b.logo ?? "none"} opts={[["none", "Aucun"], ["top", "En haut"], ["center", "Au centre"]]} onChange={(v) => set({ ...b, logo: v })} />
+          </div>
           <LinkPicker optional value={b.href ?? ""} onChange={(u) => set({ ...b, href: u })} />
         </div>
       )
@@ -270,7 +298,7 @@ export function MailCanvas({ blocks, onChange, wide, hideSheet, onTouch, chips }
     <>
       <div className="mx-auto" style={{ maxWidth: wide ? 600 : 390 }}>
         <div className="overflow-hidden rounded-2xl ring-1 ring-[#d9d7d1]" style={{ background: "#e8e7e3" }} onClick={() => touch(null)}>
-          <div className="flex justify-center px-7 pb-7 pt-9">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/images/fysu-dark.png" alt="FYSU" width={104} style={{ width: 104, height: "auto" }} /></div>
+          {!blocks.some((x) => x.type === "logo") && <div className="flex justify-center px-7 pb-7 pt-9">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/images/fysu-dark.png" alt="FYSU" width={104} style={{ width: 104, height: "auto" }} /></div>}
           {plus(0)}
           {blocks.map((b, i) => (
             <div key={i}>

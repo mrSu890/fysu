@@ -16,12 +16,23 @@ export type ProductPick = { id: number; name: string; price: number; imageUrl: s
 
 export type Size = "s" | "m" | "l"
 
+export type LogoSize = "none" | "s" | "m" | "l"
+export type LogoOver = "none" | "top" | "center"
+const LOGO_W: Record<Exclude<LogoSize, "none">, number> = { s: 72, m: 104, l: 170 }
+
+/** logo FYSU en ligne (foncé sur fond clair, clair sur photo) */
+export function logoImg(w: number, color: "dark" | "light" = "dark"): string {
+  const f = color === "light" ? "fysu-light.png" : "fysu-dark.png"
+  return `<a href="${SITE_URL}" target="_blank"><img src="${SITE_URL}/images/${f}" alt="FYSU" width="${w}" style="display:block;border:0;width:${w}px;height:auto;"></a>`
+}
+
 export type Block =
-  | { type: "hero"; imageUrl: string; alt?: string; href?: string; frame?: "wide" | "landscape" | "square" | "full"; focus?: "top" | "center" | "bottom" }
+  | { type: "logo"; size?: LogoSize; align?: "left" | "center" | "right"; color?: "dark" | "light" }
+  | { type: "hero"; imageUrl: string; alt?: string; href?: string; frame?: "wide" | "landscape" | "square" | "full"; focus?: "top" | "center" | "bottom"; logo?: LogoOver }
   | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center"; size?: Size }
   | { type: "text"; text: string; align?: "left" | "center"; size?: Size }
   | { type: "nav"; links: { label: string; url: string }[] }
-  | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string; size?: Size; height?: "s" | "m" | "l"; focus?: "top" | "center" | "bottom" }
+  | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string; size?: Size; height?: "s" | "m" | "l"; focus?: "top" | "center" | "bottom"; logo?: LogoOver }
   | { type: "mosaic"; images: { imageUrl: string; alt?: string; href?: string }[] }
   | { type: "button"; label: string; url: string; style?: "solid" | "outline" }
   | { type: "products"; heading?: string; columns?: 1 | 2; items: ProductPick[] }
@@ -30,6 +41,7 @@ export type Block =
   | { type: "raw"; html: string } // usage interne (récapitulatif de commande)
 
 export const BLOCK_LABEL: Record<Block["type"], string> = {
+  logo: "Logo FYSU",
   hero: "Image",
   nav: "Menu (liens du haut)",
   heroTitle: "Image avec titre dessus",
@@ -96,6 +108,11 @@ function productCell(p: ProductPick, big: boolean): string {
 
 export function renderBlock(b: Block): string {
   switch (b.type) {
+    case "logo": {
+      if (b.size === "none") return ""
+      const al = b.align ?? "center"
+      return `<tr><td align="${al}" style="padding:34px 28px 30px;">${logoImg(LOGO_W[b.size ?? "m"], b.color)}</td></tr>`
+    }
     case "hero": {
       const img = safeUrl(b.imageUrl)
       if (!img) return ""
@@ -104,8 +121,11 @@ export function renderBlock(b: Block): string {
       if (frame !== "full") {
         // cadre fixe (mail plus court) : la photo remplit le cadre, on choisit la partie visible
         const H = { wide: 300, landscape: 380, square: 520 }[frame]
-        const inner = href ? `<a href="${href}" target="_blank" style="display:block;height:${H}px;font-size:0;line-height:0;text-decoration:none;">&nbsp;</a>` : "&nbsp;"
-        return `<tr><td background="${img}" bgcolor="#e8e7e3" height="${H}" style="height:${H}px;font-size:0;line-height:0;background-color:#e8e7e3;background-image:url('${img}');background-size:cover;background-position:center ${b.focus ?? "center"};">${inner}</td></tr><tr><td style="font-size:0;line-height:0;height:30px;">&nbsp;</td></tr>`
+        const lg = b.logo && b.logo !== "none"
+        const inner = lg
+          ? `<table role="presentation" width="100%" height="${H}" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="${b.logo === "top" ? "top" : "middle"}" height="${H}" style="height:${H}px;padding:${b.logo === "top" ? "30px" : "0"} 0 0;">${logoImg(b.logo === "top" ? 104 : 150, "light")}</td></tr></table>`
+          : href ? `<a href="${href}" target="_blank" style="display:block;height:${H}px;font-size:0;line-height:0;text-decoration:none;">&nbsp;</a>` : "&nbsp;"
+        return `<tr><td background="${img}" bgcolor="${lg ? "#3a3935" : "#e8e7e3"}" height="${H}" style="height:${H}px;font-size:0;line-height:0;background-color:${lg ? "#3a3935" : "#e8e7e3"};background-image:url('${img}');background-size:cover;background-position:center ${b.focus ?? "center"};">${inner}</td></tr><tr><td style="font-size:0;line-height:0;height:30px;">&nbsp;</td></tr>`
       }
       const tag = `<img src="${img}" alt="${esc(b.alt || "")}" width="600" style="display:block;width:100%;height:auto;border:0;">`
       return `<tr><td style="padding:0 0 30px;">${href ? `<a href="${href}">${tag}</a>` : tag}</td></tr>`
@@ -139,9 +159,18 @@ export function renderBlock(b: Block): string {
         : ""
       const H = { s: 300, m: 400, l: 520 }[b.height ?? "l"]
       // photo en fond de cellule : sous Outlook (ordinateur) elle ne s'affiche pas, le fond reste sombre et le texte lisible
-      return `<tr><td style="padding:0 28px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td background="${img}" bgcolor="#3a3935" height="${H}" valign="bottom" align="center" style="height:${H}px;background-color:#3a3935;background-image:linear-gradient(rgba(0,0,0,0) 45%,rgba(0,0,0,0.5) 100%),url('${img}');background-size:cover;background-position:center ${b.focus ?? "top"};padding:0 20px 34px;">
-<div style="font-family:${F.sans};font-size:${{ s: 22, m: 30, l: 40 }[b.size ?? "m"]}px;line-height:1.1;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;color:#ffffff;text-shadow:0 1px 14px rgba(0,0,0,0.45);">${esc(b.title)}</div>${btn}</td></tr></table></td></tr>`
+      const lg = b.logo && b.logo !== "none"
+      const txt = `<div style="font-family:${F.sans};font-size:${{ s: 22, m: 30, l: 40 }[b.size ?? "m"]}px;line-height:1.1;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;color:#ffffff;text-shadow:0 1px 14px rgba(0,0,0,0.45);">${esc(b.title)}</div>${btn}`
+      const bg = `background-color:#3a3935;background-image:linear-gradient(rgba(0,0,0,0) 45%,rgba(0,0,0,0.5) 100%),url('${img}');background-size:cover;background-position:center ${b.focus ?? "top"};`
+      const cell = lg
+        ? `<td background="${img}" bgcolor="#3a3935" height="${H}" valign="top" align="center" style="height:${H}px;${bg}padding:0;"><table role="presentation" width="100%" height="${H}" cellpadding="0" cellspacing="0" border="0">${
+            b.logo === "center"
+              ? `<tr><td align="center" valign="middle" style="padding:0 20px;">${logoImg(150, "light")}<div style="height:22px;font-size:0;line-height:0;">&nbsp;</div>${txt}</td></tr>`
+              : `<tr><td align="center" valign="top" style="padding:30px 20px 0;">${logoImg(104, "light")}</td></tr><tr><td align="center" valign="bottom" style="padding:0 20px 34px;">${txt}</td></tr>`
+          }</table></td>`
+        : `<td background="${img}" bgcolor="#3a3935" height="${H}" valign="bottom" align="center" style="height:${H}px;${bg}padding:0 20px 34px;">${txt}</td>`
+      // photo en fond de cellule : sous Outlook (ordinateur) elle ne s'affiche pas, le fond reste sombre et le texte lisible
+      return `<tr><td style="padding:0 28px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>${cell}</tr></table></td></tr>`
     }
     case "mosaic": {
       const imgs = (b.images || []).filter((i) => safeUrl(i.imageUrl))
@@ -207,6 +236,7 @@ export type DocOpts = {
 
 export function renderDoc(o: DocOpts): string {
   const b = o.business
+  const hasLogo = o.blocks.some((x) => x.type === "logo")
   const body = o.blocks.map(renderBlock).join("\n")
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -216,7 +246,7 @@ export function renderDoc(o: DocOpts): string {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${esc(o.preheader || "")}${"&zwnj;&nbsp;".repeat(40)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="background:${C.page};"><tr><td align="center" style="padding:0;">
 <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;">
-<tr><td align="center" style="padding:40px 28px 34px;"><a href="${SITE_URL}"><img src="${SITE_URL}/images/fysu-dark.png" alt="FYSU" width="104" style="display:block;border:0;width:104px;height:auto;"></a></td></tr>
+${hasLogo ? "" : `<tr><td align="center" style="padding:40px 28px 34px;">${logoImg(104)}</td></tr>`}
 ${body}
 <tr><td style="padding:14px 28px 44px;">
 <div style="border-top:1px solid ${C.line};padding:22px 0 0;font-family:${F.sans};font-size:12px;line-height:1.7;font-weight:300;color:${C.soft};">
