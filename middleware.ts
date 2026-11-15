@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { defaultLocale, isAppLocale, locales } from "@/i18n/routing"
+import { canAccess, isRole } from "@/lib/adminRoles"
 import { GATE_COOKIE, gateActive, gateToken } from "@/lib/preLaunch"
 
 function getPreferredLocale(req: NextRequest) {
@@ -60,7 +61,7 @@ async function guardAdminApi(req: NextRequest) {
     .eq("id", user.id)
     .single()
 
-  if (!profile || profile.role !== "admin") {
+  if (!profile || !canAccess(profile.role, req.nextUrl.pathname)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -97,7 +98,7 @@ async function isAdminVisitor(req: NextRequest, res: NextResponse) {
     } = await supabase.auth.getUser()
     if (!user) return false
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-    return profile?.role === "admin"
+    return isRole(profile?.role)
   } catch {
     return false
   }
@@ -216,8 +217,8 @@ export async function middleware(req: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    if (!profile || profile.role !== "admin") {
-      return NextResponse.redirect(new URL("/", req.url))
+    if (!profile || !canAccess(profile.role, pathname)) {
+      return NextResponse.redirect(new URL(profile && isRole(profile.role) ? "/admin" : "/", req.url))
     }
   }
 
