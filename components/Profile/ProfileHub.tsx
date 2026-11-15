@@ -9,6 +9,7 @@ import Badges, { type Reward } from "./Badges"
 import Closet from "./Closet"
 import UserWishlist from "./UserWishlist"
 import UserOrders from "./UserOrders"
+import ReferralCard from "./ReferralCard"
 import Social from "@/components/Profile/Social"
 import ProfileEditor, { type GalleryAvatar } from "./ProfileEditor"
 import { profileCopy } from "./profileCopy"
@@ -202,7 +203,12 @@ export default function ProfileHub({
           {tab === "wardrobe" && <Closet copy={copy} />}
           {tab === "favorites" && <UserWishlist />}
           {tab === "orders" && <UserOrders />}
-          {tab === "friends" && data && <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />}
+          {tab === "friends" && data && (
+            <>
+              <ReferralCard locale={locale} />
+              <Social accent={accent} locale={locale} hasUsername={!!profile?.username} />
+            </>
+          )}
           {tab === "badges" && data && (
             <Badges
               earned={data.earned}

@@ -5,6 +5,7 @@ import { validateCheckoutCart } from "@/lib/payments";
 import { shippingFeeCents } from "@/lib/shipping";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { findPromo } from "@/lib/promoCodes";
+import { friendCouponId, validReferral } from "@/lib/referral";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-01-28.clover",
@@ -203,6 +204,10 @@ export async function POST(req: Request) {
       }
     }
 
+    // parrainage : un ami qui commande pour la 1re fois via un lien de parrain a une réduction (sauf s'il a déjà saisi un code)
+    const refCode = !promo ? await validReferral(/fysu_ref=([A-Z0-9]+)/.exec(req.headers.get("cookie") ?? "")?.[1], user.email) : null;
+    const refCoupon = refCode ? await friendCouponId().catch(() => null) : null;
+
     // livraison : gratuite dès 150 € (ou avec un code « livraison offerte »), sinon 5 € (voir lib/shipping.ts)
     const subtotal = validatedCart.items.reduce((sum, i) => sum + i.unitAmount * i.quantity, 0);
     const fee = promo?.freeShipping ? 0 : shippingFeeCents(subtotal);
@@ -234,8 +239,8 @@ export async function POST(req: Request) {
 
       // codes promo (ex. réduction gagnée aux jeux d'arcade) : saisis chez Stripe, sauf si un code est déjà appliqué
       // (Stripe n'accepte pas les deux). Un code « livraison offerte » seul ne retire rien sur les articles.
-      ...(promo && !promo.shippingOnly ? { discounts: [{ promotion_code: promo.id }] } : {}),
-      allow_promotion_codes: !promo,
+      ...(promo && !promo.shippingOnly ? { discounts: [{ promotion_code: promo.id }] } : refCoupon ? { discounts: [{ coupon: refCoupon }] } : {}),
+      allow_promotion_codes: !promo && !refCoupon,
 
       shipping_address_collection: {
         allowed_countries: ALL_STRIPE_ALLOWED_COUNTRIES,
@@ -251,6 +256,7 @@ export async function POST(req: Request) {
         userId: user.id,
         cart: JSON.stringify(simplifiedCart),
         promo: promo?.code ?? "",
+        referrer: refCoupon ? refCode ?? "" : "",
       },
 
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,

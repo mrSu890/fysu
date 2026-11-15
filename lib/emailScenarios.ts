@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { BUSINESS } from "@/lib/business"
 import { FOOTER, stripKeep, renderDoc, renderText, SITE_URL, type Block } from "@/lib/emailBlocks"
+import { createPersonalCode } from "@/lib/autoPromo"
 import { baseLocale, isTranslated, translateDeep } from "@/lib/mailTranslate"
 import { resendBatch, resendReady, type Mail } from "@/lib/resend"
 
@@ -19,6 +20,7 @@ export type Scenario = {
   kind: "auto" | "situation" | "campaign" | "soon"
   label: string
   when: string // « quand ça part » en une phrase
+  defaultOff?: boolean // automatique mais éteint tant que tu ne l'actives pas
   copy: Record<Lang, Copy>
 }
 
@@ -113,6 +115,20 @@ export const SCENARIOS: Scenario[] = [
       { subject: "About your return request", eyebrow: "Return", title: "We can't accept it.", body: "Hello {prenom},\n\nUnfortunately we can't accept the return of your order #{commande}. If you think this is a mistake, just reply to this email and we'll look into it together.", cta: "Contact us" }
     ),
   },
+  {
+    id: "winback", kind: "auto", defaultOff: true, label: "Client inactif", when: "Chaque jour, aux inscrits sans commande depuis 90 jours (une fois tous les 6 mois)",
+    copy: c(
+      { subject: "Tu nous manques", eyebrow: "De retour", title: "Ça fait un moment, {prenom}.", body: "Bonjour {prenom},\n\nNous avons de nouvelles pièces, et nous pensons que tu les aimeras. Passe jeter un œil.", cta: "Voir les nouveautés" },
+      { subject: "We miss you", eyebrow: "Welcome back", title: "It's been a while, {prenom}.", body: "Hello {prenom},\n\nWe have new pieces, and we think you'll like them. Come and have a look.", cta: "See what's new" }
+    ),
+  },
+  {
+    id: "referral_reward", kind: "auto", label: "Parrainage : récompense", when: "Quand un ami parrainé a payé sa première commande",
+    copy: c(
+      { subject: "Ton ami a commandé, merci", eyebrow: "Parrainage", title: "Merci de nous avoir fait connaître.", body: "Un ami que tu as parrainé vient de passer sa première commande chez FYSU. Pour te remercier, voici un code à utiliser sur ta prochaine commande.", cta: "Voir la collection" },
+      { subject: "Your friend ordered, thank you", eyebrow: "Referral", title: "Thank you for spreading the word.", body: "A friend you referred has just placed their first order at FYSU. To thank you, here's a code for your next order.", cta: "See the collection" }
+    ),
+  },
   { id: "collection", kind: "campaign", label: "Nouvelle collection", when: "Annoncer une collection", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
   { id: "private", kind: "campaign", label: "Vente privée", when: "Accès anticipé réservé aux inscrits", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
   { id: "product", kind: "campaign", label: "Nouveauté", when: "Mettre une pièce en avant", copy: c({ subject: "", eyebrow: "", title: "", body: "", cta: "" }, { subject: "", eyebrow: "", title: "", body: "", cta: "" }) },
@@ -132,7 +148,7 @@ export const SCENARIOS: Scenario[] = [
   },
 ]
 
-export type Settings = Record<string, { enabled?: boolean; fr?: Partial<Copy>; en?: Partial<Copy> }>
+export type Settings = Record<string, { enabled?: boolean; promo?: { percent: number; days: number }; fr?: Partial<Copy>; en?: Partial<Copy> }>
 
 export async function loadScenarioSettings(): Promise<Settings> {
   try {
@@ -146,7 +162,7 @@ export async function loadScenarioSettings(): Promise<Settings> {
 export function resolveCopy(s: Scenario, st: Settings, lang: Lang): Copy {
   return { ...s.copy[lang], ...(st[s.id]?.[lang] ?? {}) }
 }
-export const isEnabled = (s: Scenario, st: Settings) => st[s.id]?.enabled ?? s.kind === "auto"
+export const isEnabled = (s: Scenario, st: Settings) => st[s.id]?.enabled ?? (s.kind === "auto" && !s.defaultOff)
 
 export type Vars = { prenom?: string; commande?: string; suivi?: string; produit?: string; produits?: string; url?: string; adresse?: string; code?: string }
 const fill = (t: string, v: Vars) =>
@@ -170,6 +186,13 @@ export function renderScenario(copy: Copy, v: Vars, unsubUrl?: string | null, la
       { type: "text", text: fill(copy.body, v) },
     ]
     if (copy.cta && (v.url || copy.url)) blocks.push({ type: "button", label: copy.cta, url: v.url || copy.url, style: "solid" })
+  }
+  if (v.code && !JSON.stringify(copy).includes("{code}")) {
+    const fr = lang === "fr"
+    blocks.push(
+      { type: "title", eyebrow: fr ? "Ton code" : "Your code", title: v.code, style: "light", align: "center" },
+      { type: "text", text: fr ? "Valable une seule fois, à saisir au moment de payer." : "Valid once, enter it at checkout.", align: "center" }
+    )
   }
   return {
     subject: stripKeep(fill(copy.subject, v)),
@@ -214,6 +237,10 @@ export async function autoSend(id: string, r: Recipient) {
     if (!s) return
     const st = await loadScenarioSettings()
     if (!isEnabled(s, st)) return
+    const promo = st[id]?.promo
+    if (promo?.percent && !r.vars.code) {
+      try { r.vars = { ...r.vars, code: await createPersonalCode(promo.percent, promo.days || 30) } } catch (e) { console.error("auto promo", e) }
+    }
     await sendScenario((l) => resolveCopy(s, st, l), [r])
   } catch (e) {
     console.error("auto mail", id, e)
