@@ -21,7 +21,7 @@ export type Block =
   | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center"; size?: Size }
   | { type: "text"; text: string; align?: "left" | "center"; size?: Size }
   | { type: "nav"; links: { label: string; url: string }[] }
-  | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string; size?: Size }
+  | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string; size?: Size; height?: "s" | "m" | "l"; focus?: "top" | "center" | "bottom" }
   | { type: "mosaic"; images: { imageUrl: string; alt?: string; href?: string }[] }
   | { type: "button"; label: string; url: string; style?: "solid" | "outline" }
   | { type: "products"; heading?: string; columns?: 1 | 2; items: ProductPick[] }
@@ -130,9 +130,10 @@ export function renderBlock(b: Block): string {
       const btn = href && b.buttonLabel
         ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:22px auto 0;"><tr><td bgcolor="#ffffff" style="background:#ffffff;"><a href="${href}" target="_blank" style="display:inline-block;padding:13px 28px;font-family:${F.mono};font-size:11px;line-height:1;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;color:${C.ink};">${esc(b.buttonLabel)}</a></td></tr></table>`
         : ""
+      const H = { s: 300, m: 400, l: 520 }[b.height ?? "l"]
       // photo en fond de cellule : sous Outlook (ordinateur) elle ne s'affiche pas, le fond reste sombre et le texte lisible
       return `<tr><td style="padding:0 28px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td background="${img}" bgcolor="#3a3935" height="520" valign="bottom" align="center" style="height:520px;background-color:#3a3935;background-image:linear-gradient(rgba(0,0,0,0) 45%,rgba(0,0,0,0.5) 100%),url('${img}');background-size:cover;background-position:center top;padding:0 20px 34px;">
+<td background="${img}" bgcolor="#3a3935" height="${H}" valign="bottom" align="center" style="height:${H}px;background-color:#3a3935;background-image:linear-gradient(rgba(0,0,0,0) 45%,rgba(0,0,0,0.5) 100%),url('${img}');background-size:cover;background-position:center ${b.focus ?? "top"};padding:0 20px 34px;">
 <div style="font-family:${F.sans};font-size:${{ s: 22, m: 30, l: 40 }[b.size ?? "m"]}px;line-height:1.1;font-weight:300;letter-spacing:0.03em;text-transform:uppercase;color:#ffffff;text-shadow:0 1px 14px rgba(0,0,0,0.45);">${esc(b.title)}</div>${btn}</td></tr></table></td></tr>`
     }
     case "mosaic": {
