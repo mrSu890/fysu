@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { Check, Copy, MousePointerClick, Printer, Search, Truck, Undo2, X } from "lucide-react"
 import {
   AdminButton,
   EmptyState,
@@ -10,7 +10,7 @@ import {
   PageHeader,
   Skeleton,
 } from "@/components/Admin/ui/kit"
-import { api, errorMessage, formatMoney } from "@/lib/adminApi"
+import { api, errorMessage, formatMoney, notify } from "@/lib/adminApi"
 
 type OrderRow = {
   id: string
@@ -21,6 +21,7 @@ type OrderRow = {
   createdAt: string
   customerName: string | null
   trackingNumber: string | null
+  shipping: { name?: string; phone?: string; address?: { line1?: string; line2?: string | null; city?: string; postal_code?: string; country?: string } } | null
   itemCount: number
   items: { name: string; image: string | null; quantity: number }[]
 }
@@ -47,7 +48,17 @@ const formatDateTime = (value: string) =>
     minute: "2-digit",
   })
 
+const addressOf = (o: OrderRow) => {
+  const s = o.shipping
+  if (!s?.address) return ""
+  return [s.name, s.address.line1, s.address.line2, `${s.address.postal_code ?? ""} ${s.address.city ?? ""}`.trim(), s.address.country].filter(Boolean).join("\n")
+}
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+
 export default function OrdersPage() {
+  const [selecting, setSelecting] = useState(false)
+  const [picked, setPicked] = useState<string[]>([])
+  const [acting, setActing] = useState(false)
   const [tab, setTab] = useState<TabId>("paid")
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState("")
@@ -101,6 +112,36 @@ export default function OrdersPage() {
   }, [load])
 
   const hasMore = orders.length < total
+  const chosen = orders.filter((o) => picked.includes(o.id))
+  const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+  const stopSelecting = () => { setSelecting(false); setPicked([]) }
+
+  async function bulk(status: "shipped" | "paid" | "cancelled") {
+    const todo = chosen.filter((o) => o.status !== status)
+    if (todo.length === 0) return notify.error("Rien à changer pour cette sélection.")
+    const what = status === "shipped" ? `Marquer ${todo.length} commande(s) comme expédiée(s) ? Les clients reçoivent le mail d'expédition.` : status === "paid" ? `Remettre ${todo.length} commande(s) à « Payée » ?` : `Annuler ${todo.length} commande(s) ? Les stocks ne sont pas remis automatiquement.`
+    if (!window.confirm(what)) return
+    setActing(true)
+    let ok = 0
+    for (const o of todo) {
+      try { await fetch(`/api/admin/orders/${o.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }).then((r) => { if (r.ok) ok++ }) } catch {}
+    }
+    setActing(false)
+    notify[ok === todo.length ? "success" : "error"](`${ok} sur ${todo.length} mise(s) à jour`)
+    stopSelecting()
+    load(1, true)
+  }
+  async function copyAddresses() {
+    const text = chosen.map(addressOf).filter(Boolean).join("\n\n")
+    try { await navigator.clipboard.writeText(text); notify.success("Adresses copiées") } catch { window.prompt("Copie les adresses :", text) }
+  }
+  function printLabels() {
+    const w = window.open("", "", "width=700,height=800")
+    if (!w) return
+    w.document.write(`<html><head><title>Étiquettes</title><style>body{font-family:Arial;padding:24px}.l{border:2px solid #000;padding:16px;width:300px;margin:0 0 16px;page-break-inside:avoid}pre{margin:0;font:14px/1.4 Arial}</style></head><body>${chosen.map((o) => `<div class="l"><pre>${esc(addressOf(o))}</pre></div>`).join("")}</body></html>`)
+    w.document.close()
+    w.print()
+  }
 
   return (
     <div>
@@ -108,6 +149,11 @@ export default function OrdersPage() {
         eyebrow="Boutique"
         title="Commandes"
         description="Prépare, expédie et suis chaque commande."
+        actions={
+          <AdminButton icon={selecting ? X : MousePointerClick} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
+            {selecting ? "Terminer" : "Sélectionner"}
+          </AdminButton>
+        }
       />
 
       {/* Onglets */}
@@ -176,10 +222,16 @@ export default function OrdersPage() {
             <Link
               key={o.id}
               href={`/admin/orders/${o.id}`}
+              onClick={(e) => { if (selecting) { e.preventDefault(); toggle(o.id) } }}
               style={{ color: "inherit" }}
-              className="block rounded-3xl border border-[#e9e5df] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition hover:shadow-md sm:p-5"
+              className={`block rounded-3xl border bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition hover:shadow-md sm:p-5 ${picked.includes(o.id) ? "border-[#171717] ring-1 ring-[#171717]" : "border-[#e9e5df]"}`}
             >
               <div className="flex items-start gap-4">
+                {selecting && (
+                  <span className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${picked.includes(o.id) ? "border-[#171717] bg-[#171717] text-white" : "border-[#cfc9be]"}`}>
+                    {picked.includes(o.id) && <Check size={14} />}
+                  </span>
+                )}
                 {/* Miniatures */}
                 <div className="flex -space-x-3">
                   {o.items.slice(0, 3).map((it, i) =>
@@ -238,6 +290,22 @@ export default function OrdersPage() {
               </AdminButton>
             </div>
           )}
+        </div>
+      )}
+
+      {selecting && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e9e5df] bg-white/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
+            <button type="button" className="text-sm underline" onClick={() => setPicked(picked.length === orders.length ? [] : orders.map((o) => o.id))}>
+              {picked.length === orders.length && orders.length > 0 ? "Tout désélectionner" : "Tout sélectionner"}
+            </button>
+            <span className="mr-auto text-sm text-[#7a756d]">{picked.length} choisie(s)</span>
+            <AdminButton icon={Truck} variant="primary" disabled={!picked.length || acting} onClick={() => bulk("shipped")}>Expédiées</AdminButton>
+            <AdminButton icon={Printer} disabled={!picked.length} onClick={printLabels}>Étiquettes</AdminButton>
+            <AdminButton icon={Copy} disabled={!picked.length} onClick={copyAddresses}>Adresses</AdminButton>
+            <AdminButton icon={Undo2} variant="ghost" disabled={!picked.length || acting} onClick={() => bulk("paid")}>Remettre payées</AdminButton>
+            <AdminButton icon={X} variant="danger" disabled={!picked.length || acting} onClick={() => bulk("cancelled")}>Annuler</AdminButton>
+          </div>
         </div>
       )}
     </div>

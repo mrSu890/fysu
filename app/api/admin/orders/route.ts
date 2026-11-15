@@ -96,6 +96,7 @@ export async function GET(req: Request) {
       createdAt: o.createdAt,
       customerName: o.shipping_data?.name ?? null,
       trackingNumber: o.tracking_number ?? null,
+      shipping: o.shipping_data ?? null,
       itemCount: items.reduce((sum, it) => sum + (Number(it?.quantity) || 0), 0),
       items: items.slice(0, 3).map((it) => ({
         name: products[Number(it?.product_id)]?.name ?? "Produit",
