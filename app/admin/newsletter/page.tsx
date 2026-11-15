@@ -79,6 +79,19 @@ const TEMPLATES: { name: string; hint: string; make: () => Campaign }[] = [
     }),
   },
   {
+    name: "Vente privée",
+    hint: "Accès anticipé réservé aux inscrits, avec bouton et sélection",
+    make: () => ({
+      subject: "", preheader: "",
+      blocks: [
+        { type: "title", eyebrow: "Vente privée · réservée aux inscrits", title: "", style: "light", align: "center" },
+        { type: "text", text: "Tu as accès en avant-première.\n\nDu [date] au [date].", align: "center" },
+        { type: "button", label: "Accéder à la vente", url: "https://f-y-s-u.com", style: "solid" },
+        { type: "products", heading: "La sélection", columns: 2, items: [] },
+      ],
+    }),
+  },
+  {
     name: "Un produit à l'honneur",
     hint: "Un seul produit en grand, un mot, un bouton",
     make: () => ({

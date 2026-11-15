@@ -65,7 +65,7 @@ export const ADMIN_NAV: NavGroup[] = [
     label: "Marketing",
     items: [
       { label: "Newsletter", href: "/admin/newsletter", icon: Mail, tone: "orange" },
-      { label: "Mails automatiques", href: "/admin/emails", icon: Mail, tone: "orange" },
+      { label: "Mails", href: "/admin/emails", icon: Mail, tone: "orange" },
       { label: "Stories", href: "/admin/stories", icon: Clapperboard, tone: "purple" },
     ],
   },
