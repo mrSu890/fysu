@@ -69,8 +69,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
     url: SITE,
+    images: [{ url: "/og-fysu.jpg", width: 1200, height: 630, alt: "FYSU" }],
   },
-  twitter: { card: "summary_large_image", title: HOME_TITLE, description: HOME_DESCRIPTION },
+  twitter: { card: "summary_large_image", title: HOME_TITLE, description: HOME_DESCRIPTION, images: ["/og-fysu.jpg"] },
   icons: {
     icon: [{ url: "/api/favicon", type: "image/png" }],
     shortcut: "/api/favicon",
