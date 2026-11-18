@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Eye, MousePointerClick, ShoppingBag, Trophy, Users } from "lucide-react"
 import { EmptyState, PageHeader, Skeleton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, formatMoney } from "@/lib/adminApi"
-import { AUDIENCES } from "@/lib/audience"
+import { AUDIENCES } from "@/lib/audienceMeta"
 
 type AB = { n: number; opens: number; clicks: number }
 type Camp = { id: string; subject: string; subjectB: string | null; segment: string; recipients: number; sentAt: string; opens: number; clicks: number; orders: number; revenue: number; ab: { a: AB; b: AB } | null; top: { url: string; n: number }[] }
