@@ -5,7 +5,7 @@ import { Mail, Monitor, Send, Smartphone, Split, X, LayoutTemplate } from "lucid
 import { AdminButton } from "@/components/Admin/ui/kit"
 import { api, errorMessage, notify } from "@/lib/adminApi"
 import { MailCanvas, NEW_BLOCK, SITE, Sheet, IconBtn, field, isEmpty } from "@/components/Admin/Newsletter/MailCanvas"
-import { AUDIENCES, TOPICS, type Audience, type Topic } from "@/lib/audience"
+import { AUDIENCES, TOPICS, type Audience, type Topic } from "@/lib/audienceMeta"
 import type { Block } from "@/lib/emailBlocks"
 import type { Campaign } from "@/lib/newsletter"
 
