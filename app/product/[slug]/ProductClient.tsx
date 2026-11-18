@@ -691,7 +691,7 @@ export default function ProductClient({ initialProduct = null }: { initialProduc
               <div className="pdp-collapse border-t border-foreground/15 pt-2">
                 <style>{`
                   .pdp-collapse .ant-collapse-item { border-bottom: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent) !important; }
-                  .pdp-collapse .ant-collapse-header, .pdp-collapse .ant-collapse-header * { color: inherit !important; }
+                  .pdp-collapse, .pdp-collapse .ant-collapse, .pdp-collapse .ant-collapse-item, .pdp-collapse .ant-collapse-content, .pdp-collapse .ant-collapse-content-box, .pdp-collapse .ant-collapse-header, .pdp-collapse .ant-collapse-header *, .pdp-collapse .ant-collapse-expand-icon { color: var(--foreground) !important; }
                   .pdp-collapse .ant-collapse-item:last-child { border-bottom: 0 !important; }
                   .pdp-collapse .ant-collapse-header { padding: 14px 0 !important; font-family: var(--font-dm-mono), ui-monospace, Menlo, monospace !important; font-size: 11px !important; font-weight: 300 !important; letter-spacing: 0.12em; text-transform: uppercase; align-items: center !important; }
                   .pdp-collapse .ant-collapse-content-box { padding: 0 0 16px 0 !important; }
