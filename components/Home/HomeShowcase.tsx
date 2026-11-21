@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { prefetchProduct } from "@/lib/productCache";
+import { getEffectiveAvailability } from "@/lib/availability";
 import { useLocale } from "next-intl";
 import { useSiteCopy } from "@/lib/siteCopy";
 import IntroReveal from "@/components/IntroReveal";
@@ -54,6 +55,9 @@ export function Tile({ product, who }: { product: ProductType; who: "men" | "wom
   const imgs = ((product as any).product_images ?? []) as { url: string; worn_for?: string | null }[];
   const src = (imgs.find((i) => !i.worn_for) ?? imgs[0])?.url;
   const path = `/product/${product.slug}`;
+  // même flou que dans la boutique : produit à venir ou épuisé
+  const mode = getEffectiveAvailability(product);
+  const blurred = mode === "sold_out" || mode === "coming_soon";
   const go = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
@@ -73,7 +77,7 @@ export function Tile({ product, who }: { product: ProductType; who: "men" | "wom
   return (
     <div data-href={path} onPointerEnter={() => prefetchProduct(product.slug)} onPointerDown={() => prefetchProduct(product.slug)}>
       <Link href={path} onClick={go} data-hero-link="" aria-label={product.name} draggable={false} className="block">
-        <div ref={box} data-card-box="" className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 transition active:scale-[0.98]">
+        <div ref={box} data-card-box="" className={`relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 transition active:scale-[0.98] ${blurred ? "[&_img]:blur-[4px]" : ""}`}>
           {src && <Image src={src} alt="" fill draggable={false} sizes="(max-width: 768px) 30vw, 170px" priority loading="eager" className="object-cover" />}
         </div>
       </Link>
