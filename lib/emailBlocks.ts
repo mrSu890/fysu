@@ -29,12 +29,12 @@ export function logoImg(w: number, color: "dark" | "light" = "dark"): string {
 type BlockBase =
   | { type: "background"; color: string }
   | { type: "logo"; size?: LogoSize; align?: "left" | "center" | "right"; color?: "dark" | "light" }
-  | { type: "hero"; imageUrl: string; alt?: string; href?: string; frame?: "wide" | "landscape" | "square" | "full"; focus?: "top" | "center" | "bottom"; logo?: LogoOver }
+  | { type: "hero"; imageUrl: string; alt?: string; href?: string; frame?: "wide" | "landscape" | "square" | "portrait" | "full"; focus?: "top" | "center" | "bottom"; logo?: LogoOver }
   | { type: "title"; eyebrow?: string; title: string; style?: "bold" | "light"; align?: "left" | "center"; size?: Size }
   | { type: "text"; text: string; align?: "left" | "center"; size?: Size }
   | { type: "nav"; links: { label: string; url: string }[] }
   | { type: "heroTitle"; imageUrl: string; alt?: string; title: string; buttonLabel?: string; buttonUrl?: string; size?: Size; height?: "s" | "m" | "l"; focus?: "top" | "center" | "bottom"; logo?: LogoOver }
-  | { type: "mosaic"; images: { imageUrl: string; alt?: string; href?: string }[] }
+  | { type: "mosaic"; images: { imageUrl: string; alt?: string; href?: string; shape?: "auto" | "portrait" | "square" | "landscape" | "bleed" }[] }
   | { type: "button"; label: string; url: string; style?: "solid" | "outline" }
   | { type: "products"; heading?: string; columns?: 1 | 2; items: ProductPick[] }
   | { type: "quote"; text: string; by?: string }
@@ -152,6 +152,11 @@ function renderInner(b: Block): string {
       if (!img) return ""
       const href = safeUrl(b.href)
       const frame = b.frame ?? "landscape"
+      if (frame === "portrait") {
+        // photo verticale centrée, marges de chaque côté
+        const link = (inner: string) => (href ? `<a href="${href}" target="_blank" style="display:block;">${inner}</a>` : inner)
+        return `<tr><td align="center" style="padding:0 0 30px;"><table role="presentation" width="360" align="center" cellpadding="0" cellspacing="0" border="0" style="width:360px;max-width:100%;"><tr><td background="${img}" bgcolor="#e8e7e3" height="450" style="height:450px;font-size:0;line-height:0;background-color:#e8e7e3;background-image:url('${img}');background-size:cover;background-position:center ${b.focus ?? "center"};">${link(`<div style="height:450px;font-size:0;line-height:0;">&nbsp;</div>`)}</td></tr></table></td></tr>`
+      }
       if (frame !== "full") {
         // cadre fixe (mail plus court) : la photo remplit le cadre, on choisit la partie visible
         const H = { wide: 300, landscape: 380, square: 520 }[frame]
@@ -209,14 +214,25 @@ function renderInner(b: Block): string {
     case "mosaic": {
       const imgs = (b.images || []).filter((i) => safeUrl(i.imageUrl))
       if (imgs.length === 0) return ""
-      const tag = (i: { imageUrl: string; alt?: string; href?: string }, w: number) => {
-        const t = `<img src="${safeUrl(i.imageUrl)}" alt="${esc(i.alt || "")}" width="${w}" style="display:block;width:100%;height:auto;border:0;background:${C.paper};">`
-        return safeUrl(i.href) ? `<a href="${safeUrl(i.href)}" target="_blank">${t}</a>` : t
+      type Im = { imageUrl: string; alt?: string; href?: string; shape?: "auto" | "portrait" | "square" | "landscape" | "bleed" }
+      const RATIO = { portrait: 1.25, square: 1, landscape: 0.667, bleed: 0.6 }
+      const tag = (i: Im, w: number) => {
+        const url = safeUrl(i.imageUrl)
+        const link = safeUrl(i.href)
+        if (i.shape && i.shape !== "auto") {
+          // cadre à proportions choisies : la photo remplit le cadre
+          const H = Math.round((i.shape === "bleed" ? 600 : w) * RATIO[i.shape])
+          const box = `<div style="height:${H}px;font-size:0;line-height:0;">&nbsp;</div>`
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td background="${url}" bgcolor="${C.paper}" height="${H}" style="height:${H}px;font-size:0;line-height:0;background-color:${C.paper};background-image:url('${url}');background-size:cover;background-position:center;">${link ? `<a href="${link}" target="_blank" style="display:block;">${box}</a>` : box}</td></tr></table>`
+        }
+        const t = `<img src="${url}" alt="${esc(i.alt || "")}" width="${w}" style="display:block;width:100%;height:auto;border:0;background:${C.paper};">`
+        return link ? `<a href="${link}" target="_blank">${t}</a>` : t
       }
+      const topPad = (i: Im) => (i.shape === "bleed" ? "0 0 8px" : "0 28px 8px")
       const top = imgs.length >= 2
         ? `<tr><td style="padding:0 28px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="50%" valign="top" style="padding:0 4px 0 0;">${tag(imgs[0], 262)}</td><td width="50%" valign="top" style="padding:0 0 0 4px;">${tag(imgs[1], 262)}</td></tr></table></td></tr>`
-        : `<tr><td style="padding:0 28px 8px;">${tag(imgs[0], 544)}</td></tr>`
-      const wide = imgs.length >= 3 ? `<tr><td style="padding:0 28px 8px;">${tag(imgs[2], 544)}</td></tr>` : ""
+        : `<tr><td style="padding:${topPad(imgs[0])};">${tag(imgs[0], imgs[0].shape === "bleed" ? 600 : 544)}</td></tr>`
+      const wide = imgs.length >= 3 ? `<tr><td style="padding:${topPad(imgs[2])};">${tag(imgs[2], imgs[2].shape === "bleed" ? 600 : 544)}</td></tr>` : ""
       return top + wide + `<tr><td style="font-size:0;line-height:0;height:22px;">&nbsp;</td></tr>`
     }
     case "text":

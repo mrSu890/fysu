@@ -79,10 +79,10 @@ function Upload({ url, onUrl }: { url: string; onUrl: (u: string) => void }) {
     <div className="flex flex-wrap items-center gap-3">
       {url ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={url} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-[#f0ece5] text-[#9a948a]"><ImageIcon size={22} /></div>}
       <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#171717] px-4 py-2.5 text-sm font-medium text-white">
-        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setCrop(f) }} />
-        {busy ? "Envoi…" : url ? "Changer" : "Choisir une photo"}
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (!f) return; if (f.type === "image/gif") void done(f); else setCrop(f) }} />
+        {busy ? "Envoi…" : url ? "Changer" : "Choisir une photo ou un GIF"}
       </label>
-      {url && !busy && (
+      {url && !busy && !/\.gif(\?|$)/i.test(url) && (
         <button type="button" onClick={() => setCrop(url)} className="inline-flex items-center gap-2 rounded-full bg-[#f0ece5] px-4 py-2.5 text-sm font-medium"><Crop size={15} />Recadrer</button>
       )}
       {crop && <CropModal src={crop} onCancel={() => setCrop(null)} onDone={done} />}
@@ -228,6 +228,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
                 {b.images.length > 1 && <button type="button" aria-label="Retirer" onClick={() => set({ ...b, images: b.images.filter((_, j) => j !== i) })} className="rounded-full p-1.5 hover:bg-[#fdeeee]"><Trash2 size={14} /></button>}
               </div>
               <Upload url={im.imageUrl} onUrl={(u) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, imageUrl: u } : x)) })} />
+              <Seg value={im.shape ?? "auto"} opts={[["auto", "Entière"], ["landscape", "Paysage"], ["square", "Carré"], ["portrait", "Portrait"], ...((b.images.length === 1 || i === 2) ? [["bleed", "Bord à bord"] as [string, string]] : [])]} onChange={(v) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, shape: v as typeof x.shape } : x)) })} />
               <LinkPicker optional value={im.href ?? ""} onChange={(u) => set({ ...b, images: b.images.map((x, j) => (j === i ? { ...x, href: u } : x)) })} />
             </div>
           ))}
@@ -240,7 +241,7 @@ export function BlockForm({ b, set, chips }: { b: Block; set: (b: Block) => void
           <Upload url={b.imageUrl} onUrl={(u) => set({ ...b, imageUrl: u })} />
           <div>
             <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-[#6b6760]">Cadre</p>
-            <Seg value={b.frame ?? "landscape"} opts={[["wide", "Bandeau"], ["landscape", "Paysage"], ["square", "Carré"], ["full", "Entière"]]} onChange={(v) => set({ ...b, frame: v })} />
+            <Seg value={b.frame ?? "landscape"} opts={[["wide", "Bandeau"], ["landscape", "Paysage"], ["square", "Carré"], ["portrait", "Portrait"], ["full", "Entière"]]} onChange={(v) => set({ ...b, frame: v })} />
           </div>
           {(b.frame ?? "landscape") !== "full" && (
             <div>
