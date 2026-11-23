@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react"
 import { api } from "@/lib/adminApi"
 import { resizeImage } from "@/lib/imageTools"
+import { uploadStoryFile } from "@/lib/storyUpload"
 import type { ProductPick } from "@/lib/emailBlocks"
 
 export const field = "w-full rounded-xl bg-white px-3 py-2.5 text-[15px] ring-1 ring-[#e0dbd3] outline-none focus:ring-[#171717]"
 
 export async function uploadImage(file: File): Promise<string> {
+  // animation GIF : envoyée telle quelle (le recadrage la rendrait fixe), même lourde
+  if (file.type === "image/gif") return uploadStoryFile(file, "story-media")
   const small = await resizeImage(file)
   const form = new FormData()
   form.append("file", small)
